@@ -131,7 +131,7 @@
     <flume.version>1.4.0</flume.version>
     <zookeeper.version>3.4.5</zookeeper.version>
     <curator.version>2.4.0</curator.version>
-    <hive.group>org.spark-project.hive</hive.group>
+    <hive.group>org.apache.hive</hive.group>
     <!-- Version used in Maven Hive dependency -->
     <hive.version>0.13.1a</hive.version>
     <!-- Version used for internal directory structure -->
@@ -1739,19 +1739,22 @@
       <id>mapr3</id>
       <properties>
         <hadoop.version>1.0.3-mapr-3.0.3</hadoop.version>
-        <yarn.version>2.4.1-mapr-1408</yarn.version>
+        <yarn.version>2.5.1-mapr-1501</yarn.version>
         <hbase.version>0.98.4-mapr-1408</hbase.version>
         <zookeeper.version>3.4.5-mapr-1406</zookeeper.version>
+        <hive.version>0.13.0-mapr-1405</hive.version>
       </properties>
     </profile>
 
     <profile>
       <id>mapr4</id>
       <properties>
-        <hadoop.version>2.4.1-mapr-1408</hadoop.version>
-        <yarn.version>2.4.1-mapr-1408</yarn.version>
-        <hbase.version>0.98.4-mapr-1408</hbase.version>
+        <hadoop.version>2.5.1-mapr-1501</hadoop.version>
+        <yarn.version>2.5.1-mapr-1501</yarn.version>
+        <hbase.version>0.98.9-mapr-1503</hbase.version>
         <zookeeper.version>3.4.5-mapr-1406</zookeeper.version>
+        <protobuf.version>2.5.0</protobuf.version>
+        <hive.version>0.13.0-mapr-1405</hive.version>
       </properties>
       <dependencies>
         <dependency>
