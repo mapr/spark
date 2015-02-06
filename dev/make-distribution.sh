@@ -138,7 +138,7 @@ SPARK_HADOOP_VERSION=$("$MVN" "$MVN_PROFILE_ARG" help:evaluate -Dexpression=hado
     | grep -v "INFO"\
     | grep -v "WARNING"\
     | tail -n 1)
-SPARK_HIVE=$("$MVN" help:evaluate -Dexpression=project.activeProfiles -pl sql/hive $@ 2>/dev/null\
+SPARK_HIVE=$("$MVN" "$MVN_PROFILE_ARG" help:evaluate -Dexpression=project.activeProfiles -pl sql/hive $@ 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
     | fgrep --count "<id>hive</id>";\
