@@ -78,9 +78,14 @@ function generate_hbase_classpath()
   component_name="hbase"
   component_version="$1"
   component_lib_dir="$INSTALL_DIR/$component_name/$component_name-$component_version/lib"
+  component_conf_dir="$INSTALL_DIR/$component_name/$component_name-$component_version/conf"
 
   if [ -d $component_lib_dir ]; then
-    add_glob_jar "$component_lib_dir/hbase-*.jar"
+    add_glob_jar "$component_lib_dir/hbase*.jar"
+  fi
+
+  if [ -d $component_conf_dir ]; then
+    generated_classpath="$generated_classpath:$component_conf_dir"
   fi
 }
 
