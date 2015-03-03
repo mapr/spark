@@ -1742,7 +1742,7 @@
         <yarn.version>2.5.1-mapr-1501</yarn.version>
         <hbase.version>0.98.4-mapr-1408</hbase.version>
         <zookeeper.version>3.4.5-mapr-1406</zookeeper.version>
-        <hive.version>0.13.0-mapr-1405</hive.version>
+        <hive.version>0.13.0-mapr-1501-protobuf241</hive.version>
       </properties>
     </profile>
 
@@ -1754,7 +1754,7 @@
         <hbase.version>0.98.9-mapr-1503</hbase.version>
         <zookeeper.version>3.4.5-mapr-1406</zookeeper.version>
         <protobuf.version>2.5.0</protobuf.version>
-        <hive.version>0.13.0-mapr-1405</hive.version>
+        <hive.version>0.13.0-mapr-1501-protobuf250</hive.version>
       </properties>
       <dependencies>
         <dependency>
