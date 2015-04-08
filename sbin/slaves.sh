@@ -88,13 +88,20 @@ if [ "$SPARK_SSH_OPTS" = "" ]; then
 fi
 
 for slave in `echo "$HOSTLIST"|sed  "s/#.*$//;/^$/d"`; do
+  SSH_CMD=
+  # SSH only if its a remote slave. This is to avoid adding a node's public key to its own authorized set.
+  if [ "$slave" != "localhost" ]; then
+    SSH_CMD=ssh "$SPARK_SSH_OPTS" "$slave"
+  fi
+
   if [ -n "${SPARK_SSH_FOREGROUND}" ]; then
-    ssh $SPARK_SSH_OPTS "$slave" $"${@// /\\ }" \
+    eval "$SSH_CMD" $"${@// /\\ }" \
       2>&1 | sed "s/^/$slave: /"
   else
-    ssh $SPARK_SSH_OPTS "$slave" $"${@// /\\ }" \
+    eval "$SSH_CMD" $"${@// /\\ }" \
       2>&1 | sed "s/^/$slave: /" &
   fi
+
   if [ "$SPARK_SLAVE_SLEEP" != "" ]; then
     sleep $SPARK_SLAVE_SLEEP
   fi
