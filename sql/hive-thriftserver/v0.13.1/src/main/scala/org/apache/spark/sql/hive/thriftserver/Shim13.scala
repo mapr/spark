@@ -35,6 +35,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.operation.ExecuteStatementOperation
 import org.apache.hive.service.cli.session.{SessionManager, HiveSession}
+import org.apache.hive.service.cli.log.LogManager
 
 import org.apache.spark.{SparkContext, Logging}
 import org.apache.spark.sql.{DataFrame, Row => SparkRow, SQLConf}
@@ -226,6 +227,10 @@ private[hive] class SparkSQLSessionManager(hiveContext: HiveContext)
 
     setSuperField(this, "operationManager", sparkSqlOperationManager)
     addService(sparkSqlOperationManager)
+
+    val sparkSqlLogManager = new LogManager()
+    setSuperField(this, "logManager", sparkSqlLogManager)
+    addService(sparkSqlLogManager)
 
     initCompositeService(hiveConf)
   }
