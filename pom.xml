@@ -1753,7 +1753,7 @@
         <hbase.version>0.98.9-mapr-1503</hbase.version>
         <zookeeper.version>3.4.5-mapr-1406</zookeeper.version>
         <protobuf.version>2.5.0</protobuf.version>
-        <hive.version>0.13.0-mapr-1504-protobuf250</hive.version>
+        <hive.version>1.0.0-mapr-1504</hive.version>
       </properties>
       <dependencies>
         <dependency>
