@@ -131,7 +131,8 @@ VERSION=$("$MVN" help:evaluate -Dexpression=project.version $@ 2>/dev/null | gre
 SCALA_VERSION=$("$MVN" help:evaluate -Dexpression=scala.binary.version $@ 2>/dev/null\
     | grep -v "INFO"\
     | tail -n 1)
-SPARK_HADOOP_VERSION=$("$MVN" help:evaluate -Dexpression=hadoop.version $@ 2>/dev/null\
+# MVN_PROFILE_ARG should be set to activate the right profile
+SPARK_HADOOP_VERSION=$("$MVN" "$MVN_PROFILE_ARG" help:evaluate -Dexpression=hadoop.version $@ 2>/dev/null\
     | grep -v "INFO"\
     | tail -n 1)
 SPARK_HIVE=$("$MVN" help:evaluate -Dexpression=project.activeProfiles -pl sql/hive $@ 2>/dev/null\
@@ -167,7 +168,7 @@ export MAVEN_OPTS="${MAVEN_OPTS:--Xmx2g -XX:MaxPermSize=512M -XX:ReservedCodeCac
 # Store the command as an array because $MVN variable might have spaces in it.
 # Normal quoting tricks don't work.
 # See: http://mywiki.wooledge.org/BashFAQ/050
-BUILD_COMMAND=("$MVN" clean package -DskipTests $@)
+BUILD_COMMAND=("$MVN" clean package -DskipTests "$MVN_PROFILE_ARG" $@)
 
 # Actually build the jar
 echo -e "\nBuilding with..."
