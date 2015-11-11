@@ -87,13 +87,28 @@ if [ "$SPARK_SSH_OPTS" = "" ]; then
 fi
 
 for slave in `echo "$HOSTLIST"|sed  "s/#.*$//;/^$/d"`; do
-  if [ -n "${SPARK_SSH_FOREGROUND}" ]; then
-    ssh $SPARK_SSH_OPTS "$slave" $"${@// /\\ }" \
-      2>&1 | sed "s/^/$slave: /"
-  else
-    ssh $SPARK_SSH_OPTS "$slave" $"${@// /\\ }" \
-      2>&1 | sed "s/^/$slave: /" &
+  CMD=
+  SSH_CMD=
+  # SSH only if its a remote slave. This is to avoid adding a node's public key to its own authorized set.
+  if [ "$slave" != "localhost" ]; then
+    SSH_CMD="ssh $SPARK_SSH_OPTS $slave"
   fi
+
+  ARGS=$"${@// /\\ }"
+  CMD="$SSH_CMD $ARGS 2>&1 | sed 's/^/$slave: /'"
+  if [ ! -n "${SPARK_SSH_FOREGROUND}" ]; then
+    CMD="$CMD &"
+  fi
+
+  if [ -z "$SSH_CMD" ]; then
+    # ARGS can contain semicolon, i.e. multiple commands. So need to use eval.
+    eval $CMD
+  else
+    # Do not use eval because ARGS can contain semicolon. eval will treat the
+    # command after semicolon as not part of the SSH command.
+    $CMD
+  fi
+
   if [ "$SPARK_SLAVE_SLEEP" != "" ]; then
     sleep $SPARK_SLAVE_SLEEP
   fi
