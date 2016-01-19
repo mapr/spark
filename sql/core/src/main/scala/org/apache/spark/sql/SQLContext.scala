@@ -78,6 +78,15 @@ class SQLContext private[sql](
   }
   def this(sparkContext: JavaSparkContext) = this(sparkContext.sc)
 
+  private[sql] val MAPRFS_SHIM_LOADER = "com.mapr.fs.shim.LibraryLoader"
+
+  private[sql] def overrideSharedPrefixes(value: String): String = {
+    val prefs = value.split(",")
+    val cleaned = prefs.filterNot(_ == MAPRFS_SHIM_LOADER)
+    val newVal = cleaned.mkString(",")
+    logWarning(s"Overriding shared prefixes property:\nold value - $value,\nnew value - $newVal")
+    newVal
+  }
   // If spark.sql.allowMultipleContexts is true, we will throw an exception if a user
   // wants to create a new root SQLContext (a SLQContext that is not created by newSession).
   private val allowMultipleContexts =
@@ -258,6 +267,12 @@ class SQLContext private[sql](
     // and spark.sql.hive.metastore.jars to get correctly constructed.
     val properties = new Properties
     sparkContext.getConf.getAll.foreach {
+      case (key @ "spark.sql.hive.metastore.sharedPrefixes", value) =>
+        val newVal: String = sparkContext.getConf.get("spark.master") match {
+          case "yarn-cluster" => overrideSharedPrefixes(value)
+          case _ => value
+        }
+        properties.setProperty(key, newVal)
       case (key, value) if key.startsWith("spark.sql") => properties.setProperty(key, value)
       case _ =>
     }
