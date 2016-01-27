@@ -114,6 +114,7 @@
     <module>external/kafka</module>
     <module>external/kafka-v09</module>
     <module>external/kafka-assembly</module>
+    <module>external/kafka-producer</module>
   </modules>
 
   <properties>
