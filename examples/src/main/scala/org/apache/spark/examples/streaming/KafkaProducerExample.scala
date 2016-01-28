@@ -15,13 +15,15 @@
  * limitations under the License.
  */
 
-import java.util.{Map => JMap}
+package org.apache.spark.examples.streaming
+
+import java.util.{ Map => JMap }
 
 import org.apache.kafka.common.serialization.Serializer
 import org.apache.spark.SparkConf
 import org.apache.spark.rdd.RDD
-import org.apache.spark.streaming.dstream.{ConstantInputDStream, DStream}
-import org.apache.spark.streaming.{Seconds, StreamingContext}
+import org.apache.spark.streaming.dstream.{ ConstantInputDStream, DStream }
+import org.apache.spark.streaming.{ Seconds, StreamingContext }
 
 class ItemJsonSerializer extends Serializer[Item] {
   override def configure(configs: JMap[String, _], isKey: Boolean): Unit = { /* NOP */ }
@@ -35,12 +37,36 @@ case class Item(id: Int, value: Int) {
   override def toString: String = s"""{"id":"$id","value":"$value"}"""
 }
 
-object StreamingApp extends App {
+/**
+ * Produces messages to Kafka.
+ * Usage: KafkaProducerExample <kafkaBrokers> <topics> <numMessages>
+ *   <kafkaBrokers> is a list of one or more kafka brokers
+ *   <topics> is a list of one or more kafka topics
+ *   <numMessages> is the number of messages that the kafka producer should send
+ *
+ * Example:
+ *    `$ bin/run-example \
+ *      org.apache.spark.examples.streaming.KafkaProducerExample broker1,broker2 \
+ *      topic1,topic2 10`
+ */
+
+// scalastyle:off println
+object KafkaProducerExample extends App {
   import org.apache.spark.streaming.kafka.producer._
 
-  val topic = "stream.kafka"
-  val numMessages = 10
-  val kafkaBrokers = List("localhost:9092")
+  if (args.length < 3) {
+    System.err.println(s"""
+                          |Usage: Usage: KafkaProducerExample <kafkaBrokers> <topics> <numMessages>
+                          |  <kafkaBrokers> is a list of one or more kafka brokers
+                          |  <topics> is a list of one or more kafka topics
+                          |  <numMessages> is the number of messages that the kafka producer
+                          |                should send
+      """.stripMargin)
+    System.exit(1)
+  }
+
+  val Array(kafkaBrokers, topics, numMessages) = args
+
   val batchTime = Seconds(2)
 
   val sparkConf = new SparkConf()
@@ -51,13 +77,13 @@ object StreamingApp extends App {
   val ssc = new StreamingContext(sparkConf, batchTime)
 
   val producerConf = new ProducerConf(
-    bootstrapServers = kafkaBrokers)
+    bootstrapServers = kafkaBrokers.split(",").toList)
 
-  val items = (0 until numMessages).map(i => Item(i, i))
+  val items = (0 until numMessages.toInt).map(i => Item(i, i))
   val defaultRDD: RDD[Item] = ssc.sparkContext.parallelize(items)
   val dStream: DStream[Item] = new ConstantInputDStream[Item](ssc, defaultRDD)
 
-  dStream.sendToKafka[ItemJsonSerializer](topic, producerConf)
+  dStream.sendToKafka[ItemJsonSerializer](topics, producerConf)
   dStream.count().print()
 
   ssc.start()
