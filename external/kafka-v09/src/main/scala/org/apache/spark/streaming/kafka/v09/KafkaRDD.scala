@@ -46,9 +46,9 @@ class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag] private[spark] (
     messageHandler: ConsumerRecord[K, V] => R
   ) extends RDD[R](sc, Nil) with Logging with HasOffsetRanges {
 
-  private val KAFKA_DEFAULT_POLL_TIME: String = "0"
+  private val KAFKA_DEFAULT_POLL_TIME: String = "100"
   private val pollTime = kafkaParams.get("spark.kafka.poll.time")
-    .getOrElse(KAFKA_DEFAULT_POLL_TIME).toInt
+    .getOrElse(KAFKA_DEFAULT_POLL_TIME).toLong
   private val cluster = new KafkaCluster[K, V](kafkaParams)
 
   override def getPartitions: Array[Partition] = {
