@@ -133,7 +133,7 @@
     <curator.version>2.7.1</curator.version>
     <hive.group>org.apache.hive</hive.group>
     <!-- Version used in Maven Hive dependency -->
-    <hive.version>0.13.1a</hive.version>
+    <hive.version>0.13.0-mapr-1601</hive.version>
     <!-- Version used for internal directory structure -->
     <hive.version.short>0.13.1</hive.version.short>
     <derby.version>10.10.1.1</derby.version>
@@ -1753,7 +1753,7 @@
         <hbase.version>0.98.9-mapr-1503</hbase.version>
         <zookeeper.version>3.4.5-mapr-1406</zookeeper.version>
         <protobuf.version>2.5.0</protobuf.version>
-        <hive.version>0.13.0-mapr-1504-protobuf250</hive.version>
+        <hive.version>0.13.0-mapr-1601</hive.version>
       </properties>
       <dependencies>
         <dependency>
