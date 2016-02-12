@@ -285,6 +285,18 @@
         <enabled>false</enabled>
       </snapshots>
     </repository>
+    <!-- need to remove before release!!! -->
+    <repository>
+      <id>cv-mapr-repo</id>
+      <name>Cyber MapR Repo</name>
+      <url>http://23.21.204.176/nexus/content/groups/mapr-public</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
     <!-- returning unauthorized on some operations -->
     <repository>
       <id>spring-releases</id>
