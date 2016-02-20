@@ -164,35 +164,38 @@ class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag] private[spark] (
       }
     }
 
-    private def fetchBatch: Iterator[ConsumerRecord[K, V]] = {
+    private def fetchBatch(pollTimeout: Long): Iterator[ConsumerRecord[K, V]] = {
       consumer.seek(new TopicPartition(part.topic, part.partition), requestOffset)
-      val recs = consumer.poll(pollTime)
+      val recs = consumer.poll(pollTimeout)
       recs.records(new TopicPartition(part.topic, part.partition)).iterator().asScala
     }
 
     override def getNext(): R = {
-      if ( requestOffset == part.untilOffset ) {
+      if ( requestOffset >= part.untilOffset ) {
         finished = true
         null.asInstanceOf[R]
       }
 
       if (iter == null || !iter.hasNext) {
-        iter = fetchBatch
+        iter = fetchBatch(pollTime)
       }
 
       if (!iter.hasNext) {
-        if (!isStreams) {
-          if ( requestOffset < part.untilOffset ) {
-            return getNext()
+        if (isStreams) {
+          iter = fetchBatch(5000)
+          if (!iter.hasNext) {
+            finished = true
+            return null.asInstanceOf[R]
           }
-          assert(requestOffset == part.untilOffset, errRanOutBeforeEnd(part))
+        }
+        if ( requestOffset < part.untilOffset ) {
+          getNext()
         }
         finished = true
         null.asInstanceOf[R]
       } else {
         val item: ConsumerRecord[K, V] = iter.next()
         if (item.offset >= part.untilOffset) {
-          assert(item.offset == part.untilOffset, errOvershotEnd(item.offset, part))
           finished = true
           null.asInstanceOf[R]
         } else {
