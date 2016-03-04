@@ -469,6 +469,14 @@ object SparkSubmit {
       OptionAssigner(args.principal, YARN, CLUSTER, clOption = "--principal"),
       OptionAssigner(args.keytab, YARN, CLUSTER, clOption = "--keytab"),
 
+      // Yarn cluster and client
+      OptionAssigner(
+        (sys.props.get("mapr_sec_enabled") exists (_ equalsIgnoreCase "true")).toString,
+        YARN, CLIENT | CLUSTER, sysProp = "spark.authenticate"),
+      OptionAssigner(
+        (sys.props.get("mapr_sec_enabled") exists (_ equalsIgnoreCase "true")).toString,
+        YARN, CLIENT | CLUSTER, sysProp = "spark.ssl.enabled"),
+
       // Other options
       OptionAssigner(args.executorCores, STANDALONE | YARN, ALL_DEPLOY_MODES,
         sysProp = "spark.executor.cores"),

@@ -194,7 +194,12 @@ private[spark] class SecurityManager(sparkConf: SparkConf)
 
   import SecurityManager._
 
-  private val authOn = sparkConf.getBoolean(SecurityManager.SPARK_AUTH_CONF, false)
+  // MAPR-21699: Enables authentication in YARN mode by default
+  private val authOn = sparkConf.getBoolean(SecurityManager.SPARK_AUTH_CONF,
+    SparkHadoopUtil.get.isYarnMode &&
+    (sys.props.get("mapr_sec_enabled") exists (_ equalsIgnoreCase "true")) &&
+    !Utils.isTesting)
+
   // keep spark.ui.acls.enable for backwards compatibility with 1.0
   private var aclsOn =
     sparkConf.getBoolean("spark.acls.enable", sparkConf.getBoolean("spark.ui.acls.enable", false))

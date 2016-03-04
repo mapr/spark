@@ -202,6 +202,13 @@ class ExecutorRunnable(
     javaOpts += ("-Dspark.yarn.app.container.log.dir=" + ApplicationConstants.LOG_DIR_EXPANSION_VAR)
     YarnCommandBuilderUtils.addPermGenSizeOpt(javaOpts)
 
+    // MAPR-21699
+    javaOpts += ("-Dmapr_sec_enabled=" +
+      (sys.props.get("mapr_sec_enabled") exists (_ equalsIgnoreCase "true")).toString)
+
+    logInfo("ExecuterRunnable: mapr_sec_enabled " +
+      (sys.props.get("mapr_sec_enabled") exists (_ equalsIgnoreCase "true")).toString)
+
     val userClassPath = Client.getUserClasspath(sparkConf).flatMap { uri =>
       val absPath =
         if (new File(uri.getPath()).isAbsolute()) {
