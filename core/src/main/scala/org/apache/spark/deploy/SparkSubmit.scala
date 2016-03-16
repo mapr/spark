@@ -402,6 +402,8 @@ object SparkSubmit {
     // Special flag to avoid deprecation warnings at the client
     sysProps("SPARK_SUBMIT") = "true"
 
+    val isMaprSecEnabled = (sys.props.get("mapr_sec_enabled") exists (_ equalsIgnoreCase "true")).toString
+
     // A list of rules to map each argument to system properties or command-line options in
     // each deploy mode; we iterate through these below
     val options = List[OptionAssigner](
@@ -445,12 +447,13 @@ object SparkSubmit {
       OptionAssigner(args.keytab, YARN, CLUSTER, clOption = "--keytab"),
 
       // Yarn cluster and client
+      // MAPR-21699
       OptionAssigner(
-        (sys.props.get("mapr_sec_enabled") exists (_ equalsIgnoreCase "true")).toString,
-        YARN, CLIENT | CLUSTER, sysProp = "spark.authenticate"),
+        isMaprSecEnabled, YARN, CLIENT | CLUSTER, sysProp = "spark.authenticate"),
       OptionAssigner(
-        (sys.props.get("mapr_sec_enabled") exists (_ equalsIgnoreCase "true")).toString,
-        YARN, CLIENT | CLUSTER, sysProp = "spark.ssl.enabled"),
+        isMaprSecEnabled, YARN, CLIENT | CLUSTER, sysProp = "spark.ssl.akka.enabled"),
+      OptionAssigner(
+        isMaprSecEnabled, YARN, CLIENT | CLUSTER, sysProp = "spark.ssl.fs.enabled"),
 
       // Other options
       OptionAssigner(args.executorCores, STANDALONE | YARN, ALL_DEPLOY_MODES,
