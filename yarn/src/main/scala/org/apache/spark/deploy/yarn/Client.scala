@@ -1272,6 +1272,7 @@ object Client extends Logging {
     sys.env.get(ENV_DIST_CLASSPATH).foreach { cp =>
       addClasspathEntry(getClusterPath(sparkConf, cp), env)
     }
+    addClasspathEntry(YarnSparkHadoopUtil.expandEnvironment(Environment.PWD) + Path.SEPARATOR + "*", env)
   }
 
   /**
