@@ -727,9 +727,19 @@ private[hive] object HiveContext {
     val propMap: HashMap[String, String] = HashMap()
     // We have to mask all properties in hive-site.xml that relates to metastore data source
     // as we used a local metastore here.
+
     HiveConf.ConfVars.values().foreach { confvar =>
-      if (confvar.varname.contains("datanucleus") || confvar.varname.contains("jdo")
-        || confvar.varname.contains("hive.metastore.rawstore.impl")) {
+      if (
+          (
+            confvar.varname.contains("datanucleus")
+
+            // MAPR-23203 TEMPORARY fix
+            // TODO: Find the root-cause of this problem and fix it correctly
+            && !confvar.varname.contains("autoCreateAll")
+          )
+          || confvar.varname.contains("jdo")
+          || confvar.varname.contains("hive.metastore.rawstore.impl")
+      ) {
         propMap.put(confvar.varname, confvar.getDefaultExpr())
       }
     }
