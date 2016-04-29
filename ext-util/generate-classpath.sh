@@ -68,8 +68,8 @@ function generate_hive_classpath()
   component_lib_dir="$INSTALL_DIR/$component_name/$component_name-$component_version/lib"
 
   if [ -d $component_lib_dir ]; then
-    # Adding all jars under hive lib dir since they are more than a handful
-    generated_classpath="$component_lib_dir/*"
+    # Adding all jars under hive lib except derby jars
+    generated_classpath="$(find /opt/mapr/hive/hive-1.2/lib/* -name '*.jar' -not -name '*derby*' -printf '%p:' | sed 's/:$//')"
   fi
 }
 
