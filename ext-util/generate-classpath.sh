@@ -69,7 +69,7 @@ function generate_hive_classpath()
 
   if [ -d $component_lib_dir ]; then
     # Adding all jars under hive lib except derby jars
-    generated_classpath="$(find /opt/mapr/hive/hive-1.2/lib/* -name '*.jar' -not -name '*derby*' -printf '%p:' | sed 's/:$//')"
+    generated_classpath="$(find $component_lib_dir/* -name '*.jar' -not -name '*derby*' -printf '%p:' | sed 's/:$//')"
   fi
 }
 
