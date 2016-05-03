@@ -68,8 +68,8 @@ function generate_hive_classpath()
   component_lib_dir="$INSTALL_DIR/$component_name/$component_name-$component_version/lib"
 
   if [ -d $component_lib_dir ]; then
-    # Adding all jars under hive lib except derby jars
-    generated_classpath="$(find $component_lib_dir/* -name '*.jar' -not -name '*derby*' -printf '%p:' | sed 's/:$//')"
+    # Adding all jars under hive lib except derby and hive jars
+    generated_classpath="$(find $component_lib_dir/* -name '*.jar' -not -name '*derby*' -not -name 'hive*' -printf '%p:' | sed 's/:$//')"
   fi
 }
 
