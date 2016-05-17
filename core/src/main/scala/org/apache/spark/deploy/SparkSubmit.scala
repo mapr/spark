@@ -472,6 +472,11 @@ object SparkSubmit {
       OptionAssigner(args.keytab, YARN, CLUSTER, clOption = "--keytab"),
 
       // Yarn cluster and client
+      // MAPR-23355
+      OptionAssigner(
+        isMaprSecEnabled, YARN, CLIENT | CLUSTER,
+        sysProp = "spark.authenticate.enableSaslEncryption"),
+
       // MAPR-21699
       OptionAssigner(
         isMaprSecEnabled, YARN, CLIENT | CLUSTER, sysProp = "spark.authenticate"),
