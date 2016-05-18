@@ -729,17 +729,8 @@ private[hive] object HiveContext {
     // as we used a local metastore here.
 
     HiveConf.ConfVars.values().foreach { confvar =>
-      if (
-          (
-            confvar.varname.contains("datanucleus")
-
-            // MAPR-23203 TEMPORARY fix
-            // TODO: Find the root-cause of this problem and fix it correctly
-            && !confvar.varname.contains("autoCreateAll")
-          )
-          || confvar.varname.contains("jdo")
-          || confvar.varname.contains("hive.metastore.rawstore.impl")
-      ) {
+      if (confvar.varname.contains("datanucleus") || confvar.varname.contains("jdo")
+        || confvar.varname.contains("hive.metastore.rawstore.impl")){
         propMap.put(confvar.varname, confvar.getDefaultExpr())
       }
     }
@@ -762,7 +753,8 @@ private[hive] object HiveContext {
     // Then, you will find that the local metastore mode is only set to true when
     // hive.metastore.uris is not set.
     propMap.put(ConfVars.METASTOREURIS.varname, "")
-
+    // MAPR-23243
+    propMap.put("datanucleus.schema.autoCreateAll", "true")
     propMap.toMap
   }
 
