@@ -450,10 +450,15 @@ object SparkSubmit {
       // MAPR-21699
       OptionAssigner(
         isMaprSecEnabled, YARN, CLIENT | CLUSTER, sysProp = "spark.authenticate"),
+
+      /* MAPR-23298
+       * Disable SSL encryption until a good way to generate keystores for each job
+       * will be implemented
       OptionAssigner(
         isMaprSecEnabled, YARN, CLIENT | CLUSTER, sysProp = "spark.ssl.akka.enabled"),
       OptionAssigner(
         isMaprSecEnabled, YARN, CLIENT | CLUSTER, sysProp = "spark.ssl.fs.enabled"),
+      */
 
       // Other options
       OptionAssigner(args.executorCores, STANDALONE | YARN, ALL_DEPLOY_MODES,
