@@ -113,9 +113,14 @@ if [ "$SPARK_PID_DIR" = "" ]; then
   SPARK_PID_DIR=/tmp
 fi
 
+if [ "$SPARK_MAPR_PID_DIR" = "" ]; then
+  SPARK_MAPR_PID_DIR=$SPARK_MAPR_HOME/pid
+fi
+
 # some variables
 log="$SPARK_LOG_DIR/spark-$SPARK_IDENT_STRING-$command-$instance-$HOSTNAME.out"
 pid="$SPARK_PID_DIR/spark-$SPARK_IDENT_STRING-$command-$instance.pid"
+mapr_pid="$SPARK_MAPR_PID_DIR/spark-$SPARK_IDENT_STRING-$command-$instance.pid"
 
 # Set default scheduling priority
 if [ "$SPARK_NICENESS" = "" ]; then
@@ -162,6 +167,7 @@ run_command() {
   esac
 
   echo "$newpid" > "$pid"
+  ln -sf "$pid" "$mapr_pid"
   sleep 2
   # Check if the process has died; in that case we'll tail the log so the user can see
   if [[ ! $(ps -p "$newpid" -o comm=) =~ "java" ]]; then
@@ -187,7 +193,7 @@ case $option in
       TARGET_ID="$(cat "$pid")"
       if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
         echo "stopping $command"
-        kill "$TARGET_ID" && rm -f "$pid"
+        kill "$TARGET_ID" && rm -f "$pid" "$mapr_pid"
       else
         echo "no $command to stop"
       fi
