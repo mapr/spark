@@ -148,7 +148,7 @@ class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag] private[spark] (
     val isStreams = (part.topic.startsWith("/") == true || part.topic.contains(":") == true)
 
     val props = new Properties()
-    if (isStreams) props.put("streams.consumer.zerooffset.on.eof", "true")
+    if (isStreams) props.put("streams.zerooffset.record.on.eof", "true")
     kafkaParams.foreach(param => props.put(param._1, param._2))
 
     val consumer = new KafkaConsumer[K, V](props)
