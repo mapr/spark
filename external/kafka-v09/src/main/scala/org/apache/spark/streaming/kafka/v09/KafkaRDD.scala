@@ -21,7 +21,7 @@ import java.util.{Collections, Properties}
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
-import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
+import org.apache.kafka.clients.consumer.{ConsumerRecords, ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.common.TopicPartition
 import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 import org.apache.spark.partial.{BoundedDouble, PartialResult}
@@ -148,6 +148,7 @@ class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag] private[spark] (
     val isStreams = (part.topic.startsWith("/") == true || part.topic.contains(":") == true)
 
     val props = new Properties()
+    if (isStreams) props.put("streams.consumer.zerooffset.on.eof", "true")
     kafkaParams.foreach(param => props.put(param._1, param._2))
 
     val consumer = new KafkaConsumer[K, V](props)
@@ -166,7 +167,10 @@ class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag] private[spark] (
 
     private def fetchBatch(pollTimeout: Long): Iterator[ConsumerRecord[K, V]] = {
       consumer.seek(new TopicPartition(part.topic, part.partition), requestOffset)
-      val recs = consumer.poll(pollTimeout)
+      var recs: ConsumerRecords[K, V] = null
+      do {
+        recs = consumer.poll(pollTime)
+      } while (recs.isEmpty && requestOffset < part.untilOffset)
       recs.records(new TopicPartition(part.topic, part.partition)).iterator().asScala
     }
 
@@ -181,13 +185,6 @@ class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag] private[spark] (
       }
 
       if (!iter.hasNext) {
-        if (isStreams) {
-          iter = fetchBatch(5000)
-          if (!iter.hasNext) {
-            finished = true
-            return null.asInstanceOf[R]
-          }
-        }
         if ( requestOffset < part.untilOffset ) {
           getNext()
         }
@@ -195,7 +192,12 @@ class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag] private[spark] (
         null.asInstanceOf[R]
       } else {
         val item: ConsumerRecord[K, V] = iter.next()
-        if (item.offset >= part.untilOffset) {
+        /**
+         *  When streams.consumer.zerooffset.on.eof is true, in some cases,
+         *  item.offset() will be 0, once all the messages from a topic-partition are consumed.
+         *  Bug 22919
+         */
+        if (item.offset >= part.untilOffset || item.offset() == 0) {
           finished = true
           null.asInstanceOf[R]
         } else {
