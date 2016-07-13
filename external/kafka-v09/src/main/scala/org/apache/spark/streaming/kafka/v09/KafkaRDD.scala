@@ -18,10 +18,11 @@
 package org.apache.spark.streaming.kafka.v09
 
 import java.util.{Collections, Properties}
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
-import org.apache.kafka.clients.consumer.{ConsumerRecords, ConsumerRecord, KafkaConsumer}
+import org.apache.kafka.clients.consumer.{ConsumerRecord, ConsumerRecords, KafkaConsumer}
 import org.apache.kafka.common.TopicPartition
 import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 import org.apache.spark.partial.{BoundedDouble, PartialResult}
@@ -29,27 +30,31 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.streaming.kafka.v09.KafkaCluster.LeaderOffset
 import org.apache.spark.util.NextIterator
 
+import scala.annotation.tailrec
+import scala.collection.mutable
+
 /**
- * A batch-oriented interface for consuming from Kafka.
- * Starting and ending offsets are specified in advance,
- * so that you can control exactly-once semantics.
- * @param kafkaParams Kafka <a href="http://kafka.apache.org/documentation.html#configuration">
- *                    configuration parameters</a>. Requires "bootstrap.servers" to be set
- *                    with Kafka broker(s) specified in host1:port1,host2:port2 form.
- * @param offsetRanges offset ranges that define the Kafka data belonging to this RDD
- */
+  * A batch-oriented interface for consuming from Kafka.
+  * Starting and ending offsets are specified in advance,
+  * so that you can control exactly-once semantics.
+  *
+  * @param kafkaParams  Kafka <a href="http://kafka.apache.org/documentation.html#configuration">
+  *                     configuration parameters</a>. Requires "bootstrap.servers" to be set
+  *                     with Kafka broker(s) specified in host1:port1,host2:port2 form.
+  * @param offsetRanges offset ranges that define the Kafka data belonging to this RDD
+  */
 private[kafka]
-class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag] private[spark] (
+class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag] private[spark](
     sc: SparkContext,
     kafkaParams: Map[String, String],
     val offsetRanges: Array[OffsetRange],
     messageHandler: ConsumerRecord[K, V] => R
   ) extends RDD[R](sc, Nil) with Logging with HasOffsetRanges {
 
-  private val KAFKA_DEFAULT_POLL_TIME: String = "100"
-  private val pollTime = kafkaParams.get("spark.kafka.poll.time")
-    .getOrElse(KAFKA_DEFAULT_POLL_TIME).toLong
-  private val cluster = new KafkaCluster[K, V](kafkaParams)
+  private val KAFKA_DEFAULT_POLL_TIME: String = "5000"
+  private val pollTime = kafkaParams.
+    getOrElse("spark.kafka.poll.time", KAFKA_DEFAULT_POLL_TIME).toLong
+  val isStreams = offsetRanges(0).topic.startsWith("/") || offsetRanges(0).topic.contains(":")
 
   override def getPartitions: Array[Partition] = {
     offsetRanges.zipWithIndex.map {
@@ -58,7 +63,11 @@ class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag] private[spark] (
     }.toArray
   }
 
-  override def count(): Long = offsetRanges.map(_.count).sum
+  override def count(): Long = {
+    offsetRanges.map({
+      offset => offset.count()  - (if (isStreams && offset.fromOffset == 0) 1 else 0): Long
+    }).sum
+  }
 
   override def countApprox(
       timeout: Long,
@@ -136,74 +145,76 @@ class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag] private[spark] (
     }
   }
 
-  private class KafkaRDDIterator(
-      part: KafkaRDDPartition,
-      context: TaskContext) extends NextIterator[R] {
+  private class KafkaRDDIterator(part: KafkaRDDPartition, context: TaskContext)
+    extends Iterator[R] {
 
     context.addTaskCompletionListener { context => closeIfNeeded() }
 
     log.info(s"Computing topic ${part.topic}, partition ${part.partition} " +
       s"offsets ${part.fromOffset} -> ${part.untilOffset}")
 
-    val isStreams = (part.topic.startsWith("/") == true || part.topic.contains(":") == true)
-
     val props = new Properties()
     if (isStreams) props.put("streams.zerooffset.record.on.eof", "true")
-    kafkaParams.foreach(param => props.put(param._1, param._2))
+      kafkaParams.foreach(param => props.put(param._1, param._2))
 
     val consumer = new KafkaConsumer[K, V](props)
     val tp = new TopicPartition(part.topic, part.partition)
     consumer.assign(Collections.singletonList[TopicPartition](tp))
 
     var requestOffset = part.fromOffset
-    var iter: Iterator[ConsumerRecord[K, V]] = null
-    consumer.seek(tp, requestOffset)
+    val maxRetries = 3
+    var buffer = fetchBatch(pollTime)
 
-    override def close(): Unit = {
-      if (consumer != null) {
-        consumer.close()
+    override def hasNext: Boolean = {
+      if (requestOffset >= part.untilOffset){
+        false
+      } else {
+        if (!buffer.hasNext) {
+          buffer = fetchBatch(pollTime)
+        }
+
+        buffer.hasNext
       }
     }
+
+    override def next(): R = {
+      assert(hasNext, "Can't call getNext() once untilOffset has been reached")
+
+      val item = buffer.next()
+      requestOffset = item.offset() + 1
+      messageHandler(item)
+    }
+
 
     private def fetchBatch(pollTimeout: Long): Iterator[ConsumerRecord[K, V]] = {
-      consumer.seek(new TopicPartition(part.topic, part.partition), requestOffset)
-      var recs: ConsumerRecords[K, V] = null
-      do {
-        recs = consumer.poll(pollTime)
-      } while (recs.isEmpty && requestOffset < part.untilOffset)
-      recs.records(new TopicPartition(part.topic, part.partition)).iterator().asScala
+      @tailrec
+      def _fetch(currentTry: Int): mutable.Buffer[ConsumerRecord[K, V]] = {
+        consumer.seek(new TopicPartition(part.topic, part.partition), requestOffset)
+        val recs = consumer.poll(pollTimeout)
+        val result = recs.records(new TopicPartition(part.topic, part.partition)).asScala
+        if (result.isEmpty && currentTry < maxRetries) {
+          _fetch(currentTry + 1)
+        } else {
+          result
+        }
+      }
+
+      val result = _fetch(1)
+      assert(result.nonEmpty,
+        s"""Failed to get records for ${part.topic})
+           ||${part.partition} $requestOffset after polling for $pollTime""".stripMargin)
+      if (isStreams) {
+        val filteredResult = result.filter(_.offset() != 0)
+        requestOffset += result.size - filteredResult.size
+        filteredResult.iterator
+      } else {
+        result.iterator
+      }
     }
 
-    override def getNext(): R = {
-      if ( requestOffset >= part.untilOffset ) {
-        finished = true
-        null.asInstanceOf[R]
-      }
-
-      if (iter == null || !iter.hasNext) {
-        iter = fetchBatch(pollTime)
-      }
-
-      if (!iter.hasNext) {
-        if ( requestOffset < part.untilOffset ) {
-          getNext()
-        }
-        finished = true
-        null.asInstanceOf[R]
-      } else {
-        val item: ConsumerRecord[K, V] = iter.next()
-        /**
-         *  When streams.consumer.zerooffset.on.eof is true, in some cases,
-         *  item.offset() will be 0, once all the messages from a topic-partition are consumed.
-         *  Bug 22919
-         */
-        if (item.offset >= part.untilOffset || item.offset() == 0) {
-          finished = true
-          null.asInstanceOf[R]
-        } else {
-          requestOffset = item.offset() + 1
-          messageHandler(item)
-        }
+    def closeIfNeeded(): Unit = {
+      if (consumer != null) {
+        consumer.close()
       }
     }
   }
