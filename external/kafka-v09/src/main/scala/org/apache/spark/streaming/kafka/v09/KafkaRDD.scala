@@ -185,7 +185,6 @@ class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag] private[spark](
       messageHandler(item)
     }
 
-
     private def fetchBatch(pollTimeout: Long): Iterator[ConsumerRecord[K, V]] = {
       @tailrec
       def _fetch(currentTry: Int): mutable.Buffer[ConsumerRecord[K, V]] = {
@@ -205,7 +204,6 @@ class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag] private[spark](
            ||${part.partition} $requestOffset after polling for $pollTime""".stripMargin)
       if (isStreams) {
         val filteredResult = result.filter(_.offset() != 0)
-        requestOffset += result.size - filteredResult.size
         filteredResult.iterator
       } else {
         result.iterator
