@@ -182,7 +182,7 @@ abstract class Expression extends TreeNode[Expression] {
    */
   protected def toCommentSafeString: String = this.toString
     .replace("*/", "\\*\\/")
-    .replace("\\u", "\\\\u")
+    .replaceAll("(^|[^\\\\])(\\\\(\\\\\\\\)*u)", "$1\\\\$2")
 }
 
 
