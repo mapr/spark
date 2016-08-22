@@ -113,9 +113,14 @@ if [ "$SPARK_PID_DIR" = "" ]; then
   SPARK_PID_DIR=/tmp
 fi
 
+if [ "$SPARK_MAPR_PID_DIR" = "" ]; then
+  SPARK_MAPR_PID_DIR=$SPARK_MAPR_HOME/pid
+fi
+
 # some variables
 log="$SPARK_LOG_DIR/spark-$SPARK_IDENT_STRING-$command-$instance-$HOSTNAME.out"
 pid="$SPARK_PID_DIR/spark-$SPARK_IDENT_STRING-$command-$instance.pid"
+mapr_pid="$SPARK_MAPR_PID_DIR/spark-$SPARK_IDENT_STRING-$command-$instance.pid"
 
 # Set default scheduling priority
 if [ "$SPARK_NICENESS" = "" ]; then
@@ -162,6 +167,7 @@ run_command() {
   esac
 
   echo "$newpid" > "$pid"
+  ln -sf "$pid" "$mapr_pid"
   
   #Poll for up to 5 seconds for the java process to start
   for i in {1..10}
@@ -197,7 +203,7 @@ case $option in
       TARGET_ID="$(cat "$pid")"
       if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
         echo "stopping $command"
-        kill "$TARGET_ID" && rm -f "$pid"
+        kill "$TARGET_ID" && rm -f "$pid" "$mapr_pid"
       else
         echo "no $command to stop"
       fi
