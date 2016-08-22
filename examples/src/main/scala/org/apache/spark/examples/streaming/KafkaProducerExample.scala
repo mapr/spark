@@ -70,7 +70,6 @@ object KafkaProducerExample extends App {
   val batchTime = Seconds(2)
 
   val sparkConf = new SparkConf()
-    .setMaster("local[*]")
     .set("spark.executor.memory", "1g")
     .set("spark.driver.memory", "1g")
     .setAppName(getClass.getCanonicalName)
