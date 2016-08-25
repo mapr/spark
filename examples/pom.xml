@@ -146,6 +146,10 @@
           <groupId>org.apache.hbase</groupId>
           <artifactId>hbase-annotations</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.mapr.hadoop</groupId>
+          <artifactId>maprfs</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -369,6 +373,9 @@
           <shadedArtifactAttached>false</shadedArtifactAttached>
           <outputFile>${project.build.directory}/scala-${scala.binary.version}/spark-examples-${project.version}-hadoop${hadoop.version}.jar</outputFile>
           <artifactSet>
+            <excludes>
+              <exclude>com.mapr.hadoop:maprfs</exclude>
+            </excludes>
             <includes>
               <include>*:*</include>
             </includes>
