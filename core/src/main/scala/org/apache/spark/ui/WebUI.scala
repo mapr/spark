@@ -23,6 +23,7 @@ import javax.servlet.http.{HttpServlet, HttpServletRequest}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.HashMap
+import scala.util.{Failure, Success, Try}
 import scala.xml.Node
 
 import org.eclipse.jetty.servlet.{FilterHolder, FilterMapping, ServletContextHandler, ServletHolder}
@@ -42,7 +43,7 @@ import org.apache.spark.util.Utils
  */
 private[spark] abstract class WebUI(
     val securityManager: SecurityManager,
-    val sslOptions: SSLOptions,
+    val sslOpts: SSLOptions,
     port: Int,
     conf: SparkConf,
     basePath: String = "",
@@ -50,6 +51,7 @@ private[spark] abstract class WebUI(
     poolSize: Int = 200)
   extends Logging {
 
+  protected val sslOptions: SSLOptions = securityManager.genSslCertsForWebUIifNeeded(sslOpts)
   protected val tabs = ArrayBuffer[WebUITab]()
   protected val handlers = ArrayBuffer[ServletContextHandler]()
   protected val pageToHandlers = new HashMap[WebUIPage, ArrayBuffer[ServletContextHandler]]
@@ -86,6 +88,7 @@ private[spark] abstract class WebUI(
   /** Attaches a page to this UI. */
   def attachPage(page: WebUIPage): Unit = {
     val pagePath = "/" + page.prefix
+
     val renderHandler = createServletHandler(pagePath,
       (request: HttpServletRequest) => page.render(request), conf, basePath)
     val renderJsonHandler = createServletHandler(pagePath.stripSuffix("/") + "/json",
@@ -95,6 +98,13 @@ private[spark] abstract class WebUI(
     val handlers = pageToHandlers.getOrElseUpdate(page, ArrayBuffer[ServletContextHandler]())
     handlers += renderHandler
     handlers += renderJsonHandler
+  }
+
+  def safeRender[T](render: HttpServletRequest => T, default: T)(request: HttpServletRequest): T = {
+    Try(render(request)) match {
+      case Success(res) => res
+      case Failure(_) => default
+    }
   }
 
   /** Attaches a handler to this UI. */

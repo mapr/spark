@@ -119,4 +119,7 @@ private[spark] object Constants {
   val APP_RESOURCE_TYPE_JAVA = "java"
   val APP_RESOURCE_TYPE_PYTHON = "python"
   val APP_RESOURCE_TYPE_R = "r"
+
+  val MAPR_TICKETFILE_LOCATION = "MAPR_TICKETFILE_LOCATION"
+  val MAPR_SSL_LOCATION = "MAPR_SSL_LOCATION"
 }

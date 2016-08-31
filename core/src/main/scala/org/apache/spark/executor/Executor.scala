@@ -22,6 +22,7 @@ import java.lang.Thread.UncaughtExceptionHandler
 import java.lang.management.ManagementFactory
 import java.net.{URI, URL}
 import java.nio.ByteBuffer
+import java.security.PrivilegedExceptionAction
 import java.util.{Locale, Properties}
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicBoolean
@@ -37,6 +38,7 @@ import scala.util.control.NonFatal
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import org.slf4j.MDC
 
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark._
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.internal.Logging
@@ -539,7 +541,9 @@ private[spark] class Executor(
         } else 0L
         var threwException = true
         val value = Utils.tryWithSafeFinally {
-          val res = task.run(
+          val ugi = UserGroupInformation.getCurrentUser
+          val doAsUserName = taskDescription.properties.getProperty(SparkContext.SPARK_JOB_DOASUSER)
+          def res = task.run(
             taskAttemptId = taskId,
             attemptNumber = taskDescription.attemptNumber,
             metricsSystem = env.metricsSystem,
@@ -547,7 +551,19 @@ private[spark] class Executor(
             resources = taskDescription.resources,
             plugins = plugins)
           threwException = false
-          res
+
+          if(ugi.getUserName == doAsUserName){
+            res
+          } else {
+            val doAsAction = new PrivilegedExceptionAction[Any] () {
+              override def run(): Any = {
+                res
+              }
+            }
+            val proxyUgi = UserGroupInformation.createProxyUser(doAsUserName, ugi)
+            proxyUgi.addCredentials(ugi.getCredentials)
+            proxyUgi.doAs(doAsAction)
+          }
         } {
           val releasedLocks = env.blockManager.releaseAllLocksForTask(taskId)
           val freedMemory = taskMemoryManager.cleanUpAllAllocatedMemory()

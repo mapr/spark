@@ -31,7 +31,6 @@ abstract class PerPartitionConfig extends Serializable {
    *  from each Kafka partition.
    */
   def maxRatePerPartition(topicPartition: TopicPartition): Long
-  def minRatePerPartition(topicPartition: TopicPartition): Long = 1
 }
 
 /**
@@ -43,5 +42,4 @@ private class DefaultPerPartitionConfig(conf: SparkConf)
   val minRate = conf.get(MIN_RATE_PER_PARTITION)
 
   def maxRatePerPartition(topicPartition: TopicPartition): Long = maxRate
-  override def minRatePerPartition(topicPartition: TopicPartition): Long = minRate
 }

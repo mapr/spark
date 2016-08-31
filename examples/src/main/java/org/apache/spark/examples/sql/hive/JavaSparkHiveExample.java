@@ -56,12 +56,10 @@ public class JavaSparkHiveExample {
 
   public static void main(String[] args) {
     // $example on:spark_hive$
-    // warehouseLocation points to the default location for managed databases and tables
-    String warehouseLocation = new File("spark-warehouse").getAbsolutePath();
+    //
     SparkSession spark = SparkSession
       .builder()
       .appName("Java Spark Hive Example")
-      .config("spark.sql.warehouse.dir", warehouseLocation)
       .enableHiveSupport()
       .getOrCreate();
 
@@ -123,6 +121,9 @@ public class JavaSparkHiveExample {
     // |  4| val_4|  4| val_4|
     // ...
     // $example off:spark_hive$
+
+    spark.sql("DROP TABLE IF EXISTS src");
+    spark.sql("DROP TABLE IF EXISTS records");
 
     spark.stop();
   }
