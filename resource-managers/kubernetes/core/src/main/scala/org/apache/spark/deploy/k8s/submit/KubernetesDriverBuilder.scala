@@ -19,6 +19,9 @@ package org.apache.spark.deploy.k8s.submit
 import java.io.File
 
 import io.fabric8.kubernetes.client.KubernetesClient
+import org.apache.spark.deploy.k8s.{KubernetesConf, KubernetesDriverSpec, KubernetesDriverSpecificConf, KubernetesRoleSpecificConf}
+import org.apache.spark.deploy.k8s.features._
+import org.apache.spark.deploy.k8s.features.bindings.{JavaDriverFeatureStep, PythonDriverFeatureStep, RDriverFeatureStep}
 
 import org.apache.spark.deploy.k8s._
 import org.apache.spark.deploy.k8s.features._

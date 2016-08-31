@@ -82,7 +82,9 @@ private[spark] trait UIRoot {
   def withSparkUI[T](appId: String, attemptId: Option[String])(fn: SparkUI => T): T
 
   def getApplicationInfoList: Iterator[ApplicationInfo]
+  def getApplicationInfoListForUser(user: Option[String]): Iterator[ApplicationInfo]
   def getApplicationInfo(appId: String): Option[ApplicationInfo]
+  def getApplicationInfoForUser(user: Option[String], appId: String): Option[ApplicationInfo]
 
   /**
    * Write the event logs for the given app to the `ZipOutputStream` instance. If attemptId is

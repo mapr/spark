@@ -208,7 +208,7 @@ class PartitionedTablePerfStatsSuite
       }
     }
   }
-
+/*
   genericTest("file status caching respects refresh table and refreshByPath") { spec =>
     withSQLConf(
         SQLConf.HIVE_MANAGE_FILESOURCE_PARTITIONS.key -> "true",
@@ -237,7 +237,7 @@ class PartitionedTablePerfStatsSuite
       }
     }
   }
-
+*/
   genericTest("file status cache respects size limit") { spec =>
     withSQLConf(
         SQLConf.HIVE_MANAGE_FILESOURCE_PARTITIONS.key -> "true",

@@ -515,38 +515,6 @@ private[spark] class SparkSubmit extends Logging {
       sparkConf.set(SUBMIT_PYTHON_FILES, localPyFiles.split(",").toSeq)
     }
 
-    // In YARN mode for an R app, add the SparkR package archive and the R package
-    // archive containing all of the built R libraries to archives so that they can
-    // be distributed with the job
-    if (args.isR && clusterManager == YARN) {
-      val sparkRPackagePath = RUtils.localSparkRPackagePath
-      if (sparkRPackagePath.isEmpty) {
-        error("SPARK_HOME does not exist for R application in YARN mode.")
-      }
-      val sparkRPackageFile = new File(sparkRPackagePath.get, SPARKR_PACKAGE_ARCHIVE)
-      if (!sparkRPackageFile.exists()) {
-        error(s"$SPARKR_PACKAGE_ARCHIVE does not exist for R application in YARN mode.")
-      }
-      val sparkRPackageURI = Utils.resolveURI(sparkRPackageFile.getAbsolutePath).toString
-
-      // Distribute the SparkR package.
-      // Assigns a symbol link name "sparkr" to the shipped package.
-      args.archives = mergeFileLists(args.archives, sparkRPackageURI + "#sparkr")
-
-      // Distribute the R package archive containing all the built R packages.
-      if (!RUtils.rPackages.isEmpty) {
-        val rPackageFile =
-          RPackageUtils.zipRLibraries(new File(RUtils.rPackages.get), R_PACKAGE_ARCHIVE)
-        if (!rPackageFile.exists()) {
-          error("Failed to zip all the built R packages.")
-        }
-
-        val rPackageURI = Utils.resolveURI(rPackageFile.getAbsolutePath).toString
-        // Assigns a symbol link name "rpkg" to the shipped package.
-        args.archives = mergeFileLists(args.archives, rPackageURI + "#rpkg")
-      }
-    }
-
     // TODO: Support distributing R packages with standalone cluster
     if (args.isR && clusterManager == STANDALONE && !RUtils.rPackages.isEmpty) {
       error("Distributing R packages with standalone cluster is not supported.")
@@ -852,7 +820,59 @@ private[spark] class SparkSubmit extends Logging {
     }
     sparkConf.set(SUBMIT_PYTHON_FILES, formattedPyFiles.split(",").toSeq)
 
-    (childArgs.toSeq, childClasspath.toSeq, sparkConf, childMainClass)
+    // In YARN mode for an R app, add the SparkR package archive and the R package
+    // archive containing all of the built R libraries to archives so that they can
+    // be distributed with the job
+    if (args.isR && clusterManager == YARN) {
+      val sparkRPackagePath = RUtils.localSparkRPackagePath
+      if (sparkRPackagePath.isEmpty) {
+        printErrorAndExit("SPARK_HOME does not exist for R application in YARN mode.")
+      }
+      val sparkRPackageFile = new File(sparkRPackagePath.get, SPARKR_PACKAGE_ARCHIVE)
+      if (!sparkRPackageFile.exists()) {
+        printErrorAndExit(s"$SPARKR_PACKAGE_ARCHIVE does not exist for R application in YARN mode.")
+      }
+      val sparkRPackageURI = Utils.resolveURI(sparkRPackageFile.getAbsolutePath).toString
+
+      // Distribute the SparkR package.
+      // Assigns a symbol link name "sparkr" to the shipped package.
+      args.archives = mergeFileLists(args.archives, sparkRPackageURI + "#sparkr")
+      if(sparkConf.contains("spark.yarn.dist.archives")) {
+        args.archives = mergeFileLists(args.archives, sparkConf.get("spark.yarn.dist.archives"))
+      }
+
+      // Distribute the R package archive containing all the built R packages.
+      if (!RUtils.rPackages.isEmpty) {
+        val rPackageFile =
+          RPackageUtils.zipRLibraries(new File(RUtils.rPackages.get), R_PACKAGE_ARCHIVE)
+        if (!rPackageFile.exists()) {
+          printErrorAndExit("Failed to zip all the built R packages.")
+        }
+
+        val rPackageURI = Utils.resolveURI(rPackageFile.getAbsolutePath).toString
+        // Assigns a symbol link name "rpkg" to the shipped package.
+        args.archives = mergeFileLists(args.archives, rPackageURI + "#rpkg")
+      }
+
+      sparkConf.set("spark.yarn.dist.archives", args.archives)
+    }
+
+    (childArgs, childClasspath, sparkConf, childMainClass)
+  }
+
+  private def renameResourcesToLocalFS(resources: String, localResources: String): String = {
+    if (resources != null && localResources != null) {
+      val localResourcesSeq = Utils.stringToSeq(localResources)
+      Utils.stringToSeq(resources).map { resource =>
+        val filenameRemote = FilenameUtils.getName(new URI(resource).getPath)
+        localResourcesSeq.find { localUri =>
+          val filenameLocal = FilenameUtils.getName(new URI(localUri).getPath)
+          filenameRemote == filenameLocal
+        }.getOrElse(resource)
+      }.mkString(",")
+    } else {
+      resources
+    }
   }
 
   // [SPARK-20328]. HadoopRDD calls into a Hadoop library that fetches delegation tokens with
@@ -951,16 +971,20 @@ private[spark] class SparkSubmit extends Logging {
       app.start(childArgs.toArray, sparkConf)
     } catch {
       case t: Throwable =>
-        throw findCause(t)
-    } finally {
-      if (!isShell(args.primaryResource) && !isSqlShell(args.mainClass) &&
-        !isThriftServer(args.mainClass)) {
-        try {
-          SparkContext.getActive.foreach(_.stop())
-        } catch {
-          case e: Throwable => logError(s"Failed to close SparkContext: $e")
+        findCause(t) match {
+          case SparkUserAppException(exitCode) =>
+            System.exit(exitCode)
+
+          case t: Throwable =>
+            // TODO: fix MultiauthWebUiFilter and return standart Spark behavior
+            log.error(t.getMessage, t)
+            System.exit(1)
         }
-      }
+    }
+    // TODO: fix MultiauthWebUiFilter and return standart Spark behavior
+    if (!isThriftServer(childMainClass)
+      && !sparkConf.getBoolean("spark.byLauncher.started", false)) {
+      System.exit(0)
     }
   }
 
@@ -1198,6 +1222,13 @@ private[spark] object SparkSubmitUtils {
       "DEFAULT_ARTIFACT_REPOSITORY", "https://repos.spark-packages.org/"))
     sp.setName("spark-packages")
     cr.add(sp)
+
+    val mp: IBiblioResolver = new IBiblioResolver
+    mp.setM2compatible(true)
+    mp.setUsepoms(true)
+    mp.setRoot("http://repository.mapr.com/maven/")
+    mp.setName("mapr-repo")
+    cr.add(mp)
     cr
   }
 

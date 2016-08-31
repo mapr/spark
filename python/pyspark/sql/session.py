@@ -32,6 +32,8 @@ from pyspark.sql.types import DataType, StructType, \
     _parse_datatype_string
 from pyspark.sql.utils import install_exception_handler
 
+import pyspark.sql.maprpatch
+
 __all__ = ["SparkSession"]
 
 
@@ -255,6 +257,10 @@ class SparkSession(SparkConversionMixin):
         self._jwrapped = self._jsparkSession.sqlContext()
         self._wrapped = SQLContext(self._sc, self, self._jwrapped)
         _monkey_patch_RDD(self)
+
+        ### Applying MapR patch
+        pyspark.sql.maprpatch.mapr_session_patch(self, self._wrapped, gw = self._sc._gateway)
+
         install_exception_handler()
         # If we had an instantiated SparkSession attached with a SparkContext
         # which is stopped now, we need to renew the instantiated SparkSession.

@@ -22,13 +22,14 @@ import org.scalatest.{BeforeAndAfterAll, Suite}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.internal.config.Network.RPC_MESSAGE_MAX_SIZE
 
+// TODO FIX local-cluster
 trait LocalClusterSparkContext extends BeforeAndAfterAll { self: Suite =>
   @transient var sc: SparkContext = _
 
   override def beforeAll(): Unit = {
     super.beforeAll()
     val conf = new SparkConf()
-      .setMaster("local-cluster[2, 1, 1024]")
+      .setMaster("local")
       .setAppName("test-cluster")
       .set(RPC_MESSAGE_MAX_SIZE, 1) // set to 1MB to detect direct serialization of data
     sc = new SparkContext(conf)

@@ -59,7 +59,7 @@ class YarnProxyRedirectFilter extends Filter with Logging {
     val content = s"""
       |<html xmlns="http://www.w3.org/1999/xhtml">
       |<head>
-      |  <title>Spark History Server Redirect</title>
+      |  <title>Spark Redirect</title>
       |  <meta http-equiv="refresh" content="0;URL='$redirect'" />
       |</head>
       |<body>
