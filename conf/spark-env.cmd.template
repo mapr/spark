@@ -1,0 +1,9 @@
+@echo off
+set HADOOP_HOME=%MAPR_HOME%\hadoop\hadoop-2.7.0
+set HADOOP_CONF_DIR=%HADOOP_HOME%\etc\hadoop
+set PATH=%HADOOP_HOME%\bin;%PATH%
+
+for /f "delims=" %%A in ('%HADOOP_HOME%\bin\hadoop classpath') do set "TMP_DIST_PATH=%%A"
+set SPARK_DIST_CLASSPATH=%TMP_DIST_PATH:C:=%
+set SPARK_DIST_CLASSPATH=%SPARK_DIST_CLASSPATH:\=/%
+set SPARK_DIST_CLASSPATH=%SPARK_DIST_CLASSPATH%;%TMP_DIST_PATH%

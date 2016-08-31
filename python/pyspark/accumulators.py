@@ -226,7 +226,6 @@ class _UpdateRequestHandler(SocketServer.StreamRequestHandler):
     def handle(self):
         from pyspark.accumulators import _accumulatorRegistry
         auth_token = self.server.auth_token
-
         def poll(func):
             while not self.server.server_shutdown:
                 # Poll every 1 second for new data -- don't block in case of shutdown.
@@ -261,7 +260,6 @@ class _UpdateRequestHandler(SocketServer.StreamRequestHandler):
         # now we've authenticated, don't need to check for the token anymore
         poll(accum_updates)
 
-
 class AccumulatorServer(SocketServer.TCPServer):
 
     def __init__(self, server_address, RequestHandlerClass, auth_token):
@@ -278,7 +276,6 @@ class AccumulatorServer(SocketServer.TCPServer):
         self.server_shutdown = True
         SocketServer.TCPServer.shutdown(self)
         self.server_close()
-
 
 def _start_update_server(auth_token):
     """Start a TCP server to receive accumulator updates in a daemon thread, and returns it"""

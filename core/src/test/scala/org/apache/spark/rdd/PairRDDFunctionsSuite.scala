@@ -34,6 +34,7 @@ import org.scalatest.Assertions
 
 import org.apache.spark._
 import org.apache.spark.Partitioner
+import org.apache.spark.util.Utils
 
 class PairRDDFunctionsSuite extends SparkFunSuite with SharedSparkContext {
   test("aggregateByKey") {
@@ -469,6 +470,8 @@ class PairRDDFunctionsSuite extends SparkFunSuite with SharedSparkContext {
   }
 
   test("zero-partition RDD") {
+    sc.hadoopConfiguration.set("fs.defaultFS", "file:///")
+    sc.hadoopConfiguration.set("fs.default.name", "file:///")
     withTempDir { emptyDir =>
       val file = sc.textFile(emptyDir.getAbsolutePath)
       assert(file.partitions.isEmpty)

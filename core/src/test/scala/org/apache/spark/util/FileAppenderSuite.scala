@@ -148,7 +148,7 @@ class FileAppenderSuite extends SparkFunSuite with BeforeAndAfter with Logging {
     }
   }
 
-  test("rolling file appender - size-based rolling (compressed)") {
+  ignore("rolling file appender - size-based rolling (compressed)") {
     // setup input stream and appender
     val testOutputStream = new PipedOutputStream()
     val testInputStream = new PipedInputStream(testOutputStream, 100 * 1000)
