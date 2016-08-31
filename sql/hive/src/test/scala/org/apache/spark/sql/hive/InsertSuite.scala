@@ -526,7 +526,7 @@ class InsertSuite extends QueryTest with TestHiveSingleton with BeforeAndAfter
     }
   }
 
-  test("SPARK-20594: hive.exec.stagingdir was deleted by Hive") {
+  ignore("SPARK-20594: hive.exec.stagingdir was deleted by Hive") {
     // Set hive.exec.stagingdir under the table directory without start with ".".
     withSQLConf("hive.exec.stagingdir" -> "./test") {
       withTable("test_table") {

@@ -194,7 +194,7 @@ sparkR.sparkContext <- function(
 
     # Don't use readString() so that we can provide a useful
     # error message if the R and Java versions are mismatched.
-    authSecretLen <- readInt(f)
+    authSecretLen = readInt(f)
     if (length(authSecretLen) == 0 || authSecretLen == 0) {
       stop("Unexpected EOF in JVM connection data. Mismatched versions?")
     }
@@ -438,10 +438,9 @@ sparkR.session <- function(
   jvmVersionStrip <- gsub("-SNAPSHOT", "", jvmVersion, fixed = TRUE)
   rPackageVersion <- paste0(packageVersion("SparkR"))
 
-  if (jvmVersionStrip != rPackageVersion) {
-    warning("Version mismatch between Spark JVM and SparkR package. ",
-            "JVM version was ", jvmVersion,
-            ", while R package version was ", rPackageVersion)
+  if (!grepl(paste("^", rPackageVersion, sep=""), jvmVersionStrip)) {
+    warning(paste("Version mismatch between Spark JVM and SparkR package. JVM version was",
+                  jvmVersion, ", while R package version was", rPackageVersion))
   }
 
   sparkSession

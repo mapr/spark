@@ -74,6 +74,11 @@
       <artifactId>spark-repl_${scala.binary.version}</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>classpath-filter_${scala.binary.version}</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <!--
       Because we don't shade dependencies anymore, we need to restore Guava to compile scope so
@@ -117,7 +122,7 @@
           </executions>
           <configuration>
             <target>
-              <delete file="${basedir}/../python/lib/pyspark.zip"/>
+              <delete dir="${basedir}/../python/lib/pyspark.zip"/>
               <zip destfile="${basedir}/../python/lib/pyspark.zip">
                 <fileset dir="${basedir}/../python/" includes="pyspark/**/*"/>
               </zip>
@@ -182,6 +187,42 @@
         </dependency>
       </dependencies>
     </profile>
+    <profile>
+      <id>include-kafka-09</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.spark</groupId>
+          <artifactId>spark-streaming-kafka-0-9_${scala.binary.version}</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.spark</groupId>
+          <artifactId>spark-streaming-kafka-0-10_${scala.binary.version}</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>include-kafka-sql</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.spark</groupId>
+          <artifactId>spark-sql-kafka-0-10_${scala.binary.version}</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>include-maprdb</id>
+      <dependencies>
+        <dependency>
+          <groupId>com.mapr.db</groupId>
+          <artifactId>maprdb-spark</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+
     <profile>
       <id>spark-ganglia-lgpl</id>
       <dependencies>

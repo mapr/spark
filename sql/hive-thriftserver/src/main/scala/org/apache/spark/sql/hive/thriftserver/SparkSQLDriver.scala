@@ -64,6 +64,7 @@ private[hive] class SparkSQLDriver(val context: SQLContext = SparkSQLEnv.sqlCont
         new VariableSubstitution().substitute(command)
       }
       context.sparkContext.setJobDescription(substitutorCommand)
+      context.sparkContext.setJobDoAsUser()
       val execution = context.sessionState.executePlan(context.sql(command).logicalPlan)
       hiveResponse = SQLExecution.withNewExecutionId(execution, Some("cli")) {
         hiveResultString(execution.executedPlan)

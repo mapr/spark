@@ -18,6 +18,7 @@
 package org.apache.spark.rdd
 
 import java.io.{FileNotFoundException, IOException}
+import java.security.PrivilegedExceptionAction
 import java.text.SimpleDateFormat
 import java.util.{Date, Locale}
 
@@ -30,6 +31,7 @@ import org.apache.hadoop.mapred._
 import org.apache.hadoop.mapred.lib.CombineFileSplit
 import org.apache.hadoop.mapreduce.TaskType
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.util.ReflectionUtils
 
 import org.apache.spark._
@@ -125,6 +127,8 @@ class HadoopRDD[K, V](
       valueClass,
       minPartitions)
   }
+
+  private val doAsUserName = UserGroupInformation.getCurrentUser.getUserName
 
   protected val jobConfCacheKey: String = "rdd_%d_job_conf".format(id)
 
@@ -241,7 +245,7 @@ class HadoopRDD[K, V](
     }
   }
 
-  override def compute(theSplit: Partition, context: TaskContext): InterruptibleIterator[(K, V)] = {
+  def doCompute(theSplit: Partition, context: TaskContext): InterruptibleIterator[(K, V)] = {
     val iter = new NextIterator[(K, V)] {
 
       private val split = theSplit.asInstanceOf[HadoopPartition]
@@ -254,7 +258,8 @@ class HadoopRDD[K, V](
       // Sets InputFileBlockHolder for the file block's information
       split.inputSplit.value match {
         case fs: FileSplit =>
-          InputFileBlockHolder.set(fs.getPath.toString, fs.getStart, fs.getLength)
+          val splitLength = if (isMaprdbTable()) 0 else fs.getLength
+          InputFileBlockHolder.set(fs.getPath.toString, fs.getStart, splitLength)
         case _ =>
           InputFileBlockHolder.unset()
       }
@@ -347,7 +352,7 @@ class HadoopRDD[K, V](
           if (getBytesReadCallback.isDefined) {
             updateBytesRead()
           } else if (split.inputSplit.value.isInstanceOf[FileSplit] ||
-                     split.inputSplit.value.isInstanceOf[CombineFileSplit]) {
+            split.inputSplit.value.isInstanceOf[CombineFileSplit]) {
             // If we can't get the bytes read from the FS stats, fall back to the split size,
             // which may be inaccurate.
             try {
@@ -362,6 +367,14 @@ class HadoopRDD[K, V](
     }
     new InterruptibleIterator[(K, V)](context, iter)
   }
+
+  def isMaprdbTable(): Boolean = {
+    val maprdbTableName = getJobConf().get("maprdb.table.name")
+    maprdbTableName != null && maprdbTableName != ""
+  }
+
+  override def compute(theSplit: Partition, context: TaskContext): InterruptibleIterator[(K, V)] =
+    doCompute(theSplit: Partition, context: TaskContext)
 
   /** Maps over a partition, providing the InputSplit that was used as the base of the partition. */
   @DeveloperApi

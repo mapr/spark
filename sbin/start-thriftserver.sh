@@ -57,4 +57,4 @@ fi
 
 export SUBMIT_USAGE_FUNCTION=usage
 
-exec "${SPARK_HOME}"/sbin/spark-daemon.sh submit $CLASS 1 --name "Thrift JDBC/ODBC Server" "$@"
+exec "${SPARK_HOME}"/sbin/spark-daemon.sh submit $CLASS 1 --name "Thrift JDBC/ODBC Server"  --hiveconf "hive.server2.thrift.port=2304" "$@"

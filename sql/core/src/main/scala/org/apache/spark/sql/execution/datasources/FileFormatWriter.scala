@@ -28,10 +28,11 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark._
 import org.apache.spark.internal.Logging
 import org.apache.spark.internal.io.{FileCommitProtocol, SparkHadoopWriterUtils}
+import org.apache.spark.internal.io.FileCommitProtocol.TaskCommitMessage
 import org.apache.spark.shuffle.FetchFailedException
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.catalog.BucketSpec
+import org.apache.spark.sql.catalyst.catalog.{BucketSpec, ExternalCatalogUtils}
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.BindReferences.bindReferences
@@ -51,9 +52,9 @@ import org.apache.spark.util.{SerializableConfiguration, Utils}
 object FileFormatWriter extends Logging {
   /** Describes how output files should be placed in the filesystem. */
   case class OutputSpec(
-      outputPath: String,
-      customPartitionLocations: Map[TablePartitionSpec, String],
-      outputColumns: Seq[Attribute])
+    outputPath: String,
+    customPartitionLocations: Map[TablePartitionSpec, String],
+    outputColumns: Seq[Attribute])
 
   /** A function that converts the empty string to null for partition values. */
   case class Empty2Null(child: Expression) extends UnaryExpression with String2StringExpression {
@@ -339,6 +340,11 @@ object FileFormatWriter extends Logging {
       Utils.tryWithSafeFinallyAndFailureCallbacks(block = {
         // Execute the task to write rows out and commit the task.
         dataWriter.writeWithIterator(iterator)
+
+        val waitingTimeForInit =
+          SparkEnv.get.conf.getLong("spark.mapr.commitDelay", defaultValue = 0)
+        Thread.sleep(waitingTimeForInit)
+
         dataWriter.commit()
       })(catchBlock = {
         // If there is an error, abort the task

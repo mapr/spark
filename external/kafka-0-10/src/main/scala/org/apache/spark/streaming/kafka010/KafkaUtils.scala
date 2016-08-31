@@ -17,8 +17,12 @@
 
 package org.apache.spark.streaming.kafka010
 
-import java.{ util => ju }
+import java.{util => ju}
+import java.io.OutputStream
 
+import scala.collection.JavaConverters._
+import com.google.common.base.Charsets.UTF_8
+import net.razorvine.pickle.{IObjectPickler, Opcodes, Pickler}
 import org.apache.kafka.clients.consumer._
 import org.apache.kafka.common.TopicPartition
 
@@ -27,8 +31,8 @@ import org.apache.spark.api.java.{ JavaRDD, JavaSparkContext }
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.streaming.StreamingContext
-import org.apache.spark.streaming.api.java.{ JavaInputDStream, JavaStreamingContext }
-import org.apache.spark.streaming.dstream._
+import org.apache.spark.streaming.api.java.{JavaDStream, JavaInputDStream, JavaStreamingContext}
+import org.apache.spark.streaming.dstream.InputDStream
 
 /**
  * object for constructing Kafka streams and RDDs
@@ -179,10 +183,15 @@ object KafkaUtils extends Logging {
         jssc.ssc, locationStrategy, consumerStrategy, perPartitionConfig))
   }
 
+  val eofOffset: Int = -1001
+
   /**
    * Tweak kafka params to prevent issues on executors
    */
   private[kafka010] def fixKafkaParams(kafkaParams: ju.HashMap[String, Object]): Unit = {
+    logWarning(s"overriding ${"streams.negativeoffset.record.on.eof"} to true")
+    kafkaParams.put("streams.negativeoffset.record.on.eof", true: java.lang.Boolean)
+
     logWarning(s"overriding ${ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG} to false for executor")
     kafkaParams.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false: java.lang.Boolean)
 
@@ -204,5 +213,122 @@ object KafkaUtils extends Logging {
       logWarning(s"overriding ${ConsumerConfig.RECEIVE_BUFFER_CONFIG} to 65536 see KAFKA-3135")
       kafkaParams.put(ConsumerConfig.RECEIVE_BUFFER_CONFIG, 65536: java.lang.Integer)
     }
+  }
+
+  def waitForConsumerAssignment[K, V](consumer: KafkaConsumer[K, V],
+                                      partitions: ju.Set[TopicPartition]): Unit = {
+    val waitingForAssigmentTimeout = SparkEnv.get.conf.
+      getLong("spark.mapr.WaitingForAssignmentTimeout", 600000)
+
+    var timeout = 0
+    while ((consumer.assignment().isEmpty || consumer.assignment().size() < partitions.size)
+      && timeout < waitingForAssigmentTimeout) {
+
+      Thread.sleep(500)
+      timeout += 500
+    }
+  }
+
+  // Determine if Apache Kafka is used instead of MapR Streams
+  def isStreams(currentOffsets: Map[TopicPartition, Long]): Boolean =
+    currentOffsets.keys.map(_.topic()).exists(topic => topic.startsWith("/") && topic.contains(":"))
+
+
+}
+
+object KafkaUtilsPythonHelper {
+  private var initialized = false
+
+  def initialize(): Unit = {
+    SerDeUtil.initialize()
+    synchronized {
+      if (!initialized) {
+        new PythonMessageAndMetadataPickler().register()
+        initialized = true
+      }
+    }
+  }
+
+  initialize()
+
+  def picklerIterator(iter: Iterator[ConsumerRecord[Array[Byte], Array[Byte]]]
+    ): Iterator[Array[Byte]] = {
+    new SerDeUtil.AutoBatchedPickler(iter)
+  }
+
+  class PythonMessageAndMetadataPickler extends IObjectPickler {
+    private val module = "pyspark.streaming.kafka"
+
+    def register(): Unit = {
+      Pickler.registerCustomPickler(classOf[ConsumerRecord[Any, Any]], this)
+      Pickler.registerCustomPickler(this.getClass, this)
+    }
+
+    def pickle(obj: Object, out: OutputStream, pickler: Pickler) {
+      if (obj == this) {
+        out.write(Opcodes.GLOBAL)
+        out.write(s"$module\nKafkaMessageAndMetadata\n".getBytes(UTF_8))
+      } else {
+        pickler.save(this)
+        val msgAndMetaData = obj.asInstanceOf[ConsumerRecord[Array[Byte], Array[Byte]]]
+        out.write(Opcodes.MARK)
+        pickler.save(msgAndMetaData.topic)
+        pickler.save(msgAndMetaData.partition)
+        pickler.save(msgAndMetaData.offset)
+        pickler.save(msgAndMetaData.key)
+        pickler.save(msgAndMetaData.value)
+        out.write(Opcodes.TUPLE)
+        out.write(Opcodes.REDUCE)
+      }
+    }
+  }
+
+  @Experimental
+  def createDirectStream(
+      jssc: JavaStreamingContext,
+      locationStrategy: LocationStrategy,
+      consumerStrategy: ConsumerStrategy[Array[Byte], Array[Byte]]
+    ): JavaDStream[(Array[Byte], Array[Byte])] = {
+
+    val dStream = KafkaUtils.createDirectStream[Array[Byte], Array[Byte]](
+      jssc.ssc, locationStrategy, consumerStrategy)
+      .map(cm => (cm.key, cm.value))
+
+    new JavaDStream[(Array[Byte], Array[Byte])](dStream)
+  }
+
+  @Experimental
+  def createRDDWithoutMessageHandler(jsc: JavaSparkContext,
+                                     kafkaParams: ju.Map[String, Object],
+                                     offsetRanges: ju.List[OffsetRange],
+                                     locationStrategy: LocationStrategy): JavaRDD[(Array[Byte], Array[Byte])] = {
+
+    val rdd = KafkaUtils.createRDD[Array[Byte], Array[Byte]](
+      jsc.sc, kafkaParams, offsetRanges.asScala.toArray, locationStrategy)
+      .map(cm => (cm.key, cm.value))
+
+    new JavaRDD[(Array[Byte], Array[Byte])](rdd)
+  }
+
+  @Experimental
+  def createOffsetRange(topic: String, partition: Integer, fromOffset: java.lang.Long, untilOffset: java.lang.Long
+                       ): OffsetRange = OffsetRange(topic, partition, fromOffset, untilOffset)
+
+  @Experimental
+  def createTopicAndPartition(topic: String, partition: java.lang.Integer): TopicPartition =
+    new TopicPartition(topic, partition)
+
+  @Experimental
+  def offsetRangesOfKafkaRDD(rdd: RDD[_]): ju.List[OffsetRange] = {
+    val parentRDDs = rdd.getNarrowAncestors
+    val kafkaRDDs = parentRDDs.filter(rdd => rdd.isInstanceOf[KafkaRDD[_, _]])
+
+    require(
+      kafkaRDDs.length == 1,
+      "Cannot get offset ranges, as there may be multiple Kafka RDDs or no Kafka RDD associated" +
+        "with this RDD, please call this method only on a Kafka RDD.")
+
+    val kafkaRDD = kafkaRDDs.head.asInstanceOf[KafkaRDD[_, _]]
+    kafkaRDD.offsetRanges.toSeq.asJava
   }
 }

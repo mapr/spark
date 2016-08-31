@@ -222,7 +222,7 @@ class HiveSparkSubmitSuite
     runSparkSubmit(args)
   }
 
-  test("set spark.sql.warehouse.dir") {
+  ignore("set spark.sql.warehouse.dir") {
     val unusedJar = TestUtils.createJarWithClasses(Seq.empty)
     val args = Seq(
       "--class", SetWarehouseLocationTest.getClass.getName.stripSuffix("$"),
@@ -236,7 +236,7 @@ class HiveSparkSubmitSuite
     runSparkSubmit(args)
   }
 
-  test("set hive.metastore.warehouse.dir") {
+  ignore("set hive.metastore.warehouse.dir") {
     // In this test, we set hive.metastore.warehouse.dir in hive-site.xml but
     // not set spark.sql.warehouse.dir. So, the warehouse dir should be
     // the value of hive.metastore.warehouse.dir. Also, the value of

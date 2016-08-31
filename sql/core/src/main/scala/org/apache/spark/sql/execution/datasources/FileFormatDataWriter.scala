@@ -292,6 +292,16 @@ abstract class BaseDynamicPartitionDataWriter(
       committer.newTaskTempFile(taskAttemptContext, partDir, fileNameSpec)
     }
 
+    // Creation of intermediate folders with mkdirs() required because
+    // intermediate folders created by create() don't inherit permission bits
+    // https://maprdrill.atlassian.net/browse/SPARK-638
+    def createIntermediateFolder(filePath: String, taskAttemptContext: TaskAttemptContext) {
+      val folderPath = new Path(filePath).getParent
+      val fileSystem = folderPath.getFileSystem(taskAttemptContext.getConfiguration)
+      fileSystem.mkdirs(folderPath)
+    }
+    createIntermediateFolder(currentPath, taskAttemptContext)
+
     currentWriter = description.outputWriterFactory.newInstance(
       path = currentPath,
       dataSchema = description.dataColumns.toStructType,

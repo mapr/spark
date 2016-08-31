@@ -42,6 +42,8 @@ import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat => NewFileInputFor
 import org.apache.logging.log4j.Level
 
 import org.apache.spark.annotation.{DeveloperApi, Experimental}
+import org.apache.hadoop.security.UserGroupInformation
+import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.deploy.{LocalSparkCluster, SparkHadoopUtil}
 import org.apache.spark.executor.{Executor, ExecutorMetrics, ExecutorMetricsSource}
@@ -765,6 +767,19 @@ class SparkContext(config: SparkConf) extends Logging {
     setLocalProperty(SparkContext.SPARK_JOB_DESCRIPTION, value)
   }
 
+  /** MAPR_SPECIFIC: Used to implement impersonation in SparkExecutor **/
+  def setJobDoAsUser(user: String) {
+    setLocalProperty(SparkContext.SPARK_JOB_DOASUSER, user)
+  }
+
+  def setJobDoAsUser() {
+    setLocalProperty(SparkContext.SPARK_JOB_DOASUSER, UserGroupInformation.getCurrentUser.getUserName)
+  }
+
+  /** MAPR_SPECIFIC: Used to implement impersonation in SparkExecutor **/
+  def getJobDoAsUser(): String = getLocalProperty(SparkContext.SPARK_JOB_DOASUSER)
+
+
   /**
    * Assigns a group ID to all the jobs started by this thread until the group ID is set to a
    * different value or cleared.
@@ -792,6 +807,7 @@ class SparkContext(config: SparkConf) extends Logging {
   def setJobGroup(groupId: String,
       description: String, interruptOnCancel: Boolean = false): Unit = {
     setLocalProperty(SparkContext.SPARK_JOB_DESCRIPTION, description)
+    setJobDoAsUser()
     setLocalProperty(SparkContext.SPARK_JOB_GROUP_ID, groupId)
     // Note: Specifying interruptOnCancel in setJobGroup (rather than cancelJobGroup) avoids
     // changing several public APIs and allows Spark cancellations outside of the cancelJobGroup
@@ -803,6 +819,7 @@ class SparkContext(config: SparkConf) extends Logging {
   /** Clear the current thread's job group ID and its description. */
   def clearJobGroup(): Unit = {
     setLocalProperty(SparkContext.SPARK_JOB_DESCRIPTION, null)
+    setJobDoAsUser(null)
     setLocalProperty(SparkContext.SPARK_JOB_GROUP_ID, null)
     setLocalProperty(SparkContext.SPARK_JOB_INTERRUPT_ON_CANCEL, null)
   }
@@ -2226,6 +2243,7 @@ class SparkContext(config: SparkConf) extends Logging {
       func: (TaskContext, Iterator[T]) => U,
       partitions: Seq[Int],
       resultHandler: (Int, U) => Unit): Unit = {
+    setJobDoAsUser()
     if (stopped.get()) {
       throw new IllegalStateException("SparkContext has been shutdown")
     }
@@ -2782,6 +2800,13 @@ object SparkContext extends Logging {
       activeContext.set(null)
     }
   }
+
+
+  /******************** MapR spcific property that is used for impersonation
+    *                    in sparkExecutor.
+    */
+  private[spark] val SPARK_JOB_DOASUSER = "spark.job.doAsUser"
+  /******************************************************************/
 
   private[spark] val SPARK_JOB_DESCRIPTION = "spark.job.description"
   private[spark] val SPARK_JOB_GROUP_ID = "spark.jobGroup.id"
