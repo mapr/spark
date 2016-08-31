@@ -308,7 +308,7 @@ private[spark] class Client(
         amRequest.setPriority(Priority.newInstance(0))
         amRequest.setCapability(capability)
         amRequest.setNumContainers(1)
-        amRequest.setNodeLabelExpression(expr)
+        amRequest.setLabel(expr)
         appContext.setAMContainerResourceRequest(amRequest)
       case None =>
         appContext.setResource(capability)

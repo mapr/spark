@@ -462,6 +462,8 @@ class FileSuite extends SparkFunSuite with LocalSparkContext {
     val randomRDD = sc.parallelize(
       Seq(("key1", "a"), ("key2", "a"), ("key3", "b"), ("key4", "c")), 1)
     val job = new JobConf()
+    job.set("fs.defaultFS", "file:///")
+    job.set("fs.default.name", "file:///")
     job.setOutputKeyClass(classOf[String])
     job.setOutputValueClass(classOf[String])
     job.set("mapred.output.format.class", classOf[TextOutputFormat[String, String]].getName)

@@ -138,7 +138,7 @@ SPARK_HADOOP_VERSION=$("$MVN" help:evaluate -Dexpression=hadoop.version $@ \
     | grep -v "INFO"\
     | grep -v "WARNING"\
     | tail -n 1)
-SPARK_HIVE=$("$MVN" help:evaluate -Dexpression=project.activeProfiles -pl sql/hive $@ \
+SPARK_HIVE=$("$MVN" "$MVN_PROFILE_ARG" help:evaluate -Dexpression=project.activeProfiles -pl sql/hive $@ \
     | grep -v "INFO"\
     | grep -v "WARNING"\
     | fgrep --count "<id>hive</id>";\
@@ -166,7 +166,7 @@ export MAVEN_OPTS="${MAVEN_OPTS:--Xmx2g -XX:ReservedCodeCacheSize=1g}"
 # Store the command as an array because $MVN variable might have spaces in it.
 # Normal quoting tricks don't work.
 # See: http://mywiki.wooledge.org/BashFAQ/050
-BUILD_COMMAND=("$MVN" clean package -DskipTests $@)
+BUILD_COMMAND=("$MVN" -T 1C clean package -DskipTests -Dclean.skip=true "$MVN_PROFILE_ARG" $@)
 
 # Actually build the jar
 echo -e "\nBuilding with..."
@@ -190,11 +190,9 @@ if [ -f "$SPARK_HOME"/common/network-yarn/target/scala*/spark-*-yarn-shuffle.jar
 fi
 
 # Only create and copy the dockerfiles directory if the kubernetes artifacts were built.
-if [ -d "$SPARK_HOME"/resource-managers/kubernetes/core/target/ ]; then
-  mkdir -p "$DISTDIR/kubernetes/"
-  cp -a "$SPARK_HOME"/resource-managers/kubernetes/docker/src/main/dockerfiles "$DISTDIR/kubernetes/"
-  cp -a "$SPARK_HOME"/resource-managers/kubernetes/integration-tests/tests "$DISTDIR/kubernetes/"
-fi
+mkdir -p "$DISTDIR/kubernetes/"
+cp -a "$SPARK_HOME"/resource-managers/kubernetes/docker/src/main/dockerfiles "$DISTDIR/kubernetes/"
+cp -a "$SPARK_HOME"/resource-managers/kubernetes/integration-tests/tests "$DISTDIR/kubernetes/"
 
 # Copy examples and dependencies
 mkdir -p "$DISTDIR/examples/jars"
@@ -264,7 +262,7 @@ fi
 
 # Copy other things
 mkdir "$DISTDIR/conf"
-cp "$SPARK_HOME"/conf/*.template "$DISTDIR/conf"
+cp "$SPARK_HOME"/conf/* "$DISTDIR/conf"
 cp "$SPARK_HOME/README.md" "$DISTDIR"
 cp -r "$SPARK_HOME/bin" "$DISTDIR"
 cp -r "$SPARK_HOME/python" "$DISTDIR"

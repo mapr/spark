@@ -251,7 +251,7 @@ private[spark] class SparkSubmit extends Logging {
     }
 
     // Set the deploy mode; default is client mode
-    val deployMode: Int = args.deployMode match {
+    var deployMode: Int = args.deployMode match {
       case "client" | null => CLIENT
       case "cluster" => CLUSTER
       case _ =>
@@ -528,38 +528,6 @@ private[spark] class SparkSubmit extends Logging {
 
     if (localPyFiles != null) {
       sparkConf.set(SUBMIT_PYTHON_FILES, localPyFiles.split(",").toSeq)
-    }
-
-    // In YARN mode for an R app, add the SparkR package archive and the R package
-    // archive containing all of the built R libraries to archives so that they can
-    // be distributed with the job
-    if (args.isR && clusterManager == YARN) {
-      val sparkRPackagePath = RUtils.localSparkRPackagePath
-      if (sparkRPackagePath.isEmpty) {
-        error("SPARK_HOME does not exist for R application in YARN mode.")
-      }
-      val sparkRPackageFile = new File(sparkRPackagePath.get, SPARKR_PACKAGE_ARCHIVE)
-      if (!sparkRPackageFile.exists()) {
-        error(s"$SPARKR_PACKAGE_ARCHIVE does not exist for R application in YARN mode.")
-      }
-      val sparkRPackageURI = Utils.resolveURI(sparkRPackageFile.getAbsolutePath).toString
-
-      // Distribute the SparkR package.
-      // Assigns a symbol link name "sparkr" to the shipped package.
-      args.archives = mergeFileLists(args.archives, sparkRPackageURI + "#sparkr")
-
-      // Distribute the R package archive containing all the built R packages.
-      if (!RUtils.rPackages.isEmpty) {
-        val rPackageFile =
-          RPackageUtils.zipRLibraries(new File(RUtils.rPackages.get), R_PACKAGE_ARCHIVE)
-        if (!rPackageFile.exists()) {
-          error("Failed to zip all the built R packages.")
-        }
-
-        val rPackageURI = Utils.resolveURI(rPackageFile.getAbsolutePath).toString
-        // Assigns a symbol link name "rpkg" to the shipped package.
-        args.archives = mergeFileLists(args.archives, rPackageURI + "#rpkg")
-      }
     }
 
     // TODO: Support distributing R packages with standalone cluster
@@ -984,6 +952,15 @@ private[spark] class SparkSubmit extends Logging {
       app.start(childArgs.toArray, sparkConf)
     } catch {
       case t: Throwable =>
+        findCause(t) match {
+          case SparkUserAppException(exitCode) =>
+            System.exit(exitCode)
+
+          case t: Throwable =>
+            // TODO: fix MultiauthWebUiFilter and return standart Spark behavior
+            log.error(t.getMessage, t)
+            System.exit(1)
+        }
         throw findCause(t)
     } finally {
       if (args.master.startsWith("k8s") && !isShell(args.primaryResource) &&
@@ -993,7 +970,11 @@ private[spark] class SparkSubmit extends Logging {
         } catch {
           case e: Throwable => logError(s"Failed to close SparkContext: $e")
         }
-      }
+    }
+    // TODO: fix MultiauthWebUiFilter and return standart Spark behavior
+    if (!isThriftServer(childMainClass)
+      && !sparkConf.getBoolean("spark.byLauncher.started", false)) {
+      System.exit(0)
     }
   }
 
@@ -1231,6 +1212,13 @@ private[spark] object SparkSubmitUtils extends Logging {
       "DEFAULT_ARTIFACT_REPOSITORY", "https://repos.spark-packages.org/"))
     sp.setName("spark-packages")
     cr.add(sp)
+
+    val mp: IBiblioResolver = new IBiblioResolver
+    mp.setM2compatible(true)
+    mp.setUsepoms(true)
+    mp.setRoot("http://repository.mapr.com/maven/")
+    mp.setName("mapr-repo")
+    cr.add(mp)
     cr
   }
 

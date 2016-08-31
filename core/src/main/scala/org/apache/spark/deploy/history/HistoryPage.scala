@@ -30,8 +30,9 @@ private[history] class HistoryPage(parent: HistoryServer) extends WebUIPage("") 
     val requestedIncomplete = Option(request.getParameter("showIncomplete"))
       .getOrElse("false").toBoolean
 
-    val displayApplications = parent.getApplicationList()
-      .exists(isApplicationCompleted(_) != requestedIncomplete)
+    val user = Option(request.getRemoteUser)
+    val allAppsSize = parent.getApplicationListForUser(user)
+      .count(isApplicationCompleted(_) != requestedIncomplete)
     val eventLogsUnderProcessCount = parent.getEventLogsUnderProcess()
     val lastUpdatedTime = parent.getLastUpdatedTime()
     val providerConfig = parent.getProviderConfig()
@@ -62,7 +63,7 @@ private[history] class HistoryPage(parent: HistoryServer) extends WebUIPage("") 
             }
 
             {
-            if (displayApplications) {
+            if (allAppsSize > 0) {
               <script src={UIUtils.prependBaseUri(
                 request, "/static/dataTables.rowsGroup.js")}></script> ++
                 <div id="history-summary"></div> ++

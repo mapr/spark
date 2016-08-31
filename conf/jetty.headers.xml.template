@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <comment>application.properties</comment>
+    <entry key="X-XSS-Protection">1; mode=block</entry>
+    <entry key="Strict-Transport-Security">max-age=31536000;includeSubDomains</entry>
+    <entry key="X-Content-Type-Options">nosniff</entry>
+</properties>

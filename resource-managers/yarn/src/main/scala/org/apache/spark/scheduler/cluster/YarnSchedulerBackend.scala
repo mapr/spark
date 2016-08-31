@@ -22,8 +22,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.servlet.DispatcherType
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
-import scala.util.control.NonFatal
 
 import org.apache.hadoop.yarn.api.records.{ApplicationAttemptId, ApplicationId}
 
@@ -37,6 +35,12 @@ import org.apache.spark.scheduler._
 import org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages._
 import org.apache.spark.storage.{BlockManagerId, BlockManagerMaster}
 import org.apache.spark.util.{RpcUtils, ThreadUtils, Utils}
+import org.apache.spark.ui.JettyUtils
+import org.apache.spark.util.{RpcUtils, ThreadUtils}
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.control.NonFatal
+import scala.util.{Failure, Success}
 
 /**
  * Abstract Yarn scheduler backend that contains common logic
@@ -210,9 +214,12 @@ private[spark] abstract class YarnSchedulerBackend(
       filterName: String,
       filterParams: Map[String, String],
       proxyBase: String): Unit = {
-    if (proxyBase != null && proxyBase.nonEmpty) {
-      System.setProperty("spark.ui.proxyBase", proxyBase)
-    }
+    val amIpFilter = "org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter"
+
+    if (filterName != amIpFilter) {
+      if (proxyBase != null && proxyBase.nonEmpty) {
+        System.setProperty("spark.ui.proxyBase", proxyBase)
+      }
 
     val hasFilter =
       filterName != null && filterName.nonEmpty &&

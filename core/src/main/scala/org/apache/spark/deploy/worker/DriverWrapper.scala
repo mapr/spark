@@ -63,6 +63,7 @@ object DriverWrapper extends Logging {
         mainMethod.invoke(null, extraArgs.toArray[String])
 
         rpcEnv.shutdown()
+        System.exit(0)
 
       case _ =>
         // scalastyle:off println
