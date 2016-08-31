@@ -138,7 +138,7 @@ SPARK_HADOOP_VERSION=$("$MVN" "$MVN_PROFILE_ARG" help:evaluate -Dexpression=hado
     | grep -v "INFO"\
     | grep -v "WARNING"\
     | tail -n 1)
-SPARK_HIVE=$("$MVN" help:evaluate -Dexpression=project.activeProfiles -pl sql/hive $@ \
+SPARK_HIVE=$("$MVN" "$MVN_PROFILE_ARG" help:evaluate -Dexpression=project.activeProfiles -pl sql/hive $@ \
     | grep -v "INFO"\
     | grep -v "WARNING"\
     | fgrep --count "<id>hive</id>";\
@@ -172,6 +172,7 @@ BUILD_COMMAND=("$MVN" clean package \
     -Dmaven.scaladoc.skip=true \
     -Dmaven.source.skip \
     -Dcyclonedx.skip=true \
+    "$MVN_PROFILE_ARG" \
     $@)
 
 # Actually build the jar
