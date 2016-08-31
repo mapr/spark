@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.junit.Assume.*;
@@ -123,7 +124,7 @@ public class SparkLauncherSuite extends BaseSuite {
     assertEquals(0, app.waitFor());
   }
 
-  @Test
+  @Test @Ignore
   public void testInProcessLauncher() throws Exception {
     // Because this test runs SparkLauncher in process and in client mode, it pollutes the system
     // properties, and that can cause test failures down the test pipeline. So restore the original

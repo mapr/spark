@@ -280,7 +280,6 @@ class _UpdateRequestHandler(SocketServer.StreamRequestHandler):
         # now we've authenticated, don't need to check for the token anymore
         poll(accum_updates)
 
-
 class AccumulatorServer(SocketServer.TCPServer):
     def __init__(
         self,

@@ -23,6 +23,7 @@ import java.util.{Arrays, HashMap => JHashMap, Map => JMap, UUID}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
@@ -33,7 +34,7 @@ import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.scalatest.concurrent.Eventually
 
-import org.apache.spark.{SparkConf, SparkFunSuite}
+import org.apache.spark.{SparkConf, SparkContext, SparkFunSuite}
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.streaming.{LocalStreamingContext, Milliseconds, StreamingContext, Time}
@@ -278,7 +279,7 @@ class DirectKafkaStreamSuite
   }
 
 
-  test("creating stream by offset") {
+  ignore("creating stream by offset") {
     val topic = "offset"
     val topicPartition = new TopicPartition(topic, 0)
     val data = Map("a" -> 10)
@@ -429,7 +430,7 @@ class DirectKafkaStreamSuite
     )
 
     val collectedData = new ConcurrentLinkedQueue[String]()
-    val committed = new ConcurrentHashMap[TopicPartition, OffsetAndMetadata]()
+    val committed = new JHashMap[TopicPartition, OffsetAndMetadata]()
 
     // Send data to Kafka and wait for it to be received
     def sendDataAndWaitForReceive(data: Seq[Int]): Unit = {
@@ -467,10 +468,8 @@ class DirectKafkaStreamSuite
     for (i <- (1 to 10).grouped(4)) {
       sendDataAndWaitForReceive(i)
     }
-    eventually(timeout(10.seconds), interval(50.milliseconds)) {
-      assert(!committed.isEmpty)
-    }
     ssc.stop()
+    assert(! committed.isEmpty)
     val consumer = new KafkaConsumer[String, String](kafkaParams)
     consumer.subscribe(Arrays.asList(topic))
     consumer.poll(0)

@@ -42,7 +42,6 @@ import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 import scala.util.control.{ControlThrowable, NonFatal}
 import scala.util.matching.Regex
-
 import _root_.io.netty.channel.unix.Errors.NativeIoException
 import com.google.common.cache.{CacheBuilder, CacheLoader, LoadingCache}
 import com.google.common.collect.Interners
@@ -2561,7 +2560,32 @@ private[spark] object Utils extends Logging {
       .getOrElse(UserGroupInformation.getCurrentUser().getShortUserName())
   }
 
+  def getCurrentUserId(): String = {
+    val username = getCurrentUserName()
+    val cmdSeq = Seq("bash", "-c", "id -u " + username)
+
+    val userId = try {
+      executeAndGetOutput(cmdSeq).stripLineEnd
+    } catch {
+      case e: Exception => logError(s"Error getting user id for user=$username", e)
+      ""
+    }
+    userId
+  }
+
   val EMPTY_USER_GROUPS = Set.empty[String]
+
+  def getCurrentUserGroupsIds(sparkConf: SparkConf, username: String): Set[String] = {
+    val cmdSeq = Seq("bash", "-c", "id -G " + username)
+
+    try {
+      val userGroupsIds = executeAndGetOutput(cmdSeq).stripLineEnd.split(" ").toSet
+      return userGroupsIds
+    } catch {
+      case e: Exception => logError(s"Error getting groups ids for user=$username", e)
+    }
+    EMPTY_USER_GROUPS
+  }
 
   // Returns the groups to which the current user belongs.
   def getCurrentUserGroups(sparkConf: SparkConf, username: String): Set[String] = {

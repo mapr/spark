@@ -18,6 +18,14 @@
 
 # echo commands to the terminal output
 set -ex
+export SPARK_HOME=${SPARK_HOME:-/opt/mapr/spark/spark-2.4.0}
+export SPARK_CONF_DIR=${SPARK_HOME}/conf
+export SPARK_CONF_PATH=${SPARK_CONF_DIR}/spark-defaults.conf
+source ${SPARK_HOME}/kubernetes/dockerfiles/spark/securityConfig.sh
+
+createUser
+createUserGroups
+copySecurity
 
 # Check whether there is a passwd entry for the container UID
 myuid=$(id -u)
@@ -106,5 +114,7 @@ case "$1" in
     ;;
 esac
 
-# Execute the container CMD under tini for better hygiene
-exec /usr/bin/tini -s -- "${CMD[@]}"
+# use Spark defaults as runtime configuration
+CMD_WITH_CONF=$(sed 's|--properties-file '/opt/spark/conf/spark.properties'|--properties-file '$SPARK_CONF_PATH'|g' <<< "${CMD[@]}")
+
+exec sudo -u ${MAPR_SPARK_USER:-`whoami`} -E ${CMD_WITH_CONF}

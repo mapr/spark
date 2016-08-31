@@ -20,7 +20,7 @@ package org.apache.spark.streaming
 import org.apache.spark.internal.config.ConfigBuilder
 
 /**
- * Spark Integration for Kafka 0.10
+ * Spark Integration for Kafka 0.9
  */
 package object kafka010 { //scalastyle:ignore
 

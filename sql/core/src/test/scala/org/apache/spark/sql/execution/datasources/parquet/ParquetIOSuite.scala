@@ -1138,9 +1138,9 @@ class ParquetIOSuite extends QueryTest with ParquetTest with SharedSparkSession 
       spark.read.parquet("file:///nonexistent")
     }
     val errorMessage = intercept[Throwable] {
-      spark.read.parquet("hdfs://nonexistent")
+      spark.read.parquet("maprfs:///nonexistent/fake/path")
     }.toString
-    assert(errorMessage.contains("UnknownHostException"))
+    assert(errorMessage.contains("Could not create FileClient"))
   }
 
   test("SPARK-7837 Do not close output writer twice when commitTask() fails") {

@@ -21,9 +21,13 @@ import java.io.File
 import java.security.NoSuchAlgorithmException
 import javax.net.ssl.SSLContext
 
-import org.apache.hadoop.conf.Configuration
+import scala.util.Try
+
+import com.mapr.web.security.SslConfig.SslConfigScope
+import com.mapr.web.security.WebSecurityManager
 import org.eclipse.jetty.util.ssl.SslContextFactory
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.internal.Logging
 
 /**
@@ -122,16 +126,31 @@ private[spark] case class SSLOptions(
 
     val providerAlgorithms = context.getServerSocketFactory.getSupportedCipherSuites.toSet
 
+    val secureAlgorithms = Set("TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+      "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+      "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+      "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+      "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+      "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+      "TLS_ECDHE_ECDSA_WITH_AES_256_CCM",
+      "TLS_ECDHE_ECDSA_WITH_AES_128_CCM",
+      "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
+      "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256")
+
     // Log which algorithms we are discarding
     (enabledAlgorithms &~ providerAlgorithms).foreach { cipher =>
       logDebug(s"Discarding unsupported cipher $cipher")
+    }
+
+    (providerAlgorithms &~ secureAlgorithms).foreach { cipher =>
+      logDebug(s"Discarding less secure cipher $cipher")
     }
 
     val supported = enabledAlgorithms & providerAlgorithms
     require(supported.nonEmpty || sys.env.contains("SPARK_TESTING"),
       "SSLContext does not support any of the enabled algorithms: " +
         enabledAlgorithms.mkString(","))
-    supported
+    supported & secureAlgorithms
   }
 
   /** Returns a string representation of this SSLOptions with all the passwords masked. */
@@ -187,16 +206,19 @@ private[spark] object SSLOptions extends Logging {
       require(p >= 0, "Port number must be a non-negative value.")
     }
 
+    val maybeSslConfig =
+      Try(WebSecurityManager.getSslConfig(SslConfigScope.SCOPE_CLIENT_ONLY)).toOption
+
     val keyStore = conf.getWithSubstitution(s"$ns.keyStore").map(new File(_))
         .orElse(defaults.flatMap(_.keyStore))
 
     val keyStorePassword = conf.getWithSubstitution(s"$ns.keyStorePassword")
-        .orElse(Option(hadoopConf.getPassword(s"$ns.keyStorePassword")).map(new String(_)))
-        .orElse(defaults.flatMap(_.keyStorePassword))
+      .orElse(defaults.flatMap(_.keyStorePassword))
+      .orElse(maybeSslConfig.map(_.getClientKeystorePassword.mkString))
 
     val keyPassword = conf.getWithSubstitution(s"$ns.keyPassword")
-        .orElse(Option(hadoopConf.getPassword(s"$ns.keyPassword")).map(new String(_)))
-        .orElse(defaults.flatMap(_.keyPassword))
+      .orElse(defaults.flatMap(_.keyPassword))
+      .orElse(maybeSslConfig.map(_.getClientKeyPassword.mkString))
 
     val keyStoreType = conf.getWithSubstitution(s"$ns.keyStoreType")
         .orElse(defaults.flatMap(_.keyStoreType))
@@ -208,8 +230,8 @@ private[spark] object SSLOptions extends Logging {
         .orElse(defaults.flatMap(_.trustStore))
 
     val trustStorePassword = conf.getWithSubstitution(s"$ns.trustStorePassword")
-        .orElse(Option(hadoopConf.getPassword(s"$ns.trustStorePassword")).map(new String(_)))
-        .orElse(defaults.flatMap(_.trustStorePassword))
+      .orElse(defaults.flatMap(_.trustStorePassword))
+      .orElse(maybeSslConfig.map(_.getClientTruststorePassword.mkString))
 
     val trustStoreType = conf.getWithSubstitution(s"$ns.trustStoreType")
         .orElse(defaults.flatMap(_.trustStoreType))

@@ -16,19 +16,21 @@
  */
 package org.apache.spark.status.api.v1
 
-import java.util.{List => JList}
+import java.util.{Date, List => JList}
+import javax.servlet.http.HttpServletRequest
 import javax.ws.rs.{DefaultValue, GET, Produces, QueryParam}
-import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.{Context, MediaType}
 
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class ApplicationListResource extends ApiRequestContext {
 
   @GET
   def appList(
+      @Context request: HttpServletRequest,
       @QueryParam("status") status: JList[ApplicationStatus],
       @DefaultValue("2010-01-01") @QueryParam("minDate") minDate: SimpleDateParam,
       @DefaultValue("3000-01-01") @QueryParam("maxDate") maxDate: SimpleDateParam,
-      @DefaultValue("2010-01-01") @QueryParam("minEndDate") minEndDate: SimpleDateParam,
+      @DefaultValue("2010-01-01") @QueryParam("minEndDate")  minEndDate: SimpleDateParam,
       @DefaultValue("3000-01-01") @QueryParam("maxEndDate") maxEndDate: SimpleDateParam,
       @QueryParam("limit") limit: Integer)
   : Iterator[ApplicationInfo] = {
@@ -37,7 +39,8 @@ private[v1] class ApplicationListResource extends ApiRequestContext {
     val includeCompleted = status.isEmpty || status.contains(ApplicationStatus.COMPLETED)
     val includeRunning = status.isEmpty || status.contains(ApplicationStatus.RUNNING)
 
-    uiRoot.getApplicationInfoList.filter { app =>
+    val user = Option(request.getRemoteUser)
+    uiRoot.getApplicationInfoListForUser(user).filter { app =>
       val anyRunning = app.attempts.exists(!_.completed)
       // if any attempt is still running, we consider the app to also still be running;
       // keep the app if *any* attempts fall in the right time window
