@@ -52,7 +52,7 @@ private[spark] object HiveUtils extends Logging {
   }
 
   /** The version of hive used internally by Spark SQL. */
-  val hiveExecutionVersion: String = "1.2.1"
+  val hiveExecutionVersion: String = "1.2.0"
 
   /**
    * The property key that is used to store the raw hive type string in the metadata of StructField.
