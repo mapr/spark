@@ -17,8 +17,11 @@
 package org.apache.spark.examples.sql.hive
 
 // $example on:spark_hive$
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.SparkSession
+import java.io.File
+
+import com.google.common.io.{ByteStreams, Files}
+import org.apache.spark.sql.{Row, SparkSession}
+
 // $example off:spark_hive$
 
 object SparkHiveExample {
@@ -26,6 +29,11 @@ object SparkHiveExample {
   // $example on:spark_hive$
   case class Record(key: Int, value: String)
   // $example off:spark_hive$
+
+  val kv1Stream = SparkHiveExample.getClass.getResourceAsStream("/kv1.txt")
+  val kv1File = File.createTempFile("kv1", "txt")
+  kv1File.deleteOnExit()
+  ByteStreams.copy(kv1Stream, Files.newOutputStreamSupplier(kv1File))
 
   def main(args: Array[String]) {
     // When working with Hive, one must instantiate `SparkSession` with Hive support, including
@@ -51,7 +59,7 @@ object SparkHiveExample {
     import spark.sql
 
     sql("CREATE TABLE IF NOT EXISTS src (key INT, value STRING)")
-    sql("LOAD DATA LOCAL INPATH 'examples/src/main/resources/kv1.txt' INTO TABLE src")
+    sql(s"LOAD DATA LOCAL INPATH '${kv1File.getAbsolutePath}' INTO TABLE src")
 
     // Queries are expressed in HiveQL
     sql("SELECT * FROM src").show()
