@@ -19,28 +19,28 @@
 package org.apache.spark.examples.streaming
 
 import org.apache.kafka.clients.consumer.ConsumerConfig
+
 import org.apache.spark.SparkConf
-import org.apache.spark.streaming.kafka09.{ConsumerStrategies, KafkaUtils, LocationStrategies}
 import org.apache.spark.streaming.{Seconds, StreamingContext}
+import org.apache.spark.streaming.kafka09.{ConsumerStrategies, KafkaUtils, LocationStrategies}
 
 /**
-  * Consumes messages from one or more topics in Kafka and does wordcount.
-  * Usage: v09DirectKafkaWordCount <brokers> <topics>
-  *   <brokers> is a list of one or more Kafka brokers
-  *   <topics> is a list of one or more kafka topics to consume from
-  *   <groupId> is the name of kafka consumer group
-  *   <auto.offset.reset> What to do when there is no initial offset in Kafka or
-  *                       if the current offset does not exist any more on the server
-  *                       earliest: automatically reset the offset to the earliest offset
-  *                       latest: automatically reset the offset to the latest offset
-  *   <batch interval> is the time interval at which streaming data will be divided into batches
-  *   <pollTimeout> is time, in milliseconds, spent waiting in Kafka consumer poll
-  *                 if data is not available
-  * Example:
-  *    $ bin/run-example streaming.v09DirectKafkaWordCount broker1-host:port,broker2-host:port \
-  *    topic1,topic2 my-consumer-group latest batch-interval pollTimeout
-  */
-//noinspection ScalaStyle
+ * Consumes messages from one or more topics in Kafka and does wordcount.
+ * Usage: v09DirectKafkaWordCount <brokers> <topics>
+ *   <brokers> is a list of one or more Kafka brokers
+ *   <topics> is a list of one or more kafka topics to consume from
+ *   <groupId> is the name of kafka consumer group
+ *   <auto.offset.reset> What to do when there is no initial offset in Kafka or
+ *                       if the current offset does not exist any more on the server
+ *                       earliest: automatically reset the offset to the earliest offset
+ *                       latest: automatically reset the offset to the latest offset
+ *   <batch interval> is the time interval at which streaming data will be divided into batches
+ *   <pollTimeout> is time, in milliseconds, spent waiting in Kafka consumer poll
+ *                 if data is not available
+ * Example:
+ *    $ bin/run-example streaming.v09DirectKafkaWordCount broker1-host:port,broker2-host:port \
+ *    topic1,topic2 my-consumer-group latest batch-interval pollTimeout
+ */
 
 object V10DirectKafkaWordCount {
   def main(args: Array[String]) {
