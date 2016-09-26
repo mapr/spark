@@ -70,7 +70,7 @@ class KafkaUtils(object):
         try:
             # Use KafkaUtilsPythonHelper to access Scala's KafkaUtils (see SPARK-6027)
             helperClass = ssc._jvm.java.lang.Thread.currentThread().getContextClassLoader()\
-                .loadClass("org.apache.spark.streaming.kafka.KafkaUtilsPythonHelper")
+                .loadClass("org.apache.spark.streaming.kafka.v09.KafkaUtilsPythonHelper")
             helper = helperClass.newInstance()
             jstream = helper.createStream(ssc._jssc, kafkaParams, topics, jlevel)
         except Py4JJavaError as e:
@@ -131,7 +131,7 @@ class KafkaUtils(object):
 
         try:
             helperClass = ssc._jvm.java.lang.Thread.currentThread().getContextClassLoader() \
-                .loadClass("org.apache.spark.streaming.kafka.KafkaUtilsPythonHelper")
+                .loadClass("org.apache.spark.streaming.kafka.v09.KafkaUtilsPythonHelper")
             helper = helperClass.newInstance()
 
             jfromOffsets = dict([(k._jTopicAndPartition(helper),
@@ -191,7 +191,7 @@ class KafkaUtils(object):
 
         try:
             helperClass = sc._jvm.java.lang.Thread.currentThread().getContextClassLoader() \
-                .loadClass("org.apache.spark.streaming.kafka.KafkaUtilsPythonHelper")
+                .loadClass("org.apache.spark.streaming.kafka.v09.KafkaUtilsPythonHelper")
             helper = helperClass.newInstance()
             joffsetRanges = [o._jOffsetRange(helper) for o in offsetRanges]
             jleaders = dict([(k._jTopicAndPartition(helper),
@@ -335,7 +335,7 @@ class KafkaRDD(RDD):
         """
         try:
             helperClass = self.ctx._jvm.java.lang.Thread.currentThread().getContextClassLoader() \
-                .loadClass("org.apache.spark.streaming.kafka.KafkaUtilsPythonHelper")
+                .loadClass("org.apache.spark.streaming.kafka.v09.KafkaUtilsPythonHelper")
             helper = helperClass.newInstance()
             joffsetRanges = helper.offsetRangesOfKafkaRDD(self._jrdd.rdd())
         except Py4JJavaError as e:
