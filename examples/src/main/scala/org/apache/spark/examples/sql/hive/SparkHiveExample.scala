@@ -20,6 +20,7 @@ package org.apache.spark.examples.sql.hive
 import java.io.File
 
 import com.google.common.io.{ByteStreams, Files}
+
 import org.apache.spark.sql.{Row, SparkSession}
 
 // $example off:spark_hive$
