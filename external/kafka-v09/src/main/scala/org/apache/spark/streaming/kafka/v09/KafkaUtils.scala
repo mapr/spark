@@ -465,8 +465,10 @@ private[kafka] class KafkaUtilsPythonHelper {
     kafkaParams: JMap[String, String],
     offsetRanges: JList[OffsetRange],
     messageHandler: ConsumerRecord[Array[Byte], Array[Byte]] => V): RDD[V] = {
-    kafkaParams.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer")
-    kafkaParams.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer")
+    kafkaParams.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+      "org.apache.kafka.common.serialization.ByteArrayDeserializer")
+    kafkaParams.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+      "org.apache.kafka.common.serialization.ByteArrayDeserializer")
     KafkaUtils.createRDD[Array[Byte], Array[Byte], V](
       jsc.sc,
       kafkaParams.asScala.toMap,
@@ -518,8 +520,10 @@ private[kafka] class KafkaUtilsPythonHelper {
         Map(kafkaParams.asScala.toSeq: _*), Set(topics.asScala.toSeq: _*))
     }
 
-    kafkaParams.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer")
-    kafkaParams.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer")
+    kafkaParams.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+      "org.apache.kafka.common.serialization.ByteArrayDeserializer")
+    kafkaParams.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+      "org.apache.kafka.common.serialization.ByteArrayDeserializer")
     KafkaUtils.createDirectStream[Array[Byte], Array[Byte], V](
       jssc.ssc,
       Map(kafkaParams.asScala.toSeq: _*),

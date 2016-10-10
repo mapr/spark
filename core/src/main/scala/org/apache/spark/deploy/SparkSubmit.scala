@@ -427,7 +427,8 @@ object SparkSubmit {
     // Special flag to avoid deprecation warnings at the client
     sysProps("SPARK_SUBMIT") = "true"
 
-    val isMaprSecEnabled = (sys.props.get("mapr_sec_enabled") exists (_ equalsIgnoreCase "true")).toString
+    val isMaprSecEnabled = (sys.props.get("mapr_sec_enabled") exists (_ equalsIgnoreCase "true"))
+      .toString
 
     // A list of rules to map each argument to system properties or command-line options in
     // each deploy mode; we iterate through these below
