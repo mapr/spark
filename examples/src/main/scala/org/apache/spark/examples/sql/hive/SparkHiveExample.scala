@@ -47,7 +47,7 @@ object SparkHiveExample {
 
     // $example on:spark_hive$
     // warehouseLocation points to the default location for managed databases and tables
-    val warehouseLocation = "file:${system:user.dir}/spark-warehouse"
+    val warehouseLocation = "maprfs:///user/${system:user.name}/spark-warehouse"
 
     val spark = SparkSession
       .builder()
