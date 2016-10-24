@@ -727,10 +727,9 @@ private[hive] object HiveContext {
     val propMap: HashMap[String, String] = HashMap()
     // We have to mask all properties in hive-site.xml that relates to metastore data source
     // as we used a local metastore here.
-
     HiveConf.ConfVars.values().foreach { confvar =>
       if (confvar.varname.contains("datanucleus") || confvar.varname.contains("jdo")
-        || confvar.varname.contains("hive.metastore.rawstore.impl")){
+        || confvar.varname.contains("hive.metastore.rawstore.impl")) {
         propMap.put(confvar.varname, confvar.getDefaultExpr())
       }
     }
@@ -753,8 +752,7 @@ private[hive] object HiveContext {
     // Then, you will find that the local metastore mode is only set to true when
     // hive.metastore.uris is not set.
     propMap.put(ConfVars.METASTOREURIS.varname, "")
-    // MAPR-23243
-    propMap.put("datanucleus.schema.autoCreateAll", "true")
+
     propMap.toMap
   }
 
