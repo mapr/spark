@@ -1,0 +1,22 @@
+# Default system properties included when running spark-submit.
+# This is useful for setting default environmental settings.
+
+# Log effective Spark configuration at startup on INFO level
+spark.logConf                      true
+
+# Default location for Warehouse, if not using Hive
+spark.sql.warehouse.dir            maprfs:///user/${system:user.name}/spark-warehouse
+
+# Enable event logs for HistoryServer
+spark.eventLog.enabled             true
+spark.eventLog.dir                 maprfs:///apps/spark
+spark.history.fs.logDirectory      maprfs:///apps/spark
+
+# UI Installer Configuration
+# spark.master                        spark://${SPARK_MASTER_HOST}:7077
+spark.yarn.historyServer.address    http://${SPARK_HISTORYSERVER_HOST}:18080
+
+# Fix for SPARK-7819
+spark.sql.hive.metastore.sharedPrefixes  com.mysql.jdbc,org.postgresql,com.microsoft.sqlserver,oracle.jdbc,com.mapr.fs.shim.LibraryLoader,com.mapr.security.JNISecurity,com.mapr.fs.jni
+
+spark.executor.memory              2g
