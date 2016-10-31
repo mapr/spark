@@ -61,11 +61,6 @@ if [[ -n "$SPARK_TESTING" ]]; then
   unset HADOOP_CONF_DIR
 fi
 
-#Bug MAPR-22940
-if [ "$MAPR_SECURITY_STATUS" = "true" ]; then
-    export SPARK_JAVA_OPTS="$SPARK_JAVA_OPTS -Dhadoop.login=hybrid -Dmapr_sec_enabled=true"
-fi
-
 # The launcher library will print arguments separated by a NULL character, to allow arguments with
 # characters that would be otherwise interpreted by the shell. Read that in a while loop, populating
 # an array that will be used to exec the final command.
