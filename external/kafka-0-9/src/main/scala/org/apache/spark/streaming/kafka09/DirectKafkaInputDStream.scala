@@ -44,7 +44,6 @@ import org.apache.spark.streaming.scheduler.rate.RateEstimator
  * per second that each '''partition''' will accept.
  * @param locationStrategy In most cases, pass in [[PreferConsistent]],
  *   see [[LocationStrategy]] for more details.
- * @param executorKafkaParams Kafka
  * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
  * configuration parameters</a>.
  *   Requires  "bootstrap.servers" to be set with Kafka broker(s),
@@ -110,7 +109,7 @@ private[spark] class DirectKafkaInputDStream[K, V](
   }
 
   // Keep this consistent with how other streams are named (e.g. "Flume polling stream [2]")
-  private[streaming] override def name: String = s"Kafka 0.10 direct stream [$id]"
+  private[streaming] override def name: String = s"Kafka 0.09 direct stream [$id]"
 
   protected[streaming] override val checkpointData =
     new DirectKafkaInputDStreamCheckpointData
