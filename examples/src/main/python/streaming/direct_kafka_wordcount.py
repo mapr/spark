@@ -31,25 +31,41 @@
 from __future__ import print_function
 
 import sys
-
 from pyspark import SparkContext
 from pyspark.streaming import StreamingContext
-from pyspark.streaming.kafka import KafkaUtils
+from pyspark.streaming.kafka09 import KafkaUtils
+from pyspark.streaming.kafka09 import ConsumerStrategies
+from pyspark.streaming.kafka09 import LocationStrategies
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: direct_kafka_wordcount.py <broker_list> <topic>", file=sys.stderr)
+
+    if len(sys.argv) < 4:
+        print("Usage: direct_kafka_wordcount.py <broker_list> <topic> <group_id> " +
+              "<offset_reset> <batch_interval> <poll_timeout>", file=sys.stderr)
         exit(-1)
 
-    sc = SparkContext(appName="PythonStreamingDirectKafkaWordCount")
-    ssc = StreamingContext(sc, 2)
+    brokers, topic, group_id, offset_reset, batch_interval, poll_timeout = sys.argv[1:]
 
-    brokers, topic = sys.argv[1:]
-    kvs = KafkaUtils.createDirectStream(ssc, [topic], {"metadata.broker.list": brokers})
+    sc = SparkContext(appName="PythonStreamingDirectKafkaWordCount")
+    ssc = StreamingContext(sc, int(batch_interval))
+
+    kafkaParams = {
+        "bootstrap.servers": brokers,
+        "group.id": group_id,
+        "key.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+        "value.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+        "auto.offset.reset": offset_reset,
+        "enable.auto.commit": "false",
+        "spark.kafka.poll.time": poll_timeout
+    }
+
+    consumerStrategy = ConsumerStrategies.Subscribe(sc, [topic], kafkaParams)
+    locationStrategy = LocationStrategies.PreferConsistent(sc)
+    kvs = KafkaUtils.createDirectStream(ssc, locationStrategy, consumerStrategy)
     lines = kvs.map(lambda x: x[1])
     counts = lines.flatMap(lambda line: line.split(" ")) \
         .map(lambda word: (word, 1)) \
-        .reduceByKey(lambda a, b: a+b)
+        .reduceByKey(lambda a, b: a + b)
     counts.pprint()
 
     ssc.start()
