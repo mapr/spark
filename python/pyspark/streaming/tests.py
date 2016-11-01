@@ -47,7 +47,7 @@ if sys.version >= "3":
 from pyspark.context import SparkConf, SparkContext, RDD
 from pyspark.storagelevel import StorageLevel
 from pyspark.streaming.context import StreamingContext
-from pyspark.streaming.kafka import Broker, KafkaUtils, OffsetRange, TopicAndPartition
+from pyspark.streaming.kafka08 import Broker, KafkaUtils, OffsetRange, TopicAndPartition
 from pyspark.streaming.flume import FlumeUtils
 from pyspark.streaming.kinesis import KinesisUtils, InitialPositionInStream
 from pyspark.streaming.listener import StreamingListener
