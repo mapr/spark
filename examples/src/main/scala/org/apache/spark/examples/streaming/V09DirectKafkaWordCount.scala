@@ -42,7 +42,7 @@ import org.apache.spark.streaming.kafka09.{ConsumerStrategies, KafkaUtils, Locat
  *    topic1,topic2 my-consumer-group latest batch-interval pollTimeout
  */
 
-object V10DirectKafkaWordCount {
+object V09DirectKafkaWordCount {
   def main(args: Array[String]) {
     if (args.length < 4) {
       System.err.println(s"""
@@ -90,7 +90,7 @@ object V10DirectKafkaWordCount {
 
     val consumerStrategy = ConsumerStrategies.Subscribe[String, String](topicsSet, kafkaParams)
     val messages = KafkaUtils.createDirectStream[String, String](
-      ssc, LocationStrategies.PreferConsistent, consumerStrategy)
+      ssc, LocationStrategies.PreferConsistent(), consumerStrategy)
 
     // Get the lines, split them into words, count the words and print
     val lines = messages.map(_.value())
