@@ -90,7 +90,7 @@ object V09DirectKafkaWordCount {
 
     val consumerStrategy = ConsumerStrategies.Subscribe[String, String](topicsSet, kafkaParams)
     val messages = KafkaUtils.createDirectStream[String, String](
-      ssc, LocationStrategies.PreferConsistent(), consumerStrategy)
+      ssc, LocationStrategies.PreferConsistent, consumerStrategy)
 
     // Get the lines, split them into words, count the words and print
     val lines = messages.map(_.value())
