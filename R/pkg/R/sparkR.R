@@ -125,7 +125,10 @@ sparkR.init <- function(
   jars <- processSparkJars(sparkJars)
   packages <- processSparkPackages(sparkPackages)
 
-  sparkEnvir[["spark.master"]] <- master
+  if (master != "") {
+    sparkEnvir[["spark.master"]] <- master
+  }
+
   sparkEnvirMap <- convertNamedListToEnv(sparkEnvir)
 
   existingPort <- Sys.getenv("EXISTING_SPARKR_BACKEND_PORT", "")
