@@ -115,6 +115,8 @@ object MimaExcludes {
       ProblemFilters.exclude[IncompatibleMethTypeProblem]("org.apache.spark.sql.streaming.StreamingQueryException.this"),
       ProblemFilters.exclude[DirectMissingMethodProblem]("org.apache.spark.sql.streaming.StreamingQueryException.query"),
 
+      // [SPARK-18949] [SQL] Add repairTable API to Catalog
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("org.apache.spark.sql.catalog.Catalog.recoverPartitions"),
       // [SPARK-19267] Fetch Failure handling robust to user error handling
       ProblemFilters.exclude[ReversedMissingMethodProblem]("org.apache.spark.TaskContext.setFetchFailed")
     )
