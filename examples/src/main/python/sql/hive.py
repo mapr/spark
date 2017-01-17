@@ -39,7 +39,6 @@ if __name__ == "__main__":
     spark = SparkSession \
         .builder \
         .appName("Python Spark SQL Hive integration example") \
-        .config("spark.sql.warehouse.dir", warehouse_location) \
         .enableHiveSupport() \
         .getOrCreate()
 

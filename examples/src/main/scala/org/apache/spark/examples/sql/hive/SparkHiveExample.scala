@@ -47,13 +47,10 @@ object SparkHiveExample {
     // application is started.
 
     // $example on:spark_hive$
-    // warehouseLocation points to the default location for managed databases and tables
-    val warehouseLocation = new File("spark-warehouse").getAbsolutePath
 
     val spark = SparkSession
       .builder()
       .appName("Spark Hive Example")
-      .config("spark.sql.warehouse.dir", warehouseLocation)
       .enableHiveSupport()
       .getOrCreate()
 
