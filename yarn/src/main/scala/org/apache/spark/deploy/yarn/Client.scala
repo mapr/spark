@@ -257,7 +257,7 @@ private[spark] class Client(
           amRequest.setPriority(Priority.newInstance(0))
           amRequest.setCapability(capability)
           amRequest.setNumContainers(1)
-          val method = amRequest.getClass.getMethod("setNodeLabelExpression", classOf[String])
+          val method = amRequest.getClass.getMethod("setLabel", classOf[String])
           method.invoke(amRequest, expr)
 
           val setResourceRequestMethod =
