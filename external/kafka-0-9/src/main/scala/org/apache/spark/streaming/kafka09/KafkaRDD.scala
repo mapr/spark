@@ -60,12 +60,14 @@ private[spark] class KafkaRDD[K, V](
     ConsumerConfig.AUTO_OFFSET_RESET_CONFIG +
       " must be set to none for executor kafka params, else messages may not match offsetRange")
 
-  assert(!kafkaParams.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG).asInstanceOf[Boolean],
+  assert(false ==
+    kafkaParams.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG).asInstanceOf[Boolean],
     ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG +
       " must be set to false for executor kafka params, else offsets may commit before processing")
 
   // TODO is it necessary to have separate configs for initial poll time vs ongoing poll time?
-  private val pollTimeout = conf.getLong("spark.streaming.kafka.consumer.poll.ms", 512)
+  private val pollTimeout = conf.getLong("spark.streaming.kafka.consumer.poll.ms",
+    conf.getTimeAsMs("spark.network.timeout", "120s"))
   private val cacheInitialCapacity =
     conf.getInt("spark.streaming.kafka.consumer.cache.initialCapacity", 16)
   private val cacheMaxCapacity =
@@ -85,7 +87,7 @@ private[spark] class KafkaRDD[K, V](
     }.toArray
   }
 
-  override def count(): Long = offsetRanges.map(offset => offset.count()).sum
+  override def count(): Long = offsetRanges.map(_.count).sum
 
   override def countApprox(
       timeout: Long,
