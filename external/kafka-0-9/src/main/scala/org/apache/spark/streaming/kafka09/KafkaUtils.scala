@@ -128,21 +128,44 @@ object KafkaUtils extends Logging {
       locationStrategy: LocationStrategy,
       consumerStrategy: ConsumerStrategy[K, V]
     ): InputDStream[ConsumerRecord[K, V]] = {
-    new DirectKafkaInputDStream[K, V](ssc, locationStrategy, consumerStrategy)
+    val ppc = new DefaultPerPartitionConfig(ssc.sparkContext.getConf)
+    createDirectStream[K, V](ssc, locationStrategy, consumerStrategy, ppc)
   }
 
   /**
-  * :: Experimental ::
-  * Java constructor for a DStream where
-  * each given Kafka topic/partition corresponds to an RDD partition.
-  *
-  * @param locationStrategy In most cases, pass in LocationStrategies.preferConsistent,
-  *                         see [[LocationStrategies]] for more details.
-  * @param consumerStrategy In most cases, pass in ConsumerStrategies.subscribe,
-  *                         see [[ConsumerStrategies]] for more details
-  * @tparam K type of Kafka message key
-  * @tparam V type of Kafka message value
-  */
+   * :: Experimental ::
+   * Scala constructor for a DStream where
+   * each given Kafka topic/partition corresponds to an RDD partition.
+   * @param locationStrategy In most cases, pass in LocationStrategies.preferConsistent,
+   *   see [[LocationStrategies]] for more details.
+   * @param consumerStrategy In most cases, pass in ConsumerStrategies.subscribe,
+   *   see [[ConsumerStrategies]] for more details.
+   * @param perPartitionConfig configuration of settings such as max rate on a per-partition basis.
+   *   see [[PerPartitionConfig]] for more details.
+   * @tparam K type of Kafka message key
+   * @tparam V type of Kafka message value
+   */
+  @Experimental
+  def createDirectStream[K, V](
+      ssc: StreamingContext,
+      locationStrategy: LocationStrategy,
+      consumerStrategy: ConsumerStrategy[K, V],
+      perPartitionConfig: PerPartitionConfig
+    ): InputDStream[ConsumerRecord[K, V]] = {
+    new DirectKafkaInputDStream[K, V](ssc, locationStrategy, consumerStrategy, perPartitionConfig)
+  }
+
+  /**
+   * :: Experimental ::
+   * Java constructor for a DStream where
+   * each given Kafka topic/partition corresponds to an RDD partition.
+   * @param locationStrategy In most cases, pass in LocationStrategies.preferConsistent,
+   *   see [[LocationStrategies]] for more details.
+   * @param consumerStrategy In most cases, pass in ConsumerStrategies.subscribe,
+   *   see [[ConsumerStrategies]] for more details
+   * @tparam K type of Kafka message key
+   * @tparam V type of Kafka message value
+   */
   @Experimental
   def createDirectStream[K, V](
       jssc: JavaStreamingContext,
@@ -152,6 +175,31 @@ object KafkaUtils extends Logging {
     new JavaInputDStream(
       createDirectStream[K, V](
         jssc.ssc, locationStrategy, consumerStrategy))
+  }
+
+  /**
+   * :: Experimental ::
+   * Java constructor for a DStream where
+   * each given Kafka topic/partition corresponds to an RDD partition.
+   * @param locationStrategy In most cases, pass in LocationStrategies.preferConsistent,
+   *   see [[LocationStrategies]] for more details.
+   * @param consumerStrategy In most cases, pass in ConsumerStrategies.subscribe,
+   *   see [[ConsumerStrategies]] for more details
+   * @param perPartitionConfig configuration of settings such as max rate on a per-partition basis.
+   *   see [[PerPartitionConfig]] for more details.
+   * @tparam K type of Kafka message key
+   * @tparam V type of Kafka message value
+   */
+  @Experimental
+  def createDirectStream[K, V](
+      jssc: JavaStreamingContext,
+      locationStrategy: LocationStrategy,
+      consumerStrategy: ConsumerStrategy[K, V],
+      perPartitionConfig: PerPartitionConfig
+    ): JavaInputDStream[ConsumerRecord[K, V]] = {
+    new JavaInputDStream(
+      createDirectStream[K, V](
+        jssc.ssc, locationStrategy, consumerStrategy, perPartitionConfig))
   }
 
   /**
@@ -228,16 +276,6 @@ object KafkaUtilsPythonHelper {
       }
     }
   }
-
-//  def createRDDWithoutMessageHandler(
-//    jsc: JavaSparkContext,
-//    kafkaParams: JMap[String, String],
-//    offsetRanges: JList[OffsetRange],
-//    leaders: JMap[TopicAndPartition, Broker]): JavaRDD[(Array[Byte], Array[Byte])] = {
-//    val messageHandler =
-//      (mmd: MessageAndMetadata[Array[Byte], Array[Byte]]) => (mmd.key, mmd.message)
-//    new JavaRDD(createRDD(jsc, kafkaParams, offsetRanges, leaders, messageHandler))
-//  }
 
   @Experimental
   def createDirectStream(
