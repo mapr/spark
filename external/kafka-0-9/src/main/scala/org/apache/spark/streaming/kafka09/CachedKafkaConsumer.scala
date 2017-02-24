@@ -19,10 +19,11 @@ package org.apache.spark.streaming.kafka09
 
 import java.{ util => ju }
 
-import org.apache.kafka.clients.consumer.{ ConsumerConfig, ConsumerRecord, KafkaConsumer }
-import org.apache.kafka.common.{ KafkaException, TopicPartition }
+import collection.JavaConverters._
 
-import org.apache.spark.SparkConf
+import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, KafkaConsumer}
+import org.apache.kafka.common.{KafkaException, TopicPartition}
+
 import org.apache.spark.internal.Logging
 
 
@@ -73,9 +74,12 @@ class CachedKafkaConsumer[K, V] private(
     if (!buffer.hasNext()) { poll(timeout) }
     assert(buffer.hasNext(),
       s"Failed to get records for $groupId $topic $partition $offset after polling for $timeout")
-    var record = buffer.next()
+    val record = buffer.next()
 
-    if (record.offset != offset) {
+    nextOffset = offset + 1
+    record
+// Offsets in MapR-streams can contains gaps
+/*    if (record.offset < offset) {
       logInfo(s"Buffer miss for $groupId $topic $partition $offset")
       seek(offset)
       poll(timeout)
@@ -88,6 +92,7 @@ class CachedKafkaConsumer[K, V] private(
 
     nextOffset = offset + 1
     record
+        */
   }
 
   private def seek(offset: Long): Unit = {
@@ -98,10 +103,16 @@ class CachedKafkaConsumer[K, V] private(
   private def poll(timeout: Long): Unit = {
     val p = consumer.poll(timeout)
     val r = p.records(topicPartition)
-    logDebug(s"Polled ${p.partitions()}  ${r.size}")
-    buffer = r.iterator
-  }
 
+    val preparedRecords = if (r.size > 1) {
+      r.asScala.filter(_.offset() > 0).asJava
+    } else {
+      r
+    }
+
+    logDebug(s"Polled ${p.partitions()}  ${preparedRecords.size}")
+    buffer = preparedRecords.iterator()
+  }
 }
 
 private[kafka09]

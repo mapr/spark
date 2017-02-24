@@ -30,6 +30,9 @@ import org.apache.spark.partial.{BoundedDouble, PartialResult}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.scheduler.ExecutorCacheTaskLocation
 import org.apache.spark.storage.StorageLevel
+import org.apache.spark.util.NextIterator
+
+import scala.annotation.tailrec
 
 /**
  * A batch-oriented interface for consuming from Kafka.
@@ -81,11 +84,11 @@ private[spark] class KafkaRDD[K, V](
 
   override def getPartitions: Array[Partition] = {
     offsetRanges.zipWithIndex.map { case (o, i) =>
-        new KafkaRDDPartition(i, o.topic, o.partition, o.fromOffset, o.untilOffset)
+      new KafkaRDDPartition(i, o.topic, o.partition, o.fromOffset, o.untilOffset)
     }.toArray
   }
 
-  override def count(): Long = offsetRanges.map(offset => offset.count()).sum
+  //  override def count(): Long = offsetRanges.map(_.count).sum
 
   override def countApprox(
       timeout: Long,
@@ -191,7 +194,7 @@ private[spark] class KafkaRDD[K, V](
    */
   private class KafkaRDDIterator(
       part: KafkaRDDPartition,
-      context: TaskContext) extends Iterator[ConsumerRecord[K, V]] {
+      context: TaskContext) extends NextIterator[ConsumerRecord[K, V]] {
 
     logInfo(s"Computing topic ${part.topic}, partition ${part.partition} " +
       s"offsets ${part.fromOffset} -> ${part.untilOffset}")
@@ -213,19 +216,41 @@ private[spark] class KafkaRDD[K, V](
 
     var requestOffset = part.fromOffset
 
-    def closeIfNeeded(): Unit = {
+    override def close(): Unit = {
       if (!useConsumerCache && consumer != null) {
         consumer.close
       }
     }
 
-    override def hasNext(): Boolean = requestOffset < part.untilOffset
+    //    override def hasNext(): Boolean = requestOffset < part.untilOffset
+    override def getNext(): ConsumerRecord[K, V] = {
 
-    override def next(): ConsumerRecord[K, V] = {
-      assert(hasNext(), "Can't call getNext() once untilOffset has been reached")
-      val r = consumer.get(requestOffset, pollTimeout)
-      requestOffset += 1
-      r
+      @tailrec
+      def skipGapsAndGetNext: ConsumerRecord[K, V] = {
+        if (requestOffset < part.untilOffset) {
+          val r = consumer.get(requestOffset, pollTimeout)
+
+          requestOffset = if (r.offset() == 0) {part.untilOffset} else {r.offset() + 1}
+
+          if (null == r && r.offset() == 0) {
+            skipGapsAndGetNext
+          } else {
+            r
+          }
+        } else {
+          finished = true
+          null.asInstanceOf[ConsumerRecord[K, V]]
+        }
+      }
+
+      skipGapsAndGetNext
     }
+
+    //    override def next(): ConsumerRecord[K, V] = {
+    //      assert(hasNext, "Can't call getNext() once untilOffset has been reached")
+    //      val r = consumer.get(requestOffset, pollTimeout)
+    //      requestOffset += 1
+    //      r
+    //    }
   }
 }
