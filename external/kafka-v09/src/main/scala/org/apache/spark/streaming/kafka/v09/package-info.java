@@ -15,31 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.streaming.kafka.v09
-
-import org.apache.kafka.common.TopicPartition
-
-import org.apache.spark.Partition
-
-
 /**
- * @param topic kafka topic name
- * @param partition kafka partition id
- * @param fromOffset inclusive starting offset
- * @param untilOffset exclusive ending offset
+ * Spark Integration for Kafka 0.9
  */
-private[v09]
-class KafkaRDDPartition(
-  val index: Int,
-  val topic: String,
-  val partition: Int,
-  val fromOffset: Long,
-  val untilOffset: Long
-) extends Partition {
-  /** Number of messages this partition refers to */
-  def count(): Long = untilOffset - fromOffset
-
-  /** Kafka TopicPartition object, for convenience */
-  def topicPartition(): TopicPartition = new TopicPartition(topic, partition)
-
-}
+package org.apache.spark.streaming.kafka.v09;

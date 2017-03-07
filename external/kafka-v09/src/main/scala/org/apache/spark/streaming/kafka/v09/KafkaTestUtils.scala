@@ -20,8 +20,9 @@ package org.apache.spark.streaming.kafka.v09
 import java.io.File
 import java.lang.{Integer => JInt}
 import java.net.InetSocketAddress
-import java.util.{Map => JMap, Properties}
+import java.util.{Properties, Map => JMap}
 import java.util.concurrent.TimeoutException
+
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.language.postfixOps
@@ -32,8 +33,6 @@ import kafka.producer.{KeyedMessage, Producer, ProducerConfig}
 import kafka.serializer.StringEncoder
 import kafka.server.{KafkaConfig, KafkaServer}
 import kafka.utils.ZkUtils
-import org.I0Itec.zkclient.ZkClient
-import org.apache.kafka.common.security.JaasUtils
 import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
 import org.apache.spark.{Logging, SparkConf}
 import org.apache.spark.streaming.Time
@@ -45,7 +44,7 @@ import org.apache.spark.util.Utils
  *
  * The reason to put Kafka test utility class in src is to test Python related Kafka APIs.
  */
-private[kafka] class KafkaTestUtils extends Logging {
+private[v09] class KafkaTestUtils extends Logging {
 
   // Zookeeper related configurations
   private val zkHost = "localhost"
@@ -55,12 +54,11 @@ private[kafka] class KafkaTestUtils extends Logging {
 
   private var zookeeper: EmbeddedZookeeper = _
 
-  private var zkClient: ZkClient = _
   private var zkUtils: ZkUtils = _
 
   // Kafka broker related configurations
   private val brokerHost = "localhost"
-  private var brokerPort = 9092
+  private var brokerPort = 0
   private var brokerConf: KafkaConfig = _
 
   // Kafka broker server
@@ -83,9 +81,9 @@ private[kafka] class KafkaTestUtils extends Logging {
     s"$brokerHost:$brokerPort"
   }
 
-  def zookeeperClient: ZkClient = {
+  def zookeeperClient: ZkUtils = {
     assert(zkReady, "Zookeeper not setup yet or already torn down, cannot get zookeeper client")
-    Option(zkClient).getOrElse(
+    Option(zkUtils).getOrElse(
       throw new IllegalStateException("Zookeeper client is not yet initialized"))
   }
 
@@ -95,8 +93,7 @@ private[kafka] class KafkaTestUtils extends Logging {
     zookeeper = new EmbeddedZookeeper(s"$zkHost:$zkPort")
     // Get the actual zookeeper binding port
     zkPort = zookeeper.actualPort
-    zkClient = ZkUtils.createZkClient(s"$zkHost:$zkPort", zkSessionTimeout, zkConnectionTimeout)
-    zkUtils = ZkUtils(zkClient, JaasUtils.isZkSecurityEnabled())
+    zkUtils = ZkUtils(s"$zkHost:$zkPort", zkSessionTimeout, zkConnectionTimeout, false)
     zkReady = true
   }
 
@@ -110,7 +107,8 @@ private[kafka] class KafkaTestUtils extends Logging {
       brokerConf = new KafkaConfig(brokerConfiguration)
       server = new KafkaServer(brokerConf)
       server.startup()
-      (server, port)
+      brokerPort = server.boundPort()
+      (server, brokerPort)
     }, new SparkConf(), "KafkaBroker")
 
     brokerReady = true
@@ -139,11 +137,6 @@ private[kafka] class KafkaTestUtils extends Logging {
 
     brokerConf.logDirs.foreach { f => Utils.deleteRecursively(new File(f)) }
 
-    if (zkClient != null) {
-      zkClient.close()
-      zkClient = null
-    }
-
     if (zkUtils != null) {
       zkUtils.close()
       zkUtils = null
@@ -156,10 +149,17 @@ private[kafka] class KafkaTestUtils extends Logging {
   }
 
   /** Create a Kafka topic and wait until it is propagated to the whole cluster */
-  def createTopic(topic: String): Unit = {
-    AdminUtils.createTopic(zkUtils, topic, 1, 1)
+  def createTopic(topic: String, partitions: Int): Unit = {
+    AdminUtils.createTopic(zkUtils, topic, partitions, 1)
     // wait until metadata is propagated
-    waitUntilMetadataIsPropagated(topic, 0)
+    (0 until partitions).foreach { p =>
+      waitUntilMetadataIsPropagated(topic, p)
+    }
+  }
+
+  /** Create a Kafka topic and wait until it is propagated to the whole cluster */
+  def createTopic(topic: String): Unit = {
+    createTopic(topic, 1)
   }
 
   /** Java-friendly function for sending messages to the Kafka broker */
@@ -176,9 +176,7 @@ private[kafka] class KafkaTestUtils extends Logging {
   /** Send the array of messages to the Kafka broker */
   def sendMessages(topic: String, messages: Array[String]): Unit = {
     producer = new Producer[String, String](new ProducerConfig(producerConfiguration))
-    producer.send(messages.map {
-      new KeyedMessage[String, String](topic, _)
-    }: _*)
+    producer.send(messages.map { new KeyedMessage[String, String](topic, _ ) }: _*)
     producer.close()
     producer = null
   }
@@ -273,6 +271,5 @@ private[kafka] class KafkaTestUtils extends Logging {
       Utils.deleteRecursively(logDir)
     }
   }
-
 }
 

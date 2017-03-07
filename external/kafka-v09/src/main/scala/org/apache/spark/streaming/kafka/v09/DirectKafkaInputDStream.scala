@@ -17,50 +17,98 @@
 
 package org.apache.spark.streaming.kafka.v09
 
+import java.{util => ju}
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicReference
+
+import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.reflect.ClassTag
-import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.apache.kafka.common.TopicPartition
-import org.apache.spark.Logging
+import org.apache.kafka.clients.consumer._
+import org.apache.kafka.common.{PartitionInfo, TopicPartition}
+import org.apache.spark.{Logging, SparkException}
+import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.{StreamingContext, Time}
 import org.apache.spark.streaming.dstream._
-import org.apache.spark.streaming.kafka.v09.KafkaCluster.LeaderOffset
 import org.apache.spark.streaming.scheduler.{RateController, StreamInputInfo}
 import org.apache.spark.streaming.scheduler.rate.RateEstimator
 
+import scala.reflect.ClassTag
+
 /**
- * A stream of {@link org.apache.spark.streaming.kafka.KafkaRDD} where
+ *  A DStream where
  * each given Kafka topic/partition corresponds to an RDD partition.
  * The spark configuration spark.streaming.kafka.maxRatePerPartition gives the maximum number
- * of messages
+ *  of messages
  * per second that each '''partition''' will accept.
- * Starting offsets are specified in advance,
- * and this DStream is not responsible for committing offsets,
- * so that you can control exactly-once semantics.
- * @param kafkaParams Kafka <a href="http://kafka.apache.org/documentation.html#configuration">
- *                    configuration parameters</a>.
- *                    Requires "metadata.broker.list" or "bootstrap.servers" to be set
- *                    with Kafka broker(s),
- *                    NOT zookeeper servers, specified in host1:port1,host2:port2 form.
- * @param fromOffsets per-topic/partition Kafka offsets defining the (inclusive)
- *                    starting point of the stream
+ * @param locationStrategy In most cases, pass in [[PreferConsistent]],
+ *   see [[LocationStrategy]] for more details.
+ * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
+ * configuration parameters</a>.
+ *   Requires  "bootstrap.servers" to be set with Kafka broker(s),
+ *   NOT zookeeper servers, specified in host1:port1,host2:port2 form.
+ * @param consumerStrategy In most cases, pass in [[Subscribe]],
+ *   see [[ConsumerStrategy]] for more details
+ * @tparam K type of Kafka message key
+ * @tparam V type of Kafka message value
  */
-private[streaming]
-class DirectKafkaInputDStream[
-  K: ClassTag,
-  V: ClassTag,
-  R: ClassTag](
-    @transient ssc_ : StreamingContext,
-    val kafkaParams: Map[String, String],
-    @transient val fromOffsets: Map[TopicPartition, Long],
+private[spark] class DirectKafkaInputDStream[K: ClassTag, V: ClassTag, R: ClassTag](
+    _ssc: StreamingContext,
+    locationStrategy: LocationStrategy,
+    consumerStrategy: ConsumerStrategy[K, V],
     messageHandler: ConsumerRecord[K, V] => R
-  ) extends InputDStream[R](ssc_) with Logging {
+  ) extends InputDStream[R](_ssc) with Logging with CanCommitOffsets {
 
-  val maxRetries = context.sparkContext.getConf.getInt(
-    "spark.streaming.kafka.maxRetries", 1)
+  val executorKafkaParams = {
+    val ekp = new ju.HashMap[String, Object](consumerStrategy.executorKafkaParams)
+    KafkaUtils.fixKafkaParams(ekp)
+    ekp
+  }
+
+  protected var currentOffsets = Map[TopicPartition, Long]()
+
+  @transient private var kc: Consumer[K, V] = null
+  def consumer(): Consumer[K, V] = this.synchronized {
+    if (null == kc) {
+      kc = consumerStrategy.onStart(currentOffsets.mapValues(l => new java.lang.Long(l)).asJava)
+    }
+    kc
+  }
+
+  override def persist(newLevel: StorageLevel): DStream[R] = {
+    logError("Kafka ConsumerRecord is not serializable. " +
+      "Use .map to extract fields before calling .persist or .window")
+    super.persist(newLevel)
+  }
+
+  protected def getBrokers = {
+    val c = consumer
+    val result = new ju.HashMap[TopicPartition, String]()
+    val hosts = new ju.HashMap[TopicPartition, String]()
+    val assignments = c.assignment().iterator()
+    while (assignments.hasNext()) {
+      val tp: TopicPartition = assignments.next()
+      if (null == hosts.get(tp)) {
+        val infos = c.partitionsFor(tp.topic).iterator()
+        while (infos.hasNext()) {
+          val i = infos.next()
+          hosts.put(new TopicPartition(i.topic(), i.partition()), i.leader.host())
+        }
+      }
+      result.put(tp, hosts.get(tp))
+    }
+    result
+  }
+
+  protected def getPreferredHosts: ju.Map[TopicPartition, String] = {
+    locationStrategy match {
+      case PreferBrokers => getBrokers
+      case PreferConsistent => ju.Collections.emptyMap[TopicPartition, String]()
+      case PreferFixed(hostMap) => hostMap
+    }
+  }
 
   // Keep this consistent with how other streams are named (e.g. "Flume polling stream [2]")
-  private[streaming] override def name: String = s"Kafka 0.9 direct stream [$id]"
+  private[streaming] override def name: String = s"Kafka 0.09 direct stream [$id]"
 
   protected[streaming] override val checkpointData =
     new DirectKafkaInputDStreamCheckpointData
@@ -72,73 +120,104 @@ class DirectKafkaInputDStream[
   override protected[streaming] val rateController: Option[RateController] = {
     if (RateController.isBackPressureEnabled(ssc.conf)) {
       Some(new DirectKafkaRateController(id,
-        RateEstimator.create(ssc.conf, ssc_.graph.batchDuration)))
+        RateEstimator.create(ssc.conf, context.graph.batchDuration)))
     } else {
       None
     }
   }
-
-  protected var kafkaCluster = new KafkaCluster[K, V](kafkaParams)
 
   private val maxRateLimitPerPartition: Int = context.sparkContext.getConf.getInt(
     "spark.streaming.kafka.maxRatePerPartition", 0)
 
-  protected def maxMessagesPerPartition: Option[Long] = {
+  protected[streaming] def maxMessagesPerPartition(
+    offsets: Map[TopicPartition, Long]): Option[Map[TopicPartition, Long]] = {
     val estimatedRateLimit = rateController.map(_.getLatestRate().toInt)
-    val numPartitions = currentOffsets.keys.size
 
-    val effectiveRateLimitPerPartition = estimatedRateLimit
-      .filter(_ > 0)
-      .map { limit =>
-        if (maxRateLimitPerPartition > 0) {
-          Math.min(maxRateLimitPerPartition, (limit / numPartitions))
-        } else {
-          limit / numPartitions
+    // calculate a per-partition rate limit based on current lag
+    val effectiveRateLimitPerPartition = estimatedRateLimit.filter(_ > 0) match {
+      case Some(rate) =>
+        val lagPerPartition = offsets.map { case (tp, offset) =>
+          tp -> Math.max(offset - currentOffsets(tp), 0)
         }
-      }.getOrElse(maxRateLimitPerPartition)
+        val totalLag = lagPerPartition.values.sum
 
-    if (effectiveRateLimitPerPartition > 0) {
+        lagPerPartition.map { case (tp, lag) =>
+          val backpressureRate = Math.round(lag / totalLag.toFloat * rate)
+          tp -> (if (maxRateLimitPerPartition > 0) {
+            Math.min(backpressureRate, maxRateLimitPerPartition)} else backpressureRate)
+        }
+      case None => offsets.map { case (tp, offset) => tp -> maxRateLimitPerPartition }
+    }
+
+    if (effectiveRateLimitPerPartition.values.sum > 0) {
       val secsPerBatch = context.graph.batchDuration.milliseconds.toDouble / 1000
-      Some((secsPerBatch * effectiveRateLimitPerPartition).toLong)
+      Some(effectiveRateLimitPerPartition.map {
+        case (tp, limit) => tp -> (secsPerBatch * limit).toLong
+      })
     } else {
       None
     }
   }
 
-  // temp fix for serialization issue of TopicPartition
-  protected var serCurrentOffsets = fromOffsets.map { case(tp, l) =>
-    (tp.topic, tp.partition, l);
+  private def adjustPosition(tp: TopicPartition) = {
+    val c = consumer
+    val pos = c.position(tp)
+    if (pos == 0) {
+      val isStreams = tp.topic().startsWith("/") || tp.topic().contains(":")
+      if (isStreams) 1L else 0L
+    } else {
+      pos
+    }
   }
 
-  @transient
-  protected var currentOffsets: Map[TopicPartition, Long] = null
+  /**
+   * Returns the latest (highest) available offsets, taking new partitions into account.
+   */
+  protected def latestOffsets(): Map[TopicPartition, Long] = {
+    val c = consumer
+    // c.poll(0)
+    val parts = c.assignment().asScala
 
-  protected final def latestLeaderOffsets(): Map[TopicPartition, LeaderOffset] = {
-    kafkaCluster.getLatestOffsetsWithLeaders(currentOffsets.keySet)
+    // make sure new partitions are reflected in currentOffsets
+    val newPartitions = parts.diff(currentOffsets.keySet)
+    // position for new partitions determined by auto.offset.reset if no commit
+
+    currentOffsets = currentOffsets ++ newPartitions.map(tp =>
+      tp -> adjustPosition(tp)).toMap
+    // don't want to consume messages, so pause
+    c.pause(newPartitions.toArray : _*)
+    // find latest available offsets
+    c.seekToEnd(currentOffsets.keySet.toArray : _*)
+    parts.map(tp => tp -> c.position(tp)).toMap
   }
 
   // limits the maximum number of messages per partition
   protected def clamp(
-      leaderOffsets: Map[TopicPartition, LeaderOffset]
-    ): Map[TopicPartition, LeaderOffset] = {
-    maxMessagesPerPartition.map { mmp =>
-      leaderOffsets.map { case (tp, lo) =>
-        tp -> lo.copy(offset = Math.min(currentOffsets(tp) + mmp, lo.offset))
+    offsets: Map[TopicPartition, Long]): Map[TopicPartition, Long] = {
+
+    maxMessagesPerPartition(offsets).map { mmp =>
+      mmp.map { case (tp, messages) =>
+          val uo = offsets(tp)
+          tp -> Math.min(currentOffsets(tp) + messages, uo)
       }
-    }.getOrElse(leaderOffsets)
+    }.getOrElse(offsets)
   }
 
   override def compute(validTime: Time): Option[KafkaRDD[K, V, R]] = {
-    currentOffsets = serCurrentOffsets.map { i => new TopicPartition(i._1, i._2) -> i._3 }.toMap
-    val untilOffsets = clamp(latestLeaderOffsets())
-    val rdd = KafkaRDD[K, V, R](
-      context.sparkContext, kafkaParams, currentOffsets, untilOffsets, messageHandler)
+    val untilOffsets = clamp(latestOffsets())
+    val offsetRanges = untilOffsets.map { case (tp, uo) =>
+      val fo = currentOffsets(tp)
+      OffsetRange(tp.topic, tp.partition, fo, uo)
+    }
+    val rdd = new KafkaRDD[K, V, R](
+      context.sparkContext,
+      executorKafkaParams,
+      offsetRanges.toArray,
+      getPreferredHosts,
+      true,
+      messageHandler)
 
     // Report the record number and metadata of this batch interval to InputInfoTracker.
-    val offsetRanges = currentOffsets.map { case (tp, fo) =>
-      val uo = untilOffsets(tp)
-      OffsetRange(tp.topic, tp.partition, fo, uo.offset)
-    }
     val description = offsetRanges.filter { offsetRange =>
       // Don't display empty ranges.
       offsetRange.fromOffset != offsetRange.untilOffset
@@ -153,17 +232,63 @@ class DirectKafkaInputDStream[
     val inputInfo = StreamInputInfo(id, rdd.count, metadata)
     ssc.scheduler.inputInfoTracker.reportInfo(validTime, inputInfo)
 
-    serCurrentOffsets = untilOffsets.map { kv => (kv._1.topic, kv._1.partition, kv._2.offset) }
+    currentOffsets = untilOffsets
+    commitAll()
     Some(rdd)
   }
 
   override def start(): Unit = {
+    val c = consumer
+    c.poll(0)
+    if (currentOffsets.isEmpty) {
+      currentOffsets = c.assignment().asScala.map { tp =>
+        tp -> adjustPosition(tp)
+      }.toMap
+    }
+
+    // don't actually want to consume any messages, so pause all partitions
+    c.pause(currentOffsets.keySet.toArray: _*)
   }
 
-  def stop(): Unit = {
-    if (kafkaCluster != null) {
-      kafkaCluster.close()
-      kafkaCluster = null
+  override def stop(): Unit = this.synchronized {
+    if (kc != null) {
+      kc.close()
+    }
+  }
+
+  protected val commitQueue = new ConcurrentLinkedQueue[OffsetRange]
+  protected val commitCallback = new AtomicReference[OffsetCommitCallback]
+
+  /**
+   * Queue up offset ranges for commit to Kafka at a future time.  Threadsafe.
+   * @param offsetRanges The maximum untilOffset for a given partition will be used at commit.
+   */
+  def commitAsync(offsetRanges: Array[OffsetRange]): Unit = {
+    commitAsync(offsetRanges, null)
+  }
+
+  /**
+   * Queue up offset ranges for commit to Kafka at a future time.  Threadsafe.
+   * @param offsetRanges The maximum untilOffset for a given partition will be used at commit.
+   * @param callback Only the most recently provided callback will be used at commit.
+   */
+  def commitAsync(offsetRanges: Array[OffsetRange], callback: OffsetCommitCallback): Unit = {
+    commitCallback.set(callback)
+    commitQueue.addAll(ju.Arrays.asList(offsetRanges: _*))
+  }
+
+  protected def commitAll(): Unit = {
+    val m = new ju.HashMap[TopicPartition, OffsetAndMetadata]()
+    val it = commitQueue.iterator()
+    while (it.hasNext) {
+      val osr = it.next
+      val tp = osr.topicPartition
+      val x = m.get(tp)
+      val offset = if (null == x) { osr.untilOffset } else { Math.max(x.offset, osr.untilOffset) }
+      m.put(tp, new OffsetAndMetadata(offset))
+    }
+    if (!m.isEmpty) {
+      consumer.commitAsync(m, commitCallback.get)
     }
   }
 
@@ -173,7 +298,7 @@ class DirectKafkaInputDStream[
       data.asInstanceOf[mutable.HashMap[Time, Array[OffsetRange.OffsetRangeTuple]]]
     }
 
-    override def update(time: Time) {
+    override def update(time: Time): Unit = {
       batchForTime.clear()
       generatedRDDs.foreach { kv =>
         val a = kv._2.asInstanceOf[KafkaRDD[K, V, R]].offsetRanges.map(_.toTuple).toArray
@@ -181,15 +306,21 @@ class DirectKafkaInputDStream[
       }
     }
 
-    override def cleanup(time: Time) {}
+    override def cleanup(time: Time): Unit = { }
 
-    override def restore() {
-      // this is assuming that the topics don't change during execution, which is true currently
-
+    override def restore(): Unit = {
       batchForTime.toSeq.sortBy(_._1)(Time.ordering).foreach { case (t, b) =>
-        logInfo(s"Restoring KafkaRDD for time $t ${b.mkString("[", ", ", "]")}")
-        generatedRDDs += t -> new KafkaRDD[K, V, R](
-          context.sparkContext, kafkaParams, b.map(OffsetRange(_)), messageHandler)
+         logInfo(s"Restoring KafkaRDD for time $t ${b.mkString("[", ", ", "]")}")
+         generatedRDDs += t -> new KafkaRDD[K, V, R](
+           context.sparkContext,
+           executorKafkaParams,
+           b.map(OffsetRange(_)),
+           getPreferredHosts,
+           // during restore, it's possible same partition will be consumed from multiple
+           // threads, so dont use cache
+           false,
+           messageHandler
+         )
       }
     }
   }
@@ -201,5 +332,4 @@ class DirectKafkaInputDStream[
     extends RateController(id, estimator) {
     override def publish(rate: Long): Unit = ()
   }
-
 }

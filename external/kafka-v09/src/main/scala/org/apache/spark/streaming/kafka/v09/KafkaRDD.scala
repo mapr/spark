@@ -17,61 +17,80 @@
 
 package org.apache.spark.streaming.kafka.v09
 
-import java.util.{Collections, Properties}
+import java.{util => ju}
 
-import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
-import scala.reflect.ClassTag
-import org.apache.kafka.clients.consumer.{ConsumerRecord, ConsumerRecords, KafkaConsumer}
+import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord}
 import org.apache.kafka.common.TopicPartition
-import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 import org.apache.spark.partial.{BoundedDouble, PartialResult}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.streaming.kafka.v09.KafkaCluster.LeaderOffset
-import org.apache.spark.util.NextIterator
+import org.apache.spark.scheduler.ExecutorCacheTaskLocation
+import org.apache.spark.storage.StorageLevel
+import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 
-import scala.annotation.tailrec
-import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+import scala.reflect.ClassTag
 
 /**
-  * A batch-oriented interface for consuming from Kafka.
-  * Starting and ending offsets are specified in advance,
-  * so that you can control exactly-once semantics.
-  *
-  * @param kafkaParams  Kafka <a href="http://kafka.apache.org/documentation.html#configuration">
-  *                     configuration parameters</a>. Requires "bootstrap.servers" to be set
-  *                     with Kafka broker(s) specified in host1:port1,host2:port2 form.
-  * @param offsetRanges offset ranges that define the Kafka data belonging to this RDD
-  */
-private[kafka]
-class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag] private[spark](
+ * A batch-oriented interface for consuming from Kafka.
+ * Starting and ending offsets are specified in advance,
+ * so that you can control exactly-once semantics.
+ * @param kafkaParams Kafka
+ * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
+ * configuration parameters</a>. Requires "bootstrap.servers" to be set
+ * with Kafka broker(s) specified in host1:port1,host2:port2 form.
+ * @param offsetRanges offset ranges that define the Kafka data belonging to this RDD
+ * @param preferredHosts map from TopicPartition to preferred host for processing that partition.
+ * In most cases, use [[DirectKafkaInputDStream.preferConsistent]]
+ * Use [[DirectKafkaInputDStream.preferBrokers]] if your executors are on same nodes as brokers.
+ * @param useConsumerCache whether to use a consumer from a per-jvm cache
+ * @tparam K type of Kafka message key
+ * @tparam V type of Kafka message value
+ */
+private[spark] class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag](
     sc: SparkContext,
-    kafkaParams: Map[String, String],
+    val kafkaParams: ju.Map[String, Object],
     val offsetRanges: Array[OffsetRange],
+    val preferredHosts: ju.Map[TopicPartition, String],
+    useConsumerCache: Boolean,
     messageHandler: ConsumerRecord[K, V] => R
-  ) extends RDD[R](sc, Nil) with Logging with HasOffsetRanges {
+) extends RDD[R](sc, Nil) with Logging with HasOffsetRanges {
 
-  private val KAFKA_DEFAULT_POLL_TIME: String = "5000"
-  private val pollTime = kafkaParams.
-    getOrElse("spark.kafka.poll.time", KAFKA_DEFAULT_POLL_TIME).toLong
-  val isStreams = offsetRanges(0).topic.startsWith("/") || offsetRanges(0).topic.contains(":")
+  assert("none" ==
+    kafkaParams.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG).asInstanceOf[String],
+    ConsumerConfig.AUTO_OFFSET_RESET_CONFIG +
+      " must be set to none for executor kafka params, else messages may not match offsetRange")
+
+  assert(!kafkaParams.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG).asInstanceOf[Boolean],
+    ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG +
+      " must be set to false for executor kafka params, else offsets may commit before processing")
+
+  // TODO is it necessary to have separate configs for initial poll time vs ongoing poll time?
+  private val pollTimeout = conf.getLong("spark.kafka.poll.time", 5000)
+  private val cacheInitialCapacity =
+    conf.getInt("spark.streaming.kafka.consumer.cache.initialCapacity", 16)
+  private val cacheMaxCapacity =
+    conf.getInt("spark.streaming.kafka.consumer.cache.maxCapacity", 64)
+  private val cacheLoadFactor =
+    conf.getDouble("spark.streaming.kafka.consumer.cache.loadFactor", 0.75).toFloat
+
+  override def persist(newLevel: StorageLevel): this.type = {
+    logError("Kafka ConsumerRecord is not serializable. " +
+      "Use .map to extract fields before calling .persist or .window")
+    super.persist(newLevel)
+  }
 
   override def getPartitions: Array[Partition] = {
-    offsetRanges.zipWithIndex.map {
-      case (o, i) =>
-        new KafkaRDDPartition(i, o.topic, o.partition, o.fromOffset, o.untilOffset, o.leaderHost)
+    offsetRanges.zipWithIndex.map { case (o, i) =>
+        new KafkaRDDPartition(i, o.topic, o.partition, o.fromOffset, o.untilOffset)
     }.toArray
   }
 
-  override def count(): Long = {
-    offsetRanges.map({
-      offset => offset.count()  - (if (isStreams && offset.fromOffset == 0) 1 else 0): Long
-    }).sum
-  }
+  override def count(): Long = offsetRanges.map(offset => offset.count()).sum
 
   override def countApprox(
       timeout: Long,
-      confidence: Double = 0.95): PartialResult[BoundedDouble] = {
+      confidence: Double = 0.95
+  ): PartialResult[BoundedDouble] = {
     val c = count
     new PartialResult(new BoundedDouble(c, 1.0, c, c), true)
   }
@@ -83,7 +102,7 @@ class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag] private[spark](
       .map(_.asInstanceOf[KafkaRDDPartition])
       .filter(_.count > 0)
 
-    if (num < 1 || nonEmptyPartitions.size < 1) {
+    if (num < 1 || nonEmptyPartitions.isEmpty) {
       return new Array[R](0)
     }
 
@@ -101,20 +120,51 @@ class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag] private[spark](
     val buf = new ArrayBuffer[R]
     val res = context.runJob(
       this,
-      (tc: TaskContext, it: Iterator[R]) => it.take(parts(tc.partitionId)).toArray,
-      parts.keys.toArray)
+      (tc: TaskContext, it: Iterator[R]) =>
+      it.take(parts(tc.partitionId)).toArray, parts.keys.toArray
+    )
     res.foreach(buf ++= _)
     buf.toArray
   }
 
-  override def getPreferredLocations(thePart: Partition): Seq[String] = {
-    val part = thePart.asInstanceOf[KafkaRDDPartition]
-    // TODO is additional hostname resolution necessary here
-    if (part.host != null ) {
-      Seq(part.host)
+  private def executors(): Array[ExecutorCacheTaskLocation] = {
+    val bm = sparkContext.env.blockManager
+    bm.master.getPeers(bm.blockManagerId).toArray
+      .map(x => ExecutorCacheTaskLocation(x.host, x.executorId))
+      .sortWith(compareExecutors)
+  }
+
+  protected[v09] def compareExecutors(
+      a: ExecutorCacheTaskLocation,
+      b: ExecutorCacheTaskLocation): Boolean =
+    if (a.host == b.host) {
+      a.executorId > b.executorId
+    } else {
+      a.host > b.host
     }
-    else {
+
+  /**
+   * Non-negative modulus, from java 8 math
+   */
+  private def floorMod(a: Int, b: Int): Int = ((a % b) + b) % b
+
+  override def getPreferredLocations(thePart: Partition): Seq[String] = {
+    // The intention is best-effort consistent executor for a given topicpartition,
+    // so that caching consumers can be effective.
+    // TODO what about hosts specified by ip vs name
+    val part = thePart.asInstanceOf[KafkaRDDPartition]
+    val allExecs = executors()
+    val tp = part.topicPartition
+    val prefHost = preferredHosts.get(tp)
+    val prefExecs = if (null == prefHost) allExecs else allExecs.filter(_.host == prefHost)
+    val execs = if (prefExecs.isEmpty) allExecs else prefExecs
+    if (execs.isEmpty) {
       Seq()
+    } else {
+      // execs is sorted, tp.hashCode depends only on topic and partition, so consistent index
+      val index = this.floorMod(tp.hashCode, execs.length)
+      val chosen = execs(index)
+      Seq(chosen.toString)
     }
   }
 
@@ -123,21 +173,11 @@ class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag] private[spark](
       s"for topic ${part.topic} partition ${part.partition}. " +
       "You either provided an invalid fromOffset, or the Kafka topic has been damaged"
 
-  private def errRanOutBeforeEnd(part: KafkaRDDPartition): String =
-    s"Ran out of messages before reaching ending offset ${part.untilOffset} " +
-      s"for topic ${part.topic} partition ${part.partition} start ${part.fromOffset}." +
-      " This should not happen, and indicates that messages may have been lost"
-
-  private def errOvershotEnd(itemOffset: Long, part: KafkaRDDPartition): String =
-    s"Got ${itemOffset} > ending offset ${part.untilOffset} " +
-      s"for topic ${part.topic} partition ${part.partition} start ${part.fromOffset}." +
-      " This should not happen, and indicates a message may have been skipped"
-
   override def compute(thePart: Partition, context: TaskContext): Iterator[R] = {
     val part = thePart.asInstanceOf[KafkaRDDPartition]
     assert(part.fromOffset <= part.untilOffset, errBeginAfterEnd(part))
     if (part.fromOffset == part.untilOffset) {
-      log.info(s"Beginning offset ${part.fromOffset} is the same as ending offset " +
+      logInfo(s"Beginning offset ${part.fromOffset} is the same as ending offset " +
         s"skipping ${part.topic} ${part.partition}")
       Iterator.empty
     } else {
@@ -145,105 +185,47 @@ class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag] private[spark](
     }
   }
 
-  private class KafkaRDDIterator(part: KafkaRDDPartition, context: TaskContext)
-    extends Iterator[R] {
+  /**
+   * An iterator that fetches messages directly from Kafka for the offsets in partition.
+   * Uses a cached consumer where possible to take advantage of prefetching
+   */
+  private class KafkaRDDIterator(
+      part: KafkaRDDPartition,
+      context: TaskContext) extends Iterator[R] {
 
-    context.addTaskCompletionListener { context => closeIfNeeded() }
-
-    log.info(s"Computing topic ${part.topic}, partition ${part.partition} " +
+    logInfo(s"Computing topic ${part.topic}, partition ${part.partition} " +
       s"offsets ${part.fromOffset} -> ${part.untilOffset}")
 
-    val props = new Properties()
-    if (isStreams) props.put("streams.zerooffset.record.on.eof", "true")
-      kafkaParams.foreach(param => props.put(param._1, param._2))
+    val groupId = kafkaParams.get(ConsumerConfig.GROUP_ID_CONFIG).asInstanceOf[String]
 
-    val consumer = new KafkaConsumer[K, V](props)
-    val tp = new TopicPartition(part.topic, part.partition)
-    consumer.assign(Collections.singletonList[TopicPartition](tp))
+    context.addTaskCompletionListener{ context => closeIfNeeded() }
+
+    val consumer = if (useConsumerCache) {
+      CachedKafkaConsumer.init(cacheInitialCapacity, cacheMaxCapacity, cacheLoadFactor)
+      if (context.attemptNumber > 1) {
+        // just in case the prior attempt failures were cache related
+        CachedKafkaConsumer.remove(groupId, part.topic, part.partition)
+      }
+      CachedKafkaConsumer.get[K, V](groupId, part.topic, part.partition, kafkaParams)
+    } else {
+      CachedKafkaConsumer.getUncached[K, V](groupId, part.topic, part.partition, kafkaParams)
+    }
 
     var requestOffset = part.fromOffset
-    val maxRetries = 3
-    var buffer = fetchBatch(pollTime)
-
-    override def hasNext: Boolean = {
-      if (requestOffset >= part.untilOffset){
-        false
-      } else {
-        if (!buffer.hasNext) {
-          buffer = fetchBatch(pollTime)
-        }
-
-        buffer.hasNext
-      }
-    }
-
-    override def next(): R = {
-      assert(hasNext, "Can't call getNext() once untilOffset has been reached")
-
-      val item = buffer.next()
-      requestOffset = item.offset() + 1
-      messageHandler(item)
-    }
-
-    private def fetchBatch(pollTimeout: Long): Iterator[ConsumerRecord[K, V]] = {
-      @tailrec
-      def _fetch(currentTry: Int): mutable.Buffer[ConsumerRecord[K, V]] = {
-        consumer.seek(new TopicPartition(part.topic, part.partition), requestOffset)
-        val recs = consumer.poll(pollTimeout)
-        val result = recs.records(new TopicPartition(part.topic, part.partition)).asScala
-        if (result.isEmpty && currentTry < maxRetries) {
-          _fetch(currentTry + 1)
-        } else {
-          result
-        }
-      }
-
-      val result = _fetch(1)
-      assert(result.nonEmpty,
-        s"""Failed to get records for ${part.topic})
-           ||${part.partition} $requestOffset after polling for $pollTime""".stripMargin)
-      if (isStreams) {
-        val filteredResult = result.filter(_.offset() != 0)
-        filteredResult.iterator
-      } else {
-        result.iterator
-      }
-    }
 
     def closeIfNeeded(): Unit = {
-      if (consumer != null) {
-        consumer.close()
+      if (!useConsumerCache && consumer != null) {
+        consumer.close
       }
     }
-  }
 
-}
+    override def hasNext(): Boolean = requestOffset < part.untilOffset
 
-private[kafka]
-object KafkaRDD {
-
-  /**
-   * @param kafkaParams Kafka <a href="http://kafka.apache.org/documentation.html#configuration">
-   *                    configuration parameters</a>.
-   *                    Requires "bootstrap.servers" to be set with Kafka broker(s),
-   *                    NOT zookeeper servers, specified in host1:port1,host2:port2 form.
-   * @param fromOffsets per-topic/partition Kafka offsets defining the (inclusive)
-   *                    starting point of the batch
-   * @param untilOffsets per-topic/partition Kafka offsets defining the (exclusive)
-   *                     ending point of the batch
-   */
-  def apply[K: ClassTag, V: ClassTag, R: ClassTag](
-      sc: SparkContext,
-      kafkaParams: Map[String, String],
-      fromOffsets: Map[TopicPartition, Long],
-      untilOffsets: Map[TopicPartition, LeaderOffset],
-      messageHandler: ConsumerRecord[K, V] => R): KafkaRDD[K, V, R] = {
-    val offsetRanges = fromOffsets.map {
-      case (tp, fo) =>
-        val uo = untilOffsets(tp)
-        OffsetRange(tp.topic, tp.partition, fo, uo.offset, uo.host)
-    }.toArray
-
-    new KafkaRDD[K, V, R](sc, kafkaParams, offsetRanges, messageHandler)
+    override def next(): R = {
+      assert(hasNext(), "Can't call getNext() once untilOffset has been reached")
+      val r = consumer.get(requestOffset, pollTimeout)
+      requestOffset += 1
+      messageHandler(r)
+    }
   }
 }
