@@ -101,7 +101,6 @@ class CachedKafkaConsumer[K, V] private(
     logDebug(s"Polled ${p.partitions()}  ${r.size}")
     buffer = r.iterator
   }
-
 }
 
 private[kafka09]
