@@ -18,6 +18,7 @@
 package org.apache.spark.streaming.kafka09
 
 import org.apache.kafka.common.TopicPartition
+
 import org.apache.spark.SparkConf
 import org.apache.spark.annotation.Experimental
 
