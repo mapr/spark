@@ -85,17 +85,17 @@ private[spark] class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag](
     }.toArray
   }
 
-  override def count(): Long = offsetRanges.map(offset => offset.count()).sum
+//  override def count(): Long = offsetRanges.map(offset => offset.count()).sum
 
-  override def countApprox(
-      timeout: Long,
-      confidence: Double = 0.95
-  ): PartialResult[BoundedDouble] = {
-    val c = count
-    new PartialResult(new BoundedDouble(c, 1.0, c, c), true)
-  }
+//  override def countApprox(
+//      timeout: Long,
+//      confidence: Double = 0.95
+//  ): PartialResult[BoundedDouble] = {
+//    val c = count
+//    new PartialResult(new BoundedDouble(c, 1.0, c, c), true)
+//  }
 
-  override def isEmpty(): Boolean = count == 0L
+//  override def isEmpty(): Boolean = count == 0L
 
   override def take(num: Int): Array[R] = {
     val nonEmptyPartitions = this.partitions
