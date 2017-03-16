@@ -25,8 +25,10 @@ import org.apache.spark.partial.{BoundedDouble, PartialResult}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.scheduler.ExecutorCacheTaskLocation
 import org.apache.spark.storage.StorageLevel
+import org.apache.spark.util.NextIterator
 import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 
+import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
@@ -97,35 +99,35 @@ private[spark] class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag](
 
 //  override def isEmpty(): Boolean = count == 0L
 
-  override def take(num: Int): Array[R] = {
-    val nonEmptyPartitions = this.partitions
-      .map(_.asInstanceOf[KafkaRDDPartition])
-      .filter(_.count > 0)
-
-    if (num < 1 || nonEmptyPartitions.isEmpty) {
-      return new Array[R](0)
-    }
-
-    // Determine in advance how many messages need to be taken from each partition
-    val parts = nonEmptyPartitions.foldLeft(Map[Int, Int]()) { (result, part) =>
-      val remain = num - result.values.sum
-      if (remain > 0) {
-        val taken = Math.min(remain, part.count)
-        result + (part.index -> taken.toInt)
-      } else {
-        result
-      }
-    }
-
-    val buf = new ArrayBuffer[R]
-    val res = context.runJob(
-      this,
-      (tc: TaskContext, it: Iterator[R]) =>
-      it.take(parts(tc.partitionId)).toArray, parts.keys.toArray
-    )
-    res.foreach(buf ++= _)
-    buf.toArray
-  }
+//  override def take(num: Int): Array[R] = {
+//    val nonEmptyPartitions = this.partitions
+//      .map(_.asInstanceOf[KafkaRDDPartition])
+//      .filter(_.count > 0)
+//
+//    if (num < 1 || nonEmptyPartitions.isEmpty) {
+//      return new Array[R](0)
+//    }
+//
+//    // Determine in advance how many messages need to be taken from each partition
+//    val parts = nonEmptyPartitions.foldLeft(Map[Int, Int]()) { (result, part) =>
+//      val remain = num - result.values.sum
+//      if (remain > 0) {
+//        val taken = Math.min(remain, part.count)
+//        result + (part.index -> taken.toInt)
+//      } else {
+//        result
+//      }
+//    }
+//
+//    val buf = new ArrayBuffer[R]
+//    val res = context.runJob(
+//      this,
+//      (tc: TaskContext, it: Iterator[R]) =>
+//      it.take(parts(tc.partitionId)).toArray, parts.keys.toArray
+//    )
+//    res.foreach(buf ++= _)
+//    buf.toArray
+//  }
 
   private def executors(): Array[ExecutorCacheTaskLocation] = {
     val bm = sparkContext.env.blockManager
@@ -191,7 +193,7 @@ private[spark] class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag](
    */
   private class KafkaRDDIterator(
       part: KafkaRDDPartition,
-      context: TaskContext) extends Iterator[R] {
+      context: TaskContext) extends NextIterator[R] {
 
     logInfo(s"Computing topic ${part.topic}, partition ${part.partition} " +
       s"offsets ${part.fromOffset} -> ${part.untilOffset}")
@@ -213,19 +215,37 @@ private[spark] class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag](
 
     var requestOffset = part.fromOffset
 
-    def closeIfNeeded(): Unit = {
+    override def close(): Unit = {
       if (!useConsumerCache && consumer != null) {
         consumer.close
       }
     }
 
-    override def hasNext(): Boolean = requestOffset < part.untilOffset
+    //    override def hasNext(): Boolean = requestOffset < part.untilOffset
+    override def getNext(): R = {
 
-    override def next(): R = {
-      assert(hasNext(), "Can't call getNext() once untilOffset has been reached")
-      val r = consumer.get(requestOffset, pollTimeout)
-      requestOffset += 1
-      messageHandler(r)
+      @tailrec
+      def skipGapsAndGetNext: R = {
+        if (requestOffset < part.untilOffset) {
+          val r = consumer.get(requestOffset, pollTimeout)
+
+          requestOffset = if (r.offset() == 0) {part.untilOffset} else {r.offset() + 1}
+
+          if (null == r || r.offset() == 0) {
+            skipGapsAndGetNext
+          } else {
+            messageHandler(r)
+          }
+        } else {
+          finished = true
+          null.asInstanceOf[R]
+        }
+      }
+
+      skipGapsAndGetNext
     }
+
+    override def next(): R =
+      super.next()
   }
 }

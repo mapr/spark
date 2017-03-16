@@ -17,7 +17,9 @@
 
 package org.apache.spark.streaming.kafka.v09
 
-import java.{util => ju}
+import java.{ util => ju }
+
+import collection.JavaConverters._
 
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.common.{KafkaException, TopicPartition}
@@ -70,21 +72,11 @@ class CachedKafkaConsumer[K, V] private(
     if (!buffer.hasNext()) { poll(timeout) }
     assert(buffer.hasNext(),
       s"Failed to get records for $groupId $topic $partition $offset after polling for $timeout")
-    var record = buffer.next()
-
-    if (record.offset != offset) {
-      logInfo(s"Buffer miss for $groupId $topic $partition $offset")
-      seek(offset)
-      poll(timeout)
-      assert(buffer.hasNext(),
-        s"Failed to get records for $groupId $topic $partition $offset after polling for $timeout")
-      record = buffer.next()
-      assert(record.offset == offset,
-        s"Got wrong record for $groupId $topic $partition even after seeking to offset $offset")
-    }
 
     nextOffset = offset + 1
-    record
+    val record = buffer.next()
+
+    if (record.offset() == 0 && buffer.hasNext) buffer.next() else record
   }
 
   private def seek(offset: Long): Unit = {
@@ -95,10 +87,10 @@ class CachedKafkaConsumer[K, V] private(
   private def poll(timeout: Long): Unit = {
     val p = consumer.poll(timeout)
     val r = p.records(topicPartition)
-    logDebug(s"Polled ${p.partitions()}  ${r.size}")
-    buffer = r.iterator
-  }
 
+    logDebug(s"Polled ${p.partitions()}  ${r.size}")
+    buffer = r.iterator()
+  }
 }
 
 private[v09]
