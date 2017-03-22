@@ -37,7 +37,7 @@ import org.apache.spark.api.python.SerDeUtil
 import org.apache.spark.rdd.RDD
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.api.java.{JavaDStream, JavaInputDStream, JavaPairInputDStream, JavaStreamingContext}
-import org.apache.spark.streaming.dstream.InputDStream
+import org.apache.spark.streaming.dstream.{DStream, InputDStream}
 
 import scala.reflect.ClassTag
 
@@ -605,6 +605,141 @@ object KafkaUtils extends Logging {
 
   def createTopicAndPartition(topic: String, partition: JInt): TopicAndPartition =
     TopicAndPartition(topic, partition)
+}
+
+/**
+  * This is a helper class that wraps the KafkaUtils.createStream() into more
+  * Python-friendly class and function so that it can be easily
+  * instantiated and called from Python's KafkaUtils (see SPARK-6027).
+  *
+  * The zero-arg constructor helps instantiate this class from the Class object
+  * classOf[KafkaUtilsPythonHelper].newInstance(), and the createStream()
+  * takes care of known parameters instead of passing them from Python
+  */
+private[kafka] class KafkaUtilsPythonHelper {
+
+  import KafkaUtilsPythonHelper._
+
+  def createRDDWithoutMessageHandler(
+      jsc: JavaSparkContext,
+      kafkaParams: ju.Map[String, String],
+      offsetRanges: ju.List[OffsetRange]
+    ): JavaRDD[(Array[Byte], Array[Byte])] = {
+
+    val messageHandler =
+      (cr: ConsumerRecord[Array[Byte], Array[Byte]]) => (cr.key, cr.value)
+    new JavaRDD(createRDD(jsc, kafkaParams, offsetRanges, messageHandler))
+  }
+
+  def createRDDWithMessageHandler(
+      jsc: JavaSparkContext,
+      kafkaParams: ju.Map[String, String],
+      offsetRanges: ju.List[OffsetRange]
+    ): JavaRDD[Array[Byte]] = {
+
+    val messageHandler = (cr: ConsumerRecord[Array[Byte], Array[Byte]]) =>
+      new PythonConsumerRecord(
+        cr.topic, cr.partition, cr.offset, cr.key(), cr.value())
+    val rdd = createRDD(jsc, kafkaParams, offsetRanges, messageHandler).
+      mapPartitions(picklerIterator)
+    new JavaRDD(rdd)
+  }
+
+  private def createRDD[V: ClassTag](
+      jsc: JavaSparkContext,
+      kafkaParams: ju.Map[String, String],
+      offsetRanges: ju.List[OffsetRange],
+      messageHandler: ConsumerRecord[Array[Byte], Array[Byte]] => V
+    ): RDD[V] = {
+
+    kafkaParams.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+      "org.apache.kafka.common.serialization.ByteArrayDeserializer")
+    kafkaParams.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+      "org.apache.kafka.common.serialization.ByteArrayDeserializer")
+    KafkaUtils.createRDD[Array[Byte], Array[Byte], V](
+      jsc.sc,
+      kafkaParams.asScala.toMap,
+      offsetRanges.toArray(new Array[OffsetRange](offsetRanges.size())),
+      messageHandler)
+  }
+
+  def createDirectStreamWithoutMessageHandler(
+      jssc: JavaStreamingContext,
+      kafkaParams: ju.Map[String, String],
+      topics: ju.Set[String],
+      fromOffsets: ju.Map[TopicPartition, JLong]
+    ): JavaDStream[(Array[Byte], Array[Byte])] = {
+
+    val messageHandler =
+      (cr: ConsumerRecord[Array[Byte], Array[Byte]]) => (cr.key, cr.value)
+
+    new JavaDStream(
+      createDirectStream(jssc, kafkaParams, topics, fromOffsets, messageHandler))
+  }
+
+  def createDirectStreamWithMessageHandler(
+      jssc: JavaStreamingContext,
+      kafkaParams: ju.Map[String, String],
+      topics: ju.Set[String],
+      fromOffsets: ju.Map[TopicPartition, JLong]
+    ): JavaDStream[Array[Byte]] = {
+
+    val messageHandler = (cr: ConsumerRecord[Array[Byte], Array[Byte]]) =>
+      new PythonConsumerRecord(cr.topic, cr.partition, cr.offset, cr.key(), cr.value())
+    val stream = createDirectStream(jssc, kafkaParams, topics, fromOffsets, messageHandler).
+      mapPartitions(picklerIterator)
+
+    new JavaDStream(stream)
+  }
+
+  private def createDirectStream[V: ClassTag](
+      jssc: JavaStreamingContext,
+      kafkaParams: ju.Map[String, String],
+      topics: ju.Set[String],
+      fromOffsets: ju.Map[TopicPartition, JLong],
+      messageHandler: ConsumerRecord[Array[Byte], Array[Byte]] => V
+    ): DStream[V] = {
+
+    kafkaParams.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+      "org.apache.kafka.common.serialization.ByteArrayDeserializer")
+    kafkaParams.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+      "org.apache.kafka.common.serialization.ByteArrayDeserializer")
+
+    val consumerStrategy = ConsumerStrategies.Subscribe[Array[Byte], Array[Byte]](
+      topics.asScala,
+      kafkaParams.asScala
+    )
+
+    new DirectKafkaInputDStream[Array[Byte], Array[Byte], V](
+      jssc.ssc,
+      LocationStrategies.PreferConsistent,
+      consumerStrategy,
+      messageHandler
+    )
+  }
+
+  def createOffsetRange(
+      topic: String,
+      partition: JInt,
+      fromOffset: JLong,
+      untilOffset: JLong
+    ): OffsetRange = OffsetRange.create(topic, partition, fromOffset, untilOffset)
+
+  def createTopicAndPartition(topic: String, partition: JInt): TopicPartition =
+    new TopicPartition(topic, partition)
+
+  def offsetRangesOfKafkaRDD(rdd: RDD[_]): ju.List[OffsetRange] = {
+    val parentRDDs = rdd.getNarrowAncestors
+    val kafkaRDDs = parentRDDs.filter(rdd => rdd.isInstanceOf[KafkaRDD[_, _, _]])
+
+    require(
+      kafkaRDDs.length == 1,
+      "Cannot get offset ranges, as there may be multiple Kafka RDDs or no Kafka RDD associated" +
+        "with this RDD, please call this method only on a Kafka RDD.")
+
+    val kafkaRDD = kafkaRDDs.head.asInstanceOf[KafkaRDD[_, _, _]]
+    kafkaRDD.offsetRanges.toSeq.asJava
+  }
 }
 
 object KafkaUtilsPythonHelper {

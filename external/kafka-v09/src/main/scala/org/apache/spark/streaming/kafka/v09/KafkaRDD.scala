@@ -67,7 +67,9 @@ private[spark] class KafkaRDD[K: ClassTag, V: ClassTag, R: ClassTag](
       " must be set to false for executor kafka params, else offsets may commit before processing")
 
   // TODO is it necessary to have separate configs for initial poll time vs ongoing poll time?
-  private val pollTimeout = conf.getLong("spark.kafka.poll.time", 5000)
+  private val pollTimeout = if (kafkaParams.get("spark.kafka.poll.time") == null) 5000
+    else kafkaParams.get("spark.kafka.poll.time").asInstanceOf[String].toInt
+
   private val cacheInitialCapacity =
     conf.getInt("spark.streaming.kafka.consumer.cache.initialCapacity", 16)
   private val cacheMaxCapacity =
