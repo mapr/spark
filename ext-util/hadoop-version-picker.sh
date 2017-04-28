@@ -7,10 +7,8 @@ function set_hadoop_attr()
 {
 case "$1" in
 	classic)
-    hadoop_int_mode=1
-    hadoop_version="${classic_version}"
-    hadoop_home_dir=${INSTALL_DIR}/hadoop/hadoop-${hadoop_version}
-    hadoop_conf_dir=${hadoop_home_dir}/conf
+    echo "Classic is not supported for this version of Spark!"
+    exit 2
     ;;
 
 	yarn)
@@ -43,19 +41,6 @@ hadoop_conf_dir=
 # Source the version file. This file must exist on all installations.
 . $HADOOP_VERSION_FILE
 
-# Use the mode from version file
-if [ ! -z "$default_mode" ]; then
- hadoop_mode=$default_mode
-fi
-
-# Check if we need to override using environment variable
-if [ ! -z "$MAPR_MAPREDUCE_MODE" ]; then
-  hadoop_mode=$MAPR_MAPREDUCE_MODE
-fi
-
-# Default to yarn mode if still nothing is set.
-if [ -z "$hadoop_mode" ]; then
-  hadoop_mode="yarn"
-fi
+hadoop_mode="yarn"
 
 set_hadoop_attr $hadoop_mode
