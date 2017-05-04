@@ -22,7 +22,11 @@ import org.apache.kafka.clients.consumer.ConsumerConfig
 
 import org.apache.spark.SparkConf
 import org.apache.spark.streaming.{Seconds, StreamingContext}
-import org.apache.spark.streaming.kafka09.{ConsumerStrategies, KafkaUtils, LocationStrategies}
+import org.apache.spark.streaming.kafka09.{
+  ConsumerStrategies,
+  KafkaUtils,
+  LocationStrategies
+}
 
 /**
  * Consumes messages from one or more topics in Kafka and does wordcount.
@@ -68,10 +72,17 @@ object V09DirectKafkaWordCount {
 
     StreamingExamples.setStreamingLogLevels()
 
-    val Array(brokers, topics, groupId, offsetReset, batchInterval, pollTimeout) = args
+    val Array(brokers,
+              topics,
+              groupId,
+              offsetReset,
+              batchInterval,
+              pollTimeout) = args
 
     // Create context with 2 second batch interval
-    val sparkConf = new SparkConf().setAppName("v09DirectKafkaWordCount")
+    val sparkConf = new SparkConf()
+      .setAppName("v09DirectKafkaWordCount")
+      .set("spark.streaming.kafka.consumer.poll.ms", pollTimeout)
     val ssc = new StreamingContext(sparkConf, Seconds(batchInterval.toInt))
 
     // Create direct kafka stream with brokers and topics
@@ -84,13 +95,15 @@ object V09DirectKafkaWordCount {
       ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG ->
         "org.apache.kafka.common.serialization.StringDeserializer",
       ConsumerConfig.AUTO_OFFSET_RESET_CONFIG -> offsetReset,
-      ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG -> "false",
-      "spark.kafka.poll.time" -> pollTimeout)
+      ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG -> "false"
+    )
 
-
-    val consumerStrategy = ConsumerStrategies.Subscribe[String, String](topicsSet, kafkaParams)
+    val consumerStrategy =
+      ConsumerStrategies.Subscribe[String, String](topicsSet, kafkaParams)
     val messages = KafkaUtils.createDirectStream[String, String](
-      ssc, LocationStrategies.PreferConsistent, consumerStrategy)
+      ssc,
+      LocationStrategies.PreferConsistent,
+      consumerStrategy)
 
     // Get the lines, split them into words, count the words and print
     val lines = messages.map(_.value())
