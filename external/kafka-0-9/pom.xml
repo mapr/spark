@@ -51,7 +51,7 @@
     <dependency>
       <groupId>org.apache.kafka</groupId>
       <artifactId>kafka-clients</artifactId>
-      <version>0.9.0.0-mapr-1611</version>
+      <version>0.9.0.0-mapr-1703</version>
       <exclusions>
         <exclusion>
           <groupId>com.sun.jmx</groupId>
