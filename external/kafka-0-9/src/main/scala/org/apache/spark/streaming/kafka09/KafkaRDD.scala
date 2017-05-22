@@ -17,22 +17,21 @@
 
 package org.apache.spark.streaming.kafka09
 
-import java.{ util => ju }
+import java.{util => ju}
 
+import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.kafka.clients.consumer.{ ConsumerConfig, ConsumerRecord }
+import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord}
 import org.apache.kafka.common.TopicPartition
 
-import org.apache.spark.{Partition, SparkContext, SparkException, TaskContext}
+import org.apache.spark.{Partition, SparkContext, TaskContext}
 import org.apache.spark.internal.Logging
 import org.apache.spark.partial.{BoundedDouble, PartialResult}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.scheduler.ExecutorCacheTaskLocation
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.NextIterator
-
-import scala.annotation.tailrec
 
 /**
  * A batch-oriented interface for consuming from Kafka.
@@ -91,6 +90,7 @@ private[spark] class KafkaRDD[K, V](
   }
 
   //  override def count(): Long = offsetRanges.map(_.count).sum
+  def offsetCount(): Long = offsetRanges.map(_.count).sum
 
   override def countApprox(
       timeout: Long,
