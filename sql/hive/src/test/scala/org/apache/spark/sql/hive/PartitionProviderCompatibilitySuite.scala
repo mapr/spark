@@ -20,7 +20,7 @@ package org.apache.spark.sql.hive
 import java.io.File
 
 import org.apache.spark.metrics.source.HiveCatalogMetrics
-import org.apache.spark.sql.{AnalysisException, QueryTest}
+import org.apache.spark.sql.{AnalysisException, QueryTest, Row}
 import org.apache.spark.sql.hive.test.TestHiveSingleton
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.test.SQLTestUtils
@@ -28,6 +28,7 @@ import org.apache.spark.util.Utils
 
 class PartitionProviderCompatibilitySuite
   extends QueryTest with TestHiveSingleton with SQLTestUtils {
+  import testImplicits._
 
   private def setupPartitionedDatasourceTable(tableName: String, dir: File): Unit = {
     spark.range(5).selectExpr("id as fieldOne", "id as partCol").write
@@ -70,7 +71,7 @@ class PartitionProviderCompatibilitySuite
         }
         withSQLConf(SQLConf.HIVE_MANAGE_FILESOURCE_PARTITIONS.key -> "true") {
           verifyIsLegacyTable("test")
-          spark.sql("msck repair table test")
+          spark.catalog.recoverPartitions("test")
           spark.sql("show partitions test").count()  // check we are a new table
 
           // sanity check table performance
@@ -90,7 +91,7 @@ class PartitionProviderCompatibilitySuite
           setupPartitionedDatasourceTable("test", dir)
           spark.sql("show partitions test").count()  // check we are a new table
           assert(spark.sql("select * from test").count() == 0)  // needs repair
-          spark.sql("msck repair table test")
+          spark.catalog.recoverPartitions("test")
           assert(spark.sql("select * from test").count() == 5)
         }
       }
@@ -160,7 +161,7 @@ class PartitionProviderCompatibilitySuite
       withTable("test") {
         withTempDir { dir =>
           setupPartitionedDatasourceTable("test", dir)
-          sql("msck repair table test")
+          spark.catalog.recoverPartitions("test")
           spark.sql(
             """insert overwrite table test
               |partition (partCol=1)
@@ -292,6 +293,28 @@ class PartitionProviderCompatibilitySuite
           spark.sql("insert overwrite table test partition (a=1, b) select id, 'x' from range(1)")
           assert(spark.sql("select * from test").count() == 10)
         }
+      }
+    }
+
+    test(s"SPARK-19887 partition value is null - partition management $enabled") {
+      withTable("test") {
+        Seq((1, "p", 1), (2, null, 2)).toDF("a", "b", "c")
+          .write.partitionBy("b", "c").saveAsTable("test")
+        checkAnswer(spark.table("test"),
+          Row(1, "p", 1) :: Row(2, null, 2) :: Nil)
+
+        Seq((3, null: String, 3)).toDF("a", "b", "c")
+          .write.mode("append").partitionBy("b", "c").saveAsTable("test")
+        checkAnswer(spark.table("test"),
+          Row(1, "p", 1) :: Row(2, null, 2) :: Row(3, null, 3) :: Nil)
+        // make sure partition pruning also works.
+        checkAnswer(spark.table("test").filter($"b".isNotNull), Row(1, "p", 1))
+
+        // empty string is an invalid partition value and we treat it as null when read back.
+        Seq((4, "", 4)).toDF("a", "b", "c")
+          .write.mode("append").partitionBy("b", "c").saveAsTable("test")
+        checkAnswer(spark.table("test"),
+          Row(1, "p", 1) :: Row(2, null, 2) :: Row(3, null, 3) :: Row(4, null, 4) :: Nil)
       }
     }
   }
