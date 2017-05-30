@@ -17,7 +17,7 @@
 
 package org.apache.spark.repl
 
-import java.io.{ByteArrayOutputStream, FileNotFoundException, FilterInputStream, InputStream, IOException}
+import java.io.{ByteArrayOutputStream, FilterInputStream, InputStream, IOException}
 import java.net.{HttpURLConnection, URI, URL, URLEncoder}
 import java.nio.channels.Channels
 
@@ -147,11 +147,10 @@ class ExecutorClassLoader(
   private def getClassFileInputStreamFromFileSystem(fileSystem: FileSystem)(
       pathInDirectory: String): InputStream = {
     val path = new Path(directory, pathInDirectory)
-    try {
+    if (fileSystem.exists(path)) {
       fileSystem.open(path)
-    } catch {
-      case _: FileNotFoundException =>
-        throw new ClassNotFoundException(s"Class file not found at path $path")
+    } else {
+      throw new ClassNotFoundException(s"Class file not found at path $path")
     }
   }
 

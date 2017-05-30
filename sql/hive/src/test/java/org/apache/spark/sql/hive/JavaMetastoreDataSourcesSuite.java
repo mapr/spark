@@ -75,7 +75,9 @@ public class JavaMetastoreDataSourcesSuite {
     hiveManagedPath = new Path(
       catalog.hiveDefaultTableFilePath(new TableIdentifier("javaSavedTable")));
     fs = hiveManagedPath.getFileSystem(sc.hadoopConfiguration());
-    fs.delete(hiveManagedPath, true);
+    if (fs.exists(hiveManagedPath)){
+      fs.delete(hiveManagedPath, true);
+    }
 
     List<String> jsonObjects = new ArrayList<>(10);
     for (int i = 0; i < 10; i++) {
