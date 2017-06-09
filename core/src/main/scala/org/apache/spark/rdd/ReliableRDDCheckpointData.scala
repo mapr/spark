@@ -80,7 +80,12 @@ private[spark] object ReliableRDDCheckpointData extends Logging {
   /** Clean up the files associated with the checkpoint data for this RDD. */
   def cleanCheckpoint(sc: SparkContext, rddId: Int): Unit = {
     checkpointPath(sc, rddId).foreach { path =>
-      path.getFileSystem(sc.hadoopConfiguration).delete(path, true)
+      val fs = path.getFileSystem(sc.hadoopConfiguration)
+      if (fs.exists(path)) {
+        if (!fs.delete(path, true)) {
+          logWarning(s"Error deleting ${path.toString()}")
+        }
+      }
     }
   }
 }

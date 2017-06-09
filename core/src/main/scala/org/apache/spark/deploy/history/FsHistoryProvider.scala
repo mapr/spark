@@ -193,18 +193,16 @@ private[history] class FsHistoryProvider(conf: SparkConf, clock: Clock)
   private def startPolling(): Unit = {
     // Validate the log directory.
     val path = new Path(logDir)
-    try {
-      if (!fs.getFileStatus(path).isDirectory) {
-        throw new IllegalArgumentException(
-          "Logging directory specified is not a directory: %s".format(logDir))
+    if (!fs.exists(path)) {
+      var msg = s"Log directory specified does not exist: $logDir"
+      if (logDir == DEFAULT_LOG_DIR) {
+        msg += " Did you configure the correct one through spark.history.fs.logDirectory?"
       }
-    } catch {
-      case f: FileNotFoundException =>
-        var msg = s"Log directory specified does not exist: $logDir"
-        if (logDir == DEFAULT_LOG_DIR) {
-          msg += " Did you configure the correct one through spark.history.fs.logDirectory?"
-        }
-        throw new FileNotFoundException(msg).initCause(f)
+      throw new IllegalArgumentException(msg)
+    }
+    if (!fs.getFileStatus(path).isDirectory) {
+      throw new IllegalArgumentException(
+        "Logging directory specified is not a directory: %s".format(logDir))
     }
 
     // Disable the background thread during tests.
@@ -568,7 +566,12 @@ private[history] class FsHistoryProvider(conf: SparkConf, clock: Clock)
       val leftToClean = new mutable.ListBuffer[FsApplicationAttemptInfo]
       attemptsToClean.foreach { attempt =>
         try {
-          fs.delete(new Path(logDir, attempt.logPath), true)
+          val path = new Path(logDir, attempt.logPath)
+          if (fs.exists(path)) {
+            if (!fs.delete(path, true)) {
+              logWarning(s"Error deleting ${path}")
+            }
+          }
         } catch {
           case e: AccessControlException =>
             logInfo(s"No permission to delete ${attempt.logPath}, ignoring.")
