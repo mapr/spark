@@ -55,10 +55,10 @@ private[security] class HiveCredentialProvider extends ServiceCredentialProvider
     }
   }
 
-  override def credentialsRequired(hadoopConf: Configuration): Boolean = {
+  override def credentialsRequired(hadoopConf: Configuration): Boolean =
     UserGroupInformation.isSecurityEnabled &&
-      hiveConf(hadoopConf).getTrimmed("hive.metastore.uris", "").nonEmpty
-  }
+      hiveConf(hadoopConf).getTrimmed("hive.metastore.uris", "").nonEmpty &&
+      hiveConf(hadoopConf).getBoolean("hive.metastore.sasl.enabled", false)
 
   override def obtainCredentials(
       hadoopConf: Configuration,
