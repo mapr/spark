@@ -43,7 +43,7 @@ import org.apache.spark.util.{Clock, ManualClock, SystemClock, Utils}
 class ReceivedBlockTrackerSuite
   extends SparkFunSuite with BeforeAndAfter with Matchers with Logging {
 
-  val hadoopConf = new Configuration()
+  val hadoopConf = HadoopUtil.createAndGetHadoopConfiguration()
   val streamId = 1
 
   var allReceivedBlockTrackers = new ArrayBuffer[ReceivedBlockTracker]()

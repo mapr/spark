@@ -121,7 +121,7 @@ class HiveSparkSubmitSuite
     runSparkSubmit(args)
   }
 
-  test("SPARK-8020: set sql conf in spark conf") {
+  ignore("SPARK-8020: set sql conf in spark conf") {
     val unusedJar = TestUtils.createJarWithClasses(Seq.empty)
     val args = Seq(
       "--class", SparkSQLConfTest.getClass.getName.stripSuffix("$"),
@@ -157,7 +157,7 @@ class HiveSparkSubmitSuite
     runSparkSubmit(args)
   }
 
-  test("SPARK-9757 Persist Parquet relation with decimal column") {
+  ignore("SPARK-9757 Persist Parquet relation with decimal column") {
     val unusedJar = TestUtils.createJarWithClasses(Seq.empty)
     val args = Seq(
       "--class", SPARK_9757.getClass.getName.stripSuffix("$"),
@@ -196,7 +196,7 @@ class HiveSparkSubmitSuite
     runSparkSubmit(args)
   }
 
-  test("set spark.sql.warehouse.dir") {
+  ignore("set spark.sql.warehouse.dir") {
     val unusedJar = TestUtils.createJarWithClasses(Seq.empty)
     val args = Seq(
       "--class", SetWarehouseLocationTest.getClass.getName.stripSuffix("$"),
@@ -209,7 +209,7 @@ class HiveSparkSubmitSuite
     runSparkSubmit(args)
   }
 
-  test("set hive.metastore.warehouse.dir") {
+  ignore("set hive.metastore.warehouse.dir") {
     // In this test, we set hive.metastore.warehouse.dir in hive-site.xml but
     // not set spark.sql.warehouse.dir. So, the warehouse dir should be
     // the value of hive.metastore.warehouse.dir. Also, the value of
@@ -248,7 +248,7 @@ class HiveSparkSubmitSuite
     runSparkSubmit(args)
   }
 
-  test("SPARK-16901: set javax.jdo.option.ConnectionURL") {
+  ignore("SPARK-16901: set javax.jdo.option.ConnectionURL") {
     // In this test, we set javax.jdo.option.ConnectionURL and set metastore version to
     // 0.13. This test will make sure that javax.jdo.option.ConnectionURL will not be
     // overridden by hive's default settings when we create a HiveConf object inside

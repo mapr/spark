@@ -27,6 +27,7 @@ import org.apache.parquet.hadoop.api.WriteSupport.WriteContext
 import org.apache.parquet.io.api.RecordConsumer
 import org.apache.parquet.schema.{MessageType, MessageTypeParser}
 
+import org.apache.spark.HadoopUtil
 import org.apache.spark.sql.QueryTest
 
 /**
@@ -38,7 +39,7 @@ private[sql] abstract class ParquetCompatibilityTest extends QueryTest with Parq
   }
 
   protected def readParquetSchema(path: String, pathFilter: Path => Boolean): MessageType = {
-    val hadoopConf = spark.sessionState.newHadoopConf()
+    val hadoopConf = HadoopUtil.createAndGetHadoopConfiguration()
     val fsPath = new Path(path)
     val fs = fsPath.getFileSystem(hadoopConf)
     val parquetFiles = fs.listStatus(fsPath, new PathFilter {
@@ -106,7 +107,7 @@ private[sql] object ParquetCompatibilityTest {
    * Records are produced by `recordWriters`.
    */
   def writeDirect(path: String, schema: String, recordWriters: (RecordConsumer => Unit)*): Unit = {
-    writeDirect(path, schema, Map.empty[String, String], recordWriters: _*)
+    writeDirect("file:///" + path, schema, Map.empty[String, String], recordWriters: _*)
   }
 
   /**
