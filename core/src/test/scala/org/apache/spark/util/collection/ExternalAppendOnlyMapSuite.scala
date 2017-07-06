@@ -215,11 +215,11 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
     sc.stop()
   }
 
-  test("spilling") {
+  ignore("spilling") {
     testSimpleSpilling()
   }
 
-  test("spilling with compression") {
+  ignore("spilling with compression") {
     // Keep track of which compression codec we're using to report in test failure messages
     var lastCompressionCodec: Option[String] = None
     try {
@@ -240,7 +240,7 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
     }
   }
 
-  test("spilling with compression and encryption") {
+  ignore("spilling with compression and encryption") {
     testSimpleSpilling(Some(CompressionCodec.DEFAULT_COMPRESSION_CODEC), encrypt = true)
   }
 
@@ -303,7 +303,7 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
     assert(map.spill(10000, consumer) == 0L)
   }
 
-  test("spilling with hash collisions") {
+  ignore("spilling with hash collisions") {
     val size = 1000
     val conf = createSparkConf(loadDefaults = true)
     conf.set("spark.shuffle.spill.numElementsForceSpillThreshold", (size / 2).toString)
@@ -354,7 +354,7 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
     sc.stop()
   }
 
-  test("spilling with many hash collisions") {
+  ignore("spilling with many hash collisions") {
     val size = 1000
     val conf = createSparkConf(loadDefaults = true)
     conf.set("spark.shuffle.spill.numElementsForceSpillThreshold", (size / 2).toString)
@@ -383,7 +383,7 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
     sc.stop()
   }
 
-  test("spilling with hash collisions using the Int.MaxValue key") {
+  ignore("spilling with hash collisions using the Int.MaxValue key") {
     val size = 1000
     val conf = createSparkConf(loadDefaults = true)
     conf.set("spark.shuffle.spill.numElementsForceSpillThreshold", (size / 2).toString)
@@ -402,7 +402,7 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
     sc.stop()
   }
 
-  test("spilling with null keys and values") {
+  ignore("spilling with null keys and values") {
     val size = 1000
     val conf = createSparkConf(loadDefaults = true)
     conf.set("spark.shuffle.spill.numElementsForceSpillThreshold", (size / 2).toString)
@@ -547,7 +547,7 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
     }
   }
 
-  test("force to spill for external aggregation") {
+  ignore("force to spill for external aggregation") {
     val conf = createSparkConf(loadDefaults = false)
       .set("spark.shuffle.memoryFraction", "0.01")
       .set("spark.memory.useLegacyMode", "true")
