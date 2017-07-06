@@ -28,8 +28,8 @@ import scala.concurrent._
 import scala.concurrent.duration._
 import scala.language.{implicitConversions, postfixOps}
 
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
+import org.apache.spark.streaming.HadoopUtil
 import org.mockito.ArgumentCaptor
 import org.mockito.Matchers.{eq => meq, _}
 import org.mockito.Mockito._
@@ -51,7 +51,7 @@ abstract class CommonWriteAheadLogTests(
 
   import WriteAheadLogSuite._
 
-  protected val hadoopConf = new Configuration()
+  protected val hadoopConf = HadoopUtil.createAndGetHadoopConfiguration()
   protected var tempDir: File = null
   protected var testDir: String = null
   protected var testFile: String = null
@@ -585,7 +585,7 @@ class BatchedWriteAheadLogWithCloseFileAfterWriteSuite
 
 object WriteAheadLogSuite {
 
-  private val hadoopConf = new Configuration()
+  private val hadoopConf = HadoopUtil.createAndGetHadoopConfiguration()
 
   /** Write data to a file directly and return an array of the file segments written. */
   def writeDataManually(

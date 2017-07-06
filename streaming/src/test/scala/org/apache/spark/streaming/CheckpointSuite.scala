@@ -819,7 +819,7 @@ class CheckpointSuite extends TestSuiteBase with DStreamCheckpointTester
     val jobGenerator = mock(classOf[JobGenerator])
     val checkpointDir = Utils.createTempDir().toString
     val checkpointWriter =
-      new CheckpointWriter(jobGenerator, conf, checkpointDir, new Configuration())
+      new CheckpointWriter(jobGenerator, conf, checkpointDir, HadoopUtil.createAndGetHadoopConfiguration())
     val bytes1 = Array.fill[Byte](10)(1)
     new checkpointWriter.CheckpointWriteHandler(
       Time(2000), bytes1, clearCheckpointDataLater = false).run()

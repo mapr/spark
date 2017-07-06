@@ -67,7 +67,7 @@ abstract class BaseReceivedBlockHandlerSuite(enableEncryption: Boolean)
       None
     }
 
-  val hadoopConf = new Configuration()
+  val hadoopConf = HadoopUtil.createAndGetHadoopConfiguration()
   val streamId = 1
   val securityMgr = new SecurityManager(conf, encryptionKey)
   val broadcastManager = new BroadcastManager(true, conf, securityMgr)

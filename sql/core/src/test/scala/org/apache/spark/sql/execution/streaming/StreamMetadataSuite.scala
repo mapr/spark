@@ -20,9 +20,9 @@ package org.apache.spark.sql.execution.streaming
 import java.io.File
 import java.util.UUID
 
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 
+import org.apache.spark.HadoopUtil
 import org.apache.spark.sql.streaming.StreamTest
 
 class StreamMetadataSuite extends StreamTest {
@@ -51,5 +51,5 @@ class StreamMetadataSuite extends StreamTest {
     StreamMetadata.read(new Path(input.toString), hadoopConf).get
   }
 
-  private val hadoopConf = new Configuration()
+  private val hadoopConf = HadoopUtil.createAndGetHadoopConfiguration()
 }

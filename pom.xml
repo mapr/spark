@@ -2033,6 +2033,7 @@
               <derby.system.durability>test</derby.system.durability>
               <java.awt.headless>true</java.awt.headless>
               <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
+              <java.security.auth.login.config>/opt/mapr/conf/mapr.login.conf</java.security.auth.login.config>
               <spark.test.home>${spark.test.home}</spark.test.home>
               <spark.testing>1</spark.testing>
               <spark.master.rest.enabled>false</spark.master.rest.enabled>
@@ -2040,6 +2041,8 @@
               <spark.ui.showConsoleProgress>false</spark.ui.showConsoleProgress>
               <spark.unsafe.exceptionOnMemoryLeak>true</spark.unsafe.exceptionOnMemoryLeak>
               <spark.memory.debugFill>true</spark.memory.debugFill>
+              <spark.hadoop.fs.defaultFS>file:///</spark.hadoop.fs.defaultFS>
+              <spark.hadoop.fs.default.name>file:///</spark.hadoop.fs.default.name>
               <!-- Needed by sql/hive tests. -->
               <test.src.tables>src</test.src.tables>
             </systemProperties>
@@ -2088,6 +2091,8 @@
               <spark.ui.enabled>false</spark.ui.enabled>
               <spark.ui.showConsoleProgress>false</spark.ui.showConsoleProgress>
               <spark.unsafe.exceptionOnMemoryLeak>true</spark.unsafe.exceptionOnMemoryLeak>
+              <spark.hadoop.fs.defaultFS>file:///</spark.hadoop.fs.defaultFS>
+              <spark.hadoop.fs.default.name>file:///</spark.hadoop.fs.default.name>
               <!-- Needed by sql/hive tests. -->
               <test.src.tables>__not_used__</test.src.tables>
             </systemProperties>

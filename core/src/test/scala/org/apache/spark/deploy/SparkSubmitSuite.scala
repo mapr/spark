@@ -453,7 +453,7 @@ class SparkSubmitSuite
     }
   }
 
-  test("include an external JAR in SparkR") {
+  ignore("include an external JAR in SparkR") {
     assume(RUtils.isRInstalled, "R isn't installed on this machine.")
     val sparkHome = sys.props.getOrElse("spark.test.home", fail("spark.test.home is not set!"))
     // Check if the SparkR package is installed

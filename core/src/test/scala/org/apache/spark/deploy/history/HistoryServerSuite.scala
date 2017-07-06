@@ -560,7 +560,7 @@ class HistoryServerSuite extends SparkFunSuite with BeforeAndAfter with Matchers
 
   }
 
-  test("ui and api authorization checks") {
+  ignore("ui and api authorization checks") {
     val appId = "local-1422981759269"
     val owner = "irashid"
     val admin = "root"

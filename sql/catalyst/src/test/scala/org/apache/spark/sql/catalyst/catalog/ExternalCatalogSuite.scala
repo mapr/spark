@@ -529,7 +529,8 @@ abstract class ExternalCatalogSuite extends SparkFunSuite with BeforeAndAfterEac
     try {
       val newLocation = newUriForDatabase()
       val newSerde = "com.sparkbricks.text.EasySerde"
-      val newSerdeProps = Map("spark" -> "bricks", "compressed" -> "false")
+      val newSerdeProps = Map("spark" -> "bricks", "serialization.format" -> "1",
+        "compressed" -> "false")
       // alter but keep spec the same
       val oldPart1 = catalog.getPartition("db2", "tbl2", part1.spec)
       val oldPart2 = catalog.getPartition("db2", "tbl2", part2.spec)

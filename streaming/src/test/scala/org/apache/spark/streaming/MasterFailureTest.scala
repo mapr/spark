@@ -138,7 +138,7 @@ object MasterFailureTest extends Logging {
     // Create the directories for this test
     val uuid = UUID.randomUUID().toString
     val rootDir = new Path(directory, uuid)
-    val fs = rootDir.getFileSystem(new Configuration())
+    val fs = rootDir.getFileSystem(HadoopUtil.createAndGetHadoopConfiguration())
     val checkpointDir = new Path(rootDir, "checkpoint")
     val testDir = new Path(rootDir, "test")
     fs.mkdirs(checkpointDir)
@@ -362,7 +362,7 @@ class FileGeneratingThread(input: Seq[String], testDir: Path, interval: Long)
 
   override def run() {
     val localTestDir = Utils.createTempDir()
-    var fs = testDir.getFileSystem(new Configuration())
+    var fs = testDir.getFileSystem(HadoopUtil.createAndGetHadoopConfiguration())
     val maxTries = 3
     try {
       Thread.sleep(5000) // To make sure that all the streaming context has been set up
@@ -383,7 +383,7 @@ class FileGeneratingThread(input: Seq[String], testDir: Path, interval: Long)
             done = true
           } catch {
             case ioe: IOException =>
-                  fs = testDir.getFileSystem(new Configuration())
+                  fs = testDir.getFileSystem(HadoopUtil.createAndGetHadoopConfiguration())
                   logWarning("Attempt " + tries + " at generating file " + hadoopFile + " failed.",
                     ioe)
           }

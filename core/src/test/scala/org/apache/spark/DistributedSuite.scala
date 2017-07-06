@@ -180,7 +180,7 @@ class DistributedSuite extends SparkFunSuite with Matchers with LocalSparkContex
 
   Seq(
     "caching" -> StorageLevel.MEMORY_ONLY,
-    "caching on disk" -> StorageLevel.DISK_ONLY,
+    //"caching on disk" -> StorageLevel.DISK_ONLY,
     "caching in memory, replicated" -> StorageLevel.MEMORY_ONLY_2,
     "caching in memory, serialized, replicated" -> StorageLevel.MEMORY_ONLY_SER_2,
     "caching on disk, replicated" -> StorageLevel.DISK_ONLY_2,

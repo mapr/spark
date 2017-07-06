@@ -1842,20 +1842,20 @@ public class JavaAPISuite extends LocalJavaStreamingContext implements Serializa
 
     newContextCreated.set(false);
     ssc = JavaStreamingContext.getOrCreate(corruptedCheckpointDir, creatingFunc,
-        new Configuration(), true);
+        HadoopUtil.createAndGetHadoopConfiguration(), true);
     Assert.assertTrue("new context not created", newContextCreated.get());
     ssc.stop();
 
     newContextCreated.set(false);
     ssc = JavaStreamingContext.getOrCreate(checkpointDir, creatingFunc,
-        new Configuration());
+        HadoopUtil.createAndGetHadoopConfiguration());
     Assert.assertTrue("old context not recovered", !newContextCreated.get());
     ssc.stop();
 
     newContextCreated.set(false);
     JavaSparkContext sc = new JavaSparkContext(conf);
     ssc = JavaStreamingContext.getOrCreate(checkpointDir, creatingFunc,
-        new Configuration());
+        HadoopUtil.createAndGetHadoopConfiguration());
     Assert.assertTrue("old context not recovered", !newContextCreated.get());
     ssc.stop();
   }

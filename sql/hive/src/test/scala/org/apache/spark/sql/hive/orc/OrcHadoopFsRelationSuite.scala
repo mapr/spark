@@ -98,8 +98,8 @@ class OrcHadoopFsRelationSuite extends HadoopFsRelationTest {
       val maybeOrcFile = new File(path).listFiles().find(_.getName.endsWith(".zlib.orc"))
       assert(maybeOrcFile.isDefined)
       val orcFilePath = maybeOrcFile.get.toPath.toString
-      val expectedCompressionKind =
-        OrcFileOperator.getFileReader(orcFilePath).get.getCompression
+      val expectedCompressionKind = OrcTest.getFileReaderWithHadoopConf(orcFilePath)
+        .get.getCompression
       assert("ZLIB" === expectedCompressionKind.name())
 
       val copyDf = spark
@@ -113,8 +113,8 @@ class OrcHadoopFsRelationSuite extends HadoopFsRelationTest {
     withTempPath { file =>
       spark.range(0, 10).write
         .orc(file.getCanonicalPath)
-      val expectedCompressionKind =
-        OrcFileOperator.getFileReader(file.getCanonicalPath).get.getCompression
+      val expectedCompressionKind = OrcTest.getFileReaderWithHadoopConf(file.getCanonicalPath)
+        .get.getCompression
       assert("SNAPPY" === expectedCompressionKind.name())
     }
   }

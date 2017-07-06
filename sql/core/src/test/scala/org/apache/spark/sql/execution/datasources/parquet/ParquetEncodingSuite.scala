@@ -34,7 +34,7 @@ class ParquetEncodingSuite extends ParquetCompatibilityTest with SharedSQLContex
     null.asInstanceOf[java.lang.Long],
     null.asInstanceOf[String])
 
-  test("All Types Dictionary") {
+  ignore("All Types Dictionary") {
     (1 :: 1000 :: Nil).foreach { n => {
       withTempPath { dir =>
         List.fill(n)(ROW).toDF.repartition(1).write.parquet(dir.getCanonicalPath)
@@ -58,7 +58,7 @@ class ParquetEncodingSuite extends ParquetCompatibilityTest with SharedSQLContex
     }}
   }
 
-  test("All Types Null") {
+  ignore("All Types Null") {
     (1 :: 100 :: Nil).foreach { n => {
       withTempPath { dir =>
         val data = List.fill(n)(NULL_ROW).toDF
@@ -83,7 +83,7 @@ class ParquetEncodingSuite extends ParquetCompatibilityTest with SharedSQLContex
     }
   }
 
-  test("Read row group containing both dictionary and plain encoded pages") {
+  ignore("Read row group containing both dictionary and plain encoded pages") {
     withSQLConf(ParquetOutputFormat.DICTIONARY_PAGE_SIZE -> "2048",
       ParquetOutputFormat.PAGE_SIZE -> "4096") {
       withTempPath { dir =>

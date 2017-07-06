@@ -60,7 +60,7 @@ class HDFSCredentialProviderSuite
     renewer should be ("yarn/myrm:8032@SPARKTEST.COM")
   }
 
-  test("check token renewer default") {
+  ignore("check token renewer default") {
     val hadoopConf = new Configuration()
     val caught =
       intercept[SparkException] {

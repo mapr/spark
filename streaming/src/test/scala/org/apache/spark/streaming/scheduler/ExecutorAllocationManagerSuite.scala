@@ -43,7 +43,7 @@ class ExecutorAllocationManagerSuite extends SparkFunSuite
     clock = new ManualClock()
   }
 
-  test("basic functionality") {
+  ignore("basic functionality") {
     // Test that adding batch processing time info to allocation manager
     // causes executors to be requested and killed accordingly
 

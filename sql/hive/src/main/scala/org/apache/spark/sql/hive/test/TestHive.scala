@@ -54,7 +54,9 @@ object TestHive
           "org.apache.spark.sql.hive.execution.PairSerDe")
         .set("spark.sql.warehouse.dir", TestHiveContext.makeWarehouseDir().toURI.getPath)
         // SPARK-8910
-        .set("spark.ui.enabled", "false")))
+        .set("spark.ui.enabled", "false")
+        .set("spark.hadoop.fs.defaultFS", "file:///")
+        .set("spark.hadoop.fs.default.name", "file:///")))
 
 
 /**
