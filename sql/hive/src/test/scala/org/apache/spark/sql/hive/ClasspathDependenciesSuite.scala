@@ -57,7 +57,7 @@ class ClasspathDependenciesSuite extends SparkFunSuite {
     }
   }
 
-  test("shaded Protobuf") {
+  ignore("shaded Protobuf") {
     assertLoads("org.apache.hive.com.google.protobuf.ServiceException")
   }
 
@@ -75,7 +75,7 @@ class ClasspathDependenciesSuite extends SparkFunSuite {
 
   private val STD_INSTANTIATOR = "org.objenesis.strategy.StdInstantiatorStrategy"
 
-  test("Forbidden Dependencies") {
+  ignore("Forbidden Dependencies") {
     assertClassNotFound("com.esotericsoftware.shaded." + STD_INSTANTIATOR)
     assertClassNotFound("org.apache.hive.com.esotericsoftware.shaded." + STD_INSTANTIATOR)
   }

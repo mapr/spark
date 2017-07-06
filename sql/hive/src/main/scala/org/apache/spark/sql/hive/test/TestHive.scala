@@ -35,8 +35,8 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, OneRowRelation}
-import org.apache.spark.sql.execution.{QueryExecution, SQLExecution}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.execution.QueryExecution
 import org.apache.spark.sql.execution.command.CacheTableCommand
 import org.apache.spark.sql.hive._
 import org.apache.spark.sql.hive.client.HiveClient
@@ -52,13 +52,13 @@ object TestHive
       "TestSQLContext",
       new SparkConf()
         .set("spark.sql.test", "")
-        .set(SQLConf.CODEGEN_FALLBACK.key, "false")
         .set("spark.sql.hive.metastore.barrierPrefixes",
           "org.apache.spark.sql.hive.execution.PairSerDe")
         .set("spark.sql.warehouse.dir", TestHiveContext.makeWarehouseDir().toURI.getPath)
         // SPARK-8910
         .set("spark.ui.enabled", "false")
-        .set("spark.unsafe.exceptionOnMemoryLeak", "true")))
+        .set("spark.hadoop.fs.defaultFS", "file:///")
+        .set("spark.hadoop.fs.default.name", "file:///")))
 
 
 case class TestHiveVersion(hiveClient: HiveClient)
@@ -187,13 +187,7 @@ private[hive] class TestHiveSparkSession(
       ConfVars.METASTORE_INTEGER_JDO_PUSHDOWN.varname -> "true",
       // scratch directory used by Hive's metastore client
       ConfVars.SCRATCHDIR.varname -> TestHiveContext.makeScratchDir().toURI.toString,
-      ConfVars.METASTORE_CLIENT_CONNECT_RETRY_DELAY.varname -> "1") ++
-      // After session cloning, the JDBC connect string for a JDBC metastore should not be changed.
-      existingSharedState.map { state =>
-        val connKey =
-          state.sparkContext.hadoopConfiguration.get(ConfVars.METASTORECONNECTURLKEY.varname)
-        ConfVars.METASTORECONNECTURLKEY.varname -> connKey
-      }
+      ConfVars.METASTORE_CLIENT_CONNECT_RETRY_DELAY.varname -> "1")
 
     metastoreTempConf.foreach { case (k, v) =>
       sc.hadoopConfiguration.set(k, v)
@@ -310,23 +304,23 @@ private[hive] class TestHiveSparkSession(
         "CREATE TABLE src1 (key INT, value STRING)".cmd,
         s"LOAD DATA LOCAL INPATH '${quoteHiveFile("data/files/kv3.txt")}' INTO TABLE src1".cmd),
       TestTable("srcpart", () => {
-        "CREATE TABLE srcpart (key INT, value STRING) PARTITIONED BY (ds STRING, hr STRING)"
-          .cmd.apply()
+        sql(
+          "CREATE TABLE srcpart (key INT, value STRING) PARTITIONED BY (ds STRING, hr STRING)")
         for (ds <- Seq("2008-04-08", "2008-04-09"); hr <- Seq("11", "12")) {
-          s"""
-             |LOAD DATA LOCAL INPATH '${quoteHiveFile("data/files/kv1.txt")}'
-             |OVERWRITE INTO TABLE srcpart PARTITION (ds='$ds',hr='$hr')
-          """.stripMargin.cmd.apply()
+          sql(
+            s"""LOAD DATA LOCAL INPATH '${quoteHiveFile("data/files/kv1.txt")}'
+               |OVERWRITE INTO TABLE srcpart PARTITION (ds='$ds',hr='$hr')
+             """.stripMargin)
         }
       }),
       TestTable("srcpart1", () => {
-        "CREATE TABLE srcpart1 (key INT, value STRING) PARTITIONED BY (ds STRING, hr INT)"
-          .cmd.apply()
+        sql(
+          "CREATE TABLE srcpart1 (key INT, value STRING) PARTITIONED BY (ds STRING, hr INT)")
         for (ds <- Seq("2008-04-08", "2008-04-09"); hr <- 11 to 12) {
-          s"""
-             |LOAD DATA LOCAL INPATH '${quoteHiveFile("data/files/kv1.txt")}'
-             |OVERWRITE INTO TABLE srcpart1 PARTITION (ds='$ds',hr='$hr')
-          """.stripMargin.cmd.apply()
+          sql(
+            s"""LOAD DATA LOCAL INPATH '${quoteHiveFile("data/files/kv1.txt")}'
+               |OVERWRITE INTO TABLE srcpart1 PARTITION (ds='$ds',hr='$hr')
+             """.stripMargin)
         }
       }),
       TestTable("src_thrift", () => {
@@ -334,7 +328,8 @@ private[hive] class TestHiveSparkSession(
         import org.apache.hadoop.mapred.{SequenceFileInputFormat, SequenceFileOutputFormat}
         import org.apache.thrift.protocol.TBinaryProtocol
 
-        s"""
+        sql(
+          s"""
            |CREATE TABLE src_thrift(fake INT)
            |ROW FORMAT SERDE '${classOf[ThriftDeserializer].getName}'
            |WITH SERDEPROPERTIES(
@@ -344,12 +339,13 @@ private[hive] class TestHiveSparkSession(
            |STORED AS
            |INPUTFORMAT '${classOf[SequenceFileInputFormat[_, _]].getName}'
            |OUTPUTFORMAT '${classOf[SequenceFileOutputFormat[_, _]].getName}'
-        """.stripMargin.cmd.apply()
+          """.stripMargin)
 
-        s"""
-           |LOAD DATA LOCAL INPATH '${quoteHiveFile("data/files/complex.seq")}'
-           |INTO TABLE src_thrift
-        """.stripMargin.cmd.apply()
+        sql(
+          s"""
+             |LOAD DATA LOCAL INPATH '${quoteHiveFile("data/files/complex.seq")}'
+             |INTO TABLE src_thrift
+           """.stripMargin)
       }),
       TestTable("serdeins",
         s"""CREATE TABLE serdeins (key INT, value STRING)
@@ -465,8 +461,6 @@ private[hive] class TestHiveSparkSession(
 
   private val loadedTables = new collection.mutable.HashSet[String]
 
-  def getLoadedTables: collection.mutable.HashSet[String] = loadedTables
-
   def loadTestTable(name: String) {
     if (!(loadedTables contains name)) {
       // Marks the table as loaded first to prevent infinite mutually recursive table loading.
@@ -474,17 +468,7 @@ private[hive] class TestHiveSparkSession(
       logDebug(s"Loading test table $name")
       val createCmds =
         testTables.get(name).map(_.commands).getOrElse(sys.error(s"Unknown test table $name"))
-
-      // test tables are loaded lazily, so they may be loaded in the middle a query execution which
-      // has already set the execution id.
-      if (sparkContext.getLocalProperty(SQLExecution.EXECUTION_ID_KEY) == null) {
-        // We don't actually have a `QueryExecution` here, use a fake one instead.
-        SQLExecution.withNewExecutionId(this, new QueryExecution(this, OneRowRelation())) {
-          createCmds.foreach(_())
-        }
-      } else {
-        createCmds.foreach(_())
-      }
+      createCmds.foreach(_())
 
       if (cacheTables) {
         new SQLContext(self).cacheTable(name)
@@ -499,7 +483,8 @@ private[hive] class TestHiveSparkSession(
   protected val originalUDFs: JavaSet[String] = FunctionRegistry.getFunctionNames
 
   /**
-   * Resets the test instance by deleting any table, view, temp view, and UDF that have been created
+   * Resets the test instance by deleting any tables that have been created.
+   * TODO: also clear out UDFs, views, etc.
    */
   def reset() {
     try {
@@ -537,6 +522,8 @@ private[hive] class TestHiveSparkSession(
       // For some reason, RESET does not reset the following variables...
       // https://issues.apache.org/jira/browse/HIVE-9004
       metadataHive.runSqlHive("set hive.table.parameters.default=")
+      metadataHive.runSqlHive("set datanucleus.cache.collections=true")
+      metadataHive.runSqlHive("set datanucleus.cache.collections.lazy=true")
       // Lots of tests fail if we do not change the partition whitelist from the default.
       metadataHive.runSqlHive("set hive.metastore.partition.name.whitelist.pattern=.*")
 
@@ -573,14 +560,11 @@ private[hive] class TestHiveQueryExecution(
     val referencedTables =
       describedTables ++
         logical.collect { case UnresolvedRelation(tableIdent) => tableIdent.table }
-    val resolver = sparkSession.sessionState.conf.resolver
-    val referencedTestTables = sparkSession.testTables.keys.filter { testTable =>
-      referencedTables.exists(resolver(_, testTable))
-    }
+    val referencedTestTables = referencedTables.filter(sparkSession.testTables.contains)
     logDebug(s"Query references test tables: ${referencedTestTables.mkString(", ")}")
     referencedTestTables.foreach(sparkSession.loadTestTable)
     // Proceed with analysis.
-    sparkSession.sessionState.analyzer.executeAndCheck(logical)
+    sparkSession.sessionState.analyzer.execute(logical)
   }
 }
 
