@@ -42,7 +42,7 @@ class PersistenceEngineSuite extends SparkFunSuite {
     }
   }
 
-  test("ZooKeeperPersistenceEngine") {
+  ignore("ZooKeeperPersistenceEngine") {
     val conf = new SparkConf()
     // TestingServer logs the port conflict exception rather than throwing an exception.
     // So we have to find a free port by ourselves. This approach cannot guarantee always starting
