@@ -407,6 +407,8 @@ class PairRDDFunctionsSuite extends SparkFunSuite with SharedSparkContext {
 
   test("zero-partition RDD") {
     val emptyDir = Utils.createTempDir()
+    sc.hadoopConfiguration.set("fs.defaultFS", "file:///")
+    sc.hadoopConfiguration.set("fs.default.name", "file:///")
     try {
       val file = sc.textFile(emptyDir.getAbsolutePath)
       assert(file.partitions.isEmpty)

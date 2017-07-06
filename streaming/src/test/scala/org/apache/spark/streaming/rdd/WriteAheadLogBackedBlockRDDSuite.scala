@@ -20,13 +20,13 @@ import java.io.File
 
 import scala.util.Random
 
-import org.apache.hadoop.conf.Configuration
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.spark.{SparkConf, SparkContext, SparkException, SparkFunSuite}
 import org.apache.spark.internal.config._
 import org.apache.spark.serializer.SerializerManager
 import org.apache.spark.storage.{BlockId, BlockManager, StorageLevel, StreamBlockId}
+import org.apache.spark.streaming.HadoopUtil
 import org.apache.spark.streaming.util.{FileBasedWriteAheadLogSegment, FileBasedWriteAheadLogWriter}
 import org.apache.spark.util.Utils
 
@@ -37,7 +37,7 @@ class WriteAheadLogBackedBlockRDDSuite
     .setMaster("local[2]")
     .setAppName(this.getClass.getSimpleName)
 
-  val hadoopConf = new Configuration()
+  val hadoopConf = HadoopUtil.createAndGetHadoopConfiguration()
 
   var sparkContext: SparkContext = null
   var blockManager: BlockManager = null

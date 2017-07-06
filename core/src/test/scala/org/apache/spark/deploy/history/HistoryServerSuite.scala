@@ -568,7 +568,7 @@ class HistoryServerSuite extends SparkFunSuite with BeforeAndAfter with Matchers
     logDir.deleteOnExit()
   }
 
-  test("ui and api authorization checks") {
+  ignore("ui and api authorization checks") {
     val appId = "local-1430917381535"
     val owner = "irashid"
     val admin = "root"

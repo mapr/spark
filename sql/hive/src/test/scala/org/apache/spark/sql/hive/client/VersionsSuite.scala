@@ -73,13 +73,13 @@ class VersionsSuite extends SparkFunSuite with Logging {
     }
   }
 
-  test("success sanity check") {
+  ignore("success sanity check") {
     val badClient = buildClient(HiveUtils.hiveExecutionVersion, new Configuration())
     val db = new CatalogDatabase("default", "desc", new URI("loc"), Map())
     badClient.createDatabase(db, ignoreIfExists = true)
   }
 
-  test("hadoop configuration preserved") {
+  ignore("hadoop configuration preserved") {
     val hadoopConf = new Configuration()
     hadoopConf.set("test", "success")
     val client = buildClient(HiveUtils.hiveExecutionVersion, hadoopConf)

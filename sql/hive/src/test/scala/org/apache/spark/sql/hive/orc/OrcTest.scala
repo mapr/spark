@@ -19,9 +19,11 @@ package org.apache.spark.sql.hive.orc
 
 import java.io.File
 
+import org.apache.hadoop.hive.ql.io.orc.Reader
+import org.apache.spark.HadoopUtil
+
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.TypeTag
-
 import org.apache.spark.sql._
 import org.apache.spark.sql.hive.test.TestHiveSingleton
 import org.apache.spark.sql.test.SQLTestUtils
@@ -74,5 +76,11 @@ private[sql] trait OrcTest extends SQLTestUtils with TestHiveSingleton {
   protected def makeOrcFile[T <: Product: ClassTag: TypeTag](
       df: DataFrame, path: File): Unit = {
     df.write.mode(SaveMode.Overwrite).orc(path.getCanonicalPath)
+  }
+}
+
+object OrcTest {
+  def getFileReaderWithHadoopConf(basePath: String): Option[Reader] = {
+    OrcFileOperator.getFileReader(basePath, Some(HadoopUtil.createAndGetHadoopConfiguration()))
   }
 }

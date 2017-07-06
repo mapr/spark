@@ -37,8 +37,7 @@ import org.apache.hadoop.yarn.util.Records
 import org.mockito.Matchers.{eq => meq, _}
 import org.mockito.Mockito._
 import org.scalatest.{BeforeAndAfterAll, Matchers}
-
-import org.apache.spark.{SparkConf, SparkFunSuite, TestUtils}
+import org.apache.spark.{HadoopUtil, SparkConf, SparkFunSuite, TestUtils}
 import org.apache.spark.deploy.yarn.config._
 import org.apache.spark.util.{ResetSystemProperties, SparkConfWithEnv, Utils}
 
@@ -129,11 +128,11 @@ class ClientSuite extends SparkFunSuite with Matchers with BeforeAndAfterAll
   }
 
   test("Jar path propagation through SparkConf") {
-    val conf = new Configuration()
+    val conf = HadoopUtil.createAndGetHadoopConfiguration()
     val sparkConf = new SparkConf()
       .set(SPARK_JARS, Seq(SPARK))
       .set("spark.yarn.dist.jars", ADDED)
-    val client = createClient(sparkConf, args = Array("--jar", USER))
+    val client = createClient(sparkConf, conf, Array("--jar", USER))
     doReturn(new Path("/")).when(client).copyFileToRemote(any(classOf[Path]),
       any(classOf[Path]), anyShort(), any(classOf[MutableHashMap[URI, Path]]), anyBoolean(), any())
 
