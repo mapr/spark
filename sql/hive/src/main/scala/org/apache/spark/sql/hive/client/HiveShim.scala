@@ -26,17 +26,15 @@ import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters._
 import scala.util.Try
 import scala.util.control.NonFatal
-
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.hive.conf.HiveConf
-import org.apache.hadoop.hive.metastore.api.{Function => HiveFunction, FunctionType, MetaException, PrincipalType, ResourceType, ResourceUri}
+import org.apache.hadoop.hive.metastore.api.{FunctionType, MetaException, PrincipalType, ResourceType, ResourceUri, Function => HiveFunction}
 import org.apache.hadoop.hive.ql.Driver
 import org.apache.hadoop.hive.ql.metadata.{Hive, HiveException, Partition, Table}
 import org.apache.hadoop.hive.ql.plan.AddPartitionDesc
 import org.apache.hadoop.hive.ql.processors.{CommandProcessor, CommandProcessorFactory}
 import org.apache.hadoop.hive.ql.session.SessionState
 import org.apache.hadoop.hive.serde.serdeConstants
-
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.FunctionIdentifier
@@ -45,6 +43,7 @@ import org.apache.spark.sql.catalyst.catalog.{CatalogFunction, CatalogTableParti
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.{IntegralType, StringType}
+import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.Utils
 
 /**
@@ -557,23 +556,83 @@ private[client] class Shim_v0_13 extends Shim_v0_12 {
    */
   def convertFilters(table: Table, filters: Seq[Expression]): String = {
     // hive varchar is treated as catalyst string, but hive varchar can't be pushed down.
-    val varcharKeys = table.getPartitionKeys.asScala
+    lazy val varcharKeys = table.getPartitionKeys.asScala
       .filter(col => col.getType.startsWith(serdeConstants.VARCHAR_TYPE_NAME) ||
         col.getType.startsWith(serdeConstants.CHAR_TYPE_NAME))
       .map(col => col.getName).toSet
 
-    filters.collect {
-      case op @ BinaryComparison(a: Attribute, Literal(v, _: IntegralType)) =>
-        s"${a.name} ${op.symbol} $v"
-      case op @ BinaryComparison(Literal(v, _: IntegralType), a: Attribute) =>
-        s"$v ${op.symbol} ${a.name}"
-      case op @ BinaryComparison(a: Attribute, Literal(v, _: StringType))
-          if !varcharKeys.contains(a.name) =>
-        s"""${a.name} ${op.symbol} "$v""""
-      case op @ BinaryComparison(Literal(v, _: StringType), a: Attribute)
-          if !varcharKeys.contains(a.name) =>
-        s""""$v" ${op.symbol} ${a.name}"""
-    }.mkString(" and ")
+    object ExtractableLiteral {
+      def unapply(expr: Expression): Option[String] = expr match {
+        case Literal(value, _: IntegralType) => Some(value.toString)
+        case Literal(value, _: StringType) => Some(quoteStringLiteral(value.toString))
+        case _ => None
+      }
+    }
+
+    object ExtractableLiterals {
+      def unapply(exprs: Seq[Expression]): Option[Seq[String]] = {
+        exprs.map(ExtractableLiteral.unapply).foldLeft(Option(Seq.empty[String])) {
+          case (Some(accum), Some(value)) => Some(accum :+ value)
+          case _ => None
+        }
+      }
+    }
+
+    object ExtractableValues {
+      private lazy val valueToLiteralString: PartialFunction[Any, String] = {
+        case value: Byte => value.toString
+        case value: Short => value.toString
+        case value: Int => value.toString
+        case value: Long => value.toString
+        case value: UTF8String => quoteStringLiteral(value.toString)
+      }
+
+      def unapply(values: Set[Any]): Option[Seq[String]] = {
+        values.toSeq.foldLeft(Option(Seq.empty[String])) {
+          case (Some(accum), value) if valueToLiteralString.isDefinedAt(value) =>
+            Some(accum :+ valueToLiteralString(value))
+          case _ => None
+        }
+      }
+    }
+
+    def convertInToOr(a: Attribute, values: Seq[String]): String = {
+      values.map(value => s"${a.name} = $value").mkString("(", " or ", ")")
+    }
+
+    lazy val convert: PartialFunction[Expression, String] = {
+      case In(a: Attribute, ExtractableLiterals(values))
+        if !varcharKeys.contains(a.name) && values.nonEmpty =>
+        convertInToOr(a, values)
+      case InSet(a: Attribute, ExtractableValues(values))
+        if !varcharKeys.contains(a.name) && values.nonEmpty =>
+        convertInToOr(a, values)
+      case op@BinaryComparison(a: Attribute, ExtractableLiteral(value))
+        if !varcharKeys.contains(a.name) =>
+        s"${a.name} ${op.symbol} $value"
+      case op@BinaryComparison(ExtractableLiteral(value), a: Attribute)
+        if !varcharKeys.contains(a.name) =>
+        s"$value ${op.symbol} ${a.name}"
+      case op@And(expr1, expr2)
+        if convert.isDefinedAt(expr1) || convert.isDefinedAt(expr2) =>
+        (convert.lift(expr1) ++ convert.lift(expr2)).mkString("(", " and ", ")")
+      case op@Or(expr1, expr2)
+        if convert.isDefinedAt(expr1) && convert.isDefinedAt(expr2) =>
+        s"(${convert(expr1)} or ${convert(expr2)})"
+    }
+
+    filters.map(convert.lift).collect { case Some(filterString) => filterString }.mkString(" and ")
+  }
+
+  private def quoteStringLiteral(str: String): String = {
+    if (!str.contains("\"")) {
+      s""""$str""""
+    } else if (!str.contains("'")) {
+      s"""'$str'"""
+    } else {
+      throw new UnsupportedOperationException(
+        """Partition filter cannot have both `"` and `'` characters""")
+    }
   }
 
   override def getPartitionsByFilter(
