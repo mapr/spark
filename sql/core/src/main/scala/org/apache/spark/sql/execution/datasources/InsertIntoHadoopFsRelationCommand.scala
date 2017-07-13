@@ -19,9 +19,9 @@ package org.apache.spark.sql.execution.datasources
 
 import java.io.IOException
 
-import org.apache.hadoop.fs.{FileSystem, Path}
-
 import scala.util.{Failure, Success, Try}
+
+import org.apache.hadoop.fs.{FileSystem, Path}
 
 import org.apache.spark.internal.io.FileCommitProtocol
 import org.apache.spark.sql._
@@ -142,7 +142,9 @@ case class InsertIntoHadoopFsRelationCommand(
     // use fs.open instead fs.exists because fs.exists can
     // return wrong result working with different threads
     val exists = Try (fs.open(staticPrefixPath)) match {
-      case Success(_) => true
+      case Success(inputStream) =>
+        inputStream.close()
+        true
       case Failure(_) => false
     }
 
