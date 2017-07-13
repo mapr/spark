@@ -21,6 +21,8 @@ import java.io.IOException
 
 import org.apache.hadoop.fs.{FileSystem, Path}
 
+import scala.util.{Failure, Success, Try}
+
 import org.apache.spark.internal.io.FileCommitProtocol
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.catalog.{BucketSpec, CatalogTable}
@@ -136,9 +138,17 @@ case class InsertIntoHadoopFsRelationCommand(
     }
     // first clear the path determined by the static partition keys (e.g. /table/foo=1)
     val staticPrefixPath = qualifiedOutputPath.suffix(staticPartitionPrefix)
-    if (fs.exists(staticPrefixPath) && !fs.delete(staticPrefixPath, true /* recursively */)) {
-      throw new IOException(s"Unable to clear output " +
-        s"directory $staticPrefixPath prior to writing to it")
+
+    // use fs.open instead fs.exists because fs.exists can
+    // return wrong result working with different threads
+    val exists = Try (fs.open(staticPrefixPath)) match {
+      case Success(_) => true
+      case Failure(_) => false
+    }
+
+    if (exists && !fs.delete(staticPrefixPath, true /* recursively */)) {
+        throw new IOException(s"Unable to clear output " +
+          s"directory $staticPrefixPath prior to writing to it")
     }
     // now clear all custom partition locations (e.g. /custom/dir/where/foo=2/bar=4)
     for ((spec, customLoc) <- customPartitionLocations) {
