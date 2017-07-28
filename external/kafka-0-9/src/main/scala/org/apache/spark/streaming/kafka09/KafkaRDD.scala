@@ -227,16 +227,18 @@ private[spark] class KafkaRDD[K, V](
     //    override def hasNext(): Boolean = requestOffset < part.untilOffset
     override def getNext(): ConsumerRecord[K, V] = {
 
+      val isStreams = consumer.topic.startsWith("/") && consumer.topic.contains(":")
+
       @tailrec
       def skipGapsAndGetNext: ConsumerRecord[K, V] = {
         if (requestOffset < part.untilOffset) {
           val r = consumer.get(requestOffset, pollTimeout)
 
-          requestOffset = if (r.offset() == 0) {part.untilOffset} else {r.offset() + 1}
-
-          if (null == r && r.offset() == 0) {
+          if (isStreams && r.offset() == 0) {
+            requestOffset = requestOffset + 1
             skipGapsAndGetNext
           } else {
+            requestOffset = r.offset() + 1
             r
           }
         } else {
