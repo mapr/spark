@@ -16,16 +16,13 @@
  */
 
 package org.apache.spark.streaming.kafka09
-
 import java.{ util => ju }
 
 import collection.JavaConverters._
-
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.common.{KafkaException, TopicPartition}
 
 import org.apache.spark.internal.Logging
-
 
 /**
  * Consumer of single topicpartition, intended for cached reuse.
@@ -104,14 +101,8 @@ class CachedKafkaConsumer[K, V] private(
     val p = consumer.poll(timeout)
     val r = p.records(topicPartition)
 
-    val preparedRecords = if (r.size > 1) {
-      r.asScala.filter(_.offset() > 0).asJava
-    } else {
-      r
-    }
-
-    logDebug(s"Polled ${p.partitions()}  ${preparedRecords.size}")
-    buffer = preparedRecords.iterator()
+    logDebug(s"Polled ${p.partitions()}  ${r.size}")
+    buffer = r.iterator()
   }
 }
 
