@@ -189,6 +189,10 @@ object FileFormatWriter extends Logging {
         // Execute the task to write rows out and commit the task.
         val outputPartitions = writeTask.execute(iterator)
         writeTask.releaseResources()
+        val waitingTimeForInit = SparkEnv.get.conf.
+          getLong("spark.mapr.commitDelay",
+            defaultValue = 0)
+        Thread.sleep(waitingTimeForInit)
         (committer.commitTask(taskAttemptContext), outputPartitions)
       })(catchBlock = {
         // If there is an error, release resource and then abort the task
