@@ -137,8 +137,10 @@ case class InsertIntoHadoopFsRelationCommand(
     // first clear the path determined by the static partition keys (e.g. /table/foo=1)
     val staticPrefixPath = qualifiedOutputPath.suffix(staticPartitionPrefix)
     if (fs.exists(staticPrefixPath) && !fs.delete(staticPrefixPath, true /* recursively */)) {
-      throw new IOException(s"Unable to clear output " +
-        s"directory $staticPrefixPath prior to writing to it")
+      if (fs.exists(staticPrefixPath)) {
+        throw new IOException(s"Unable to clear output " +
+          s"directory $staticPrefixPath prior to writing to it")
+      }
     }
     // now clear all custom partition locations (e.g. /custom/dir/where/foo=2/bar=4)
     for ((spec, customLoc) <- customPartitionLocations) {
