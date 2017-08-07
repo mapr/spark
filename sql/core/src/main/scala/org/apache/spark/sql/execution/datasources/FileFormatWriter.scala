@@ -241,6 +241,12 @@ object FileFormatWriter extends Logging {
     try {
       Utils.tryWithSafeFinallyAndFailureCallbacks(block = {
         // Execute the task to write rows out and commit the task.
+        val summary = writeTask.execute(iterator)
+        writeTask.releaseResources()
+        val waitingTimeForInit =
+          SparkEnv.get.conf.getLong("spark.mapr.commitDelay", defaultValue = 0)
+        Thread.sleep(waitingTimeForInit)
+        WriteTaskResult(committer.commitTask(taskAttemptContext), summary)
         while (iterator.hasNext) {
           dataWriter.write(iterator.next())
         }
