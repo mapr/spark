@@ -18,6 +18,7 @@
 package org.apache.spark.rdd
 
 import java.io.IOException
+import java.security.PrivilegedExceptionAction
 import java.text.SimpleDateFormat
 import java.util.{Date, Locale}
 
@@ -36,6 +37,7 @@ import org.apache.hadoop.mapred.TaskAttemptID
 import org.apache.hadoop.mapred.TaskID
 import org.apache.hadoop.mapred.lib.CombineFileSplit
 import org.apache.hadoop.mapreduce.TaskType
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.util.ReflectionUtils
 
 import org.apache.spark._
@@ -131,6 +133,8 @@ class HadoopRDD[K, V](
       minPartitions)
   }
 
+  private val doAsUserName = UserGroupInformation.getCurrentUser.getUserName
+
   protected val jobConfCacheKey = "rdd_%d_job_conf".format(id)
 
   protected val inputFormatCacheKey = "rdd_%d_input_format".format(id)
@@ -207,7 +211,7 @@ class HadoopRDD[K, V](
     array
   }
 
-  override def compute(theSplit: Partition, context: TaskContext): InterruptibleIterator[(K, V)] = {
+  def doCompute(theSplit: Partition, context: TaskContext): InterruptibleIterator[(K, V)] = {
     val iter = new NextIterator[(K, V)] {
 
       private val split = theSplit.asInstanceOf[HadoopPartition]
@@ -298,7 +302,7 @@ class HadoopRDD[K, V](
           if (getBytesReadCallback.isDefined) {
             updateBytesRead()
           } else if (split.inputSplit.value.isInstanceOf[FileSplit] ||
-                     split.inputSplit.value.isInstanceOf[CombineFileSplit]) {
+            split.inputSplit.value.isInstanceOf[CombineFileSplit]) {
             // If we can't get the bytes read from the FS stats, fall back to the split size,
             // which may be inaccurate.
             try {
@@ -312,6 +316,29 @@ class HadoopRDD[K, V](
       }
     }
     new InterruptibleIterator[(K, V)](context, iter)
+  }
+
+  override def compute(theSplit: Partition, context: TaskContext): InterruptibleIterator[(K, V)] = {
+    val ugi = UserGroupInformation.getCurrentUser
+
+    if (ugi.getUserName == doAsUserName) {
+      doCompute(theSplit: Partition, context: TaskContext)
+    } else {
+      val doAsAction = new PrivilegedExceptionAction[InterruptibleIterator[(K, V)]]() {
+        override def run(): InterruptibleIterator[(K, V)] = {
+          try {
+            doCompute(theSplit: Partition, context: TaskContext)
+          } catch {
+            case e: Exception =>
+              log.error("Error when HadoopRDD computing: ", e)
+              throw e
+          }
+        }
+      }
+
+      val proxyUgi = UserGroupInformation.createProxyUser(doAsUserName, ugi)
+      proxyUgi.doAs(doAsAction)
+    }
   }
 
   /** Maps over a partition, providing the InputSplit that was used as the base of the partition. */
