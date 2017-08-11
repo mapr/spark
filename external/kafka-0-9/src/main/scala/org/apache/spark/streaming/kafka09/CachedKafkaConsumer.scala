@@ -49,6 +49,8 @@ class CachedKafkaConsumer[K, V] private(
     c
   }
 
+  val isStreams = topic.startsWith("/") && topic.contains(":")
+
   // TODO if the buffer was kept around as a random-access structure,
   // could possibly optimize re-calculating of an RDD in the same batch
   protected var buffer = ju.Collections.emptyList[ConsumerRecord[K, V]]().iterator
@@ -68,13 +70,15 @@ class CachedKafkaConsumer[K, V] private(
       poll(timeout)
     }
 
-    if (!buffer.hasNext()) { poll(timeout) }
-    assert(buffer.hasNext(),
+    if (!buffer.hasNext) { poll(timeout) }
+
+    assert(buffer.hasNext,
       s"Failed to get records for $groupId $topic $partition $offset after polling for $timeout")
     val record = buffer.next()
 
     nextOffset = offset + 1
-    record
+
+    if (record.offset() == 0 && isStreams && buffer.hasNext) buffer.next() else record
 // Offsets in MapR-streams can contains gaps
 /*    if (record.offset < offset) {
       logInfo(s"Buffer miss for $groupId $topic $partition $offset")
