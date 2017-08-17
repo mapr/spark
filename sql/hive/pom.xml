@@ -89,6 +89,11 @@
       <groupId>${hive.group}</groupId>
       <artifactId>hive-metastore</artifactId>
     </dependency>
+    <dependency>
+      <groupId>${hive.group}</groupId>
+      <artifactId>hive-hbase-handler</artifactId>
+      <version>${hive.version}</version>
+    </dependency>
     <!--
         <dependency>
           <groupId>${hive.group}</groupId>
