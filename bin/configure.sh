@@ -44,6 +44,14 @@ SPARK_BIN="$SPARK_HOME"/bin
 SPARK_LOGS="$SPARK_HOME"/logs
 DAEMON_CONF=${MAPR_HOME}/conf/daemon.conf
 
+# indicates whether cluster is up or not
+SPARK_IS_RUNNING=false
+if [ ! -z ${isOnlyRoles+x} ]; then # isOnlyRoles exists
+	if [ $isOnlyRoles -eq 1 ] ; then
+        SPARK_IS_RUNNING=true;
+    fi
+fi
+
 if [ -f $MAPR_HOME/MapRBuildVersion ]; then
   MAPR_MIN_VERSION=4.0
   MAPR_VERSION=`cat $MAPR_HOME/MapRBuildVersion | awk -F "." '{print $1"."$2}'`
@@ -82,8 +90,7 @@ sed 's/rootCategory=INFO/rootCategory=WARN/' "$SPARK_HOME/conf/log4j.properties.
 #
 if [ ! -e "$SPARK_HOME"/conf/spark-env.sh ]; then
 	cp "$SPARK_HOME"/conf/spark-env.sh.template "$SPARK_HOME"/conf/spark-env.sh
-fi
-       cat >> "$SPARK_HOME"/conf/spark-env.sh << EOM
+    cat >> "$SPARK_HOME"/conf/spark-env.sh << EOM
 
 
 #########################################################################################################
@@ -175,30 +182,7 @@ export SPARK_WORKER_DIR=\$SPARK_HOME/tmp
 
 
 EOM
-
-source $MAPR_HOME/conf/env.sh
-        if [ "$MAPR_SECURITY_STATUS" = "true" ]; then
-          sed -i '/# Security/,/# EndOfSecurityConfiguration/d' "$SPARK_HOME"/conf/spark-defaults.conf
-          cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOM
-
-# Security
-# - ACLS
-spark.acls.enable       true
-spark.admin.acls        mapr
-spark.admin.acls.groups mapr
-# - Authorization and Network Encryption
-spark.authenticate      true
-# - - This secret will be used only by local/standalone modes. YARN will override this with its own secret
-spark.authenticate.secret       changeMe
-spark.authenticate.enableSaslEncryption true
-spark.network.sasl.serverAlwaysEncrypt  true
-# - IO Encryption
-spark.io.encryption.enabled     true
-spark.io.encryption.keySizeBits 128
-# EndOfSecurityConfiguration
-EOM
-        fi
-
+fi
         #
         # If the spark version is greater than 1.0, remove
         # the any shark directory that is left over.  Otherwise,
@@ -250,6 +234,34 @@ function change_permissions() {
 }
 
 #
+# Configure security
+#
+
+function configureOnSecureCluster() {
+source $MAPR_HOME/conf/env.sh
+          sed -i '/# Security/,/# EndOfSecurityConfiguration/d' "$SPARK_HOME"/conf/spark-defaults.conf
+          cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOM
+
+# Security
+# - ACLS
+spark.acls.enable       true
+spark.admin.acls        mapr
+spark.admin.acls.groups mapr
+# - Authorization and Network Encryption
+spark.authenticate      true
+# - - This secret will be used only by local/standalone modes. YARN will override this with its own secret
+spark.authenticate.secret       changeMe
+spark.authenticate.enableSaslEncryption true
+spark.network.sasl.serverAlwaysEncrypt  true
+# - IO Encryption
+spark.io.encryption.enabled     true
+spark.io.encryption.keySizeBits 128
+# EndOfSecurityConfiguration
+EOM
+}
+
+
+#
 # Add warden files
 #
 
@@ -298,16 +310,19 @@ function installWardenConfFile() {
 function stopServicesForRestartByWarden() {
 	#Stop spark master
 	if [ -e ${MAPR_CONF_DIR}/conf.d/warden.spark-master.conf ]; then
+		logInfo 'Stopping Spark-Master...'
 		${SPARK_HOME}/sbin/stop-master.sh
 	fi
 
 	#Stop spark historyserver
 	if [ -e ${MAPR_CONF_DIR}/conf.d/warden.spark-historyserver.conf ]; then
+		logInfo 'Stopping Spark-Historyserver...'
 		${SPARK_HOME}/sbin/stop-history-server.sh
 	fi
 
 	#Stop spark thriftserver
 	if [ -e ${MAPR_CONF_DIR}/conf.d/warden.spark-thriftserver.conf ]; then
+		logInfo 'Stopping Spark-Thriftserver...'
 		${SPARK_HOME}/sbin/stop-thriftserver.sh
 	fi
 }
@@ -315,14 +330,9 @@ function stopServicesForRestartByWarden() {
 # Parse options
 #
 
-USAGE="usage: $0 [-h] [-R] [-secure] [-unsecure]"
+USAGE="usage: $0 [-s|--secure || -u|--unsecure] [-R] [--EC] [-h|--help]]"
 
-OPTS=`getopt -n "$0" -a -o h -l R -l EC: -l secure -l unsecure -- "$@"`
-
-if [ $? != 0 ] || [ ${#} -lt 1 ] ; then
-  echo "${USAGE}"
-  exit $RETURN_ERR_ARGS
-fi
+{ OPTS=`getopt -n "$0" -a -o suhR --long secure,unsecure,help,EC -- "$@"`; } 2>/dev/null
 
 eval set -- "$OPTS"
 
@@ -334,10 +344,16 @@ for i ; do
     --unsecure)
       isSecure=0;
       shift 1;;
+     -R)
+      SPARK_IS_READY=true;
+      shift;;
     --help)
       echo "${USAGE}"
       exit $RETURN_SUCCESS
       ;;
+    --EC)
+      #ignoring
+      shift;;
     --)
       shift;;
     *)
@@ -346,6 +362,10 @@ for i ; do
       exit $RETURN_ERR_ARGS
   esac
 done
+
+if [ "$isSecure" == 1 ] ; then
+	configureOnSecureCluster
+fi
 
 change_permissions
 installWardenConfFile
