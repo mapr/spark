@@ -42,5 +42,43 @@
             <version>2.11.8</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.ant</groupId>
+            <artifactId>ant</artifactId>
+            <version>1.8.2</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <!-- When using SPARK_PREPEND_CLASSES Spark classes compiled locally don't use
+                         shaded deps. So here we store jars in their original form which are added
+                         when the classpath is computed. -->
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}</outputDirectory>
+                            <overWriteReleases>false</overWriteReleases>
+                            <overWriteSnapshots>false</overWriteSnapshots>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                            <useSubDirectoryPerType>true</useSubDirectoryPerType>
+                            <includeArtifactIds>
+                                ant
+                            </includeArtifactIds>
+                            <silent>true</silent>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
