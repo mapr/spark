@@ -19,19 +19,34 @@ package org.apache.spark.classpath
 
 import java.io.File
 
+import org.apache.tools.ant.DirectoryScanner
+
 object ClasspathFilter {
+  val scanner = new DirectoryScanner()
+  scanner.setCaseSensitive(false)
+  scanner.setIncludes(Array("**/*.jar"))
+
 
   def main(args: Array[String]): Unit = {
-    val classpath = args(0)
-    val blacklist = scala.io.Source.fromFile(new File(args(1)))
+    val classpath = resolveClasspath(args(0).split(":"))
+    val blacklist = scala.io.Source.fromFile(new File(args(1))).mkString
 
     val filteredClasspath =
-      classpath.split(':')
-        .map(new File(_))
+        classpath.map(new File(_))
         .filter { file =>
-          file.exists() && !blacklist.contains(file.getName)
+          file.exists() && !blacklist.contains(file.getAbsolutePath)
         }.mkString(":")
 
     print(filteredClasspath)
+  }
+
+  def resolveClasspath(classpath: Array[String]): Array[String] = {
+    classpath.flatMap(path => {
+      if (path.endsWith("/*")) {
+        scanner.setBasedir(path.dropRight(1))
+        scanner.scan()
+        scanner.getIncludedFiles.map(jar => path.dropRight(1) + jar)
+      } else Array(path)
+    })
   }
 }
