@@ -110,7 +110,7 @@ export HADOOP_CONF_DIR=\$hadoop_conf_dir
 # Enable mapr impersonation
 export MAPR_IMPERSONATION_ENABLED=1
 
-MAPR_HADOOP_CLASSPATH=\`mapr classpath\`
+MAPR_HADOOP_CLASSPATH=\`$SPARK_HOME/bin/mapr-classpath.sh\`
 MAPR_HADOOP_JNI_PATH=\`hadoop jnipath\`
 MAPR_SPARK_CLASSPATH="\$MAPR_HADOOP_CLASSPATH"
 
