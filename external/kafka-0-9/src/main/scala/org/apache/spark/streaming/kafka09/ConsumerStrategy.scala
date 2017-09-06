@@ -95,7 +95,8 @@ private case class Subscribe[K, V](
       val aor = kafkaParams.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG)
       val shouldSuppress = aor != null && aor.asInstanceOf[String].toUpperCase == "NONE"
       try {
-        consumer.poll(0)
+        // consumer.poll(0)
+        KafkaUtils.waitForConsumerAssignment(consumer)
       } catch {
         case x: NoOffsetForPartitionException if shouldSuppress =>
           logWarning("Catching NoOffsetForPartitionException since " +
@@ -149,7 +150,8 @@ private case class SubscribePattern[K, V](
       val aor = kafkaParams.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG)
       val shouldSuppress = aor != null && aor.asInstanceOf[String].toUpperCase == "NONE"
       try {
-        consumer.poll(0)
+        // consumer.poll(0)
+        KafkaUtils.waitForConsumerAssignment(consumer)
       } catch {
         case x: NoOffsetForPartitionException if shouldSuppress =>
           logWarning("Catching NoOffsetForPartitionException since " +
