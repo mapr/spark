@@ -26,7 +26,7 @@ import net.razorvine.pickle.{IObjectPickler, Opcodes, Pickler}
 import org.apache.kafka.clients.consumer._
 import org.apache.kafka.common.TopicPartition
 
-import org.apache.spark.SparkContext
+import org.apache.spark.{SparkContext, SparkEnv}
 import org.apache.spark.annotation.Experimental
 import org.apache.spark.api.java.{JavaRDD, JavaSparkContext}
 import org.apache.spark.api.java.function.{Function0 => JFunction0}
@@ -229,6 +229,17 @@ object KafkaUtils extends Logging {
     if (null == rbb || rbb.asInstanceOf[java.lang.Integer] < 65536) {
       logWarning(s"overriding ${ConsumerConfig.RECEIVE_BUFFER_CONFIG} to 65536 see KAFKA-3135")
       kafkaParams.put(ConsumerConfig.RECEIVE_BUFFER_CONFIG, 65536: java.lang.Integer)
+    }
+  }
+
+  def waitForConsumerAssignment[K, V](consumer: KafkaConsumer[K, V]): Unit = {
+    val waitingForAssigmentTimeout = SparkEnv.get.conf.
+      getLong("spark.mapr.WaitingForAssignmentTimeout",
+        defaultValue = 10000)
+    var timeout = 0
+    while (consumer.assignment().isEmpty && timeout < waitingForAssigmentTimeout) {
+      Thread.sleep(500)
+      timeout += 500
     }
   }
 }
