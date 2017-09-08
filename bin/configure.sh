@@ -239,10 +239,20 @@ function change_permissions() {
 
 function configureOnSecureCluster() {
 source $MAPR_HOME/conf/env.sh
+		  sed -i '/^spark.yarn.historyServer.address/ d' $MAPR_SPARK_HOME/conf/spark-defaults.conf
           sed -i '/# Security/,/# EndOfSecurityConfiguration/d' "$SPARK_HOME"/conf/spark-defaults.conf
           cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOM
 
 # Security
+#HistoryServer https configure
+spark.yarn.historyServer.address node1:18480
+spark.ssl.protocol tls
+spark.ssl.historyServer.enabled true
+spark.ssl.trustStore $MAPR_HOME/conf/ssl_truststore
+spark.ssl.keyStore $MAPR_HOME/conf/ssl_keystore
+spark.ssl.trustStorePassword mapr123
+spark.ssl.keyStorePassword mapr123
+
 # - ACLS
 spark.acls.enable       true
 spark.admin.acls        mapr
