@@ -17,12 +17,13 @@
 
 package org.apache.spark.launcher;
 
+import org.junit.Test;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -30,10 +31,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
-
 import static org.apache.spark.launcher.LauncherProtocol.*;
+import static org.junit.Assert.*;
 
 public class LauncherServerSuite extends BaseSuite {
 
