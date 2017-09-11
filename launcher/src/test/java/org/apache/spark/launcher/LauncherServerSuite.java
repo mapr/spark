@@ -17,6 +17,8 @@
 
 package org.apache.spark.launcher;
 
+import org.junit.Test;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -32,10 +34,8 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
-
 import static org.apache.spark.launcher.LauncherProtocol.*;
+import static org.junit.Assert.*;
 
 public class LauncherServerSuite extends BaseSuite {
 
