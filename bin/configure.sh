@@ -381,4 +381,6 @@ change_permissions
 installWardenConfFile
 stopServicesForRestartByWarden
 
+rm -f "$SPARK_HOME"/etc/.not_configured_yet
+
 exit $RETURN_SUCCESS
