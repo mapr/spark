@@ -98,6 +98,7 @@
     <module>sql/core</module>
     <module>sql/hive</module>
     <module>assembly</module>
+    <module>external/maprdb</module>
     <module>external/flume</module>
     <module>external/flume-sink</module>
     <module>external/flume-assembly</module>
