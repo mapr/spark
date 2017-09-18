@@ -99,6 +99,7 @@
     <module>sql/core</module>
     <module>sql/hive</module>
     <module>assembly</module>
+    <module>external/maprdb</module>
     <module>examples</module>
     <module>repl</module>
     <module>launcher</module>
