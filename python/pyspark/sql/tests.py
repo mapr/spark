@@ -46,7 +46,8 @@ if sys.version_info[:2] <= (2, 6):
 else:
     import unittest
 
-from pyspark.sql import SparkSession, HiveContext, Column, Row
+from pyspark import SparkContext
+from pyspark.sql import SparkSession, SQLContext, HiveContext, Column, Row
 from pyspark.sql.types import *
 from pyspark.sql.types import UserDefinedType, _infer_type
 from pyspark.tests import ReusedPySparkTestCase, SparkSubmitTests
@@ -205,6 +206,11 @@ class SQLTests(ReusedPySparkTestCase):
         cls.spark.stop()
         shutil.rmtree(cls.tempdir.name, ignore_errors=True)
 
+    def test_sqlcontext_reuses_sparksession(self):
+        sqlContext1 = SQLContext(self.sc)
+        sqlContext2 = SQLContext(self.sc)
+        self.assertTrue(sqlContext1.sparkSession is sqlContext2.sparkSession)
+
     def test_row_should_be_read_only(self):
         row = Row(a=1, b=2)
         self.assertEqual(1, row.a)
@@ -317,6 +323,12 @@ class SQLTests(ReusedPySparkTestCase):
         self.assertEqual(row[0], 4)
         [row] = self.spark.sql("SELECT double(double(1) + 1)").collect()
         self.assertEqual(row[0], 6)
+
+    def test_single_udf_with_repeated_argument(self):
+        # regression test for SPARK-20685
+        self.spark.catalog.registerFunction("add", lambda x, y: x + y, IntegerType())
+        row = self.spark.sql("SELECT add(1, 1)").first()
+        self.assertEqual(tuple(row), (2, ))
 
     def test_multiple_udfs(self):
         self.spark.catalog.registerFunction("double", lambda x: x * 2, IntegerType())
@@ -1354,6 +1366,14 @@ class SQLTests(ReusedPySparkTestCase):
         self.assertEqual(now, now1)
         self.assertEqual(now, utcnow1)
 
+    # regression test for SPARK-19561
+    def test_datetime_at_epoch(self):
+        epoch = datetime.datetime.fromtimestamp(0)
+        df = self.spark.createDataFrame([Row(date=epoch)])
+        first = df.select('date', lit(epoch).alias('lit_date')).first()
+        self.assertEqual(first['date'], epoch)
+        self.assertEqual(first['lit_date'], epoch)
+
     def test_decimal(self):
         from decimal import Decimal
         schema = StructType([StructField("decimal", DecimalType(10, 5))])
@@ -1884,6 +1904,32 @@ class HiveSparkSubmitTests(SparkSubmitTests):
         self.assertEqual(0, proc.returncode)
         self.assertIn("default", out.decode('utf-8'))
         self.assertTrue(os.path.exists(metastore_path))
+
+
+class SQLTests2(ReusedPySparkTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        ReusedPySparkTestCase.setUpClass()
+        cls.spark = SparkSession(cls.sc)
+
+    @classmethod
+    def tearDownClass(cls):
+        ReusedPySparkTestCase.tearDownClass()
+        cls.spark.stop()
+
+    # We can't include this test into SQLTests because we will stop class's SparkContext and cause
+    # other tests failed.
+    def test_sparksession_with_stopped_sparkcontext(self):
+        self.sc.stop()
+        sc = SparkContext('local[4]', self.sc.appName)
+        spark = SparkSession.builder.getOrCreate()
+        try:
+            df = spark.createDataFrame([(1, 2)], ["c", "c"])
+            df.collect()
+        finally:
+            spark.stop()
+            sc.stop()
 
 
 class HiveContextSQLTests(ReusedPySparkTestCase):
