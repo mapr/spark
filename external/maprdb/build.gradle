@@ -1,0 +1,65 @@
+import PomUtil
+
+apply from: "${topDir}/javatest.gradle"
+apply plugin: "scala"
+apply plugin: "maven-publish"
+
+defaultTasks "publishToMavenLocal"
+
+group = "com.mapr.db"
+version = maprVersion
+
+dependencies {
+    compile project(path: ":src/java-utils", configuration: "main")
+    compile project(path: ":src/fs/proto-java", configuration: "main")
+    compile project(path: ":src/fs/client/fileclient/java/maprfs", configuration: "main")
+    compile project(path: ":src/fs/client/fileclient/java/maprfs-jni", configuration: "main")
+    compile project(path: ":src/fs/client/dbclient-parent/client", configuration: "main")
+    compile project(path: ":src/fs/client/dbclient-parent/map-reduce", configuration: "main")
+    compile(group: "org.ojai", name: "ojai", version: ojaiVersion) {
+        exclude group: "org.apache.hadoop"
+    }
+    compile(group: "org.ojai", name: "ojai-scala", version: ojaiVersion) {
+        exclude group: "org.apache.hadoop"
+    }
+    compile group: "org.apache.spark", name: "spark-core_${scalaCompatVersion}", version: sparkCoreVersion
+    compile group: "org.apache.spark", name: "spark-streaming_${scalaCompatVersion}", version: sparkCoreVersion
+    compile group: "org.apache.spark", name: "spark-sql_${scalaCompatVersion}", version: sparkCoreVersion
+    compile group: "org.scala-lang", name: "scala-library", version: scalaVersion
+    compile group: "com.fasterxml.jackson.module", name: "jackson-module-scala_${scalaCompatVersion}", version: jacksonVersion
+    compile group: "org.specs2", name: "specs2-junit_${scalaCompatVersion}", version: specs2Version
+    compile group: "org.scalatest", name: "scalatest_${scalaCompatVersion}", version: scalatestVersion
+
+    testCompile project(path: ":src/fs/client/dbclient-parent/client", configuration: "testjar")
+}
+
+tasks.withType(Jar) {
+    baseName "maprdb-spark"
+}
+
+File originalPom = file("pom.xml")
+List<Node> originalNodes = null
+
+task eatPom() {
+    doFirst {
+        originalNodes = PomUtil.parsePom(originalPom, maprVersion)
+    }
+}
+
+publishing {
+    publications {
+        mvnArtifact {
+            artifactId "maprdb-spark"
+            pom.withXml {
+                originalNodes.each { asNode().append(it) }
+            }
+        }
+    }
+}
+
+model {
+    tasks.generatePomFileForMvnArtifactPublication {
+        dependsOn "eatPom"
+    }
+}
+
