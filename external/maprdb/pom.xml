@@ -23,7 +23,7 @@
     <dependency>
       <groupId>com.mapr.db</groupId>
       <artifactId>maprdb</artifactId>
-      <version>6.0.0-mapr-SNAPSHOT</version>
+      <version>5.2.2-mapr</version>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
@@ -70,22 +70,22 @@
     <dependency>
       <groupId>com.mapr.db</groupId>
       <artifactId>maprdb-mapreduce</artifactId>
-      <version>6.0.0-mapr-SNAPSHOT</version>
+      <version>5.2.2-mapr</version>
     </dependency>
     <dependency>
       <groupId>org.ojai</groupId>
       <artifactId>ojai</artifactId>
-      <version>2.0-mapr-1707-beta</version>
+      <version>1.1-mapr-1703</version>
     </dependency>
     <dependency>
       <groupId>org.ojai</groupId>
       <artifactId>ojai-scala</artifactId>
-      <version>2.0-mapr-1707-beta</version>
+      <version>1.1-mapr-1703</version>
     </dependency>
     <dependency>
       <groupId>com.mapr</groupId>
       <artifactId>mapr-java-utils</artifactId>
-      <version>6.0.0-mapr-SNAPSHOT</version>
+      <version>5.2.2-mapr</version>
       <classifier>tests</classifier>
       <scope>test</scope>
     </dependency>
@@ -136,8 +136,8 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
+          <source>1.7</source>
+          <target>1.7</target>
         </configuration>
       </plugin>
     </plugins>
