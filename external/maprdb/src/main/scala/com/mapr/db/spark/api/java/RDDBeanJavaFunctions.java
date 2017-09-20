@@ -15,7 +15,7 @@ public class RDDBeanJavaFunctions<D> {
     public RDDBeanJavaFunctions(JavaRDD<D> rdd, Class<D> clazz) {
         OJAIValue<D> val = OJAIValue$.MODULE$.overrideJavaDefault();
         this.rdd = rdd;
-        this.ojaiDocumentRDDFunctions = new OJAIDocumentRDDFunctions(rdd.rdd(), val);
+        this.ojaiDocumentRDDFunctions = new OJAIDocumentRDDFunctions<>(rdd.rdd(), val);
     }
 
     public void saveToMapRDB(String tableName) {
