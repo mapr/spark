@@ -8,6 +8,7 @@ import com.mapr.db.spark.writers.OJAIKey;
 import com.mapr.db.spark.writers.OJAIValue;
 import com.mapr.db.spark.writers.OJAIValue$;
 import org.apache.spark.api.java.JavaPairRDD;
+import scala.reflect.ClassTag;
 import scala.reflect.ClassTag$;
 
 public class PairedRDDJavaFunctions<K> {
@@ -17,9 +18,10 @@ public class PairedRDDJavaFunctions<K> {
 
     public PairedRDDJavaFunctions(JavaPairRDD<K, OJAIDocument> rdd, Class<K> keyClazz) {
         OJAIValue<OJAIDocument> val = OJAIValue$.MODULE$.defaultOJAIDocument();
-        OJAIKey<K> key = MapRDBUtils.getOjaiKey(ClassTag$.MODULE$.apply(keyClazz));
+        ClassTag<K> ct = ClassTag$.MODULE$.apply(keyClazz);
+        OJAIKey<K> key = MapRDBUtils.getOjaiKey(ct);
         this.rdd = rdd;
-        this.ojaiDocumentRDDFunctions = new PairedDocumentRDDFunctions(rdd.rdd(), key, val);
+        this.ojaiDocumentRDDFunctions = new PairedDocumentRDDFunctions<>(rdd.rdd(), key, val);
     }
 
     public void saveToMapRDB(String tableName) {
