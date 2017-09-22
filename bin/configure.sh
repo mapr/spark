@@ -346,7 +346,7 @@ USAGE="usage: $0 [-s|--secure || -u|--unsecure] [-R] [--EC] [-h|--help]]"
 
 eval set -- "$OPTS"
 
-for i ; do
+for i in "$@" ; do
   case "$i" in
     --secure)
       isSecure=1;
@@ -354,14 +354,14 @@ for i ; do
     --unsecure)
       isSecure=0;
       shift 1;;
-     -R)
+     -R|--R)
       SPARK_IS_READY=true;
       shift;;
     --help)
       echo "${USAGE}"
       exit $RETURN_SUCCESS
       ;;
-    --EC)
+    -EC|--EC)
       #ignoring
       shift;;
     --)
