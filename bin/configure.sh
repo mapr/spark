@@ -273,6 +273,8 @@ for i in "$@" ; do
       ;;
     --EC|-EC)
       #ignoring
+      shift;;
+    --)
       shift; break;;
     *)
       # Invalid arguments passed
