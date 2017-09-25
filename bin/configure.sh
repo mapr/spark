@@ -88,101 +88,6 @@ sed 's/rootCategory=INFO/rootCategory=WARN/' "$SPARK_HOME/conf/log4j.properties.
 #
 # Add MapR customization to spark
 #
-if [ ! -e "$SPARK_HOME"/conf/spark-env.sh ]; then
-	cp "$SPARK_HOME"/conf/spark-env.sh.template "$SPARK_HOME"/conf/spark-env.sh
-    cat >> "$SPARK_HOME"/conf/spark-env.sh << EOM
-
-
-#########################################################################################################
-# Set MapR attributes and compute classpath
-#########################################################################################################
-
-# Set the spark attributes
-if [ -d "$SPARK_HOME" ]; then
-  export SPARK_HOME=$SPARK_HOME
-fi
-
-# Load the hadoop version attributes
-source $SPARK_HOME/mapr-util/hadoop-version-picker.sh
-export HADOOP_HOME=\$hadoop_home_dir
-export HADOOP_CONF_DIR=\$hadoop_conf_dir
-
-# Enable mapr impersonation
-export MAPR_IMPERSONATION_ENABLED=1
-
-MAPR_HADOOP_CLASSPATH=\`$SPARK_HOME/bin/mapr-classpath.sh\`
-MAPR_HADOOP_JNI_PATH=\`hadoop jnipath\`
-MAPR_SPARK_CLASSPATH="\$MAPR_HADOOP_CLASSPATH"
-
-SPARK_MAPR_HOME=$MAPR_HOME
-
-export SPARK_LIBRARY_PATH=\$MAPR_HADOOP_JNI_PATH
-export LD_LIBRARY_PATH="\$MAPR_HADOOP_JNI_PATH:\$LD_LIBRARY_PATH"
-
-# Load the classpath generator script
-source $SPARK_HOME/mapr-util/generate-classpath.sh
-
-# Calculate hive jars to include in classpath
-generate_compatible_classpath "spark" "$SPARK_VERSION" "hive"
-MAPR_HIVE_CLASSPATH=\${generated_classpath}
-if [ ! -z "\$MAPR_HIVE_CLASSPATH" ]; then
-  MAPR_SPARK_CLASSPATH="\$MAPR_SPARK_CLASSPATH:\$MAPR_HIVE_CLASSPATH"
-fi
-
-# Calculate hbase jars to include in classpath
-generate_compatible_classpath "spark" "$SPARK_VERSION" "hbase"
-MAPR_HBASE_CLASSPATH=\${generated_classpath}
-if [ ! -z "\$MAPR_HBASE_CLASSPATH" ]; then
-  MAPR_SPARK_CLASSPATH="\$MAPR_SPARK_CLASSPATH:\$MAPR_HBASE_CLASSPATH"
-  SPARK_SUBMIT_OPTS="\$SPARK_SUBMIT_OPTS -Dspark.driver.extraClassPath=\$MAPR_HBASE_CLASSPATH"
-fi
-
-# Set executor classpath for MESOS. Uncomment following string if you want deploy spark jobs on Mesos
-#MAPR_MESOS_CLASSPATH=\$MAPR_SPARK_CLASSPATH
-SPARK_SUBMIT_OPTS="\$SPARK_SUBMIT_OPTS -Dspark.executor.extraClassPath=\$MAPR_HBASE_CLASSPATH:\$MAPR_MESOS_CLASSPATH"
-
-# Set SPARK_DIST_CLASSPATH
-export SPARK_DIST_CLASSPATH=\$MAPR_SPARK_CLASSPATH
-
-# Security status
-source $MAPR_HOME/conf/env.sh
-if [ "\$MAPR_SECURITY_STATUS" = "true" ]; then
-  SPARK_SUBMIT_OPTS="\$SPARK_SUBMIT_OPTS -Dhadoop.login=hybrid -Dmapr_sec_enabled=true"
-fi
-
-# scala
-export SCALA_VERSION=2.11
-export SPARK_SCALA_VERSION=\$SCALA_VERSION
-export SCALA_HOME=$SPARK_HOME/scala
-export SCALA_LIBRARY_PATH=\$SCALA_HOME/lib
-
-# Use a fixed identifier for pid files
-export SPARK_IDENT_STRING="mapr"
-
-#########################################################################################################
-#    :::CAUTION::: DO NOT EDIT ANYTHING ON OR ABOVE THIS LINE
-#########################################################################################################
-
-
-#
-# MASTER HA SETTINGS
-#
-#export SPARK_DAEMON_JAVA_OPTS="-Dspark.deploy.recoveryMode=ZOOKEEPER  -Dspark.deploy.zookeeper.url=<zookeerper1:5181,zookeeper2:5181,..> -Djava.security.auth.login.config=/opt/mapr/conf/mapr.login.conf -Dzookeeper.sasl.client=false"
-
-
-# MEMORY SETTINGS
-export SPARK_DAEMON_MEMORY=1g
-export SPARK_WORKER_MEMORY=16g
-
-# Worker Directory
-export SPARK_WORKER_DIR=\$SPARK_HOME/tmp
-
-# Environment variable for printing spark command everytime you run spark.Set to "1" to print.
-# export SPARK_PRINT_LAUNCH_COMMAND=1
-
-
-EOM
-fi
         #
         # If the spark version is greater than 1.0, remove
         # the any shark directory that is left over.  Otherwise,
@@ -276,44 +181,49 @@ EOM
 #
 
 function installWardenConfFile() {
-    if checkNetworkPortAvailability 8080 2>/dev/null; then
-    	{ set +x; } 2>/dev/null
-        #Register port for spark master
-        registerNetworkPort spark_master 8080 2>/dev/null
+	if [ -f $SPARK_HOME/warden/warden.spark-master.conf ] ; then
+		if checkNetworkPortAvailability 8080 2>/dev/null; then
+			{ set +x; } 2>/dev/null
+			#Register port for spark master
+			registerNetworkPort spark_master 8080 2>/dev/null
 
-        cp "${SPARK_HOME}/warden/warden.spark-master.conf" "${MAPR_CONF_DIR}/conf.d/" 2>/dev/null || :
-        logInfo 'Warden conf for Spark-master copied.'
-    else
-    	{ set +x; } 2>/dev/null
-        logErr 'Spark-master  cannot start because its ports already has been taken.'
-        exit $RETURN_ERR_MAPRCLUSTER
+			cp "${SPARK_HOME}/warden/warden.spark-master.conf" "${MAPR_CONF_DIR}/conf.d/" 2>/dev/null || :
+			logInfo 'Warden conf for Spark-master copied.'
+		else
+			{ set +x; } 2>/dev/null
+			logErr 'Spark-master  cannot start because its ports already has been taken.'
+			exit $RETURN_ERR_MAPRCLUSTER
+		fi
     fi
 
-    if checkNetworkPortAvailability 18080 2>/dev/null; then
-        #Register port for spark historyserver
-        { set +x; } 2>/dev/null
-        registerNetworkPort spark_historyserver 18080 2>/dev/null
+	if [ -f $SPARK_HOME/warden/warden.spark-historyserver.conf ] ; then
+		if checkNetworkPortAvailability 18080 2>/dev/null; then
+			#Register port for spark historyserver
+			{ set +x; } 2>/dev/null
+			registerNetworkPort spark_historyserver 18080 2>/dev/null
 
-        cp "${SPARK_HOME}/warden/warden.spark-historyserver.conf" "${MAPR_CONF_DIR}/conf.d/" 2>/dev/null || :
-        logInfo 'Warden conf for Spark-historyserver copied.'
-    else
-    	{ set +x; } 2>/dev/null
-        logErr 'Spark-historyserver  cannot start because its ports already has been taken.'
-        exit $RETURN_ERR_MAPRCLUSTER
+			cp "${SPARK_HOME}/warden/warden.spark-historyserver.conf" "${MAPR_CONF_DIR}/conf.d/" 2>/dev/null || :
+			logInfo 'Warden conf for Spark-historyserver copied.'
+		else
+			{ set +x; } 2>/dev/null
+			logErr 'Spark-historyserver  cannot start because its ports already has been taken.'
+			exit $RETURN_ERR_MAPRCLUSTER
+		fi
     fi
 
+	if [ -f $SPARK_HOME/warden/warden.spark-thriftserver.conf ] ; then
+		if checkNetworkPortAvailability 4040 2>/dev/null; then
+			#Register port for spark thriftserver
+			{ set +x; } 2>/dev/null
+			registerNetworkPort spark_thriftserver 4040 2>/dev/null
 
-    if checkNetworkPortAvailability 4040 2>/dev/null; then
-        #Register port for spark thriftserver
-        { set +x; } 2>/dev/null
-        registerNetworkPort spark_thriftserver 4040 2>/dev/null
-
-        cp "${SPARK_HOME}/warden/warden.spark-thriftserver.conf" "${MAPR_CONF_DIR}/conf.d/" 2>/dev/null || :
-        logInfo 'Warden conf for Spark-thriftserver copied.'
-    else
-    	{ set +x; } 2>/dev/null
-        logErr 'Spark-thriftserver  cannot start because its ports already has been taken.'
-        exit $RETURN_ERR_MAPRCLUSTER
+			cp "${SPARK_HOME}/warden/warden.spark-thriftserver.conf" "${MAPR_CONF_DIR}/conf.d/" 2>/dev/null || :
+			logInfo 'Warden conf for Spark-thriftserver copied.'
+		else
+			{ set +x; } 2>/dev/null
+			logErr 'Spark-thriftserver  cannot start because its ports already has been taken.'
+			exit $RETURN_ERR_MAPRCLUSTER
+		fi
     fi
 }
 
@@ -348,28 +258,25 @@ eval set -- "$OPTS"
 
 for i in "$@" ; do
   case "$i" in
-    --secure)
+    --secure|-s)
       isSecure=1;
       shift 1;;
-    --unsecure)
+    --unsecure|-u)
       isSecure=0;
       shift 1;;
-     -R|--R)
+     --R|-R)
       SPARK_IS_READY=true;
       shift;;
-    --help)
+    --help|-h)
       echo "${USAGE}"
       exit $RETURN_SUCCESS
       ;;
-    -EC|--EC)
+    --EC|-EC)
       #ignoring
-      shift;;
-    --)
-      shift;;
+      shift; break;;
     *)
       # Invalid arguments passed
-      echo "${USAGE}"
-      exit $RETURN_ERR_ARGS
+      break;;
   esac
 done
 
