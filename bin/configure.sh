@@ -151,12 +151,17 @@ source $MAPR_HOME/conf/env.sh
 # Security
 #HistoryServer https configure
 spark.yarn.historyServer.address $(hostname --fqdn):18480
-spark.ssl.protocol tls
 spark.ssl.historyServer.enabled true
+
+# ssl
+spark.ssl.fs.enabled true
+spark.ssl.keyPassword mapr123
 spark.ssl.trustStore $MAPR_HOME/conf/ssl_truststore
-spark.ssl.keyStore $MAPR_HOME/conf/ssl_keystore
 spark.ssl.trustStorePassword mapr123
+spark.ssl.keyStore $MAPR_HOME/conf/ssl_keystore
 spark.ssl.keyStorePassword mapr123
+spark.ssl.protocol TLSv1.2
+spark.ssl.enabledAlgorithms TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
 
 # - ACLS
 spark.acls.enable       true
