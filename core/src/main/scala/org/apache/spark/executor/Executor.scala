@@ -20,7 +20,7 @@ package org.apache.spark.executor
 import java.io.{File, NotSerializableException}
 import java.lang.Thread.UncaughtExceptionHandler
 import java.lang.management.ManagementFactory
-import java.net.URL
+import java.net.{URI, URL}
 import java.nio.ByteBuffer
 import java.util.Properties
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
@@ -431,7 +431,8 @@ private[spark] class Executor(
           setTaskFinishedAndClearInterruptStatus()
           execBackend.statusUpdate(taskId, TaskState.KILLED, ser.serialize(TaskKilled))
 
-        case _: InterruptedException if task.killed =>
+        case _: InterruptedException | NonFatal(_) if
+            task != null && task.killed =>
           logInfo(s"Executor interrupted and killed $taskName (TID $taskId)")
           setTaskFinishedAndClearInterruptStatus()
           execBackend.statusUpdate(taskId, TaskState.KILLED, ser.serialize(TaskKilled))
