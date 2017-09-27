@@ -178,6 +178,23 @@ spark.io.encryption.enabled     true
 spark.io.encryption.keySizeBits 128
 # EndOfSecurityConfiguration
 EOM
+
+if [ ! -f $SPARK_HOME/conf/hive-site.xml ] ; then
+	cp $SPARK_HOME/conf/hive-site.xml.security.template $SPARK_HOME/conf/hive-site.xml
+else
+	if ! grep -q hive.server2.thrift.sasl.qop "$SPARK_HOME/conf/hive-site.xml"; then
+		CONF="</configuration>"
+		PROPERTIES="<property>\n<name>hive.server2.thrift.sasl.qop</name>\n<value>auth-conf</value>\n</property>\n</configuration>"
+		sed -i "s~$CONF~$PROPERTIES~g" $SPARK_HOME/conf/hive-site.xml
+	fi
+
+	if ! grep -q hive.server2.authentication "$SPARK_HOME/conf/hive-site.xml"; then
+		CONF="</configuration>"
+		PROPERTIES="<property>\n<name>hive.server2.authentication</name>\n<value>MAPRSASL</value>\n</property>\n</configuration>"
+		sed -i "s~$CONF~$PROPERTIES~g" $SPARK_HOME/conf/hive-site.xml
+	fi
+fi
+
 }
 
 
