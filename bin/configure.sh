@@ -44,8 +44,6 @@ SPARK_BIN="$SPARK_HOME"/bin
 SPARK_LOGS="$SPARK_HOME"/logs
 DAEMON_CONF=${MAPR_HOME}/conf/daemon.conf
 
-CLUSTER_INFO=`cat $MAPR_HOME/conf/mapr-clusters.conf`
-
 # indicates whether cluster is up or not
 SPARK_IS_RUNNING=false
 if [ ! -z ${isOnlyRoles+x} ]; then # isOnlyRoles exists
@@ -181,23 +179,22 @@ spark.io.encryption.keySizeBits 128
 # EndOfSecurityConfiguration
 EOM
 
-if [[ $CLUSTER_INFO == *"kerberos"* ]]; then
-	if [ ! -f $SPARK_HOME/conf/hive-site.xml ] ; then
-		cp $SPARK_HOME/conf/hive-site.xml.security.template $SPARK_HOME/conf/hive-site.xml
-	else
-		if ! grep -q hive.server2.thrift.sasl.qop "$SPARK_HOME/conf/hive-site.xml"; then
-			CONF="</configuration>"
-			PROPERTIES="<property>\n<name>hive.server2.thrift.sasl.qop</name>\n<value>auth-conf</value>\n</property>\n</configuration>"
-			sed -i "s~$CONF~$PROPERTIES~g" $SPARK_HOME/conf/hive-site.xml
-		fi
+if [ ! -f $SPARK_HOME/conf/hive-site.xml ] ; then
+	cp $SPARK_HOME/conf/hive-site.xml.security.template $SPARK_HOME/conf/hive-site.xml
+else
+	if ! grep -q hive.server2.thrift.sasl.qop "$SPARK_HOME/conf/hive-site.xml"; then
+		CONF="</configuration>"
+		PROPERTIES="<property>\n<name>hive.server2.thrift.sasl.qop</name>\n<value>auth-conf</value>\n</property>\n</configuration>"
+		sed -i "s~$CONF~$PROPERTIES~g" $SPARK_HOME/conf/hive-site.xml
+	fi
 
-		if ! grep -q hive.server2.authentication "$SPARK_HOME/conf/hive-site.xml"; then
-			CONF="</configuration>"
-			PROPERTIES="<property>\n<name>hive.server2.authentication</name>\n<value>MAPRSASL</value>\n</property>\n</configuration>"
-			sed -i "s~$CONF~$PROPERTIES~g" $SPARK_HOME/conf/hive-site.xml
-		fi
+	if ! grep -q hive.server2.authentication "$SPARK_HOME/conf/hive-site.xml"; then
+		CONF="</configuration>"
+		PROPERTIES="<property>\n<name>hive.server2.authentication</name>\n<value>MAPRSASL</value>\n</property>\n</configuration>"
+		sed -i "s~$CONF~$PROPERTIES~g" $SPARK_HOME/conf/hive-site.xml
 	fi
 fi
+
 }
 
 
