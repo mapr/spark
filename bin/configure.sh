@@ -68,8 +68,6 @@ if [ -f $MAPR_HOME/MapRBuildVersion ]; then
   fi
 fi
 
-ln -sfn "$SPARK_HOME" /usr/local/spark
-
 #
 # Make the logs directory rwx, and set the sticky bit.
 #
