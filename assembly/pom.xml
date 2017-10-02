@@ -185,9 +185,6 @@
     </profile>
     <profile>
       <id>include-maprdb</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
       <dependencies>
         <dependency>
           <groupId>com.mapr.db</groupId>
