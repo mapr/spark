@@ -75,21 +75,25 @@
                   <groupId>com.mapr.db</groupId>
                   <artifactId>maprdb</artifactId>
                   <version>5.2.2-mapr</version>
+                  <scope>provided</scope>
               </dependency>
               <dependency>
                   <groupId>com.mapr.db</groupId>
                   <artifactId>maprdb-mapreduce</artifactId>
                   <version>5.2.2-mapr</version>
+                  <scope>provided</scope>
               </dependency>
               <dependency>
                   <groupId>org.ojai</groupId>
                   <artifactId>ojai</artifactId>
                   <version>1.1-mapr-1703</version>
+                  <scope>provided</scope>
               </dependency>
               <dependency>
                   <groupId>org.ojai</groupId>
                   <artifactId>ojai-scala</artifactId>
                   <version>1.1-mapr-1703</version>
+                  <scope>provided</scope>
               </dependency>
               <dependency>
                   <groupId>com.mapr</groupId>
@@ -107,21 +111,25 @@
                   <groupId>com.mapr.db</groupId>
                   <artifactId>maprdb</artifactId>
                   <version>6.0.0-mapr-SNAPSHOT</version>
+                  <scope>provided</scope>
               </dependency>
               <dependency>
                   <groupId>com.mapr.db</groupId>
                   <artifactId>maprdb-mapreduce</artifactId>
                   <version>6.0.0-mapr-SNAPSHOT</version>
+                  <scope>provided</scope>
               </dependency>
               <dependency>
                   <groupId>org.ojai</groupId>
                   <artifactId>ojai</artifactId>
                   <version>2.0-mapr-1707-beta</version>
+                  <scope>provided</scope>
               </dependency>
               <dependency>
                   <groupId>org.ojai</groupId>
                   <artifactId>ojai-scala</artifactId>
                   <version>2.0-mapr-1707-beta</version>
+                  <scope>provided</scope>
               </dependency>
               <dependency>
                   <groupId>com.mapr</groupId>
