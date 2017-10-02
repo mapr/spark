@@ -26,7 +26,7 @@
   </parent>
 
   <artifactId>spark-assembly_2.11</artifactId>
-  <name>Spark Project Assembly</name>
+  <name>Spark Integration for MapR-DB</name>
   <url>http://spark.apache.org/</url>
   <packaging>pom</packaging>
 
@@ -193,6 +193,20 @@
         </dependency>
       </dependencies>
     </profile>
+    <profile>
+      <id>include-maprdb</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>com.mapr.db</groupId>
+          <artifactId>maprdb-spark</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+
     <profile>
       <id>spark-ganglia-lgpl</id>
       <dependencies>
