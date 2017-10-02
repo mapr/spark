@@ -403,7 +403,7 @@ object MapRSqlUtils {
       case (BinaryType) => DBValueBuilderImpl.KeyValueBuilder.initFrom(element.asInstanceOf[ByteBuffer])
       case (BooleanType) => DBValueBuilderImpl.KeyValueBuilder.initFrom(element.asInstanceOf[Boolean])
       case (DateType) => DBValueBuilderImpl.KeyValueBuilder.initFrom(new ODate(element.asInstanceOf[java.sql.Date]))
-      case (TimestampType) => DBValueBuilderImpl.KeyValueBuilder.initFrom(element.asInstanceOf[OTimestamp])
+      case (TimestampType) => DBValueBuilderImpl.KeyValueBuilder.initFrom(new OTimestamp(element.asInstanceOf[java.sql.Timestamp].getTime))
       case (NullType) => DBValueBuilderImpl.KeyValueBuilder.initFromNull()
       case (DoubleType) => DBValueBuilderImpl.KeyValueBuilder.initFrom(element.asInstanceOf[Double])
       case (IntegerType) => DBValueBuilderImpl.KeyValueBuilder.initFrom(element.asInstanceOf[Integer])
