@@ -12,6 +12,7 @@ import org.apache.spark.sql.SparkSession
 import org.ojai.types.{ODate, OTime, OTimestamp}
 import com.mapr.org.apache.hadoop.hbase.util.Bytes.ByteArrayComparator
 import com.mapr.db.MapRDB
+import com.mapr.db.spark.dbclient.DBClient
 
 object SparkSqlAccessTests {
   lazy val conf = new SparkConf()
@@ -31,7 +32,12 @@ object SparkSqlAccessTests {
   def tableInitialization(tableName: String): Unit = {
     if (MapRDB.tableExists(tableName))
       MapRDB.deleteTable(tableName)
-    val table = MapRDB.createTable(tableName)
+    val tabDesc = DBClient().newTableDescriptor()
+    tabDesc.setAutoSplit(true)
+    tabDesc.setPath(tableName)
+    tabDesc.setInsertionOrder(false)
+    DBClient().createTable(tabDesc)
+    val table = DBClient().getTable(tableName)
     table.insertOrReplace(getNullRecord())
     table.insertOrReplace(getBooleanRecord())
     table.insertOrReplace(getStringRecord())
