@@ -27,6 +27,7 @@ private[spark] object MapRDBUtils {
       tabDesc.setAutoSplit(true)
       tabDesc.setPath(tableName)
       tabDesc.setBulkLoad(bulkMode)
+      tabDesc.setInsertionOrder(false)
       if (keys.isEmpty)
         DBClient().createTable(tabDesc)
       else

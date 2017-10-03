@@ -10,6 +10,8 @@ import org.apache.spark.rdd.RDD
 import org.ojai.exceptions.TypeException
 import org.ojai.store.QueryCondition
 import com.mapr.db.MapRDB
+import com.mapr.db.spark.dbclient.DBClient
+
 
 object PredicateTests {
   val tableName = "/tmp/user_profiles_predicates"
@@ -29,7 +31,11 @@ object PredicateTests {
     if (MapRDB.tableExists(tableName))
       MapRDB.deleteTable(tableName)
     println("table successfully create :" + tableName)
-    MapRDB.createTable(tableName)
+    val tabDesc = DBClient().newTableDescriptor()
+    tabDesc.setAutoSplit(true)
+    tabDesc.setPath(tableName)
+    tabDesc.setInsertionOrder(false)
+    DBClient().createTable(tabDesc)
   }
 
   def runTests(sparkSession: SparkContext): Unit = {
