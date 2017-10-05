@@ -212,7 +212,6 @@ function registerPort() {
 		else
 			{ set +x; } 2>/dev/null
 			logErr "Spark-$1 port already has been taken."
-			exit $RETURN_ERR_MAPRCLUSTER
 		fi
     fi
 }
