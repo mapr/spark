@@ -203,72 +203,52 @@ fi
 # Add warden files
 #
 
-function installWardenConfFile() {
-	if [ -f $SPARK_HOME/warden/warden.spark-master.conf ] ; then
-		if checkNetworkPortAvailability 8080 2>/dev/null; then
+function registerPort() {
+	if [ -f $SPARK_HOME/warden/warden.spark-$1.conf ] ; then
+		if checkNetworkPortAvailability $2 2>/dev/null; then
 			{ set +x; } 2>/dev/null
-			#Register port for spark master
-			registerNetworkPort spark_master 8080 2>/dev/null
-
-			cp "${SPARK_HOME}/warden/warden.spark-master.conf" "${MAPR_CONF_DIR}/conf.d/" 2>/dev/null || :
-			logInfo 'Warden conf for Spark-master copied.'
+			registerNetworkPort spark_$1 $2 2>/dev/null
+			logInfo "Warden conf for Spark-$1 copied."
 		else
 			{ set +x; } 2>/dev/null
-			logErr 'Spark-master  cannot start because its ports already has been taken.'
+			logErr "Spark-$1 port already has been taken."
 			exit $RETURN_ERR_MAPRCLUSTER
 		fi
     fi
+}
 
-	if [ -f $SPARK_HOME/warden/warden.spark-historyserver.conf ] ; then
-		if checkNetworkPortAvailability 18080 2>/dev/null; then
-			#Register port for spark historyserver
-			{ set +x; } 2>/dev/null
-			registerNetworkPort spark_historyserver 18080 2>/dev/null
+function registerServicePorts() {
+	registerPort master 8080
+	registerPort historyserver 18080
+	registerPort thriftserver 4040
+}
 
-			cp "${SPARK_HOME}/warden/warden.spark-historyserver.conf" "${MAPR_CONF_DIR}/conf.d/" 2>/dev/null || :
-			logInfo 'Warden conf for Spark-historyserver copied.'
-		else
-			{ set +x; } 2>/dev/null
-			logErr 'Spark-historyserver  cannot start because its ports already has been taken.'
-			exit $RETURN_ERR_MAPRCLUSTER
-		fi
-    fi
+function copyWardenFile() {
+	if [ -f $SPARK_HOME/warden/warden.spark-$1.conf ] ; then
+		cp "${SPARK_HOME}/warden/warden.spark-${1}.conf" "${MAPR_CONF_DIR}/conf.d/" 2>/dev/null || :
+	fi
+}
 
-	if [ -f $SPARK_HOME/warden/warden.spark-thriftserver.conf ] ; then
-		if checkNetworkPortAvailability 4040 2>/dev/null; then
-			#Register port for spark thriftserver
-			{ set +x; } 2>/dev/null
-			registerNetworkPort spark_thriftserver 4040 2>/dev/null
+function copyWardenConfFiles() {
+	mkdir -p "$MAPR_HOME"/conf/conf.d
+	copyWardenFile master
+	copyWardenFile historyserver
+	copyWardenFile thriftserver
+}
 
-			cp "${SPARK_HOME}/warden/warden.spark-thriftserver.conf" "${MAPR_CONF_DIR}/conf.d/" 2>/dev/null || :
-			logInfo 'Warden conf for Spark-thriftserver copied.'
-		else
-			{ set +x; } 2>/dev/null
-			logErr 'Spark-thriftserver  cannot start because its ports already has been taken.'
-			exit $RETURN_ERR_MAPRCLUSTER
-		fi
-    fi
+function stopService() {
+	if [ -e ${MAPR_CONF_DIR}/conf.d/warden.spark-${1}.conf ]; then
+		logInfo "Stopping spark-$1..."
+		${SPARK_HOME}/sbin/stop-${2}.sh
+	fi
 }
 
 function stopServicesForRestartByWarden() {
-	#Stop spark master
-	if [ -e ${MAPR_CONF_DIR}/conf.d/warden.spark-master.conf ]; then
-		logInfo 'Stopping Spark-Master...'
-		${SPARK_HOME}/sbin/stop-master.sh
-	fi
-
-	#Stop spark historyserver
-	if [ -e ${MAPR_CONF_DIR}/conf.d/warden.spark-historyserver.conf ]; then
-		logInfo 'Stopping Spark-Historyserver...'
-		${SPARK_HOME}/sbin/stop-history-server.sh
-	fi
-
-	#Stop spark thriftserver
-	if [ -e ${MAPR_CONF_DIR}/conf.d/warden.spark-thriftserver.conf ]; then
-		logInfo 'Stopping Spark-Thriftserver...'
-		${SPARK_HOME}/sbin/stop-thriftserver.sh
-	fi
+	stopService master master
+	stopService historyserver history-server
+	stopService thriftserver thriftserver
 }
+
 #
 # Parse options
 #
@@ -310,7 +290,8 @@ if [ "$isSecure" == 1 ] ; then
 fi
 
 change_permissions
-installWardenConfFile
+registerServicePorts
+copyWardenConfFiles
 stopServicesForRestartByWarden
 
 rm -f "$SPARK_HOME"/etc/.not_configured_yet
