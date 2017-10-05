@@ -142,13 +142,14 @@ function change_permissions() {
 # Configure security
 #
 
-function configureOnSecureCluster() {
-source $MAPR_HOME/conf/env.sh
-		  sed -i '/^spark.yarn.historyServer.address/ d' $SPARK_HOME/conf/spark-defaults.conf
-          sed -i '/# Security/,/# EndOfSecurityConfiguration/d' "$SPARK_HOME"/conf/spark-defaults.conf
-          cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOM
+function configureSecurity() {
+sed -i '/# ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK/,/# END OF THE SECURITY CONFIGURATION BLOCK/d' "$SPARK_HOME"/conf/spark-defaults.conf
+if [ "$isSecure" == 1 ] ; then
+	source $MAPR_HOME/conf/env.sh
+	sed -i '/^spark.yarn.historyServer.address/ d' $SPARK_HOME/conf/spark-defaults.conf
+    cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOM
 
-# Security
+# ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK
 #HistoryServer https configure
 spark.yarn.historyServer.address $(hostname --fqdn):18480
 spark.ssl.historyServer.enabled true
@@ -176,23 +177,25 @@ spark.network.sasl.serverAlwaysEncrypt  true
 # - IO Encryption
 spark.io.encryption.enabled     true
 spark.io.encryption.keySizeBits 128
-# EndOfSecurityConfiguration
+# END OF THE SECURITY CONFIGURATION BLOCK
+
 EOM
 
-if [[ ! $CLUSTER_INFO == *"kerberos"* ]]; then
-	if [ ! -f $SPARK_HOME/conf/hive-site.xml ] ; then
-		cp $SPARK_HOME/conf/hive-site.xml.security.template $SPARK_HOME/conf/hive-site.xml
-	else
-		if ! grep -q hive.server2.thrift.sasl.qop "$SPARK_HOME/conf/hive-site.xml"; then
-			CONF="</configuration>"
-			PROPERTIES="<property>\n<name>hive.server2.thrift.sasl.qop</name>\n<value>auth-conf</value>\n</property>\n</configuration>"
-			sed -i "s~$CONF~$PROPERTIES~g" $SPARK_HOME/conf/hive-site.xml
-		fi
+	if [[ ! $CLUSTER_INFO == *"kerberos"* ]]; then
+		if [ ! -f $SPARK_HOME/conf/hive-site.xml ] ; then
+			cp $SPARK_HOME/conf/hive-site.xml.security.template $SPARK_HOME/conf/hive-site.xml
+		else
+			if ! grep -q hive.server2.thrift.sasl.qop "$SPARK_HOME/conf/hive-site.xml"; then
+				CONF="</configuration>"
+				PROPERTIES="<property>\n<name>hive.server2.thrift.sasl.qop</name>\n<value>auth-conf</value>\n</property>\n</configuration>"
+				sed -i "s~$CONF~$PROPERTIES~g" $SPARK_HOME/conf/hive-site.xml
+			fi
 
-		if ! grep -q hive.server2.authentication "$SPARK_HOME/conf/hive-site.xml"; then
-			CONF="</configuration>"
-			PROPERTIES="<property>\n<name>hive.server2.authentication</name>\n<value>MAPRSASL</value>\n</property>\n</configuration>"
-			sed -i "s~$CONF~$PROPERTIES~g" $SPARK_HOME/conf/hive-site.xml
+			if ! grep -q hive.server2.authentication "$SPARK_HOME/conf/hive-site.xml"; then
+				CONF="</configuration>"
+				PROPERTIES="<property>\n<name>hive.server2.authentication</name>\n<value>MAPRSASL</value>\n</property>\n</configuration>"
+				sed -i "s~$CONF~$PROPERTIES~g" $SPARK_HOME/conf/hive-site.xml
+			fi
 		fi
 	fi
 fi
@@ -284,10 +287,7 @@ for i in "$@" ; do
   esac
 done
 
-if [ "$isSecure" == 1 ] ; then
-	configureOnSecureCluster
-fi
-
+configureSecurity
 change_permissions
 registerServicePorts
 copyWardenConfFiles
