@@ -211,7 +211,7 @@ function registerPort() {
 			logInfo "Warden conf for Spark-$1 copied."
 		else
 			{ set +x; } 2>/dev/null
-			logErr "Spark-$1 port already has been taken."
+			logWarn "Spark-$1 port already has been taken by $(whoHasNetworkPort $2)"
 		fi
     fi
 }
