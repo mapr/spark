@@ -143,7 +143,7 @@ function change_permissions() {
 #
 
 function configureSecurity() {
-sed -i '/# ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK/,/# END OF THE SECURITY CONFIGURATION BLOCK/d' "$SPARK_HOME"/conf/spark-defaults.conf
+sed -i '/# SECURITY BLOCK/,/# END OF THE SECURITY CONFIGURATION BLOCK/d' "$SPARK_HOME"/conf/spark-defaults.conf
 if [ "$isSecure" == 1 ] ; then
 	source $MAPR_HOME/conf/env.sh
 	sed -i '/^spark.yarn.historyServer.address/ d' $SPARK_HOME/conf/spark-defaults.conf
@@ -151,9 +151,6 @@ if [ "$isSecure" == 1 ] ; then
 
 # SECURITY BLOCK
 # ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK
-#HistoryServer https configure
-spark.yarn.historyServer.address $(hostname --fqdn):18480
-spark.ssl.historyServer.enabled true
 
 # ssl
 spark.ssl.fs.enabled true
@@ -181,6 +178,11 @@ spark.io.encryption.keySizeBits 128
 # END OF THE SECURITY CONFIGURATION BLOCK
 
 EOM
+
+	if [ -f $SPARK_HOME/warden/warden.spark-historyserver.conf ] ; then
+		HISTORY_SERVER_SECURE_PROPS="# ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK\n#HistoryServer https configure\nspark.yarn.historyServer.address $(hostname --fqdn):18480\nspark.ssl.historyServer.enabled true"
+		sed -i "s~# ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK~$HISTORY_SERVER_SECURE_PROPS~g" $SPARK_HOME/conf/spark-defaults.conf
+	fi
 
 	if [[ ! $CLUSTER_INFO == *"kerberos"* ]]; then
 		if [ ! -f $SPARK_HOME/conf/hive-site.xml ] ; then
