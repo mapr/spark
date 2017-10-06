@@ -149,6 +149,7 @@ if [ "$isSecure" == 1 ] ; then
 	sed -i '/^spark.yarn.historyServer.address/ d' $SPARK_HOME/conf/spark-defaults.conf
     cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOM
 
+# SECURITY BLOCK
 # ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK
 #HistoryServer https configure
 spark.yarn.historyServer.address $(hostname --fqdn):18480
