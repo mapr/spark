@@ -232,7 +232,7 @@ private[spark] class KafkaRDD[K, V](
         if (requestOffset < part.untilOffset) {
           val r = consumer.get(requestOffset, pollTimeout)
 
-          if (consumer.isStreams && r.offset() == 0) {
+          if (consumer.isStreams && r.offset() == KafkaUtils.eofOffset) {
             requestOffset = part.untilOffset
             skipGapsAndGetNext
           } else {

@@ -19,7 +19,9 @@ package org.apache.spark.streaming.kafka09
 
 import java.{util => ju}
 import java.io.OutputStream
-import java.lang.{Integer => JInt, Long => JLong}
+import java.lang.{Boolean => JlBool}
+
+import scala.util.{Failure, Success, Try}
 
 import com.google.common.base.Charsets.UTF_8
 import net.razorvine.pickle.{IObjectPickler, Opcodes, Pickler}
@@ -29,13 +31,13 @@ import org.apache.kafka.common.TopicPartition
 import org.apache.spark.{SparkContext, SparkEnv}
 import org.apache.spark.annotation.Experimental
 import org.apache.spark.api.java.{JavaRDD, JavaSparkContext}
-import org.apache.spark.api.java.function.{Function0 => JFunction0}
 import org.apache.spark.api.python.SerDeUtil
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.api.java.{JavaDStream, JavaInputDStream, JavaStreamingContext}
 import org.apache.spark.streaming.dstream.InputDStream
+import org.apache.spark.util.Utils
 
 /**
  * :: Experimental ::
@@ -202,15 +204,38 @@ object KafkaUtils extends Logging {
         jssc.ssc, locationStrategy, consumerStrategy, perPartitionConfig))
   }
 
+  val maprClusterVersion: Array[Int] = Try {
+    Utils.classForName("com.mapr.fs.maprbuildversion.MapRBuildVersion")
+      .getMethod("getMapRBuildVersion")
+      .invoke(null)
+      .asInstanceOf[String]
+      .split("\\.", 4)
+      .slice(0, 3)
+      .map(_.toInt)
+  } match {
+    case Success(v) => v
+    case Failure(e) =>
+      logError("Unable to determine MapR Core version", e)
+      throw e
+  }
+
+  val eofOffset: Int = if (maprClusterVersion(0) < 6) 0 else -1001
+
   /**
   * Tweak kafka params to prevent issues on executors
   */
   private[kafka09] def fixKafkaParams(kafkaParams: ju.HashMap[String, Object]): Unit = {
-    logWarning(s"overriding ${ConsumerConfig.STREAMS_ZEROOFFSET_RECORD_ON_EOF_CONFIG} to true")
-    kafkaParams.put(ConsumerConfig.STREAMS_ZEROOFFSET_RECORD_ON_EOF_CONFIG, true: java.lang.Boolean)
+
+    if (maprClusterVersion(0) < 6) {
+      logWarning(s"overriding ${ConsumerConfig.STREAMS_ZEROOFFSET_RECORD_ON_EOF_CONFIG} to true")
+      kafkaParams.put(ConsumerConfig.STREAMS_ZEROOFFSET_RECORD_ON_EOF_CONFIG, true: JlBool)
+    } else {
+      logWarning(s"overriding ${"streams.negativeoffset.record.on.eof"} to true")
+      kafkaParams.put("streams.negativeoffset.record.on.eof", true: JlBool)
+    }
 
     logWarning(s"overriding ${ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG} to false for executor")
-    kafkaParams.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false: java.lang.Boolean)
+    kafkaParams.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false: JlBool)
 
     logWarning(s"overriding ${ConsumerConfig.AUTO_OFFSET_RESET_CONFIG} to none for executor")
     kafkaParams.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "none")

@@ -78,7 +78,11 @@ class CachedKafkaConsumer[K, V] private(
 
     nextOffset = offset + 1
 
-    if (record.offset() == 0 && isStreams && buffer.hasNext) buffer.next() else record
+    if (record.offset() == KafkaUtils.eofOffset && isStreams && buffer.hasNext) {
+      buffer.next()
+    } else {
+      record
+    }
 // Offsets in MapR-streams can contains gaps
 /*    if (record.offset < offset) {
       logInfo(s"Buffer miss for $groupId $topic $partition $offset")

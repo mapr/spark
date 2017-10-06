@@ -14,21 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.spark.streaming.kafka09
 
-import java.{ util => ju }
+import java.{util => ju}
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicReference
 
-import scala.annotation.tailrec
-import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.collection.JavaConverters._
 
 import org.apache.kafka.clients.consumer._
-import org.apache.kafka.common.{ PartitionInfo, TopicPartition }
+import org.apache.kafka.common.TopicPartition
 
-import org.apache.spark.SparkException
 import org.apache.spark.internal.Logging
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.{StreamingContext, Time}
@@ -159,17 +156,6 @@ private[spark] class DirectKafkaInputDStream[K, V](
     }
   }
 
-  private def adjustPosition(tp: TopicPartition) = {
-    val c = consumer
-    val pos = c.position(tp)
-    if (pos == 0) {
-      val isStreams = tp.topic().startsWith("/") || tp.topic().contains(":")
-      if (isStreams) 1L else 0L
-    } else {
-      pos
-    }
-  }
-
   /**
    * The concern here is that poll might consume messages despite being paused,
    * which would throw off consumer position.  Fix position if this happens.
@@ -201,7 +187,7 @@ private[spark] class DirectKafkaInputDStream[K, V](
     val newPartitions = parts.diff(currentOffsets.keySet)
     // position for new partitions determined by auto.offset.reset if no commit
     currentOffsets = currentOffsets ++ newPartitions.map(tp =>
-      tp -> adjustPosition(tp)).toMap
+      tp -> c.position(tp)).toMap
     // don't want to consume messages, so pause
     c.pause(newPartitions.toArray : _*)
     // find latest available offsets
@@ -255,7 +241,7 @@ private[spark] class DirectKafkaInputDStream[K, V](
     paranoidPoll(c)
     if (currentOffsets.isEmpty) {
       currentOffsets = c.assignment().asScala.map { tp =>
-        tp -> adjustPosition(tp)
+        tp -> c.position(tp)
       }.toMap
     }
 
@@ -268,7 +254,6 @@ private[spark] class DirectKafkaInputDStream[K, V](
       kc.close()
     }
   }
-
   protected val commitQueue = new ConcurrentLinkedQueue[OffsetRange]
   protected val commitCallback = new AtomicReference[OffsetCommitCallback]
 
