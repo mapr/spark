@@ -306,7 +306,7 @@ for i in "$@" ; do
   esac
 done
 
-if [ ! isSecure == 2 ] ; then
+if [ ! "$isSecure" -eq "2" ] ; then
 	configureSecurity
 fi
 change_permissions
