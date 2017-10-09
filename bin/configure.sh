@@ -39,7 +39,9 @@ initCfgEnv
 
 MAPR_CONF_DIR=${MAPR_CONF_DIR:-"$MAPR_HOME/conf"}
 SPARK_VERSION="2.1.0"
+HIVE_VERSION=`cat $MAPR_HOME/hive/hiveversion`
 SPARK_HOME="$MAPR_HOME"/spark/spark-"$SPARK_VERSION"
+HIVE_HOME="$MAPR_HOME"/hive/hive-"$HIVE_VERSION"
 SPARK_BIN="$SPARK_HOME"/bin
 SPARK_LOGS="$SPARK_HOME"/logs
 DAEMON_CONF=${MAPR_HOME}/conf/daemon.conf
@@ -143,7 +145,14 @@ function change_permissions() {
 #
 
 function configureSecurity() {
-sed -i '/# SECURITY BLOCK/,/# END OF THE SECURITY CONFIGURATION BLOCK/d' "$SPARK_HOME"/conf/spark-defaults.conf
+rm -f $SPARK_HOME/conf/hive-site.xml.old
+if [ -f $SPARK_HOME/conf/hive-site.xml ] ; then
+	mv $SPARK_HOME/conf/hive-site.xml $SPARK_HOME/conf/hive-site.xml.old
+fi
+if [ -f $HIVE_HOME/conf/hive-site.xml ] ; then
+	cp $HIVE_HOME/conf/hive-site.xml $SPARK_HOME/conf/
+fi
+sed -i '/# ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK/,/# END OF THE SECURITY CONFIGURATION BLOCK/d' "$SPARK_HOME"/conf/spark-defaults.conf
 if [ "$isSecure" == 1 ] ; then
 	source $MAPR_HOME/conf/env.sh
 	sed -i '/^spark.yarn.historyServer.address/ d' $SPARK_HOME/conf/spark-defaults.conf
@@ -258,9 +267,9 @@ function stopServicesForRestartByWarden() {
 # Parse options
 #
 
-USAGE="usage: $0 [-s|--secure || -u|--unsecure] [-R] [--EC] [-h|--help]]"
+USAGE="usage: $0 [-s|--secure || -u|--unsecure || -cs|--customSecure] [-R] [--EC] [-h|--help]]"
 
-{ OPTS=`getopt -n "$0" -a -o suhR --long secure,unsecure,help,EC -- "$@"`; } 2>/dev/null
+{ OPTS=`getopt -n "$0" -a -o suhR --long secure,unsecure,customSecure,help,EC -- "$@"`; } 2>/dev/null
 
 eval set -- "$OPTS"
 
@@ -271,6 +280,13 @@ for i in "$@" ; do
       shift 1;;
     --unsecure|-u)
       isSecure=0;
+      shift 1;;
+    --customSecure|-cs)
+      if [ -f "$SPARK_HOME/etc/.not_configured_yet" ]; then
+      	isSecure=1;
+      else
+      	isSecure=2;
+      fi
       shift 1;;
      --R|-R)
       SPARK_IS_READY=true;
@@ -290,7 +306,9 @@ for i in "$@" ; do
   esac
 done
 
-configureSecurity
+if [ ! isSecure == 2 ] ; then
+	configureSecurity
+fi
 change_permissions
 registerServicePorts
 copyWardenConfFiles
