@@ -152,7 +152,7 @@ fi
 if [ -f $HIVE_HOME/conf/hive-site.xml ] ; then
 	cp $HIVE_HOME/conf/hive-site.xml $SPARK_HOME/conf/
 fi
-sed -i '/# ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK/,/# END OF THE SECURITY CONFIGURATION BLOCK/d' "$SPARK_HOME"/conf/spark-defaults.conf
+sed -i '/# SECURITY BLOCK/,/# END OF THE SECURITY CONFIGURATION BLOCK/d' "$SPARK_HOME"/conf/spark-defaults.conf
 if [ "$isSecure" == 1 ] ; then
 	source $MAPR_HOME/conf/env.sh
 	sed -i '/^spark.yarn.historyServer.address/ d' $SPARK_HOME/conf/spark-defaults.conf
