@@ -48,6 +48,23 @@ DAEMON_CONF=${MAPR_HOME}/conf/daemon.conf
 
 CLUSTER_INFO=`cat $MAPR_HOME/conf/mapr-clusters.conf`
 
+IS_FIRST_RUN=false
+if [ -f $SPARK_HOME/etc/.not_configured_yet ] ; then
+	IS_FIRST_RUN=true
+fi
+
+# Spark ports
+sparkHSUIPort=18080
+isSparkHSUIPortDef=false
+sparkTSPort=2304
+isSparkTSPortDef=false
+sparkTSUIPort=4040
+isSparkTSUIPortDef=false
+sparkMasterPort=7077
+isSparkMasterPortDef=false
+sparkMasterUIPort=8080
+isSparkMasterUIPortDef=false
+
 # indicates whether cluster is up or not
 SPARK_IS_RUNNING=false
 if [ ! -z ${isOnlyRoles+x} ]; then # isOnlyRoles exists
@@ -155,7 +172,6 @@ fi
 sed -i '/# SECURITY BLOCK/,/# END OF THE SECURITY CONFIGURATION BLOCK/d' "$SPARK_HOME"/conf/spark-defaults.conf
 if [ "$isSecure" == 1 ] ; then
 	source $MAPR_HOME/conf/env.sh
-	sed -i '/^spark.yarn.historyServer.address/ d' $SPARK_HOME/conf/spark-defaults.conf
     cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOM
 
 # SECURITY BLOCK
@@ -189,7 +205,7 @@ spark.io.encryption.keySizeBits 128
 EOM
 
 	if [ -f $SPARK_HOME/warden/warden.spark-historyserver.conf ] ; then
-		HISTORY_SERVER_SECURE_PROPS="# ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK\n#HistoryServer https configure\nspark.yarn.historyServer.address $(hostname --fqdn):18480\nspark.ssl.historyServer.enabled true"
+		HISTORY_SERVER_SECURE_PROPS="# ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK\n#HistoryServer https configure\nspark.ssl.historyServer.enabled true"
 		sed -i "s~# ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK~$HISTORY_SERVER_SECURE_PROPS~g" $SPARK_HOME/conf/spark-defaults.conf
 	fi
 
@@ -215,27 +231,109 @@ fi
 
 
 #
-# Add warden files
+# Reserve ports
 #
 
-function registerPort() {
-	if [ -f $SPARK_HOME/warden/warden.spark-$1.conf ] ; then
-		if checkNetworkPortAvailability $2 2>/dev/null; then
+function changeSparkDefaults() {
+	if grep -q $1 "$SPARK_HOME/conf/spark-defaults.conf"; then
+		sed -i "s~^$1.*~$2~" $SPARK_HOME/conf/spark-defaults.conf
+	else
+		cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOM
+$2
+EOM
+	fi
+}
+
+function changeWardenConfig() {
+	if [ -f $SPARK_HOME/warden/warden.spark-$3.conf ] ; then
+		sed -i "s~^$1.*~$2~" $SPARK_HOME/warden/warden.spark-$3.conf
+	fi
+}
+
+function registerPortMaster() {
+	if [ -f $SPARK_HOME/warden/warden.spark-master.conf ] ; then
+		if checkNetworkPortAvailability $sparkMasterUIPort 2>/dev/null; then
 			{ set +x; } 2>/dev/null
-			registerNetworkPort spark_$1 $2 2>/dev/null
-			logInfo "Warden conf for Spark-$1 copied."
+			registerNetworkPort spark_master_ui $sparkMasterUIPort 2>/dev/null
 		else
 			{ set +x; } 2>/dev/null
-			logWarn "Spark-$1 port already has been taken by $(whoHasNetworkPort $2)"
+			logWarn "Spark-master-ui port already has been taken by $(whoHasNetworkPort $sparkMasterUIPort)"
 		fi
-    fi
+		if checkNetworkPortAvailability $sparkMasterPort 2>/dev/null; then
+			{ set +x; } 2>/dev/null
+			registerNetworkPort spark_master $sparkMasterPort 2>/dev/null
+		else
+			{ set +x; } 2>/dev/null
+			logWarn "Spark-master port already has been taken by $(whoHasNetworkPort $sparkMasterPort)"
+		fi
+
+		if [ "$isSparkMasterPortDef" = true ] || [ "$IS_FIRST_RUN" = true ] ; then
+			changeSparkDefaults "spark.master " "spark.master   spark://$(hostname --fqdn):$sparkMasterPort"
+			changeWardenConfig "service.port" "service.port=$sparkMasterPort" "master"
+		fi
+
+		if [ "$isSparkMasterUIPortDef" = true ] || [ "$IS_FIRST_RUN" = true ] ; then
+			changeSparkDefaults "spark.master.ui.port" "spark.master.ui.port	$sparkMasterUIPort"
+			changeWardenConfig "service.ui.port" "service.ui.port=$sparkMasterUIPort" "master"
+		fi
+	fi
+}
+
+function registerPortThriftServer() {
+	if [ -f $SPARK_HOME/warden/warden.spark-thriftserver.conf ] ; then
+		if checkNetworkPortAvailability $sparkTSUIPort 2>/dev/null; then
+			{ set +x; } 2>/dev/null
+			registerNetworkPort spark_thriftserver_ui $sparkTSUIPort 2>/dev/null
+		else
+			{ set +x; } 2>/dev/null
+			logWarn "Spark-thriftServer-ui port already has been taken by $(whoHasNetworkPort $sparkTSUIPort)"
+		fi
+		if checkNetworkPortAvailability $sparkTSPort 2>/dev/null; then
+			{ set +x; } 2>/dev/null
+			registerNetworkPort spark_thriftserver $sparkTSPort 2>/dev/null
+		else
+			{ set +x; } 2>/dev/null
+			logWarn "Spark-thriftServer port already has been taken by $(whoHasNetworkPort $sparkTSPort)"
+		fi
+
+		if [ "$isSparkTSPortDef" = true ] || [ "$IS_FIRST_RUN" = true ] ; then
+			changeWardenConfig "service.port" "service.port=$sparkTSPort" "thriftserver"
+			sed -i "s/hive.server2.thrift.port.*/hive.server2.thrift.port=$sparkTSPort/" $SPARK_HOME/warden/warden.spark-thriftserver.conf
+		fi
+
+		if [ "$isSparkTSUIPortDef" = true ] || [ "$IS_FIRST_RUN" = true ] ; then
+			changeWardenConfig "service.ui.port" "service.ui.port=$sparkTSUIPort" "thriftserver"
+		fi
+	fi
+}
+
+function registerPortHistoryServer() {
+	if [ -f $SPARK_HOME/warden/warden.spark-historyserver.conf ] ; then
+		if checkNetworkPortAvailability $sparkHSUIPort 2>/dev/null; then
+			{ set +x; } 2>/dev/null
+			registerNetworkPort spark_historyServer $sparkHSUIPort 2>/dev/null
+		else
+			{ set +x; } 2>/dev/null
+			logWarn "Spark-historyServer port already has been taken by $(whoHasNetworkPort $sparkHSUIPort)"
+		fi
+
+		if [ "$isSparkHSUIPortDef" = true ] || [ "$IS_FIRST_RUN" = true ] ; then
+			changeSparkDefaults "spark.yarn.historyServer.address" "spark.yarn.historyServer.address $(hostname --fqdn):$sparkHSUIPort"
+			changeSparkDefaults "spark.history.ui.port" "spark.history.ui.port $sparkHSUIPort"
+			changeWardenConfig "service.ui.port" "service.ui.port=$sparkHSUIPort" "historyserver"
+		fi
+	fi
 }
 
 function registerServicePorts() {
-	registerPort master 8080
-	registerPort historyserver 18080
-	registerPort thriftserver 4040
+	registerPortMaster
+	registerPortThriftServer
+	registerPortHistoryServer
 }
+
+#
+# Add warden files
+#
 
 function copyWardenFile() {
 	if [ -f $SPARK_HOME/warden/warden.spark-$1.conf ] ; then
@@ -269,12 +367,12 @@ function stopServicesForRestartByWarden() {
 
 USAGE="usage: $0 [-s|--secure || -u|--unsecure || -cs|--customSecure] [-R] [--EC] [-h|--help]]"
 
-{ OPTS=`getopt -n "$0" -a -o suhR --long secure,unsecure,customSecure,help,EC -- "$@"`; } 2>/dev/null
+{ OPTS=`getopt -n "$0" -a -o suhR --long secure,unsecure,customSecure,help,EC,sparkHSUIPort:,sparkMasterPort:,sparkTSPort:,sparkMasterUIPort:,sparkTSUIPort: -- "$@"`; } 2>/dev/null
 
 eval set -- "$OPTS"
 
-for i in "$@" ; do
-  case "$i" in
+while [ ${#} -gt 0 ] ; do
+  case "$1" in
     --secure|-s)
       isSecure=1;
       shift 1;;
@@ -298,6 +396,31 @@ for i in "$@" ; do
     --EC|-EC)
       #ignoring
       shift;;
+    --sparkHSUIPort)
+      sparkHSUIPort=$2
+      isSparkHSUIPortDef=true
+      shift 2
+      ;;
+    --sparkMasterPort)
+      sparkMasterPort=$2
+      isSparkMasterPortDef=true
+      shift 2
+      ;;
+    --sparkTSPort)
+      sparkTSPort=$2
+      isSparkTSPortDef=true
+      shift 2
+      ;;
+    --sparkMasterUIPort)
+      sparkMasterUIPort=$2
+      isSparkMasterUIPortDef=true
+      shift 2
+      ;;
+    --sparkTSUIPort)
+      sparkTSUIPort=$2
+      isSparkTSUIPortDef=true
+      shift 2
+      ;;
     --)
       shift; break;;
     *)
@@ -306,11 +429,11 @@ for i in "$@" ; do
   esac
 done
 
-if [ ! "$isSecure" -eq "2" ] ; then
+registerServicePorts
+if [ ! "$isSecure" -eq 2 ] ; then
 	configureSecurity
 fi
 change_permissions
-registerServicePorts
 copyWardenConfFiles
 stopServicesForRestartByWarden
 
