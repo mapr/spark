@@ -162,18 +162,10 @@ function change_permissions() {
 #
 
 function configureSecurity() {
-rm -f $SPARK_HOME/conf/hive-site.xml.old
-if [ -f $SPARK_HOME/conf/hive-site.xml ] ; then
-	mv $SPARK_HOME/conf/hive-site.xml $SPARK_HOME/conf/hive-site.xml.old
-fi
-if [ -f $HIVE_HOME/conf/hive-site.xml ] ; then
-	cp $HIVE_HOME/conf/hive-site.xml $SPARK_HOME/conf/
-fi
 sed -i '/# SECURITY BLOCK/,/# END OF THE SECURITY CONFIGURATION BLOCK/d' "$SPARK_HOME"/conf/spark-defaults.conf
 if [ "$isSecure" == 1 ] ; then
 	source $MAPR_HOME/conf/env.sh
     cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOM
-
 # SECURITY BLOCK
 # ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK
 
@@ -229,6 +221,19 @@ EOM
 fi
 }
 
+#
+# Configure on Hive
+#
+
+function configureOnHive() {
+	rm -f $SPARK_HOME/conf/hive-site.xml.old
+	if [ -f $SPARK_HOME/conf/hive-site.xml ] ; then
+		mv $SPARK_HOME/conf/hive-site.xml $SPARK_HOME/conf/hive-site.xml.old
+	fi
+	if [ -f $HIVE_HOME/conf/hive-site.xml ] ; then
+		cp $HIVE_HOME/conf/hive-site.xml $SPARK_HOME/conf/hive-site.xml
+	fi
+}
 
 #
 # Reserve ports
@@ -429,6 +434,7 @@ while [ ${#} -gt 0 ] ; do
   esac
 done
 
+configureOnHive
 registerServicePorts
 if [ ! "$isSecure" -eq 2 ] ; then
 	configureSecurity
