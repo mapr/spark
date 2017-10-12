@@ -200,24 +200,25 @@ EOM
 		HISTORY_SERVER_SECURE_PROPS="# ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK\n#HistoryServer https configure\nspark.ssl.historyServer.enabled true"
 		sed -i "s~# ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK~$HISTORY_SERVER_SECURE_PROPS~g" $SPARK_HOME/conf/spark-defaults.conf
 	fi
-
-	if [[ ! $CLUSTER_INFO == *"kerberos"* ]]; then
+	case "$CLUSTER_INFO" in
+		*"secure=true"*)
 		if [ ! -f $SPARK_HOME/conf/hive-site.xml ] ; then
-			cp $SPARK_HOME/conf/hive-site.xml.security.template $SPARK_HOME/conf/hive-site.xml
-		else
-			if ! grep -q hive.server2.thrift.sasl.qop "$SPARK_HOME/conf/hive-site.xml"; then
-				CONF="</configuration>"
-				PROPERTIES="<property>\n<name>hive.server2.thrift.sasl.qop</name>\n<value>auth-conf</value>\n</property>\n</configuration>"
-				sed -i "s~$CONF~$PROPERTIES~g" $SPARK_HOME/conf/hive-site.xml
-			fi
+				cp $SPARK_HOME/conf/hive-site.xml.security.template $SPARK_HOME/conf/hive-site.xml
+			else
+				if ! grep -q hive.server2.thrift.sasl.qop "$SPARK_HOME/conf/hive-site.xml"; then
+					CONF="</configuration>"
+					PROPERTIES="<property>\n<name>hive.server2.thrift.sasl.qop</name>\n<value>auth-conf</value>\n</property>\n</configuration>"
+					sed -i "s~$CONF~$PROPERTIES~g" $SPARK_HOME/conf/hive-site.xml
+				fi
 
-			if ! grep -q hive.server2.authentication "$SPARK_HOME/conf/hive-site.xml"; then
-				CONF="</configuration>"
-				PROPERTIES="<property>\n<name>hive.server2.authentication</name>\n<value>MAPRSASL</value>\n</property>\n</configuration>"
-				sed -i "s~$CONF~$PROPERTIES~g" $SPARK_HOME/conf/hive-site.xml
+				if ! grep -q hive.server2.authentication "$SPARK_HOME/conf/hive-site.xml"; then
+					CONF="</configuration>"
+					PROPERTIES="<property>\n<name>hive.server2.authentication</name>\n<value>MAPRSASL</value>\n</property>\n</configuration>"
+					sed -i "s~$CONF~$PROPERTIES~g" $SPARK_HOME/conf/hive-site.xml
+				fi
 			fi
-		fi
-	fi
+		;;
+	esac
 fi
 }
 
@@ -232,6 +233,11 @@ function configureOnHive() {
 	fi
 	if [ -f $HIVE_HOME/conf/hive-site.xml ] ; then
 		cp $HIVE_HOME/conf/hive-site.xml $SPARK_HOME/conf/hive-site.xml
+	fi
+	if [ -f $SPARK_HOME/conf/hive-site.xml ] ; then
+		TEZ_PROP_VALUE="<value>tez</value>"
+		MR_PROP_VALUE="<value>mr</value>"
+		sed -i "s~$TEZ_PROP_VALUE~$MR_PROP_VALUE~g" $SPARK_HOME/conf/hive-site.xml
 	fi
 }
 
