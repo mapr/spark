@@ -278,13 +278,19 @@ function registerPortMaster() {
 			logWarn "Spark-master port already has been taken by $(whoHasNetworkPort $sparkMasterPort)"
 		fi
 
-		if [ "$isSparkMasterPortDef" = true ] || [ "$IS_FIRST_RUN" = true ] ; then
+		if [ "$isSparkMasterPortDef" = true ] || [ "$IS_FIRST_RUN" = true ] || ! grep -q "spark.master " "$SPARK_HOME/conf/spark-defaults.conf"; then
 			changeSparkDefaults "spark.master " "spark.master   spark://$(hostname --fqdn):$sparkMasterPort"
+		fi
+
+		if [ "$isSparkMasterPortDef" = true ] || [ "$IS_FIRST_RUN" = true ] ; then
 			changeWardenConfig "service.port" "service.port=$sparkMasterPort" "master"
 		fi
 
-		if [ "$isSparkMasterUIPortDef" = true ] || [ "$IS_FIRST_RUN" = true ] ; then
+		if [ "$isSparkMasterUIPortDef" = true ] || [ "$IS_FIRST_RUN" = true ] || ! grep -q "spark.master.ui.port" "$SPARK_HOME/conf/spark-defaults.conf"; then
 			changeSparkDefaults "spark.master.ui.port" "spark.master.ui.port	$sparkMasterUIPort"
+		fi
+
+		if [ "$isSparkMasterUIPortDef" = true ] || [ "$IS_FIRST_RUN" = true ] ; then
 			changeWardenConfig "service.ui.port" "service.ui.port=$sparkMasterUIPort" "master"
 		fi
 	fi
@@ -328,9 +334,15 @@ function registerPortHistoryServer() {
 			logWarn "Spark-historyServer port already has been taken by $(whoHasNetworkPort $sparkHSUIPort)"
 		fi
 
-		if [ "$isSparkHSUIPortDef" = true ] || [ "$IS_FIRST_RUN" = true ] ; then
+		if [ "$isSparkHSUIPortDef" = true ] || [ "$IS_FIRST_RUN" = true ] || ! grep -q "spark.yarn.historyServer.address" "$SPARK_HOME/conf/spark-defaults.conf"; then
 			changeSparkDefaults "spark.yarn.historyServer.address" "spark.yarn.historyServer.address $(hostname --fqdn):$sparkHSUIPort"
+		fi
+
+		if [ "$isSparkHSUIPortDef" = true ] || [ "$IS_FIRST_RUN" = true ] || ! grep -q "spark.history.ui.port" "$SPARK_HOME/conf/spark-defaults.conf"; then
 			changeSparkDefaults "spark.history.ui.port" "spark.history.ui.port $sparkHSUIPort"
+		fi
+
+		if [ "$isSparkHSUIPortDef" = true ] || [ "$IS_FIRST_RUN" = true ] ; then
 			changeWardenConfig "service.ui.port" "service.ui.port=$sparkHSUIPort" "historyserver"
 		fi
 	fi
