@@ -170,6 +170,7 @@ if [ "$isSecure" == 1 ] ; then
 # ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK
 
 # ssl
+spark.ssl.enabled true
 spark.ssl.fs.enabled true
 spark.ssl.keyPassword mapr123
 spark.ssl.trustStore $MAPR_HOME/conf/ssl_truststore
@@ -195,11 +196,6 @@ spark.io.encryption.keySizeBits 128
 # END OF THE SECURITY CONFIGURATION BLOCK
 
 EOM
-
-	if [ -f $SPARK_HOME/warden/warden.spark-historyserver.conf ] ; then
-		HISTORY_SERVER_SECURE_PROPS="# ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK\n#HistoryServer https configure\nspark.ssl.historyServer.enabled true"
-		sed -i "s~# ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK~$HISTORY_SERVER_SECURE_PROPS~g" $SPARK_HOME/conf/spark-defaults.conf
-	fi
 	case "$CLUSTER_INFO" in
 		*"secure=true"*)
 		if [ ! -f $SPARK_HOME/conf/hive-site.xml ] ; then
