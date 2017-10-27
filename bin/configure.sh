@@ -65,6 +65,11 @@ isSparkMasterPortDef=false
 sparkMasterUIPort=8080
 isSparkMasterUIPortDef=false
 
+# secure ui ports
+sparkMasterSecureUIPort=8480
+sparkTSSecureUIPort=4440
+sparkHSSecureUIPort=18480
+
 # indicates whether cluster is up or not
 SPARK_IS_RUNNING=false
 if [ ! -z ${isOnlyRoles+x} ]; then # isOnlyRoles exists
@@ -138,6 +143,26 @@ EOM
 #####################################
 
 #
+# Change config functions
+#
+
+function changeSparkDefaults() {
+	if grep -q $1 "$SPARK_HOME/conf/spark-defaults.conf"; then
+		sed -i "s~^$1.*~$2~" $SPARK_HOME/conf/spark-defaults.conf
+	else
+		cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOM
+$2
+EOM
+	fi
+}
+
+function changeWardenConfig() {
+	if [ -f $SPARK_HOME/warden/warden.spark-$3.conf ] ; then
+		sed -i "s~^$1.*~$2~" $SPARK_HOME/warden/warden.spark-$3.conf
+	fi
+}
+
+#
 # Change permission
 #
 
@@ -162,6 +187,15 @@ function change_permissions() {
 #
 
 function configureSecurity() {
+if [ -f $SPARK_HOME/warden/warden.spark-master.conf ] ; then
+	changeWardenConfig "service.ui.port" "service.ui.port=$sparkMasterUIPort" "master"
+fi
+if [ -f $SPARK_HOME/warden/warden.spark-thriftserver.conf ] ; then
+	changeWardenConfig "service.ui.port" "service.ui.port=$sparkTSUIPort" "thriftserver"
+fi
+if [ -f $SPARK_HOME/warden/warden.spark-historyserver.conf ] ; then
+	changeWardenConfig "service.ui.port" "service.ui.port=$sparkHSUIPort" "historyserver"
+fi
 sed -i '/# SECURITY BLOCK/,/# END OF THE SECURITY CONFIGURATION BLOCK/d' "$SPARK_HOME"/conf/spark-defaults.conf
 if [ "$isSecure" == 1 ] ; then
 	source $MAPR_HOME/conf/env.sh
@@ -196,6 +230,15 @@ spark.io.encryption.keySizeBits 128
 # END OF THE SECURITY CONFIGURATION BLOCK
 
 EOM
+	if [ -f $SPARK_HOME/warden/warden.spark-master.conf ] ; then
+		changeWardenConfig "service.ui.port" "service.ui.port=$sparkMasterSecureUIPort" "master"
+	fi
+	if [ -f $SPARK_HOME/warden/warden.spark-thriftserver.conf ] ; then
+		changeWardenConfig "service.ui.port" "service.ui.port=$sparkTSSecureUIPort" "thriftserver"
+	fi
+	if [ -f $SPARK_HOME/warden/warden.spark-historyserver.conf ] ; then
+		changeWardenConfig "service.ui.port" "service.ui.port=$sparkHSSecureUIPort" "historyserver"
+	fi
 	case "$CLUSTER_INFO" in
 		*"secure=true"*)
 		if [ ! -f $SPARK_HOME/conf/hive-site.xml ] ; then
@@ -240,22 +283,6 @@ function configureOnHive() {
 #
 # Reserve ports
 #
-
-function changeSparkDefaults() {
-	if grep -q $1 "$SPARK_HOME/conf/spark-defaults.conf"; then
-		sed -i "s~^$1.*~$2~" $SPARK_HOME/conf/spark-defaults.conf
-	else
-		cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOM
-$2
-EOM
-	fi
-}
-
-function changeWardenConfig() {
-	if [ -f $SPARK_HOME/warden/warden.spark-$3.conf ] ; then
-		sed -i "s~^$1.*~$2~" $SPARK_HOME/warden/warden.spark-$3.conf
-	fi
-}
 
 function registerPortMaster() {
 	if [ -f $SPARK_HOME/warden/warden.spark-master.conf ] ; then
