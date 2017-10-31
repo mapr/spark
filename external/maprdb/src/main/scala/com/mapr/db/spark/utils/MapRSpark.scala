@@ -53,8 +53,17 @@ object MapRSpark {
     documentRdd.updateToMapRDB(tableName, mutation, getID, condition)
   }
 
-  def save(dfw: DataFrameWriter[_], tableName: String): Unit = {
-    dfw.format(defaultSource).option("tableName", tableName).save()
+  def save(
+           dfw: DataFrameWriter[_],
+           tableName: String,
+           idFieldPath: String,
+           bulkInsert: Boolean
+          ): Unit = {
+    dfw.format(defaultSource)
+      .option("tableName", tableName)
+      .option("idFieldPath", idFieldPath)
+      .option("bulkMode", bulkInsert)
+      .save()
   }
 
   def load(sc: SparkContext, tableName: String) : MapRDBBaseRDD[OJAIDocument] = {
