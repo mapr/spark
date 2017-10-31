@@ -7,6 +7,6 @@ import org.apache.spark.sql.DataFrameWriter
 private[spark] case class MapRDBDataFrameWriterFunctions(@transient dfw: DataFrameWriter[_]) extends LoggingTrait {
 
   def saveToMapRDB(tableName: String, idFieldPath: String = "_id",
-                   bulkInsert : Boolean = false): Unit = MapRSpark.save(dfw, tableName)
+                   bulkInsert : Boolean = false): Unit = MapRSpark.save(dfw, tableName, idFieldPath, bulkInsert)
 
 }
