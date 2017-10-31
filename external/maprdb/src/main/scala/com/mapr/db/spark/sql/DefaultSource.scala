@@ -48,12 +48,14 @@ class DefaultSource extends DataSourceRegister
                               parameters: Map[String, String], data: DataFrame): BaseRelation = {
 
     require(parameters.get("tableName").isDefined)
+    require(parameters.get("idFieldPath").isDefined)
+    val idFieldPath = parameters("idFieldPath")
     //val cParser = new ConditionParser();
     val condition : Option[QueryCondition] = parameters.get("QueryCondition").map(cond => ConditionImpl.parseFrom(ByteBuffer.wrap(cond.getBytes)))
     lazy val tableExists = DBClient().tableExists(parameters.get("tableName").get)
     lazy val tableName = parameters.get("tableName").get
     lazy val createTheTable = if (tableExists) false else true
-    lazy val bulkMode  = parameters.get("bulkMode").getOrElse("false").toBoolean
+    lazy val bulkMode = parameters.get("bulkMode").getOrElse("false").toBoolean
     val operation = parameters.get("Operation").getOrElse("ErrorIfExists")
     mode match {
       case ErrorIfExists => {}
@@ -62,25 +64,25 @@ class DefaultSource extends DataSourceRegister
 
     operation match {
       case "Insert" => {
-        MapRSpark.insert(data, tableName,"_id", createTable = createTheTable, bulkInsert = bulkMode)
+        MapRSpark.insert(data, tableName,idFieldPath, createTable = createTheTable, bulkInsert = bulkMode)
       }
 
       case "InsertOrReplace" => {
-        MapRSpark.save(data, tableName,"_id",createTable = createTheTable, bulkInsert = bulkMode)
+        MapRSpark.save(data, tableName,idFieldPath,createTable = createTheTable, bulkInsert = bulkMode)
       }
 
       case "ErrorIfExists" => {
         if (tableExists) throw new TableExistsException("Table: " + tableName + " already Exists")
-        else MapRSpark.save(data, tableName,"_id",createTable = true, bulkInsert = bulkMode)
+        else MapRSpark.save(data, tableName,idFieldPath,createTable = true, bulkInsert = bulkMode)
       }
 
       case "Overwrite" => {
         DBClient().deleteTable(tableName)
-        MapRSpark.save(data, tableName,"_id",createTable = true, bulkInsert = bulkMode)
+        MapRSpark.save(data, tableName,idFieldPath,createTable = true, bulkInsert = bulkMode)
       }
 
       case "Update" => {
-        MapRSpark.update(data, tableName,"_id",createTable = false, bulkInsert = bulkMode)
+        MapRSpark.update(data, tableName,idFieldPath,createTable = false, bulkInsert = bulkMode)
       }
 
       case _ => throw new UnsupportedOperationException("Not supported operation")    }
