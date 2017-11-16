@@ -4,6 +4,9 @@ package com.mapr.db.spark.impl
 import java.io.{Externalizable, ObjectInput, ObjectOutput}
 import java.nio.{ByteBuffer, ByteOrder}
 
+import scala.collection.JavaConverters._
+import scala.language.implicitConversions
+
 import com.mapr.db.impl.IdCodec
 import com.mapr.db.rowcol.RowcolCodec
 import com.mapr.db.spark.documentUtils.ScalaDocumentIterator
@@ -15,16 +18,16 @@ import org.ojai.exceptions.DecodingException
 import org.ojai.json.JsonOptions
 import org.ojai.types._
 
-import scala.collection.JavaConverters._
-import scala.language.implicitConversions
-
 /**
-  * This class implements scala's version of OJAIDocument.
-  * It encapsulates the org.ojai.Document and provides the functionality to
-  * the caller with relevant scala's types for ojai's java types.
-  */
-private[spark] abstract class ScalaOjaiDocument[B <: ScalaOjaiDocument[B]](@transient private var dc: org.ojai.Document)
-                                extends org.ojai.scala.Document with Externalizable with LoggingTrait{
+* This class implements scala's version of OJAIDocument.
+* It encapsulates the org.ojai.Document and provides the functionality to
+* the caller with relevant scala's types for ojai's java types.
+*/
+private[spark] abstract class ScalaOjaiDocument[B <: ScalaOjaiDocument[B]](
+    @transient private var dc: org.ojai.Document)
+    extends org.ojai.scala.Document
+    with Externalizable
+    with LoggingTrait {
 
   // constructor required for serialization.
   def this() {
@@ -39,37 +42,36 @@ private[spark] abstract class ScalaOjaiDocument[B <: ScalaOjaiDocument[B]](@tran
     val idbuff = IdCodec.encode(dc.getId)
     objectOutput.writeInt(idbuff.capacity())
     idbuff.order(ByteOrder.LITTLE_ENDIAN)
-    objectOutput.write(idbuff.array(),0,idbuff.capacity())
+    objectOutput.write(idbuff.array(), 0, idbuff.capacity())
     val buff = RowcolCodec.encode(dc)
     buff.order(ByteOrder.LITTLE_ENDIAN)
     objectOutput.writeInt(buff.capacity())
-    objectOutput.write(buff.array(),0,buff.capacity())
-    logDebug("Serializing OJAI Document: bytes written:" + buff.capacity() + " bytes written for ID field: "+ idbuff.capacity())
+    objectOutput.write(buff.array(), 0, buff.capacity())
+    logDebug(
+      "Serializing OJAI Document: bytes written:" + buff
+        .capacity() + " bytes written for ID field: " + idbuff.capacity())
   }
 
   override def readExternal(objectinput: ObjectInput): Unit = {
-    val idbuffersize = objectinput.readInt()
-    val idbuffer = ByteBufs.allocate(idbuffersize)
-    MapRDBUtils.readBytes(idbuffer,idbuffersize,objectinput)
-    val buffersize = objectinput.readInt()
-    val buff: ByteBuffer = ByteBufs.allocate(buffersize)
-    MapRDBUtils.readBytes(buff,buffersize,objectinput)
-    dc = RowcolCodec.decode(buff,idbuffer,false,false,true)
-    logDebug("Deserializing OJAI Document: bytes read:" + buffersize + " bytes read for ID field: "+ idbuffersize)
+    val idBufferSize = objectinput.readInt()
+    val idbuffer = ByteBufs.allocate(idBufferSize)
+    MapRDBUtils.readBytes(idbuffer, idBufferSize, objectinput)
+    val bufferSize = objectinput.readInt()
+    val buff: ByteBuffer = ByteBufs.allocate(bufferSize)
+    MapRDBUtils.readBytes(buff, bufferSize, objectinput)
+    dc = RowcolCodec.decode(buff, idbuffer, false, false, true)
+    logDebug(
+      s"Document Deserialized : bytes read: $bufferSize bytes read for ID field: $idBufferSize")
   }
 
-  override def toString = {
-    dc.asJsonString()
-  }
+  override def toString: String = dc.asJsonString()
 
   override def setId(id: Value): B = {
     this.dc.setId(id)
     THIS
   }
 
-  override def getId(): Value = {
-    this.dc.getId
-  }
+  override def getId(): Value = this.dc.getId
 
   override def setId(_id: String): B = {
     this.dc.setId(_id)
@@ -90,26 +92,18 @@ private[spark] abstract class ScalaOjaiDocument[B <: ScalaOjaiDocument[B]](@tran
     THIS
   }
 
-  override def getIdBinary(): ByteBuffer = {
-    this.dc.getIdBinary
-  }
+  override def getIdBinary: ByteBuffer = this.dc.getIdBinary
 
-  def getIdBinarySerializable(): DBBinaryValue = {
-    new DBBinaryValue(this.dc.getIdBinary)
-  }
+  def getIdBinarySerializable: DBBinaryValue = new DBBinaryValue(this.dc.getIdBinary)
 
-  override def isReadOnly(): Boolean = {
-    this.isReadOnly()
-  }
+  override def isReadOnly: Boolean = this.isReadOnly()
 
-  override def size(): Int = {
-    this.dc.size
-  }
+
+  override def size: Int = this.dc.size
+
 
   @throws(classOf[DecodingException])
-  override def toJavaBean[T](beanClass: Class[T]) : T  = {
-    this.dc.toJavaBean(beanClass)
-  }
+  override def toJavaBean[T](beanClass: Class[T]): T = this.dc.toJavaBean(beanClass)
 
   override def empty(): B = {
     this.dc.empty
@@ -246,12 +240,18 @@ private[spark] abstract class ScalaOjaiDocument[B <: ScalaOjaiDocument[B]](@tran
     THIS
   }
 
-  override def set(fieldPath: String, value: Seq[Byte],off: Integer,len: Integer): B = {
+  override def set(fieldPath: String,
+                   value: Seq[Byte],
+                   off: Integer,
+                   len: Integer): B = {
     this.dc.set(fieldPath, value.asJava)
     THIS
   }
 
-  override def set(fieldPath: FieldPath, value: Seq[Byte], off:  Integer, len: Integer): B = {
+  override def set(fieldPath: FieldPath,
+                   value: Seq[Byte],
+                   off: Integer,
+                   len: Integer): B = {
     this.dc.set(fieldPath, value.asJava)
     THIS
   }
@@ -261,7 +261,7 @@ private[spark] abstract class ScalaOjaiDocument[B <: ScalaOjaiDocument[B]](@tran
     THIS
   }
 
-  override def set(fieldPath: FieldPath, value:ByteBuffer): B = {
+  override def set(fieldPath: FieldPath, value: ByteBuffer): B = {
     this.dc.set(fieldPath, value)
     THIS
   }
@@ -271,17 +271,17 @@ private[spark] abstract class ScalaOjaiDocument[B <: ScalaOjaiDocument[B]](@tran
     THIS
   }
 
-  override def set(fieldPath: FieldPath, value: Map[String, _<: AnyRef]): B = {
+  override def set(fieldPath: FieldPath, value: Map[String, _ <: AnyRef]): B = {
     this.dc.set(fieldPath, value.asJava)
     THIS
   }
 
-  override def set(fieldPath: String, value:  org.ojai.scala.Document): B =  {
+  override def set(fieldPath: String, value: org.ojai.scala.Document): B = {
     this.dc.set(fieldPath, value.asInstanceOf[ScalaOjaiDocument[_]].dc)
     THIS
   }
 
-  override def set(fieldPath: FieldPath, value:  org.ojai.scala.Document): B = {
+  override def set(fieldPath: FieldPath, value: org.ojai.scala.Document): B = {
     this.dc.set(fieldPath, value.asInstanceOf[ScalaOjaiDocument[_]].dc)
     THIS
   }
@@ -307,12 +307,12 @@ private[spark] abstract class ScalaOjaiDocument[B <: ScalaOjaiDocument[B]](@tran
   }
 
   override def setArray(fieldPath: String, values: AnyRef*): B = {
-    this.dc.setArray(fieldPath, values:_*)
+    this.dc.setArray(fieldPath, values: _*)
     THIS
   }
 
   override def setArray(fieldPath: FieldPath, values: AnyRef*): B = {
-    this.dc.setArray(fieldPath, values:_*)
+    this.dc.setArray(fieldPath, values: _*)
     THIS
   }
 
@@ -356,7 +356,7 @@ private[spark] abstract class ScalaOjaiDocument[B <: ScalaOjaiDocument[B]](@tran
     THIS
   }
 
-  def setArray(fieldPath: String, values:Array[Long]): B = {
+  def setArray(fieldPath: String, values: Array[Long]): B = {
     this.dc.setArray(fieldPath, values)
     THIS
   }
@@ -496,7 +496,7 @@ private[spark] abstract class ScalaOjaiDocument[B <: ScalaOjaiDocument[B]](@tran
     this.dc.getLong(fieldPath)
   }
 
-  override def getLongObj(fieldPath: String):java.lang.Long = {
+  override def getLongObj(fieldPath: String): java.lang.Long = {
     this.dc.getLongObj(fieldPath)
   }
 
@@ -600,36 +600,24 @@ private[spark] abstract class ScalaOjaiDocument[B <: ScalaOjaiDocument[B]](@tran
     this.dc.getValue(fieldPath)
   }
 
-  override def getMap(fieldPath: String): Map[String, AnyRef]  = {
-    val result : java.util.Map[String, Object] = this.dc.getMap(fieldPath)
-    if (result == null)
-      return null
-    else
-      new DBMapValue(result.asScala.toMap)
+  override def getMap(fieldPath: String): Map[String, AnyRef] = {
+    val result: java.util.Map[String, Object] = this.dc.getMap(fieldPath)
+    if (result == null) null else new DBMapValue(result.asScala.toMap)
   }
 
-  override def getMap(fieldPath: FieldPath): Map[String, AnyRef]  = {
-    val result : java.util.Map[String, Object] = this.dc.getMap(fieldPath)
-    if (result == null)
-      return null
-    else
-      new DBMapValue(result.asScala.toMap)
+  override def getMap(fieldPath: FieldPath): Map[String, AnyRef] = {
+    val result: java.util.Map[String, Object] = this.dc.getMap(fieldPath)
+    if (result == null) null else new DBMapValue(result.asScala.toMap)
   }
 
   override def getList(fieldPath: String): Seq[AnyRef] = {
     val result: java.util.List[Object] = this.dc.getList(fieldPath)
-    if (result == null)
-      return null
-    else
-      new DBArrayValue(result.asScala)
+    if (result == null) null else new DBArrayValue(result.asScala)
   }
 
   override def getList(fieldPath: FieldPath): Seq[AnyRef] = {
-    val result: java.util.List[Object] = this.dc.getList(fieldPath)
-    if (result == null)
-      return null
-    else
-      new DBArrayValue(result.asScala)
+    val result = this.dc.getList(fieldPath)
+    if (result == null) null else new DBArrayValue(result.asScala)
   }
 
   override def asJsonString(): String = {
@@ -652,11 +640,9 @@ private[spark] abstract class ScalaOjaiDocument[B <: ScalaOjaiDocument[B]](@tran
     this.dc.asReader(fieldPath)
   }
 
-  override def asMap(): Map[String, AnyRef]  = {
+  override def asMap(): Map[String, AnyRef] = {
     new DBMapValue(dc.asMap().asScala.toMap)
   }
 
-  override def iterator = {
-    new ScalaDocumentIterator(this.dc.iterator)
-  }
+  override def iterator: ScalaDocumentIterator = new ScalaDocumentIterator(this.dc.iterator)
 }

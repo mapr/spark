@@ -1,10 +1,10 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
+
 package com.mapr.db.spark.dbclient
 
-import com.mapr.db.TabletInfo
-import com.mapr.db.{Table, TableDescriptor, TabletInfo}
-import org.ojai.store.{DocumentStore, QueryCondition}
+import com.mapr.db.{TableDescriptor, TabletInfo}
 import org.ojai.{Document, DocumentBuilder, Value}
+import org.ojai.store.{DocumentStore, QueryCondition}
 
 trait DBClient {
   def newDocument() : Document
@@ -33,7 +33,6 @@ object DBClient {
   val oldClient = DBOlderClientImpl
 
   def apply(): DBClient = {
-    if (CLIENT_VERSION.equals("2.0")) return newClient
-    else return oldClient
+    if (CLIENT_VERSION.equals("2.0")) newClient else oldClient
   }
 }

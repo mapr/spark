@@ -4,14 +4,14 @@ package com.mapr.db
 import java.nio.ByteBuffer
 
 import com.mapr.db.impl.IdCodec
-import org.apache.spark.SparkContext
-import org.apache.spark.rdd.RDD
 import com.mapr.db.spark.RDD._
 import com.mapr.db.spark.condition.quotes
 import com.mapr.db.spark.types.DBBinaryValue
-import com.mapr.db.spark.writers.OJAIKey
-import com.mapr.db.spark.writers.OJAIValue
+import com.mapr.db.spark.writers.{OJAIKey, OJAIValue}
 import com.mapr.org.apache.hadoop.hbase.util.Bytes
+
+import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 
 package object spark {
 
@@ -42,28 +42,37 @@ package object spark {
     * @param sc sparkContext
     * @example val docs = sc.loadMapRDBTable("tableName")
     */
-  implicit def toSparkContextFunctions(sc: SparkContext) : SparkContextFunctions = SparkContextFunctions(sc)
+  implicit def toSparkContextFunctions(
+      sc: SparkContext): SparkContextFunctions = SparkContextFunctions(sc)
 
   /**
-    * Spark MapRDB connector specific functions to save either RDD[OJAIDocument] or RDD of anyobject
+    * Spark MapRDB connector specific functions to save either RDD[OJAIDocument]
+    *   or RDD of anyobject
     * @param rdd rdd on which this function is called
     * @example docs.saveToMapRDB("tableName")
-    *          It might throw a DecodingException if the RDD or anyObject is not possible to convert to a document.
+    *          It might throw a DecodingException if the RDD
+    *          or anyObject is not possible to convert to a document.
     */
-  implicit def toDocumentRDDFunctions[D :  OJAIValue](rdd: RDD[D]) = OJAIDocumentRDDFunctions[D](rdd)
+  implicit def toDocumentRDDFunctions[D: OJAIValue](rdd: RDD[D]): OJAIDocumentRDDFunctions[D] =
+    OJAIDocumentRDDFunctions[D](rdd)
 
   /**
-    * Spark MapRDB connector specific functions to save either RDD[(String, OJAIDocument)] or RDD[(String, anyobject)]
+    * Spark MapRDB connector specific functions to save either RDD[(String, OJAIDocument)]
+    *   or RDD[(String, anyobject)]
     * @param rdd rdd on which this function is called
     * @example docs.saveToMapRDB("tableName")
-    *          It might throw a DecodingException if the RDD or anyObject is not possible to convert to a document.
+    *          It might throw a DecodingException if the RDD
+    *          or anyObject is not possible to convert to a document.
     */
-  implicit def toPairedRDDFunctions[K: OJAIKey, V: OJAIValue](rdd: RDD[(K,V)]) = PairedDocumentRDDFunctions[K,V](rdd)
+  implicit def toPairedRDDFunctions[K: OJAIKey, V: OJAIValue](rdd: RDD[(K, V)]
+                                                             ): PairedDocumentRDDFunctions[K, V] =
+    PairedDocumentRDDFunctions[K, V](rdd)
 
   /**
     * Spark MapRDB connector specific functions to join external RDD with a MapRDB table.
     * @param rdd rdd on which this function is called
     * @example docs.joinWithMapRDB("tableName")
     */
-  implicit def toFilterRDDFunctions[K : OJAIKey : quotes](rdd : RDD[K]) = FilterRDDFunctions(rdd)
+  implicit def toFilterRDDFunctions[K: OJAIKey: quotes](rdd: RDD[K]): FilterRDDFunctions[K] =
+    FilterRDDFunctions(rdd)
 }

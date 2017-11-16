@@ -13,12 +13,12 @@ import com.mapr.db.spark.serializers._
 import com.mapr.db.spark.impl.OJAIDocument
 
 /**
-  * Custom registrator provided for registering classes specific to spark ojai connector
-  * This registrator should be used when kryo serialization is enabled for the spark application.
-  *
-  * @example sparkconf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-  *                   .set("spark.kryo.registrator", "com.mapr.db.spark.OJAIKryoRegistrator")
-  */
+* Custom registrator provided for registering classes specific to spark ojai connector
+* This registrator should be used when kryo serialization is enabled for the spark application.
+*
+* @example sparkconf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+*                   .set("spark.kryo.registrator", "com.mapr.db.spark.OJAIKryoRegistrator")
+*/
 class OJAIKryoRegistrator extends KryoRegistrator {
 
   override def registerClasses(kryo: Kryo) {

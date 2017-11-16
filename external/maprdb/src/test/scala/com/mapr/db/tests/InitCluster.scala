@@ -29,23 +29,28 @@ trait InitClusterDisableKryoSerialization extends BeforeAndAfterAll {
     cnf
   }
 
-  lazy val spark = SparkSession.builder().appName("simpletest").config(conf).getOrCreate()
+  lazy val spark =
+    SparkSession.builder().appName("simpletest").config(conf).getOrCreate()
 
   override def beforeAll(): Unit = {
     super.beforeAll()
     _sc = spark.sparkContext
     _sc.setLogLevel("OFF")
     _ssc = new StreamingContext(spark.sparkContext, Seconds(10))
-    com.mapr.db.testCases.MapRDBSparkTests.tableInitialization(sc, MapRDBSparkTests.tableName)
+    com.mapr.db.testCases.MapRDBSparkTests
+      .tableInitialization(sc, MapRDBSparkTests.tableName)
     com.mapr.db.testCases.LoadAndSaveTests.tableInitialization(sc, tableName)
-    com.mapr.db.testCases.PredicateTests.tableInitialization(sc, PredicateTests.tableName)
-    com.mapr.db.testCases.SparkSqlAccessTests.tableInitialization(SparkSqlAccessTests.tableName)
-    com.mapr.db.testCases.MapRDBSparkTests.tableInitialization(sc, SparkSqlPushDownTests.tableName)
-    MapRDBSparkTests.tableInitialization(spark.sparkContext, SparkSqlLoadAndSaveTests.tableName)
-    MapRDBSparkTests.tableInitialization(spark.sparkContext, SparkStreamingTests.tableName)
+    com.mapr.db.testCases.PredicateTests
+      .tableInitialization(sc, PredicateTests.tableName)
+    com.mapr.db.testCases.SparkSqlAccessTests
+      .tableInitialization(SparkSqlAccessTests.tableName)
+    com.mapr.db.testCases.MapRDBSparkTests
+      .tableInitialization(sc, SparkSqlPushDownTests.tableName)
+    MapRDBSparkTests.tableInitialization(spark.sparkContext,
+                                         SparkSqlLoadAndSaveTests.tableName)
+    MapRDBSparkTests.tableInitialization(spark.sparkContext,
+                                         SparkStreamingTests.tableName)
   }
-
-
 
   override def afterAll(): Unit = {
     if (_sc != null) {
@@ -56,8 +61,6 @@ trait InitClusterDisableKryoSerialization extends BeforeAndAfterAll {
     super.afterAll()
   }
 }
-
-
 
 trait InitClusterEnableKryoSerialization extends BeforeAndAfterAll {
   this: Suite =>
@@ -82,20 +85,27 @@ trait InitClusterEnableKryoSerialization extends BeforeAndAfterAll {
     cnf
   }
 
-  lazy val spark = SparkSession.builder().appName("simpletest").config(conf).getOrCreate()
+  lazy val spark =
+    SparkSession.builder().appName("simpletest").config(conf).getOrCreate()
 
   override def beforeAll(): Unit = {
     super.beforeAll()
     _sc = new SparkContext(conf)
     _sc.setLogLevel("OFF")
     _ssc = new StreamingContext(spark.sparkContext, Seconds(10))
-    com.mapr.db.testCases.MapRDBSparkTests.tableInitialization(sc, MapRDBSparkTests.tableName)
+    com.mapr.db.testCases.MapRDBSparkTests
+      .tableInitialization(sc, MapRDBSparkTests.tableName)
     com.mapr.db.testCases.LoadAndSaveTests.tableInitialization(sc, tableName)
-    com.mapr.db.testCases.PredicateTests.tableInitialization(sc, PredicateTests.tableName)
-    com.mapr.db.testCases.SparkSqlAccessTests.tableInitialization(SparkSqlAccessTests.tableName)
-    com.mapr.db.testCases.MapRDBSparkTests.tableInitialization(sc, SparkSqlPushDownTests.tableName)
-    MapRDBSparkTests.tableInitialization(spark.sparkContext, SparkSqlLoadAndSaveTests.tableName)
-    MapRDBSparkTests.tableInitialization(spark.sparkContext, SparkStreamingTests.tableName)
+    com.mapr.db.testCases.PredicateTests
+      .tableInitialization(sc, PredicateTests.tableName)
+    com.mapr.db.testCases.SparkSqlAccessTests
+      .tableInitialization(SparkSqlAccessTests.tableName)
+    com.mapr.db.testCases.MapRDBSparkTests
+      .tableInitialization(sc, SparkSqlPushDownTests.tableName)
+    MapRDBSparkTests.tableInitialization(spark.sparkContext,
+                                         SparkSqlLoadAndSaveTests.tableName)
+    MapRDBSparkTests.tableInitialization(spark.sparkContext,
+                                         SparkStreamingTests.tableName)
   }
 
   override def afterAll(): Unit = {

@@ -1,95 +1,68 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.dbclient
 
-import com.mapr.db.{TableDescriptor, TabletInfo, MapRDB}
+import com.mapr.db.{MapRDB, Table, TableDescriptor, TabletInfo}
 import com.mapr.db.impl.AdminImpl
-import com.mapr.db.TabletInfo
+import org.ojai.{Document, DocumentBuilder, Value}
 import org.ojai.store.QueryCondition
-import org.ojai.{Document, Value}
 
 object DBOlderClientImpl extends DBClient {
-  @Override
-  def newDocument(): Document = {
+
+  override def newDocument(): Document = {
     MapRDB.newDocument()
   }
 
-  @Override
   override def getTabletInfos(tablePath: String, cond: QueryCondition): Seq[TabletInfo] = {
     MapRDB.getTable(tablePath).getTabletInfos(cond)
   }
 
-  @Override
   override def getTabletInfos(tablePath: String): Seq[TabletInfo] = {
     MapRDB.getTable(tablePath).getTabletInfos
   }
 
-  @Override
-  def newDocument(jsonString: String) = {
+  override def newDocument(jsonString: String): Document =
     MapRDB.newDocument(jsonString)
-  }
 
-  @Override
-  def newCondition() = {
-    MapRDB.newCondition()
-  }
+  override def newCondition(): QueryCondition = MapRDB.newCondition()
 
-  @Override
-  def deleteTable(tablePath: String) = {
+  override def deleteTable(tablePath: String): Unit =
     MapRDB.deleteTable(tablePath)
-  }
 
-  @Override
-  def tableExists(tablePath: String) = {
+  override def tableExists(tablePath: String): Boolean =
     MapRDB.tableExists(tablePath)
-  }
 
-  @Override
-  def newTableDescriptor() = {
+  override def newTableDescriptor(): TableDescriptor =
     MapRDB.newTableDescriptor()
-  }
 
-  @Override
-  def createTable(tablePath: String) = {
+  override def createTable(tablePath: String): Unit =
     MapRDB.createTable(tablePath)
-  }
 
-  @Override
-  def createTable(tableDesc: TableDescriptor) = {
+  override def createTable(tableDesc: TableDescriptor): Unit =
     MapRDB.newAdmin().createTable(tableDesc)
-  }
 
-  @Override
-  def createTable(tableDesc: TableDescriptor, keys: Array[Value]) = {
-    MapRDB.newAdmin().asInstanceOf[AdminImpl].createTable(tableDesc, keys)
-  }
+  override def createTable(tableDesc: TableDescriptor, keys: Array[Value]): Unit =
+    MapRDB
+      .newAdmin()
+      .asInstanceOf[AdminImpl]
+      .createTable(tableDesc, keys)
 
-  @Override
-  def isBulkLoad(tablePath: String) = {
-    MapRDB.newAdmin().getTableDescriptor(tablePath).isBulkLoad
-  }
+  override def isBulkLoad(tablePath: String): Boolean =
+    MapRDB
+      .newAdmin()
+      .getTableDescriptor(tablePath)
+      .isBulkLoad
 
-  @Override
-  def alterTable(tableDesc: TableDescriptor) = {
+  override def alterTable(tableDesc: TableDescriptor): Unit =
     MapRDB.newAdmin().alterTable(tableDesc)
-  }
 
-  @Override
-  def getTable(tablePath: String) = {
-    MapRDB.getTable(tablePath)
-  }
+  override def getTable(tablePath: String): Table = MapRDB.getTable(tablePath)
 
-  @Override
-  def getTableDescriptor(tablePath: String) = {
+  override def getTableDescriptor(tablePath: String): TableDescriptor =
     MapRDB.newAdmin().getTableDescriptor(tablePath)
-  }
 
-  @Override
-  override def getEstimatedSize(scanRange: TabletInfo): Long = {
-    return 0
-  }
+  override def getEstimatedSize(scanRange: TabletInfo): Long = 0
 
-  @Override
-  def newDocumentBuilder() = {
+  override def newDocumentBuilder(): DocumentBuilder =
     MapRDB.newDocumentBuilder()
-  }
+
 }
