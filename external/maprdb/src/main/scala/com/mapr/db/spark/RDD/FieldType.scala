@@ -13,6 +13,7 @@ object FIELD {
   }
 
   implicit val fieldPaths = new FIELD[FieldPath] {
-    def getFields(fields: Seq[Any]) = fields.map(field => field.asInstanceOf[FieldPath].asPathString())
+    def getFields(fields: Seq[Any]) =
+      fields.map(field => field.asInstanceOf[FieldPath].asPathString())
   }
 }

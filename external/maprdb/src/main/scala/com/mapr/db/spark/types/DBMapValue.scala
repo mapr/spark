@@ -13,20 +13,27 @@ import com.mapr.db.spark.dbclient.DBClient
 import com.mapr.db.spark.utils.MapRDBUtils
 import com.mapr.db.util.ByteBufs
 
-private[spark] final class DBMapValue(@transient private[spark] var value: Map[String,AnyRef])
-  extends Map[String,AnyRef] with MapLike[String, AnyRef, DBMapValue] with Externalizable{
+private[spark] final class DBMapValue(
+    @transient private[spark] var value: Map[String, AnyRef])
+    extends Map[String, AnyRef]
+    with MapLike[String, AnyRef, DBMapValue]
+    with Externalizable {
 
   def this() {
     this(null)
   }
 
-  override def empty = new DBMapValue(Map.empty)
+  override def empty: DBMapValue = new DBMapValue(Map.empty)
 
   private lazy val m = Map[String, AnyRef](getMap.toList: _*)
-  override def +[B1 >: AnyRef](kv: (String, B1)) =  m + kv
-  override def -(k: String) =  new DBMapValue(m - k)
-  override def iterator = new MapIterator(m)
-  override def get(s: String) = {
+
+  override def +[B1 >: AnyRef](kv: (String, B1)): Map[String, B1] = m + kv
+
+  override def -(k: String): DBMapValue = new DBMapValue(m - k)
+
+  override def iterator: MapIterator = new MapIterator(m)
+
+  override def get(s: String): Option[AnyRef] = {
     val element = m.get(s)
     if (element.isDefined && element.get.isInstanceOf[java.util.List[_]]) {
       Option(new DBArrayValue(element.get.asInstanceOf[java.util.List[Object]].asScala))
@@ -40,35 +47,33 @@ private[spark] final class DBMapValue(@transient private[spark] var value: Map[S
   private lazy val getMap = value
 
   override def writeExternal(objectOutput: ObjectOutput): Unit = {
-    val newdoc = DBClient().newDocument().set("encode",
-      (value map {case (k,v) => k -> v.asInstanceOf[AnyRef]}).asJava)
+    val newdoc = DBClient()
+      .newDocument()
+      .set("encode", (value map { case (k, v) => k -> v.asInstanceOf[AnyRef] }).asJava)
     val buff = RowcolCodec.encode(newdoc)
     objectOutput.writeInt(buff.capacity())
     buff.order(ByteOrder.LITTLE_ENDIAN)
-    objectOutput.write(buff.array(),0,buff.capacity())
+    objectOutput.write(buff.array(), 0, buff.capacity())
   }
 
-  override def readExternal(objectinput: ObjectInput) : Unit = {
+  override def readExternal(objectinput: ObjectInput): Unit = {
     val buffersize = objectinput.readInt()
     val buffer = ByteBufs.allocate(buffersize)
-    MapRDBUtils.readBytes(buffer,buffersize,objectinput)
+    MapRDBUtils.readBytes(buffer, buffersize, objectinput)
     this.value = RowcolCodec.decode(buffer).getMap("encode").asScala.toMap
   }
 
-  override def hashCode() : Int = {
-    this.keySet.size
-  }
+  override def hashCode(): Int = this.keySet.size
 
-  override def equals(other: Any) : Boolean = {
+  override def equals(other: Any): Boolean = {
     if (other.isInstanceOf[DBMapValue]) {
-      val that : DBMapValue = other.asInstanceOf[DBMapValue]
-      val result = this.sameElements(that)
-      return result
+      val that: DBMapValue = other.asInstanceOf[DBMapValue]
+      this == that
     } else if (other.isInstanceOf[Map[_, _]]) {
-      val that: DBMapValue = new DBMapValue(other.asInstanceOf[Map[String, AnyRef]])
-      val result = this.getMap.sameElements(that)
-      return result
-    }
-    return false
+      val that: DBMapValue = new DBMapValue(
+        other.asInstanceOf[Map[String, AnyRef]])
+      this.getMap == that
+    } else false
+
   }
 }

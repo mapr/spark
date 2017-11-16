@@ -82,7 +82,7 @@ object OjaiDocumentAccessTesting {
     rec.set("map2.field2", 10000.toShort)
     rec.set("map2.longfield2verylongverylong", 12.345678)
     rec.set("FIELD3", "VERY LONG STRING IS THIS YOU KNOW")
-    val map:  util.Map [java.lang.String, Object] = new util.HashMap [java.lang.String, Object]()
+    val map: util.Map [java.lang.String, Object] = new util.HashMap [java.lang.String, Object]()
     map.put("Name", "Aditya")
     map.put("Age", new Integer(20))
     rec.set("map.map", map)
@@ -100,7 +100,7 @@ object OjaiDocumentAccessTesting {
     rec.set("map.timestamp", new OTimestamp(1000))
     //    rec.set("map.decimal", new java.math.BigDecimal("1000000000.11111111111111111111"))
 
-    val bytes: Array[Byte] = Array.range(1,10).map(_.toByte)
+    val bytes: Array[Byte] = Array.range(1, 10).map(_.toByte)
     rec.set("map.binary1", bytes)
     rec.set("map.binary2", bytes, 1, 3)
     val bbuf: ByteBuffer = ByteBuffer.allocate(100)
