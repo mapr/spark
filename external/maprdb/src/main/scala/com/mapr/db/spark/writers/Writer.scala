@@ -25,11 +25,11 @@ private[spark] object Writer {
                  bulkInsert: Boolean, insertOrReplace : Boolean): Writer = {
 
     if (!bulkInsert) {
-      if (insertOrReplace)
-        new TableInsertOrReplaceWriter(DBClient().getTable(tableName))
-      else new TableInsertWriter(DBClient().getTable(tableName))
+      if (insertOrReplace) {
+        TableInsertOrReplaceWriter(DBClient().getTable(tableName))
+      } else TableInsertWriter(DBClient().getTable(tableName))
     }
-    else new BulkTableWriter(
+    else BulkTableWriter(
       new BulkLoadRecordWriter(serializableConfiguration.value, new Path(tableName)))
   }
 }
