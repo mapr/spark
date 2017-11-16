@@ -9,19 +9,26 @@ import org.ojai.DocumentConstants
 import com.mapr.db.spark._
 import com.mapr.db.spark.writers.OJAIValue
 
-class DStreamFunctions[T](dStream: DStream[T])(implicit fv: OJAIValue[T]) extends Serializable with LoggingTrait {
+class DStreamFunctions[T](dStream: DStream[T])(implicit fv: OJAIValue[T])
+    extends Serializable
+    with LoggingTrait {
 
   def sparkContext: SparkContext = dStream.context.sparkContext
 
-  def saveToMapRDB(tableName: String, createTable: Boolean = false,
-                   bulkInsert: Boolean = false, idFieldPath: String = DocumentConstants.ID_KEY) : Unit = {
-    logDebug("DStreamFunctions is called for table: "+tableName+" with bulkinsert flag set: "+bulkInsert+" and createTable:"+ createTable)
+  def saveToMapRDB(tableName: String,
+                   createTable: Boolean = false,
+                   bulkInsert: Boolean = false,
+                   idFieldPath: String = DocumentConstants.ID_KEY): Unit = {
+    logDebug(
+      "DStreamFunctions is called for table: " + tableName + " with bulkinsert flag set: "
+        + bulkInsert + " and createTable:" + createTable)
 
     if (createTable) {
       logDebug("Table:" + tableName + " is created in DStreamFunctions")
       DBClient().createTable(tableName)
     }
 
-    dStream.foreachRDD(rdd => rdd.saveToMapRDB(tableName,false,bulkInsert,idFieldPath))
+    dStream.foreachRDD(rdd =>
+      rdd.saveToMapRDB(tableName, false, bulkInsert, idFieldPath))
   }
 }
