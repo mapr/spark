@@ -1,14 +1,16 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
+
 package com.mapr.db.spark.condition
 
 import java.io.{Externalizable, ObjectInput, ObjectOutput}
-import org.ojai.store.QueryCondition
+
 import com.mapr.db.impl.ConditionImpl
 import com.mapr.db.spark.utils.MapRDBUtils
 import com.mapr.db.util.ByteBufs
+import org.ojai.store.QueryCondition
 
-
-private[spark] class DBQueryCondition(@transient var condition: QueryCondition) extends Externalizable {
+private[spark] class DBQueryCondition(@transient var condition: QueryCondition)
+    extends Externalizable {
 
   def this() {
     this(null)
@@ -17,7 +19,7 @@ private[spark] class DBQueryCondition(@transient var condition: QueryCondition) 
   override def readExternal(in: ObjectInput): Unit = {
     val size = in.readInt()
     val condSerialized = ByteBufs.allocate(size)
-    MapRDBUtils.readBytes(condSerialized,size,in)
+    MapRDBUtils.readBytes(condSerialized, size, in)
     this.condition = ConditionImpl.parseFrom(condSerialized)
   }
 
@@ -32,4 +34,3 @@ private[spark] class DBQueryCondition(@transient var condition: QueryCondition) 
 object DBQueryCondition {
   def apply(cond: QueryCondition): DBQueryCondition = new DBQueryCondition(cond)
 }
-

@@ -12,13 +12,14 @@ import com.mapr.db.spark.condition.DBQueryCondition
   * @param cond queryCondition associated with a partition
   */
 
-case class MaprDBPartition(val index: Int, val tableName: String, val locations: Seq[String],
-                           val size: Long, val cond : DBQueryCondition) extends Partition {
+case class MaprDBPartition(index: Int, tableName: String, locations: Seq[String],
+                           size: Long, cond : DBQueryCondition) extends Partition {
 
   override def hashCode(): Int = super.hashCode()
 
   override def equals(other: Any): Boolean = other match {
-    case p: MaprDBPartition if tableName.equals(p.tableName) &&  locations.equals(p.locations) && size.equals(p.size) => true
+    case p: MaprDBPartition =>
+      tableName.equals(p.tableName) &&  locations.equals(p.locations) && size.equals(p.size)
     case _ => false
   }
 }
