@@ -2,6 +2,7 @@
 package com.mapr.db.spark.documentTypeUtils
 
 import java.nio.ByteBuffer
+
 import org.ojai.Value
 import org.ojai.types._
 

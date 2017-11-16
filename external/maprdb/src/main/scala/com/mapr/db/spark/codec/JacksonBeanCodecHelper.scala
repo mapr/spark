@@ -1,30 +1,21 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
+
 package com.mapr.db.spark.codec
 
-import org.ojai.beans.jackson.JacksonHelper
 import java.io.IOException
-import org.ojai.annotation.API
-import org.ojai.types.ODate
-import org.ojai.types.OInterval
-import org.ojai.types.OTime
-import org.ojai.types.OTimestamp
-import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.core.JsonProcessingException
-import com.fasterxml.jackson.core.Version
+
+import com.fasterxml.jackson.core.{JsonGenerator, JsonParser, JsonProcessingException, Version}
 import com.fasterxml.jackson.core.util.VersionUtil
-import com.fasterxml.jackson.databind.DeserializationContext
-import com.fasterxml.jackson.databind.JsonDeserializer
-import com.fasterxml.jackson.databind.JsonSerializer
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializerProvider
+import com.fasterxml.jackson.databind.{DeserializationContext, JsonDeserializer, JsonSerializer, ObjectMapper, SerializerProvider}
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import org.ojai.annotation.API
+import org.ojai.beans.jackson.JacksonHelper
+import org.ojai.types.{ODate, OInterval, OTime, OTimestamp}
 
 @API.Internal
 object JacksonBeanCodecHelper {
 
-  var VERSION: Version = null
   val MAPPER: ObjectMapper = new ObjectMapper
 
   class ByteSerializer extends JsonSerializer[Byte] {
@@ -47,7 +38,7 @@ object JacksonBeanCodecHelper {
     @throws[IOException]
     @throws[JsonProcessingException]
     def deserialize(p: JsonParser, ctxt: DeserializationContext): OInterval = {
-      return p.getEmbeddedObject.asInstanceOf[OInterval]
+      p.getEmbeddedObject.asInstanceOf[OInterval]
     }
   }
 
@@ -63,7 +54,7 @@ object JacksonBeanCodecHelper {
     @throws[IOException]
     @throws[JsonProcessingException]
     def deserialize(p: JsonParser, ctxt: DeserializationContext): ODate = {
-      return p.getEmbeddedObject.asInstanceOf[ODate]
+      p.getEmbeddedObject.asInstanceOf[ODate]
     }
   }
 
@@ -79,7 +70,7 @@ object JacksonBeanCodecHelper {
     @throws[IOException]
     @throws[JsonProcessingException]
     def deserialize(p: JsonParser, ctxt: DeserializationContext): OTime = {
-      return p.getEmbeddedObject.asInstanceOf[OTime]
+      p.getEmbeddedObject.asInstanceOf[OTime]
     }
   }
 
@@ -95,16 +86,23 @@ object JacksonBeanCodecHelper {
     @throws[IOException]
     @throws[JsonProcessingException]
     def deserialize(p: JsonParser, ctxt: DeserializationContext): OTimestamp = {
-      return p.getEmbeddedObject.asInstanceOf[OTimestamp]
+      p.getEmbeddedObject.asInstanceOf[OTimestamp]
     }
   }
 
-  val version: String = classOf[JacksonHelper].getPackage.getImplementationVersion
-  val version_str: String = if (version == null) "<unknown>"
-  else version
-  VERSION = VersionUtil.parseVersion(version_str, "org.ojai", "core")
-  val module: SimpleModule = new SimpleModule("OjaiSerializers", VERSION)
-  val byteSerializer: JacksonBeanCodecHelper.ByteSerializer = new JacksonBeanCodecHelper.ByteSerializer
+  val version: Version = {
+    val ver: String = classOf[JacksonHelper].getPackage.getImplementationVersion
+    if (ver == null) {
+      VersionUtil.parseVersion("<unknown>", "org.ojai", "core")
+    } else {
+      VersionUtil.parseVersion(ver, "org.ojai", "core")
+    }
+  }
+
+  val byteSerializer: JacksonBeanCodecHelper.ByteSerializer =
+    new JacksonBeanCodecHelper.ByteSerializer
+
+  val module: SimpleModule = new SimpleModule("OjaiSerializers", version)
   module.addSerializer(classOf[Byte], byteSerializer)
   module.addSerializer(classOf[OInterval], new JacksonHelper.IntervalSerializer)
   module.addDeserializer(classOf[OInterval], new JacksonHelper.IntervalDeserializer)
@@ -116,5 +114,6 @@ object JacksonBeanCodecHelper {
   module.addDeserializer(classOf[OTimestamp], new JacksonHelper.TimestampDeserializer)
   MAPPER.registerModule(DefaultScalaModule)
   MAPPER.registerModule(module)
+
 }
 
