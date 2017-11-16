@@ -11,19 +11,32 @@ import scala.reflect.ClassTag
 import org.apache.spark.SparkContext
 import org.ojai.store.QueryCondition
 
-private[spark] abstract class MapRDBBaseRDD[T : ClassTag] (@transient val sc: SparkContext,
-                                                           tableName: String, condition: DBQueryCondition,
-                                                           beanClass: Class[T], fields:Seq[String] = "*" :: Nil)
-  extends RDD[T](sc, Seq.empty) {
+private[spark] abstract class MapRDBBaseRDD[T: ClassTag](
+    @transient val sc: SparkContext,
+    tableName: String,
+    condition: DBQueryCondition,
+    beanClass: Class[T],
+    fields: Seq[String] = "*" :: Nil)
+    extends RDD[T](sc, Seq.empty) {
 
   type Self <: MapRDBBaseRDD[T]
 
-  protected def copy(tableName : String = tableName, fields : Seq[String] = fields,
-                     cond: DBQueryCondition = condition, beanClass: Class[T] = beanClass): Self
+  protected def copy(tableName: String = tableName,
+                     fields: Seq[String] = fields,
+                     cond: DBQueryCondition = condition,
+                     beanClass: Class[T] = beanClass): Self
 
-  def where(pred: Predicate) : Self = {
+  def where(pred: Predicate): Self = {
     if (condition != null && !condition.condition.isEmpty) {
-      copy(cond = DBQueryCondition(DBClient().newCondition().and().condition(condition.condition).condition(pred.build.build()).close.build()))
+      copy(
+        cond = DBQueryCondition(
+          DBClient()
+            .newCondition()
+            .and()
+            .condition(condition.condition)
+            .condition(pred.build.build())
+            .close
+            .build()))
     } else {
       copy(cond = DBQueryCondition(pred.build.build()))
     }
@@ -31,24 +44,35 @@ private[spark] abstract class MapRDBBaseRDD[T : ClassTag] (@transient val sc: Sp
 
   def where(condition: QueryCondition): Self = {
     if (this.condition != null && !this.condition.condition.isEmpty) {
-      copy(cond = DBQueryCondition(DBClient().newCondition().and().condition(this.condition.condition).condition(condition).build()))
+      copy(
+        cond = DBQueryCondition(
+          DBClient()
+            .newCondition()
+            .and()
+            .condition(this.condition.condition)
+            .condition(condition)
+            .build()))
     } else {
       copy(cond = DBQueryCondition(condition))
     }
   }
 
-  def limit(value: Integer) : Self = {
+  def limit(value: Integer): Self = {
     throw new NotImplementedError()
   }
 
-  def select[T : FIELD](projectedFields: T*)(implicit ev: FIELD[T]) : Self = {
+  def select[TF: FIELD](projectedFields: TF*)(implicit ev: FIELD[TF]): Self = {
     if (fields == null) {
       copy(fields = ev.getFields(projectedFields))
     } else {
       val fieldProjections = ev.getFields(projectedFields)
       val outputFields = fieldProjections.filter(fld => !this.fields.contains(fld))
-      if (outputFields.size > 0) throw new DBException("Fields:" + fieldProjections + " doesn't exist in the RDD ")
-      else copy(fields = fieldProjections.filter(fld => this.fields.contains(fld)))
+      if (outputFields.nonEmpty) {
+        throw new DBException(
+          "Fields:" + fieldProjections + " doesn't exist in the RDD")
+      } else {
+        copy(fields = fieldProjections.filter(fld => this.fields.contains(fld)))
+      }
     }
   }
 }

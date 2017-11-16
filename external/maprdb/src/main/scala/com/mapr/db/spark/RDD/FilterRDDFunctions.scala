@@ -11,21 +11,26 @@ import scala.language.implicitConversions
 import com.mapr.db.spark.dbclient.DBClient
 import scala.reflect._
 
-case class FilterRDDFunctions[K : OJAIKey : quotes](rdd : RDD[K]) {
+case class FilterRDDFunctions[K: OJAIKey: quotes](rdd: RDD[K]) {
 
-  def joinWithMapRDB[D : ClassTag](tableName: String)(implicit e: D DefaultType OJAIDocument, reqType: RDDTYPE[D]): RDD[D] = {
-    rdd.mapPartitions( partition => {
+  def joinWithMapRDB[D: ClassTag](tableName: String)(
+      implicit e: D DefaultType OJAIDocument,
+      reqType: RDDTYPE[D]): RDD[D] = {
+    rdd.mapPartitions(partition => {
       val table = DBClient().getTable(tableName)
 
       partition.flatMap(item => {
         val condition = field("_id") === item
-        reqType.getValue(table.find(condition.build).iterator(), classTag[D].runtimeClass.asInstanceOf[Class[D]])
+        reqType.getValue(table.find(condition.build).iterator(),
+                         classTag[D].runtimeClass.asInstanceOf[Class[D]])
       })
     })
   }
 
-  def bulkJoinWithMapRDB[D : ClassTag](tableName: String)(implicit e: D DefaultType OJAIDocument, reqType: RDDTYPE[D]): RDD[D] = {
-    rdd.mapPartitions( partition => {
+  def bulkJoinWithMapRDB[D: ClassTag](tableName: String)(
+      implicit e: D DefaultType OJAIDocument,
+      reqType: RDDTYPE[D]): RDD[D] = {
+    rdd.mapPartitions(partition => {
       val table = DBClient().getTable(tableName)
       var gets = Seq[K]()
       var res = List[D]()
@@ -34,50 +39,55 @@ case class FilterRDDFunctions[K : OJAIKey : quotes](rdd : RDD[K]) {
         gets = gets :+ partition.next
         if (gets.size == 4) {
           val condition = field("_id") in gets
-          res = res ++ reqType.getValue(table.find(condition.build).iterator(), classTag[D].runtimeClass.asInstanceOf[Class[D]])
+          res = res ++ reqType.getValue(
+            table.find(condition.build).iterator(),
+            classTag[D].runtimeClass.asInstanceOf[Class[D]])
           gets = Seq[K]()
         }
       }
 
-      if (gets.size > 0) {
+      if (gets.nonEmpty) {
         val condition = field("_id") in gets
-        res = res ++ reqType.getValue(table.find(condition.build).iterator(), classTag[D].runtimeClass.asInstanceOf[Class[D]])
+        res = res ++ reqType.getValue(
+          table.find(condition.build).iterator(),
+          classTag[D].runtimeClass.asInstanceOf[Class[D]])
         gets = Seq[K]()
       }
       res.iterator
-  })
+    })
 
-//  def bulkJoinWithMapRDB[D : ClassTag](tableName: String)(implicit e: D DefaultType OJAIDocument, reqType: RDDTYPE[D]): RDD[D] = {
+//  def bulkJoinWithMapRDB[D : ClassTag](tableName: String)
+    // (implicit e: D DefaultType OJAIDocument, reqType: RDDTYPE[D]): RDD[D] = {
 //    rdd.mapPartitions( partition => {
 //      val table = MapRDBImpl.getTable(tableName)
 //      val preparedPartitions : Seq[Seq[K]] = partition.foldLeft[Seq[Seq[K]]](Seq[Seq[K]]()) {
 //        case (Nil, item) => Seq(Seq(item))
-//        case (result, s) => {
+//        case (result, s) =>
 //          if (result.last.size < 4) result.dropRight(1) :+ (result.last :+ s)
 //          else result :+ Seq(s)
-//        }
 //      }
 //
 //      val output : Iterator[D]= preparedPartitions.map(items => {
 //        val condition = field("_id") in items
-//        reqType.getValue(table.find(condition.build).iterator(), classTag[D].runtimeClass.asInstanceOf[Class[D]])})
+//        reqType.getValue(table.find(condition.build).iterator(),
+    // classTag[D].runtimeClass.asInstanceOf[Class[D]])})
 //      output })
 //      output })
 //      return preparedPartitions.asInstanceOf[RDD[D]]
-
-
 //        .flatMap(items : Seq[K] => {
 //        val condition = field("_id") in items
-//        reqType.getValue(table.find(condition.build).iterator(), classTag[D].runtimeClass.asInstanceOf[Class[D]])
+//        reqType.getValue(table.find(condition.build).iterator(),
+    // classTag[D].runtimeClass.asInstanceOf[Class[D]])
 //      }
 //    })
-//      partition.foldLeft[List[K](List[Iterator[_]]()){
+//      partition.foldLeft[List[K](List[Iterator[_]]()) {
 //        case (Nil, s) => List(List(s))
 //        case (result, s) => if (result.last.size < 4) result.dropRight(1) :+ (result.last :+ s)
 //                            else result :+ List(s)
 //      }.flatMap(items => {
 //        val condition = field("_id") in items
-//        reqType.getValue(table.find(condition.build).iterator(), classTag[D].runtimeClass.asInstanceOf[Class[D]])
+//        reqType.getValue(table.find(condition.build).iterator(),
+    // classTag[D].runtimeClass.asInstanceOf[Class[D]])
 //      })
 //    })
   }
