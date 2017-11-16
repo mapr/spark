@@ -38,9 +38,7 @@ private[spark] case class MapRDBRelation(
       .map(IsNotNull) ++ filters
 
     if (requiredColumns.nonEmpty || queryConditions.nonEmpty) {
-      logDebug(s"requiredColumns: ${
-        requiredColumns
-          .mkString(",")
+      logDebug(s"requiredColumns: ${requiredColumns.mkString(",")
       }, filters: ${queryConditions.mkString(",")}")
     }
 
@@ -56,7 +54,7 @@ private[spark] case class MapRDBRelation(
 
     val optimizedByFilter =
       if (!queryConditions.isEmpty) {
-        optimizedByColumns.where(convertToCondition(filters, false))
+        optimizedByColumns.where(convertToCondition(queryConditions, false))
       } else optimizedByColumns
 
     optimizedByFilter
