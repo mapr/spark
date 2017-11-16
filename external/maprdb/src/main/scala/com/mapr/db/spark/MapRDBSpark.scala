@@ -3,30 +3,33 @@ package com.mapr.db.spark
 
 import java.nio.ByteBuffer
 
-import com.mapr.db.spark.RDD.partitioner.MapRDBPartitioner
-import com.mapr.db.spark.RDD.partitioner.OJAIKEY
+import com.mapr.db.spark.RDD.partitioner.{MapRDBPartitioner, MapRDBSplitPartitioner, OJAIKEY}
 import com.mapr.db.spark.dbclient.DBClient
 import com.mapr.db.spark.impl.OJAIDocument
 import com.mapr.db.spark.sql.utils.MapRSqlUtils
 import com.mapr.db.spark.types.DBBinaryValue
+
+import org.apache.spark.Partitioner
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
+
 import org.ojai.Document
 
 /**
-  * MapRDBSpark is a static class which contains factory methods to create scala's ojai document and partitioner objects.
-  * @example Factory functions to help create scala's ojai documents
-  *          val doc = MapRDBSpark.newDocument(jsonString)
-  *          val doc = MapRDBSpark.newDocument(document: org.ojai.Document)
-  *          Here are the ways to access elements in OJAIDocument
-  *          val partitioner = MapRDBSpark.newPartitioner(tableName)
-  *          It creates a partitioiner using the splits specified in tableName.
-  *
-  *          val partitioner = MapRDBSpark.newPartitioner(Seq("AA","CC"))
-  *          It creates a partitioner using the splits provided in the sequence.
-  *          Here three splits will be created (null, "AA") , ("AA","CC") and ("CC", null)
-  *          Note that this call assumes that user supplies the splits in sorted order.
-  */
+* MapRDBSpark is a static class which contains factory methods to create scala's
+*   ojai document and partitioner objects.
+* @example Factory functions to help create scala's ojai documents
+*          val doc = MapRDBSpark.newDocument(jsonString)
+*          val doc = MapRDBSpark.newDocument(document: org.ojai.Document)
+*          Here are the ways to access elements in OJAIDocument
+*          val partitioner = MapRDBSpark.newPartitioner(tableName)
+*          It creates a partitioiner using the splits specified in tableName.
+*
+*          val partitioner = MapRDBSpark.newPartitioner(Seq("AA","CC"))
+*          It creates a partitioner using the splits provided in the sequence.
+*          Here three splits will be created (null, "AA") , ("AA","CC") and ("CC", null)
+*          Note that this call assumes that user supplies the splits in sorted order.
+*/
 object MapRDBSpark {
 
   /**
@@ -64,7 +67,7 @@ object MapRDBSpark {
     * Factory function to create a new partitioner using existing MapRDBTable.
     * @param table existing tableName in MapRDB
     */
-  def newPartitioner[T: OJAIKEY](table: String) = {
+  def newPartitioner[T: OJAIKEY](table: String): Partitioner = {
     MapRDBPartitioner(table)
   }
 
@@ -74,7 +77,7 @@ object MapRDBSpark {
     *               Splits supported at this point are String and ByteBuffer.
     * It is user's responsibility to supply the splits in ascending order.
     */
-  def newPartitioner[T: OJAIKEY](splits: Seq[T]) = {
+  def newPartitioner[T: OJAIKEY](splits: Seq[T]): MapRDBSplitPartitioner[T] = {
     MapRDBPartitioner[T](splits)
   }
 
@@ -91,7 +94,7 @@ object MapRDBSpark {
     * @param ojaiDoc OJAI Document to be converted to Spark's Row format.
     * @param schema Schema for the Row.
     */
-  def docToRow(ojaiDoc: OJAIDocument, schema : StructType) = {
+  def docToRow(ojaiDoc: OJAIDocument, schema : StructType): Row = {
     MapRSqlUtils.documentToRow(ojaiDoc, schema)
   }
 }

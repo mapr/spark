@@ -2,9 +2,10 @@
 package com.mapr.db.spark.codec
 
 import java.io.IOException
-import org.ojai.annotation.API
+
 import com.mapr.db.spark.codec.JacksonBeanCodecHelper._
 import org.ojai.{Document, DocumentBuilder, DocumentReader}
+import org.ojai.annotation.API
 import org.ojai.beans.jackson.{DocumentGenerator, DocumentParser}
 import org.ojai.exceptions.{DecodingException, EncodingException}
 
@@ -16,12 +17,11 @@ object BeanCodec {
     val gen: DocumentGenerator = new DocumentGenerator(db)
     try {
       MAPPER.writeValue(gen, bean)
-      return gen.getDocument
+      gen.getDocument
     }
     catch {
-      case e: Exception => {
+      case e: Exception =>
         throw new DecodingException("Failed to convert the java bean to Document", e)
-      }
     }
   }
 
@@ -29,12 +29,11 @@ object BeanCodec {
   def encode[T](dr: DocumentReader, beanClass: Class[T]): T = {
     if (dr == null) return null.asInstanceOf[T]
     try {
-      return MAPPER.readValue(new DocumentParser(dr), beanClass)
+      MAPPER.readValue(new DocumentParser(dr), beanClass)
     }
     catch {
-      case e: IOException => {
+      case e: IOException =>
         throw new EncodingException("Failed to create java bean from Document", e)
-      }
     }
   }
 }
