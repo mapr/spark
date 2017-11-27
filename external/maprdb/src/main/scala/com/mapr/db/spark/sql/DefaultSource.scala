@@ -62,16 +62,16 @@ class DefaultSource
                               parameters: Map[String, String],
                               data: DataFrame): BaseRelation = {
 
-    require(parameters.get("tableName").isDefined)
-    require(parameters.get("idFieldPath").isDefined)
-    val idFieldPath = parameters("idFieldPath")
+
+    require(parameters.get("tableName").isDefined, "Table name must be defined")
+    val idFieldPath = parameters.getOrElse("idFieldPath", "_id")
     val condition: Option[QueryCondition] = parameters
       .get("QueryCondition")
       .map(cond => ConditionImpl.parseFrom(ByteBuffer.wrap(cond.getBytes)))
     lazy val tableExists =
       DBClient().tableExists(parameters("tableName"))
     lazy val tableName = parameters("tableName")
-    lazy val createTheTable = if (tableExists) false else true
+    lazy val createTheTable = !tableExists
     lazy val bulkMode = parameters.getOrElse("bulkMode", "false").toBoolean
     val operation = parameters.getOrElse("Operation", "ErrorIfExists")
     mode match {
