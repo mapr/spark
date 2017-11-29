@@ -3,22 +3,22 @@ package com.mapr.db.spark.sql.utils
 
 import java.nio.ByteBuffer
 
-import com.mapr.db.MapRDB
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
+import scala.language.implicitConversions
+
 import com.mapr.db.rowcol.DBValueBuilderImpl
 import com.mapr.db.spark.MapRDBSpark
 import com.mapr.db.spark.dbclient.DBClient
 import com.mapr.db.spark.exceptions.SchemaMappingException
 import com.mapr.db.spark.impl.OJAIDocument
+import org.ojai.DocumentReader
+import org.ojai.types.{ODate, OInterval, OTimestamp}
+
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.catalyst.util._
 import org.apache.spark.sql.types._
-import org.ojai.DocumentReader
-import org.ojai.types.{ODate, OInterval, OTimestamp}
-import scala.language.implicitConversions
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.JavaConverters._
-import org.ojai.store.DocumentMutation
 
 object MapRSqlUtils {
 
