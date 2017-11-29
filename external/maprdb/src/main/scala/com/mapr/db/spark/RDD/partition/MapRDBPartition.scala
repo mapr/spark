@@ -1,8 +1,9 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.RDD.partition
 
-import org.apache.spark.Partition
 import com.mapr.db.spark.condition.DBQueryCondition
+
+import org.apache.spark.Partition
 /**
   * An identifier for a partition in a MapRTableScanRDD.
   *
