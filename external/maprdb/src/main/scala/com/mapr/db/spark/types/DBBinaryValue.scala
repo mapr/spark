@@ -3,6 +3,7 @@ package com.mapr.db.spark.types
 
 import java.io.{Externalizable, ObjectInput, ObjectOutput}
 import java.nio.{ByteBuffer, ByteOrder}
+
 import com.mapr.db.impl.IdCodec
 import com.mapr.db.spark.utils.MapRDBUtils
 import com.mapr.db.util.ByteBufs
