@@ -1,13 +1,14 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.streaming
 
+import com.mapr.db.spark._
 import com.mapr.db.spark.dbclient.DBClient
 import com.mapr.db.spark.utils.LoggingTrait
-import org.apache.spark.SparkContext
-import org.apache.spark.streaming.dstream.DStream
-import org.ojai.DocumentConstants
-import com.mapr.db.spark._
 import com.mapr.db.spark.writers.OJAIValue
+import org.ojai.DocumentConstants
+
+import org.apache.spark.streaming.dstream.DStream
+import org.apache.spark.SparkContext
 
 class DStreamFunctions[T](dStream: DStream[T])(implicit fv: OJAIValue[T])
     extends Serializable

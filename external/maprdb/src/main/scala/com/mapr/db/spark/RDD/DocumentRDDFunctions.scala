@@ -8,7 +8,6 @@ import com.mapr.db.spark.configuration.SerializableConfiguration
 import com.mapr.db.spark.dbclient.DBClient
 import com.mapr.db.spark.utils.{LoggingTrait, MapRDBUtils}
 import com.mapr.db.spark.writers._
-
 import org.apache.hadoop.conf.Configuration
 import org.ojai.{Document, DocumentConstants, Value}
 import org.ojai.store.DocumentMutation
