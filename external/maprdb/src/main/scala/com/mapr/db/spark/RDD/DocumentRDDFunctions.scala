@@ -24,7 +24,7 @@ private[spark] class DocumentRDDFunctions extends LoggingTrait {
       createTable: Boolean = false,
       bulkInsert: Boolean = false,
       function1: (Broadcast[SerializableConfiguration],
-                  Boolean) => Function1[Iterator[T], Unit]): Unit = {
+                  Boolean) => ((Iterator[T]) => Unit)): Unit = {
     var isNewAndBulkLoad = (false, false)
 
     val partitioner: Option[Partitioner] = rdd.partitioner
@@ -67,31 +67,30 @@ private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T])(
 
   @transient val sparkContext = rdd.sparkContext
 
-  def saveToMapRDB(tablename: String,
+  def saveToMapRDB(tableName: String,
                    createTable: Boolean = false,
                    bulkInsert: Boolean = false,
                    idFieldPath: String = DocumentConstants.ID_KEY): Unit = {
     logDebug(
-      s"saveToMapRDB in OJAIDocumentRDDFunctions is called for table: $tablename " +
+      s"saveToMapRDB in OJAIDocumentRDDFunctions is called for table: $tableName " +
         s"with bulkinsert flag set: $bulkInsert and createTable: $createTable")
 
-    var getID: (Document) => Value = null
-    if (idFieldPath == DocumentConstants.ID_KEY) {
-      getID = (doc: Document) => doc.getId
+    val getID: Document => Value = if (idFieldPath == DocumentConstants.ID_KEY) {
+      (doc: Document) => doc.getId
     } else {
-      getID = (doc: Document) => doc.getValue(idFieldPath)
+      (doc: Document) => doc.getValue(idFieldPath)
     }
 
     this.saveToMapRDBInternal(
       rdd,
-      tablename,
+      tableName,
       createTable,
       bulkInsert,
-      (cnf: Broadcast[SerializableConfiguration], isnewAndBulkLoad: Boolean) =>
+      (cnf: Broadcast[SerializableConfiguration], isNewAndBulkLoad: Boolean) =>
         (iter: Iterator[T]) => {
           if (iter.nonEmpty) {
             val writer =
-              Writer.initialize(tablename, cnf.value, isnewAndBulkLoad, true)
+              Writer.initialize(tableName, cnf.value, isNewAndBulkLoad, true)
             while (iter.hasNext) {
               val element = iter.next
               f.write(f.getValue(element), getID, writer)
@@ -110,8 +109,8 @@ private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T])(
       s"insertToMapRDB in OJAIDocumentRDDFunctions is called for table: $tablename" +
         s" with bulkinsert flag set: $bulkInsert and createTable: $createTable")
 
-    var getID: (Document) => Value = if (idFieldPath == DocumentConstants.ID_KEY) {
-     (doc: Document) => doc.getId
+    val getID: (Document) => Value = if (idFieldPath == DocumentConstants.ID_KEY) {
+      (doc: Document) => doc.getId
     } else {
       (doc: Document) => doc.getValue(idFieldPath)
     }
@@ -121,11 +120,11 @@ private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T])(
       tablename,
       createTable,
       bulkInsert,
-      (cnf: Broadcast[SerializableConfiguration], isnewAndBulkLoad: Boolean) =>
+      (cnf: Broadcast[SerializableConfiguration], isNewAndBulkLoad: Boolean) =>
         (iter: Iterator[T]) => {
           if (iter.nonEmpty) {
             val writer =
-              Writer.initialize(tablename, cnf.value, isnewAndBulkLoad, false)
+              Writer.initialize(tablename, cnf.value, isNewAndBulkLoad, false)
             while (iter.hasNext) {
               val element = iter.next
               f.write(f.getValue(element), getID, writer)
@@ -136,20 +135,20 @@ private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T])(
     )
   }
 
-  def updateToMapRDB(tablename: String,
+  def updateToMapRDB(tableName: String,
                      mutation: (T) => DocumentMutation,
                      getID: (T) => Value): Unit = {
     logDebug(
-      "updateToMapRDB in OJAIDocumentRDDFunctions is called for table: " + tablename)
+      "updateToMapRDB in OJAIDocumentRDDFunctions is called for table: " + tableName)
     this.saveToMapRDBInternal(
       rdd,
-      tablename,
+      tableName,
       false,
       false,
       (cnf: Broadcast[SerializableConfiguration], isnewAndBulkLoad: Boolean) =>
         (iter: Iterator[T]) =>
           if (iter.nonEmpty) {
-            val writer = TableUpdateWriter(DBClient().getTable(tablename))
+            val writer = TableUpdateWriter(DBClient().getTable(tableName))
             while (iter.hasNext) {
               val element = iter.next
               f.update(mutation(element), getID(element), writer)
@@ -159,24 +158,24 @@ private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T])(
     )
   }
 
-  def updateToMapRDB(tablename: String,
+  def updateToMapRDB(tableName: String,
                      mutation: (T) => DocumentMutation,
                      getID: (T) => Value,
                      condition: Predicate): Unit = {
     logDebug(
-      "updateToMapRDB in OJAIDocumentRDDFunctions is called for table: " + tablename)
+      "updateToMapRDB in OJAIDocumentRDDFunctions is called for table: " + tableName)
     val queryCondition = DBQueryCondition(condition.build.build())
 
     this.saveToMapRDBInternal(
       rdd,
-      tablename,
+      tableName,
       false,
       false,
       (cnf: Broadcast[SerializableConfiguration], isnewAndBulkLoad: Boolean) =>
         (iter: Iterator[T]) =>
           if (iter.nonEmpty) {
             val writer =
-              TableCheckAndMutateWriter(DBClient().getTable(tablename))
+              TableCheckAndMutateWriter(DBClient().getTable(tableName))
             while (iter.hasNext) {
               val element = iter.next
               f.checkAndUpdate(mutation(element),
@@ -196,23 +195,23 @@ private[spark] case class PairedDocumentRDDFunctions[K, V](rdd: RDD[(K, V)])(
     extends DocumentRDDFunctions {
 
   @transient val sparkContext = rdd.sparkContext
-  def saveToMapRDB(tablename: String,
+  def saveToMapRDB(tableName: String,
                    createTable: Boolean = false,
                    bulkInsert: Boolean = false): Unit = {
     logDebug(
       "saveToMapRDB in PairedDocumentRDDFunctions is called for table: " +
-        tablename + " with bulkinsert flag set: " + bulkInsert + " and createTable:" + createTable)
+        tableName + " with bulkinsert flag set: " + bulkInsert + " and createTable:" + createTable)
 
     this.saveToMapRDBInternal[(K, V)](
       rdd,
-      tablename,
+      tableName,
       createTable,
       bulkInsert,
       (cnf: Broadcast[SerializableConfiguration], isnewAndBulkLoad: Boolean) =>
         (iter: Iterator[(K, V)]) =>
           if (iter.nonEmpty) {
             val writer =
-              Writer.initialize(tablename, cnf.value, isnewAndBulkLoad, true)
+              Writer.initialize(tableName, cnf.value, isnewAndBulkLoad, true)
             while (iter.hasNext) {
               val element = iter.next
               f.write(v.getValue(element._2), f.getValue(element._1), writer)

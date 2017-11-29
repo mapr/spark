@@ -7,6 +7,8 @@ import com.mapr.db.exceptions.TableExistsException
 import com.mapr.db.impl.ConditionImpl
 import com.mapr.db.spark.dbclient.DBClient
 import com.mapr.db.spark.utils.MapRSpark
+import org.ojai.DocumentConstants
+
 import org.apache.spark.sql.{DataFrame, SQLContext, SaveMode}
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.StructType
@@ -64,7 +66,7 @@ class DefaultSource
 
 
     require(parameters.get("tableName").isDefined, "Table name must be defined")
-    val idFieldPath = parameters.getOrElse("idFieldPath", "_id")
+    val idFieldPath = parameters.getOrElse("idFieldPath", DocumentConstants.ID_KEY)
     val condition: Option[QueryCondition] = parameters
       .get("QueryCondition")
       .map(cond => ConditionImpl.parseFrom(ByteBuffer.wrap(cond.getBytes)))
