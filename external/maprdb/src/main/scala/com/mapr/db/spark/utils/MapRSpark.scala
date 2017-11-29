@@ -1,25 +1,22 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.utils
 
-import com.mapr.db.MapRDB
-import com.mapr.db.spark.RDD.{MapRDBTableScanRDD, RDDTYPE}
-import com.mapr.db.spark.condition.{DBQueryCondition, Predicate}
-import com.mapr.db.spark.configuration.SerializableConfiguration
-
 import scala.reflect._
 import scala.reflect.runtime.universe._
 
-import org.apache.hadoop.conf.Configuration
-
-import org.ojai.store.{DocumentMutation, QueryCondition}
 import com.mapr.db.impl.ConditionImpl
-import com.mapr.db.spark.utils.DefaultClass.DefaultType
-import com.mapr.db.spark.impl.OJAIDocument
-import com.mapr.db.spark.RDD.MapRDBBaseRDD
 import com.mapr.db.spark._
+import com.mapr.db.spark.RDD.{MapRDBBaseRDD, MapRDBTableScanRDD, RDDTYPE}
+import com.mapr.db.spark.condition.{DBQueryCondition, Predicate}
+import com.mapr.db.spark.configuration.SerializableConfiguration
 import com.mapr.db.spark.dbclient.DBClient
+import com.mapr.db.spark.impl.OJAIDocument
 import com.mapr.db.spark.sql.GenerateSchema
 import com.mapr.db.spark.sql.utils.MapRSqlUtils
+import com.mapr.db.spark.utils.DefaultClass.DefaultType
+import org.apache.hadoop.conf.Configuration
+import org.ojai.store.{DocumentMutation, QueryCondition}
+
 import org.apache.spark.SparkContext
 import org.apache.spark.sql._
 import org.apache.spark.sql.types.StructType
@@ -116,10 +113,6 @@ object MapRSpark {
       require(sparkctx.isDefined, "The SparkContext must be set.")
       require(tableName.isDefined, "Source should be set")
       require(conf.isDefined, "Configuration should be set")
-      val cond = condition match {
-        case Some(x) => Option(x)
-        case None => Option(DBClient().newCondition().build)
-      }
 
       new MapRSpark(sparkSession,
                     sparkctx,
