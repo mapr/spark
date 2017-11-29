@@ -5,9 +5,10 @@ import java.io.{Externalizable, ObjectInput, ObjectOutput}
 import java.nio._
 import java.util
 
-import scala.language.implicitConversions
 import scala.collection.JavaConverters._
 import scala.collection.MapLike
+import scala.language.implicitConversions
+
 import com.mapr.db.rowcol.RowcolCodec
 import com.mapr.db.spark.dbclient.DBClient
 import com.mapr.db.spark.utils.MapRDBUtils

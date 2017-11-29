@@ -1,15 +1,16 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.RDD
 
+import scala.language.existentials
+import scala.reflect.ClassTag
+
 import com.mapr.db.exceptions.DBException
 import com.mapr.db.spark.condition.{DBQueryCondition, Predicate}
 import com.mapr.db.spark.dbclient.DBClient
-import org.apache.spark.rdd.RDD
-
-import scala.language.existentials
-import scala.reflect.ClassTag
-import org.apache.spark.SparkContext
 import org.ojai.store.QueryCondition
+
+import org.apache.spark.rdd.RDD
+import org.apache.spark.SparkContext
 
 private[spark] abstract class MapRDBBaseRDD[T: ClassTag](
     @transient val sc: SparkContext,
