@@ -1,25 +1,25 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.sql
 
-import com.mapr.db.spark.RDD.MapRDBBaseRDD
-import com.mapr.db.spark.impl.OJAIDocument
-import com.mapr.db.spark.utils.MapRSpark
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.types.{DataType, DataTypes, StructField, StructType}
-import org.ojai.DocumentReader
-
-import scala.reflect.runtime.universe._
-import scala.Array._
 import java.util.Arrays.sort
 import java.util.Comparator
 
+import scala.reflect.runtime.universe._
+import scala.Array._
+
 import com.mapr.db.spark.exceptions.SchemaMappingException
+import com.mapr.db.spark.RDD.MapRDBBaseRDD
+import com.mapr.db.spark.impl.OJAIDocument
+import com.mapr.db.spark.utils.MapRSpark
+import org.ojai.DocumentReader
+
+import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.catalyst.{JavaTypeInference, ScalaReflection}
 import org.apache.spark.sql.catalyst.analysis.TypeCoercion
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.types.{DataType, DataTypes, StructField, StructType}
 
-import scala.annotation.switch
 
 object GenerateSchema {
 

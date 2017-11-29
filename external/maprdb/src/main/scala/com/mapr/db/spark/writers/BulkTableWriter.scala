@@ -2,9 +2,10 @@
 package com.mapr.db.spark.writers
 
 import java.nio.ByteBuffer
-import org.ojai.Document
+
 import com.mapr.db.mapreduce.BulkLoadRecordWriter
 import com.mapr.db.rowcol.DBValueBuilderImpl
+import org.ojai.Document
 
 private[spark] case class BulkTableWriter(@transient table: BulkLoadRecordWriter) extends Writer {
 

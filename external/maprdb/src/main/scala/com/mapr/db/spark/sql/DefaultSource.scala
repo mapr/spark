@@ -8,12 +8,12 @@ import com.mapr.db.impl.ConditionImpl
 import com.mapr.db.spark.dbclient.DBClient
 import com.mapr.db.spark.utils.MapRSpark
 import org.ojai.DocumentConstants
-
-import org.apache.spark.sql.{DataFrame, SQLContext, SaveMode}
-import org.apache.spark.sql.sources._
-import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.SaveMode._
 import org.ojai.store.QueryCondition
+
+import org.apache.spark.sql.{DataFrame, SaveMode, SQLContext}
+import org.apache.spark.sql.sources._
+import org.apache.spark.sql.types.{StructField, StructType}
+import org.apache.spark.sql.SaveMode._
 
 class DefaultSource
     extends DataSourceRegister
@@ -156,7 +156,6 @@ class DefaultSource
     val failureOnConflict = failOnConflict.toBoolean
 
     val rdd = MapRSpark.builder
-      .sparkContext(sqlContext.sparkContext)
       .sparkSession(sqlContext.sparkSession)
       .configuration()
       .setTable(tableName.get)
@@ -165,15 +164,21 @@ class DefaultSource
       .build
       .toRDD(null)
 
-    val schema: StructType = userSchema match {
+    val schema: StructType = makeSchemaNullable(userSchema match {
       case Some(s) => s
       case None =>
         GenerateSchema(
           rdd,
           sampleSize.map(_.toDouble).getOrElse(GenerateSchema.SAMPLE_SIZE),
           failureOnConflict)
-    }
+    })
 
     MapRDBRelation(tableName.get, schema, rdd, Operation)(sqlContext)
+  }
+
+  private def makeSchemaNullable(schema: StructType): StructType = {
+    StructType(schema.map(field => {
+      StructField(field.name, field.dataType, nullable = true, field.metadata  )
+    }))
   }
 }
