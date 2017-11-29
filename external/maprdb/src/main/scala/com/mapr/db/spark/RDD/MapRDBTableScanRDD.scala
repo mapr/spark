@@ -4,7 +4,6 @@ package com.mapr.db.spark.RDD
 import scala.language.existentials
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
-
 import com.mapr.db.impl.{ConditionImpl, IdCodec}
 import com.mapr.db.spark.RDD.partition.MaprDBPartition
 import com.mapr.db.spark.RDD.partitioner.MapRDBPartitioner
@@ -14,14 +13,10 @@ import com.mapr.db.spark.dbclient.DBClient
 import com.mapr.db.spark.impl.OJAIDocument
 import com.mapr.db.spark.utils.DefaultClass.DefaultType
 import com.mapr.db.spark.utils.MapRSpark
-
 import org.ojai.{Document, Value}
-
 import org.apache.spark.{Partition, Partitioner, SparkContext, TaskContext}
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.sql.SparkSession
-
-
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
 private[spark] class MapRDBTableScanRDD[T: ClassTag](
     @transient sparkSession: SparkSession,
@@ -36,9 +31,9 @@ private[spark] class MapRDBTableScanRDD[T: ClassTag](
 
   @transient private lazy val table = DBClient().getTable(tableName)
   @transient private lazy val tabletinfos =
-    if (condition == null || condition.condition.isEmpty)
+    if (condition == null || condition.condition.isEmpty) {
       DBClient().getTabletInfos(tableName)
-    else DBClient().getTabletInfos(tableName, condition.condition)
+    } else DBClient().getTabletInfos(tableName, condition.condition)
   @transient private lazy val getSplits: Seq[Value] = {
     val keys = tabletinfos.map(
       tableinfo =>
@@ -52,18 +47,18 @@ private[spark] class MapRDBTableScanRDD[T: ClassTag](
   }
 
   private def getPartitioner: Partitioner = {
-    if (getSplits.isEmpty)
-      return null
-    if (getSplits(0).getType == Value.Type.STRING) {
-      return MapRDBPartitioner(getSplits.map(_.getString))
+    if (getSplits.isEmpty) {
+      null
+    } else if (getSplits(0).getType == Value.Type.STRING) {
+      MapRDBPartitioner(getSplits.map(_.getString))
     } else {
-      return MapRDBPartitioner(getSplits.map(_.getBinary))
+      MapRDBPartitioner(getSplits.map(_.getBinary))
     }
   }
 
-  def toDF[T <: Product: TypeTag]() = maprspark[T]()
+  def toDF[T <: Product: TypeTag](): DataFrame = maprspark[T]()
 
-  def maprspark[T <: Product: TypeTag]() = {
+  def maprspark[T <: Product: TypeTag](): DataFrame = {
     MapRSpark.builder
       .sparkSession(sparkSession)
       .configuration()
@@ -89,7 +84,7 @@ private[spark] class MapRDBTableScanRDD[T: ClassTag](
                       DBQueryCondition(tabcond)).asInstanceOf[Partition]
     })
     logDebug("Partitions for the table:" + tableName + " are " + splits)
-    return splits.toArray
+    splits.toArray
   }
 
   override def getPreferredLocations(split: Partition): Seq[String] = {
@@ -125,8 +120,9 @@ private[spark] class MapRDBTableScanRDD[T: ClassTag](
     if (columns != null) {
       logDebug("Columns projected from table:" + columns)
       itrs = table.find(combinedCond.build(), columns.toArray: _*).iterator()
-    } else
+    } else {
       itrs = table.find(combinedCond.build()).iterator()
+    }
     val ojaiCursor = reqType.getValue(itrs, beanClass)
 
     context.addTaskCompletionListener((ctx: TaskContext) => {
