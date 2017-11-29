@@ -6,6 +6,8 @@ import com.mapr.db.spark.condition.DBQueryCondition
 import com.mapr.db.spark.dbclient.DBClient
 import org.ojai.{Document, Value}
 import com.mapr.db.spark.impl.OJAIDocument
+import com.mapr.db.spark.sql.utils.MapRSqlUtils
+import org.apache.spark.sql.Row
 import org.ojai.store.DocumentMutation
 
 private[spark] sealed trait OJAIValue[T] extends Serializable {
@@ -17,6 +19,20 @@ private[spark] sealed trait OJAIValue[T] extends Serializable {
 }
 
 private[spark] object OJAIValue extends BaseOJAIValue {
+
+  implicit def rowOJAIDocument[T]: OJAIValue[Row] = new OJAIValue[Row] {
+    override type Self = Row
+
+    override def getValue(elem: Row): Document = MapRSqlUtils.rowToDocument(elem).getDoc
+
+    override def write(doc: Document, getID: (Document) => Value, writer: Writer) = writer.write(doc, getID(doc))
+
+    override def update(mutation: DocumentMutation, getID: Value, writer: TableUpdateWriter) = writer.write(mutation, getID)
+
+    override def checkAndUpdate(mutation: DocumentMutation, queryCondition: DBQueryCondition, getID: Value, writer: TableCheckAndMutateWriter): Unit =
+      writer.write(mutation, queryCondition, getID)
+
+  }
 
   implicit def defaultOJAIDocument[T]: OJAIValue[OJAIDocument] = new OJAIValue[OJAIDocument] {
     type Self = OJAIDocument
