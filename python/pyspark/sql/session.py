@@ -58,6 +58,31 @@ def _monkey_patch_RDD(sparkSession):
 
     RDD.toDF = toDF
 
+def _mapr_session_patch(original_session, mapr_j_session, wrapped, default_sample_size=1000.0, default_id_field ="_id"):
+
+    def loadFromMapRDB(self, table_name, schema = None, sample_size=default_sample_size):
+        """
+        Loads data from MapR-DB Table.
+
+        :param table_name: MapR-DB table path.
+        :param schema: schema representation.
+        :param sample_size: sample size.
+        :return: a DataFrame
+
+        >>> spark.loadFromMapRDB("/test-table").collect()
+        """
+        df_reader = original_session.read \
+            .format("com.mapr.db.spark.sql") \
+            .option("tableName", table_name) \
+            .option("sampleSize", sample_size)
+
+        if schema:
+            df_reader.schema(schema)
+
+        return df_reader.load()
+
+    SparkSession.loadFromMapRDB = loadFromMapRDB
+
 
 class SparkSession(object):
     """The entry point to programming Spark with the Dataset and DataFrame API.
@@ -213,6 +238,9 @@ class SparkSession(object):
         self._jwrapped = self._jsparkSession.sqlContext()
         self._wrapped = SQLContext(self._sc, self, self._jwrapped)
         _monkey_patch_RDD(self)
+
+        mapr_j_session = self._jvm.MapRDBJavaSession(self._jsparkSession)
+        _mapr_session_patch(self, mapr_j_session, self._wrapped)
         install_exception_handler()
         if SparkSession._instantiatedContext is None:
             SparkSession._instantiatedContext = self
