@@ -289,7 +289,7 @@ object MapRSqlUtils {
         DBValueBuilderImpl.KeyValueBuilder.initFrom(map.asJava)
       case (BinaryType) =>
         DBValueBuilderImpl.KeyValueBuilder.initFrom(
-          element.asInstanceOf[ByteBuffer])
+          ByteBuffer.wrap(element.asInstanceOf[Array[Byte]]))
       case (BooleanType) =>
         DBValueBuilderImpl.KeyValueBuilder.initFrom(
           element.asInstanceOf[Boolean])
