@@ -84,6 +84,42 @@ def _mapr_session_patch(original_session, mapr_j_session, wrapped, default_sampl
 
     SparkSession.loadFromMapRDB = loadFromMapRDB
 
+    def saveToMapRDB(self, dataframe, table_name, id_field_path = default_id_field, create_table = False, bulk_insert = False):
+        """
+        Saves data to MapR-DB Table.
+
+        :param dataframe: a DataFrame which will be saved.
+        :param table_name: MapR-DB table path.
+        :param id_field_path: field name of document ID.
+        :param create_table: indicates if table creation required.
+        :param bulk_insert: indicates bulk insert.
+        :return: a RDD
+
+        >>> spark.saveToMapRDB(df, "/test-table")
+        """
+        DataFrame(mapr_j_session.saveToMapRDB(dataframe._jdf, table_name, id_field_path, create_table, bulk_insert), wrapped)
+
+    SparkSession.saveToMapRDB = saveToMapRDB
+
+    # TODO implement
+    # def updateToMapRDB(self, dataframe, table_name, mutation, id_value, condition):
+
+    def insertToMapRDB(self, dataframe, table_name, id_field_path = default_id_field, create_table = False, bulk_insert = False):
+        """
+        Inserts data into MapR-DB Table.
+
+        :param dataframe: a DataFrame which will be saved.
+        :param table_name: MapR-DB table path.
+        :param id_field_path: field name of document ID.
+        :param create_table: indicates if table creation required.
+        :param bulk_insert: indicates bulk insert.
+        :return: a RDD
+
+        >>> spark.insertToMapRDB(df, "/test-table")
+        """
+        DataFrame(mapr_j_session.insertToMapRDB(dataframe._jdf, table_name, id_field_path, create_table, bulk_insert), wrapped)
+
+    SparkSession.insertToMapRDB = insertToMapRDB
 
 class SparkSession(object):
     """The entry point to programming Spark with the Dataset and DataFrame API.
