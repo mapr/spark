@@ -38,6 +38,8 @@ from pyspark.sql.types import Row, DataType, StringType, StructType, TimestampTy
     _parse_datatype_string
 from pyspark.sql.utils import install_exception_handler
 
+import pyspark.sql.maprpatch
+
 __all__ = ["SparkSession"]
 
 
@@ -59,67 +61,6 @@ def _monkey_patch_RDD(sparkSession):
 
     RDD.toDF = toDF
 
-def _mapr_session_patch(original_session, mapr_j_session, wrapped, default_sample_size=1000.0, default_id_field ="_id"):
-
-    def loadFromMapRDB(self, table_name, schema = None, sample_size=default_sample_size):
-        """
-        Loads data from MapR-DB Table.
-
-        :param table_name: MapR-DB table path.
-        :param schema: schema representation.
-        :param sample_size: sample size.
-        :return: a DataFrame
-
-        >>> spark.loadFromMapRDB("/test-table").collect()
-        """
-        df_reader = original_session.read \
-            .format("com.mapr.db.spark.sql") \
-            .option("tableName", table_name) \
-            .option("sampleSize", sample_size)
-
-        if schema:
-            df_reader.schema(schema)
-
-        return df_reader.load()
-
-    SparkSession.loadFromMapRDB = loadFromMapRDB
-
-    def saveToMapRDB(self, dataframe, table_name, id_field_path = default_id_field, create_table = False, bulk_insert = False):
-        """
-        Saves data to MapR-DB Table.
-
-        :param dataframe: a DataFrame which will be saved.
-        :param table_name: MapR-DB table path.
-        :param id_field_path: field name of document ID.
-        :param create_table: indicates if table creation required.
-        :param bulk_insert: indicates bulk insert.
-        :return: a RDD
-
-        >>> spark.saveToMapRDB(df, "/test-table")
-        """
-        DataFrame(mapr_j_session.saveToMapRDB(dataframe._jdf, table_name, id_field_path, create_table, bulk_insert), wrapped)
-
-    SparkSession.saveToMapRDB = saveToMapRDB
-
-    # TODO implement
-    # def updateToMapRDB(self, dataframe, table_name, mutation, id_value, condition):
-
-    def insertToMapRDB(self, dataframe, table_name, id_field_path = default_id_field, create_table = False, bulk_insert = False):
-        """
-        Inserts data into MapR-DB Table.
-
-        :param dataframe: a DataFrame which will be saved.
-        :param table_name: MapR-DB table path.
-        :param id_field_path: field name of document ID.
-        :param create_table: indicates if table creation required.
-        :param bulk_insert: indicates bulk insert.
-        :return: a RDD
-
-        >>> spark.insertToMapRDB(df, "/test-table")
-        """
-        DataFrame(mapr_j_session.insertToMapRDB(dataframe._jdf, table_name, id_field_path, create_table, bulk_insert), wrapped)
-
-    SparkSession.insertToMapRDB = insertToMapRDB
 
 class SparkSession(object):
     """The entry point to programming Spark with the Dataset and DataFrame API.
@@ -280,8 +221,9 @@ class SparkSession(object):
         self._wrapped = SQLContext(self._sc, self, self._jwrapped)
         _monkey_patch_RDD(self)
 
-        mapr_j_session = self._jvm.MapRDBJavaSession(self._jsparkSession)
-        _mapr_session_patch(self, mapr_j_session, self._wrapped)
+        ### Applying MapR patch
+        pyspark.sql.maprpatch.mapr_session_patch(self, self._wrapped, gw = self._sc._gateway)
+
         install_exception_handler()
         # If we had an instantiated SparkSession attached with a SparkContext
         # which is stopped now, we need to renew the instantiated SparkSession.
