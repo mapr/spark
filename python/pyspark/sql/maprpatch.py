@@ -1,4 +1,5 @@
 from py4j.java_gateway import java_import, JavaObject
+from pyspark.sql.dataframe import DataFrame
 
 def mapr_session_patch(original_session, wrapped, gw, default_sample_size=1000.0, default_id_field ="_id"):
 
