@@ -130,8 +130,6 @@ def launch_gateway(conf=None):
     java_import(gateway.jvm, "org.apache.spark.sql.api.python.*")
     java_import(gateway.jvm, "org.apache.spark.sql.hive.*")
     java_import(gateway.jvm, "scala.Tuple2")
-    # MapR DB Connector classes
-    java_import(gateway.jvm, "com.mapr.db.spark.sql.api.java.MapRDBJavaSession")
 
     return gateway
 
