@@ -16,7 +16,7 @@ case class SparkContextFunctions(@transient sc: SparkContext)
   /**
     * Spark MapRDB connector specific functions to load json tables as RDD[OJAIDocument]
     * @param tableName name of the table in MapRDB
-    * @example val docs = sc.loadMapRDBTable("tableName")
+    * @example val docs = sc.loadMapRDBTable("tablePath")
     */
   def loadFromMapRDB[T: ClassTag](tableName: String)(
       implicit e: T DefaultType OJAIDocument,
