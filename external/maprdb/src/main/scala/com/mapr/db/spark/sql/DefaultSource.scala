@@ -25,13 +25,13 @@ class DefaultSource
 
   override def createRelation(sqlContext: SQLContext,
                               parameters: Map[String, String]): BaseRelation = {
-    val condition: Option[QueryCondition] =
-      parameters
+    val condition: Option[QueryCondition] = parameters
         .get("QueryCondition")
         .map(cond => ConditionImpl.parseFrom(ByteBuffer.wrap(cond.getBytes)))
+
     createMapRDBRelation(
       sqlContext,
-      parameters.get("tableName"),
+      getTablePath(parameters),
       None,
       parameters.get("sampleSize"),
       condition,
@@ -47,9 +47,10 @@ class DefaultSource
     val condition: Option[QueryCondition] = parameters
       .get("QueryCondition")
       .map(cond => ConditionImpl.parseFrom(ByteBuffer.wrap(cond.getBytes)))
+
     createMapRDBRelation(
       sqlContext,
-      parameters.get("tableName"),
+      getTablePath(parameters),
       Some(schema),
       parameters.get("sampleSize"),
       condition,
@@ -64,22 +65,21 @@ class DefaultSource
                               parameters: Map[String, String],
                               data: DataFrame): BaseRelation = {
 
+    val tableName = getTablePath(parameters).getOrElse("")
+    require(tableName.nonEmpty, "Table name must be defined")
 
-    require(parameters.get("tableName").isDefined, "Table name must be defined")
     val idFieldPath = parameters.getOrElse("idFieldPath", DocumentConstants.ID_KEY)
-    val condition: Option[QueryCondition] = parameters
-      .get("QueryCondition")
+    val condition: Option[QueryCondition] = parameters.get("QueryCondition")
       .map(cond => ConditionImpl.parseFrom(ByteBuffer.wrap(cond.getBytes)))
-    lazy val tableExists =
-      DBClient().tableExists(parameters("tableName"))
-    lazy val tableName = parameters("tableName")
+
+    lazy val tableExists = DBClient().tableExists(tableName)
     lazy val createTheTable = !tableExists
     lazy val bulkMode = parameters.getOrElse("bulkMode", "false").toBoolean
+
     val operation = parameters.getOrElse("Operation", "ErrorIfExists")
     mode match {
       case ErrorIfExists =>
-      case _ =>
-        throw new UnsupportedOperationException(
+      case _ => throw new UnsupportedOperationException(
           "Any mode operation is not supported for MapRDB Table." +
             "Please use Operation option instead")
     }
@@ -138,7 +138,6 @@ class DefaultSource
       parameters.getOrElse("Operation", "InsertOrReplace"),
       parameters.getOrElse("FailOnConflict", "false")
     )
-
   }
 
   private def createMapRDBRelation(sqlContext: SQLContext,
@@ -151,17 +150,19 @@ class DefaultSource
                                    failOnConflict: String): BaseRelation = {
 
     require(tableName.isDefined)
-    val columns =
-      colProjection.map(colList => colList.split(",").toSeq.filter(_.nonEmpty))
+    val columns = colProjection.map(colList => colList.split(",")
+        .toSeq
+        .filter(_.nonEmpty))
+
     val failureOnConflict = failOnConflict.toBoolean
 
-    val rdd = MapRSpark.builder
+    val rdd = MapRSpark.builder()
       .sparkSession(sqlContext.sparkSession)
       .configuration()
       .setTable(tableName.get)
       .setCond(queryCondition)
       .setColumnProjection(columns)
-      .build
+      .build()
       .toRDD(null)
 
     val schema: StructType = makeSchemaNullable(userSchema match {
@@ -180,5 +181,10 @@ class DefaultSource
     StructType(schema.map(field => {
       StructField(field.name, field.dataType, nullable = true, field.metadata  )
     }))
+  }
+
+  private def getTablePath(parameters: Map[String, String]): Option[String] = {
+    val tablePath = parameters.get("tablePath")
+    if (tablePath.isDefined) tablePath else parameters.get("tableName")
   }
 }

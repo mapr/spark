@@ -1,3 +1,4 @@
+/* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.api.java
 
 import com.mapr.db.spark.RDD.api.java.MapRDBJavaRDD
@@ -14,10 +15,12 @@ import org.ojai.DocumentConstants
 
 class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
 
-  def this(javaSparkContext: JavaSparkContext) = this(JavaSparkContext.toSparkContext(javaSparkContext))
+  def this(javaSparkContext: JavaSparkContext) =
+    this(JavaSparkContext.toSparkContext(javaSparkContext))
 
   def loadFromMapRDB(tableName: String): MapRDBJavaRDD[OJAIDocument] = {
-    val rdd = MapRSpark.builder()
+    val rdd = MapRSpark
+      .builder()
       .sparkContext(sparkContext)
       .configuration(new Configuration)
       .setTable(tableName)
@@ -27,11 +30,14 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
     MapRDBJavaRDD(rdd)
   }
 
-  def loadFromMapRDB[D <: java.lang.Object](tableName: String, clazz: Class[D]): MapRDBJavaRDD[D] = {
+  def loadFromMapRDB[D <: java.lang.Object](
+      tableName: String,
+      clazz: Class[D]): MapRDBJavaRDD[D] = {
     import scala.reflect._
     implicit val ct: ClassTag[D] = ClassTag(clazz)
     implicit val rddType: RDDTYPE[D] = RDDTYPE.overrideJavaDefaultType[D]
-    val rdd = MapRSpark.builder()
+    val rdd = MapRSpark
+      .builder()
       .sparkContext(sparkContext)
       .configuration(new Configuration)
       .setTable(tableName)
@@ -51,20 +57,38 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
 
     require(javaRDD != null, "RDD can not be null")
 
-
-    javaRDD.rdd.asInstanceOf[RDD[OJAIValue[D]]].saveToMapRDB(tableName, createTable, bulkInsert, idField)
+    javaRDD.rdd
+      .asInstanceOf[RDD[OJAIValue[D]]]
+      .saveToMapRDB(tableName, createTable, bulkInsert, idField)
   }
 
-  def saveToMapRDB[D](javaRDD: JavaRDD[D], tableName: String, createTable: Boolean, bulkInsert: Boolean): Unit = {
-    this.saveToMapRDB(javaRDD, tableName, createTable, bulkInsert, DocumentConstants.ID_KEY)
+  def saveToMapRDB[D](javaRDD: JavaRDD[D],
+                      tableName: String,
+                      createTable: Boolean,
+                      bulkInsert: Boolean): Unit = {
+    this.saveToMapRDB(javaRDD,
+                      tableName,
+                      createTable,
+                      bulkInsert,
+                      DocumentConstants.ID_KEY)
   }
 
-  def saveToMapRDB[D](javaRDD: JavaRDD[D], tableName: String, createTable: Boolean): Unit = {
-    this.saveToMapRDB(javaRDD, tableName, createTable, bulkInsert = false, DocumentConstants.ID_KEY)
+  def saveToMapRDB[D](javaRDD: JavaRDD[D],
+                      tableName: String,
+                      createTable: Boolean): Unit = {
+    this.saveToMapRDB(javaRDD,
+                      tableName,
+                      createTable,
+                      bulkInsert = false,
+                      DocumentConstants.ID_KEY)
   }
 
   def saveToMapRDB[D](javaRDD: JavaRDD[D], tableName: String): Unit = {
-    this.saveToMapRDB(javaRDD, tableName, createTable = false, bulkInsert = false, DocumentConstants.ID_KEY)
+    this.saveToMapRDB(javaRDD,
+                      tableName,
+                      createTable = false,
+                      bulkInsert = false,
+                      DocumentConstants.ID_KEY)
   }
 
   def saveRowRDDToMapRDB(javaRDD: JavaRDD[Row],
@@ -74,20 +98,38 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
                          idField: String): Unit = {
 
     require(javaRDD != null, "RDD can not be null")
-    javaRDD.rdd.asInstanceOf[RDD[Row]].saveToMapRDB(tableName, createTable, bulkInsert, idField)
+    javaRDD.rdd
+      .asInstanceOf[RDD[Row]]
+      .saveToMapRDB(tableName, createTable, bulkInsert, idField)
   }
 
-
-  def saveRowRDDToMapRDB(javaRDD: JavaRDD[Row], tableName: String, createTable: Boolean, bulkInsert: Boolean): Unit = {
-    this.saveRowRDDToMapRDB(javaRDD, tableName, createTable, bulkInsert, DocumentConstants.ID_KEY)
+  def saveRowRDDToMapRDB(javaRDD: JavaRDD[Row],
+                         tableName: String,
+                         createTable: Boolean,
+                         bulkInsert: Boolean): Unit = {
+    this.saveRowRDDToMapRDB(javaRDD,
+                            tableName,
+                            createTable,
+                            bulkInsert,
+                            DocumentConstants.ID_KEY)
   }
 
-  def saveRowRDDToMapRDB(javaRDD: JavaRDD[Row], tableName: String, createTable: Boolean): Unit = {
-    this.saveRowRDDToMapRDB(javaRDD, tableName, createTable, bulkInsert = false, DocumentConstants.ID_KEY)
+  def saveRowRDDToMapRDB(javaRDD: JavaRDD[Row],
+                         tableName: String,
+                         createTable: Boolean): Unit = {
+    this.saveRowRDDToMapRDB(javaRDD,
+                            tableName,
+                            createTable,
+                            bulkInsert = false,
+                            DocumentConstants.ID_KEY)
   }
 
   def saveRowRDDToMapRDB(javaRDD: JavaRDD[Row], tableName: String): Unit = {
-    this.saveRowRDDToMapRDB(javaRDD, tableName, createTable = false, bulkInsert = false, DocumentConstants.ID_KEY)
+    this.saveRowRDDToMapRDB(javaRDD,
+                            tableName,
+                            createTable = false,
+                            bulkInsert = false,
+                            DocumentConstants.ID_KEY)
   }
 
   def saveToMapRDB[K, V <: AnyRef](javaPairRDD: JavaPairRDD[K, V],
@@ -108,7 +150,8 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
     implicit val ct: ClassTag[K] = ClassTag(keyClazz)
     implicit val f: OJAIKey[K] = MapRDBUtils.getOjaiKey[K]()
 
-    PairedDocumentRDDFunctions(javaPairRDD.rdd).saveToMapRDB(tableName, createTable, bulkInsert)
+    PairedDocumentRDDFunctions(javaPairRDD.rdd)
+      .saveToMapRDB(tableName, createTable, bulkInsert)
   }
 
   def saveToMapRDB[K, V <: AnyRef](javaPairRDD: JavaPairRDD[K, V],
@@ -117,7 +160,12 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
                                    tableName: String,
                                    createTable: Boolean): Unit = {
 
-    this.saveToMapRDB(javaPairRDD, keyClazz, valueClazz, tableName, createTable, bulkInsert = false)
+    this.saveToMapRDB(javaPairRDD,
+                      keyClazz,
+                      valueClazz,
+                      tableName,
+                      createTable,
+                      bulkInsert = false)
   }
 
   def saveToMapRDB[K, V <: AnyRef](javaPairRDD: JavaPairRDD[K, V],
@@ -125,7 +173,12 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
                                    valueClazz: Class[V],
                                    tableName: String): Unit = {
 
-    this.saveToMapRDB(javaPairRDD, keyClazz, valueClazz, tableName, createTable = false, bulkInsert = false)
+    this.saveToMapRDB(javaPairRDD,
+                      keyClazz,
+                      valueClazz,
+                      tableName,
+                      createTable = false,
+                      bulkInsert = false)
   }
 
 }

@@ -68,7 +68,7 @@ private[spark] case class MapRDBRelation(
 
     val dfw = data.write
       .format("com.mapr.db.spark.sql")
-      .option("tableName", tableName)
+      .option("tablePath", tableName)
       .option("sampleSize", 1000)
 
     if (overwrite) {
