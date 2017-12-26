@@ -40,7 +40,7 @@ package object spark {
   /**
     * Spark MapRDB connector specific functions to load json tables as RDD[OJAIDocument]
     * @param sc sparkContext
-    * @example val docs = sc.loadMapRDBTable("tableName")
+    * @example val docs = sc.loadMapRDBTable("tablePath")
     */
   implicit def toSparkContextFunctions(
       sc: SparkContext): SparkContextFunctions = SparkContextFunctions(sc)
@@ -49,7 +49,7 @@ package object spark {
     * Spark MapRDB connector specific functions to save either RDD[OJAIDocument]
     *   or RDD of anyobject
     * @param rdd rdd on which this function is called
-    * @example docs.saveToMapRDB("tableName")
+    * @example docs.saveToMapRDB("tablePath")
     *          It might throw a DecodingException if the RDD
     *          or anyObject is not possible to convert to a document.
     */
@@ -60,7 +60,7 @@ package object spark {
     * Spark MapRDB connector specific functions to save either RDD[(String, OJAIDocument)]
     *   or RDD[(String, anyobject)]
     * @param rdd rdd on which this function is called
-    * @example docs.saveToMapRDB("tableName")
+    * @example docs.saveToMapRDB("tablePath")
     *          It might throw a DecodingException if the RDD
     *          or anyObject is not possible to convert to a document.
     */
@@ -71,7 +71,7 @@ package object spark {
   /**
     * Spark MapRDB connector specific functions to join external RDD with a MapRDB table.
     * @param rdd rdd on which this function is called
-    * @example docs.joinWithMapRDB("tableName")
+    * @example docs.joinWithMapRDB("tablePath")
     */
   implicit def toFilterRDDFunctions[K: OJAIKey: quotes](rdd: RDD[K]): FilterRDDFunctions[K] =
     FilterRDDFunctions(rdd)

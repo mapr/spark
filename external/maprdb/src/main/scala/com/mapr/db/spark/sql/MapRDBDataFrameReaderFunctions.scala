@@ -24,7 +24,7 @@ private[spark] case class MapRDBDataFrameReaderFunctions(
     createDataFrame(GenerateSchema.reflectSchema[T](), None)
 
   def maprdb(tableName: String): DataFrame =
-    createDataFrame(None, Option(Map("tableName" -> tableName)))
+    createDataFrame(None, Option(Map("tablePath" -> tableName)))
 
   /**
     * Creates a [[DataFrame]] through schema inference via the `T` type,
