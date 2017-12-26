@@ -88,7 +88,7 @@ object MapRSpark {
   ): Unit = {
     dfw
       .format(defaultSource)
-      .option("tableName", tableName)
+      .option("tablePath", tableName)
       .option("idFieldPath", idFieldPath)
       .option("bulkMode", bulkInsert)
       .save()
@@ -200,7 +200,7 @@ case class MapRSpark(sparkSession: Option[SparkSession],
     val reader: DataFrameReader = sparkSession.get.read
       .format("com.mapr.db.spark.sql")
       .schema(schema)
-      .option("tableName", this.tableName.get)
+      .option("tablePath", this.tableName.get)
       .option("sampleSize", sampleSize)
 
     val readerWithCondition =
