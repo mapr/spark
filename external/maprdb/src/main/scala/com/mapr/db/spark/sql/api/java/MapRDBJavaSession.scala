@@ -23,7 +23,7 @@ class MapRDBJavaSession(spark: SparkSession) {
     spark.read
       .format("com.mapr.db.spark.sql")
       .schema(schema)
-      .option("tableName", tableName)
+      .option("tablePath", tableName)
       .option("sampleSize", sampleSize)
       .load()
   }
@@ -58,7 +58,7 @@ class MapRDBJavaSession(spark: SparkSession) {
     spark.read
       .format("com.mapr.db.spark.sql")
       .schema(schema)
-      .option("tableName", tableName)
+      .option("tablePath", tableName)
       .option("sampleSize", sampleSize)
       .load()
       .as(encoder)
