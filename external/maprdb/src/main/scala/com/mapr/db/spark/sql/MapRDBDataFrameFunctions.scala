@@ -22,15 +22,4 @@ private[spark] case class MapRDBDataFrameFunctions(@transient df: DataFrame)
                      createTable: Boolean = false,
                      bulkInsert: Boolean = false): Unit =
     MapRSpark.insert(df, tableName, idFieldPath, createTable, bulkInsert)
-
-  def updateToMapRDB(tableName: String,
-                     mutation: (Row) => DocumentMutation,
-                     getID: (Row) => org.ojai.Value): Unit =
-    MapRSpark.update(df, tableName, mutation, getID)
-
-  def updateToMapRDB(tableName: String,
-                     mutation: (Row) => DocumentMutation,
-                     getID: (Row) => org.ojai.Value,
-                     condition: Predicate): Unit =
-    MapRSpark.update(df, tableName, mutation, getID, condition)
 }
