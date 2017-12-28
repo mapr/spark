@@ -51,26 +51,6 @@ private[spark] case class TableInsertWriter(@transient table: DocumentStore)
   }
 }
 
-private[spark] case class TableUpdateWriter(@transient table: DocumentStore) {
-
-  def write(mutation: DocumentMutation, key: ByteBuffer): Unit = {
-    write(mutation, DBValueBuilderImpl.KeyValueBuilder.initFrom(key))
-  }
-
-  def write(mutation: DocumentMutation, key: String): Unit = {
-    write(mutation, DBValueBuilderImpl.KeyValueBuilder.initFrom(key))
-  }
-
-  def write(mutation: DocumentMutation, key: org.ojai.Value): Unit = {
-    table.update(key, mutation)
-  }
-
-  def close(): Unit = {
-    table.flush()
-    table.close()
-  }
-}
-
 private[spark] case class TableCheckAndMutateWriter(
     @transient table: DocumentStore) {
 
