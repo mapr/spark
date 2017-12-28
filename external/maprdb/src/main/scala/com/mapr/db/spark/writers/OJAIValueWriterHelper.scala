@@ -12,7 +12,6 @@ private[spark] sealed trait OJAIKey[T] extends Serializable {
   type Self
   def getValue(elem: T): Self
   def write(doc: Document, key: Self, table: Writer)
-  def update(mutation: DocumentMutation, key: Self, table: TableUpdateWriter)
   def checkAndMutate(mutation: DocumentMutation,
                      queryCondition: DBQueryCondition,
                      key: Self,
@@ -25,9 +24,6 @@ private[spark] object OJAIKey {
     override def getValue(elem: String) = elem
     override def write(doc: Document, key: String, table: Writer) =
       table.write(doc, key)
-    override def update(mutation: DocumentMutation,
-                        key: String,
-                        table: TableUpdateWriter) = table.write(mutation, key)
     override def checkAndMutate(mutation: DocumentMutation,
                                 queryCondition: DBQueryCondition,
                                 key: String,
@@ -40,9 +36,7 @@ private[spark] object OJAIKey {
     override def getValue(elem: ByteBuffer) = elem
     override def write(doc: Document, key: ByteBuffer, table: Writer) =
       table.write(doc, key)
-    override def update(mutation: DocumentMutation,
-                        key: ByteBuffer,
-                        table: TableUpdateWriter) = table.write(mutation, key)
+
     override def checkAndMutate(mutation: DocumentMutation,
                                 queryCondition: DBQueryCondition,
                                 key: ByteBuffer,
@@ -55,9 +49,6 @@ private[spark] object OJAIKey {
     override def getValue(elem: DBBinaryValue) = elem.getByteBuffer()
     override def write(doc: Document, key: ByteBuffer, table: Writer) =
       table.write(doc, key)
-    override def update(mutation: DocumentMutation,
-                        key: ByteBuffer,
-                        table: TableUpdateWriter) = table.write(mutation, key)
     override def checkAndMutate(mutation: DocumentMutation,
                                 queryCondition: DBQueryCondition,
                                 key: ByteBuffer,
