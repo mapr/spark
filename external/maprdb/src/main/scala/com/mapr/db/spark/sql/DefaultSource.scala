@@ -118,12 +118,6 @@ class DefaultSource
                        idFieldPath,
                        createTable = true,
                        bulkInsert = bulkMode)
-      case "Update" =>
-        MapRSpark.update(data,
-                         tableName,
-                         idFieldPath,
-                         createTable = false,
-                         bulkInsert = bulkMode)
       case _ =>
         throw new UnsupportedOperationException("Not supported operation")
     }
