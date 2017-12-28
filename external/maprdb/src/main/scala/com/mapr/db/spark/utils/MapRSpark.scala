@@ -51,35 +51,6 @@ object MapRSpark {
                                idFieldPath = idFieldPath)
   }
 
-  def update[D](dataset: Dataset[D],
-                tableName: String,
-                idFieldPath: String,
-                createTable: Boolean,
-                bulkInsert: Boolean): Unit = {
-    val documentRdd = dataset.toDF.rdd.map(MapRSqlUtils.rowToDocument)
-    documentRdd.saveToMapRDB(tableName,
-                             createTable = createTable,
-                             bulkInsert = bulkInsert,
-                             idFieldPath = idFieldPath)
-  }
-
-  def update(df: DataFrame,
-             tableName: String,
-             mutation: (Row) => DocumentMutation,
-             getID: (Row) => org.ojai.Value): Unit = {
-    val documentRdd = df.rdd
-    documentRdd.updateToMapRDB(tableName, mutation, getID)
-  }
-
-  def update(df: DataFrame,
-             tableName: String,
-             mutation: (Row) => DocumentMutation,
-             getID: (Row) => org.ojai.Value,
-             condition: Predicate): Unit = {
-    val documentRdd = df.rdd
-    documentRdd.updateToMapRDB(tableName, mutation, getID, condition)
-  }
-
   def save(
       dfw: DataFrameWriter[_],
       tableName: String,
