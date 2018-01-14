@@ -181,4 +181,135 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
                       bulkInsert = false)
   }
 
+  def insertToMapRDB[K, V <: AnyRef](javaPairRDD: JavaPairRDD[K, V],
+                                   keyClazz: Class[K],
+                                   valueClazz: Class[V],
+                                   tableName: String,
+                                   createTable: Boolean,
+                                   bulkInsert: Boolean): Unit = {
+
+    require(javaPairRDD != null, "RDD can not be null")
+    require(keyClazz != null, "Key class can not be null")
+    require(valueClazz != null, "Value class can not be null")
+
+    import scala.reflect._
+    implicit val vct: ClassTag[V] = ClassTag(valueClazz)
+    implicit val v: OJAIValue[V] = OJAIValue.overrideDefault[V]
+
+    implicit val ct: ClassTag[K] = ClassTag(keyClazz)
+    implicit val f: OJAIKey[K] = MapRDBUtils.getOjaiKey[K]()
+
+    PairedDocumentRDDFunctions(javaPairRDD.rdd)
+      .insertToMapRDB(tableName, createTable, bulkInsert)
+  }
+
+  def insertToMapRDB[K, V <: AnyRef](javaPairRDD: JavaPairRDD[K, V],
+                                   keyClazz: Class[K],
+                                   valueClazz: Class[V],
+                                   tableName: String,
+                                   createTable: Boolean): Unit = {
+
+    this.insertToMapRDB(javaPairRDD,
+      keyClazz,
+      valueClazz,
+      tableName,
+      createTable,
+      bulkInsert = false)
+  }
+
+  def insertToMapRDB[K, V <: AnyRef](javaPairRDD: JavaPairRDD[K, V],
+                                   keyClazz: Class[K],
+                                   valueClazz: Class[V],
+                                   tableName: String): Unit = {
+
+    this.insertToMapRDB(javaPairRDD,
+      keyClazz,
+      valueClazz,
+      tableName,
+      createTable = false,
+      bulkInsert = false)
+  }
+
+  def insertRowRDDToMapRDB(javaRDD: JavaRDD[Row],
+                         tableName: String,
+                         createTable: Boolean,
+                         bulkInsert: Boolean,
+                         idField: String): Unit = {
+
+    require(javaRDD != null, "RDD can not be null")
+    javaRDD.rdd
+      .asInstanceOf[RDD[Row]]
+      .insertToMapRDB(tableName, createTable, bulkInsert, idField)
+  }
+
+  def insertRowRDDToMapRDB(javaRDD: JavaRDD[Row],
+                         tableName: String,
+                         createTable: Boolean,
+                         bulkInsert: Boolean): Unit = {
+    this.insertRowRDDToMapRDB(javaRDD,
+      tableName,
+      createTable,
+      bulkInsert,
+      DocumentConstants.ID_KEY)
+  }
+
+  def insertRowRDDToMapRDB(javaRDD: JavaRDD[Row],
+                         tableName: String,
+                         createTable: Boolean): Unit = {
+    this.insertRowRDDToMapRDB(javaRDD,
+      tableName,
+      createTable,
+      bulkInsert = false,
+      DocumentConstants.ID_KEY)
+  }
+
+  def insertRowRDDToMapRDB(javaRDD: JavaRDD[Row], tableName: String): Unit = {
+    this.insertRowRDDToMapRDB(javaRDD,
+      tableName,
+      createTable = false,
+      bulkInsert = false,
+      DocumentConstants.ID_KEY)
+  }
+
+  def insertToMapRDB[D](javaRDD: JavaRDD[D],
+                      tableName: String,
+                      createTable: Boolean,
+                      bulkInsert: Boolean,
+                      idField: String): Unit = {
+
+    require(javaRDD != null, "RDD can not be null")
+
+    javaRDD.rdd
+      .asInstanceOf[RDD[OJAIValue[D]]]
+      .insertToMapRDB(tableName, createTable, bulkInsert, idField)
+  }
+
+  def insertToMapRDB[D](javaRDD: JavaRDD[D],
+                      tableName: String,
+                      createTable: Boolean,
+                      bulkInsert: Boolean): Unit = {
+    this.insertToMapRDB(javaRDD,
+      tableName,
+      createTable,
+      bulkInsert,
+      DocumentConstants.ID_KEY)
+  }
+
+  def insertToMapRDB[D](javaRDD: JavaRDD[D],
+                      tableName: String,
+                      createTable: Boolean): Unit = {
+    this.insertToMapRDB(javaRDD,
+      tableName,
+      createTable,
+      bulkInsert = false,
+      DocumentConstants.ID_KEY)
+  }
+
+  def insertToMapRDB[D](javaRDD: JavaRDD[D], tableName: String): Unit = {
+    this.insertToMapRDB(javaRDD,
+      tableName,
+      createTable = false,
+      bulkInsert = false,
+      DocumentConstants.ID_KEY)
+  }
 }
