@@ -66,8 +66,6 @@ sparkMasterUIPort=8080
 isSparkMasterUIPortDef=false
 
 # secure ui ports
-sparkMasterSecureUIPort=8480
-sparkTSSecureUIPort=4440
 sparkHSSecureUIPort=18480
 
 # indicates whether cluster is up or not
@@ -204,7 +202,7 @@ if [ "$isSecure" == 1 ] ; then
 # ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK
 
 # ssl
-spark.ssl.enabled true
+spark.ssl.historyServer.enabled true
 spark.ssl.fs.enabled true
 spark.ssl.keyPassword mapr123
 spark.ssl.trustStore $MAPR_HOME/conf/ssl_truststore
@@ -230,12 +228,6 @@ spark.io.encryption.keySizeBits 128
 # END OF THE SECURITY CONFIGURATION BLOCK
 
 EOM
-	if [ -f $SPARK_HOME/warden/warden.spark-master.conf ] ; then
-		changeWardenConfig "service.ui.port" "service.ui.port=$sparkMasterSecureUIPort" "master"
-	fi
-	if [ -f $SPARK_HOME/warden/warden.spark-thriftserver.conf ] ; then
-		changeWardenConfig "service.ui.port" "service.ui.port=$sparkTSSecureUIPort" "thriftserver"
-	fi
 	if [ -f $SPARK_HOME/warden/warden.spark-historyserver.conf ] ; then
 		changeWardenConfig "service.ui.port" "service.ui.port=$sparkHSSecureUIPort" "historyserver"
 	fi
