@@ -490,38 +490,6 @@ object SparkSubmit extends CommandLineUtils with Logging {
       }
     }
 
-    // In YARN mode for an R app, add the SparkR package archive and the R package
-    // archive containing all of the built R libraries to archives so that they can
-    // be distributed with the job
-    if (args.isR && clusterManager == YARN) {
-      val sparkRPackagePath = RUtils.localSparkRPackagePath
-      if (sparkRPackagePath.isEmpty) {
-        printErrorAndExit("SPARK_HOME does not exist for R application in YARN mode.")
-      }
-      val sparkRPackageFile = new File(sparkRPackagePath.get, SPARKR_PACKAGE_ARCHIVE)
-      if (!sparkRPackageFile.exists()) {
-        printErrorAndExit(s"$SPARKR_PACKAGE_ARCHIVE does not exist for R application in YARN mode.")
-      }
-      val sparkRPackageURI = Utils.resolveURI(sparkRPackageFile.getAbsolutePath).toString
-
-      // Distribute the SparkR package.
-      // Assigns a symbol link name "sparkr" to the shipped package.
-      args.archives = mergeFileLists(args.archives, sparkRPackageURI + "#sparkr")
-
-      // Distribute the R package archive containing all the built R packages.
-      if (!RUtils.rPackages.isEmpty) {
-        val rPackageFile =
-          RPackageUtils.zipRLibraries(new File(RUtils.rPackages.get), R_PACKAGE_ARCHIVE)
-        if (!rPackageFile.exists()) {
-          printErrorAndExit("Failed to zip all the built R packages.")
-        }
-
-        val rPackageURI = Utils.resolveURI(rPackageFile.getAbsolutePath).toString
-        // Assigns a symbol link name "rpkg" to the shipped package.
-        args.archives = mergeFileLists(args.archives, rPackageURI + "#rpkg")
-      }
-    }
-
     // TODO: Support distributing R packages with standalone cluster
     if (args.isR && clusterManager == STANDALONE && !RUtils.rPackages.isEmpty) {
       printErrorAndExit("Distributing R packages with standalone cluster is not supported.")
