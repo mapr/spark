@@ -97,8 +97,10 @@
     <module>sql/catalyst</module>
     <module>sql/core</module>
     <module>sql/hive</module>
-    <module>assembly</module>
     <module>external/maprdb</module>
+    <module>external/kafka-0-9</module>
+    <module>external/kafka-0-9-assembly</module>
+    <module>assembly</module>
     <module>external/flume</module>
     <module>external/flume-sink</module>
     <module>external/flume-assembly</module>
@@ -107,8 +109,6 @@
     <module>launcher</module>
     <module>external/kafka-0-8</module>
     <module>external/kafka-0-8-assembly</module>
-    <module>external/kafka-0-9</module>
-    <module>external/kafka-0-9-assembly</module>
     <module>external/kafka-0-10</module>
     <module>external/kafka-0-10-assembly</module>
     <module>external/kafka-0-10-sql</module>
@@ -118,7 +118,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <java.version>1.7</java.version>
+    <java.version>1.8</java.version>
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
     <maven.version>3.3.9</maven.version>
@@ -229,17 +229,6 @@
       <!-- This should be at top, it makes maven try the central repo first and then others and hence faster dep resolution -->
       <name>Maven Repository</name>
       <url>https://repo.maven.apache.org/maven2</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-    <repository>
-      <id>mapr-repo</id>
-      <name>MapR Repository</name>
-      <url>http://repository.mapr.com/maven/</url>
       <releases>
         <enabled>true</enabled>
       </releases>

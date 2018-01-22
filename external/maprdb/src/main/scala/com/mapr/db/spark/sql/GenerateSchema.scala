@@ -159,7 +159,7 @@ object GenerateSchema {
 
   private def compatibleType(failureOnConflict: Boolean)
                             (dt1: DataType, dt2: DataType): DataType = {
-    TypeCoercion.findTightestCommonTypeOfTwo(dt1, dt2).getOrElse {
+    TypeCoercion.findTightestCommonType(dt1, dt2).getOrElse {
       (dt1, dt2) match {
         case (st1@StructType(fields1), st2@StructType(fields2)) =>
           if (isInvalidType(st1)) return st1
