@@ -214,6 +214,9 @@ spark.ssl.keyStorePassword mapr123
 spark.ssl.protocol TLSv1.2
 spark.ssl.enabledAlgorithms TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
 
+# - PAM
+spark.ui.filters  org.apache.spark.ui.filters.PAMWebUIFilter
+
 # - ACLS
 spark.acls.enable       true
 spark.admin.acls        mapr
