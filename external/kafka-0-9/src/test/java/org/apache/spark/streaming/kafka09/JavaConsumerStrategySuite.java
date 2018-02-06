@@ -34,12 +34,12 @@ public class JavaConsumerStrategySuite implements Serializable {
   public void testConsumerStrategyConstructors() {
     final String topic1 = "topic1";
     final Pattern pat = Pattern.compile("top.*");
-    final List<String> topics = Arrays.asList(topic1);
+    final Collection<String> topics = Arrays.asList(topic1);
     final scala.collection.Iterable<String> sTopics =
       JavaConverters.collectionAsScalaIterableConverter(topics).asScala();
     final TopicPartition tp1 = new TopicPartition(topic1, 0);
     final TopicPartition tp2 = new TopicPartition(topic1, 1);
-    final List<TopicPartition> parts = Arrays.asList(tp1, tp2);
+    final Collection<TopicPartition> parts = Arrays.asList(tp1, tp2);
     final scala.collection.Iterable<TopicPartition> sParts =
       JavaConverters.collectionAsScalaIterableConverter(parts).asScala();
     final Map<String, Object> kafkaParams = new HashMap<String, Object>();
@@ -59,39 +59,39 @@ public class JavaConsumerStrategySuite implements Serializable {
       );
 
     final ConsumerStrategy<String, String> sub1 =
-      ConsumerStrategies.<String, String>Subscribe(sTopics, sKafkaParams, sOffsets);
+      ConsumerStrategies.Subscribe(sTopics, sKafkaParams, sOffsets);
     final ConsumerStrategy<String, String> sub2 =
-      ConsumerStrategies.<String, String>Subscribe(sTopics, sKafkaParams);
+      ConsumerStrategies.Subscribe(sTopics, sKafkaParams);
     final ConsumerStrategy<String, String> sub3 =
-      ConsumerStrategies.<String, String>Subscribe(topics, kafkaParams, offsets);
+      ConsumerStrategies.Subscribe(topics, kafkaParams, offsets);
     final ConsumerStrategy<String, String> sub4 =
-      ConsumerStrategies.<String, String>Subscribe(topics, kafkaParams);
+      ConsumerStrategies.Subscribe(topics, kafkaParams);
 
     Assert.assertEquals(
       sub1.executorKafkaParams().get("bootstrap.servers"),
       sub3.executorKafkaParams().get("bootstrap.servers"));
 
     final ConsumerStrategy<String, String> psub1 =
-      ConsumerStrategies.<String, String>SubscribePattern(pat, sKafkaParams, sOffsets);
+      ConsumerStrategies.SubscribePattern(pat, sKafkaParams, sOffsets);
     final ConsumerStrategy<String, String> psub2 =
-      ConsumerStrategies.<String, String>SubscribePattern(pat, sKafkaParams);
+      ConsumerStrategies.SubscribePattern(pat, sKafkaParams);
     final ConsumerStrategy<String, String> psub3 =
-      ConsumerStrategies.<String, String>SubscribePattern(pat, kafkaParams, offsets);
+      ConsumerStrategies.SubscribePattern(pat, kafkaParams, offsets);
     final ConsumerStrategy<String, String> psub4 =
-      ConsumerStrategies.<String, String>SubscribePattern(pat, kafkaParams);
+      ConsumerStrategies.SubscribePattern(pat, kafkaParams);
 
     Assert.assertEquals(
       psub1.executorKafkaParams().get("bootstrap.servers"),
       psub3.executorKafkaParams().get("bootstrap.servers"));
 
     final ConsumerStrategy<String, String> asn1 =
-      ConsumerStrategies.<String, String>Assign(sParts, sKafkaParams, sOffsets);
+      ConsumerStrategies.Assign(sParts, sKafkaParams, sOffsets);
     final ConsumerStrategy<String, String> asn2 =
-      ConsumerStrategies.<String, String>Assign(sParts, sKafkaParams);
+      ConsumerStrategies.Assign(sParts, sKafkaParams);
     final ConsumerStrategy<String, String> asn3 =
-      ConsumerStrategies.<String, String>Assign(parts, kafkaParams, offsets);
+      ConsumerStrategies.Assign(parts, kafkaParams, offsets);
     final ConsumerStrategy<String, String> asn4 =
-      ConsumerStrategies.<String, String>Assign(parts, kafkaParams);
+      ConsumerStrategies.Assign(parts, kafkaParams);
 
     Assert.assertEquals(
       asn1.executorKafkaParams().get("bootstrap.servers"),
