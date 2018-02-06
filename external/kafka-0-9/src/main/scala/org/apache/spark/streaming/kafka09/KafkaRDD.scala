@@ -24,15 +24,12 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.kafka.clients.consumer.{ ConsumerConfig, ConsumerRecord }
 import org.apache.kafka.common.TopicPartition
 
-import org.apache.spark.{Partition, SparkContext, SparkException, TaskContext}
+import org.apache.spark.{Partition, SparkContext, TaskContext}
 import org.apache.spark.internal.Logging
 import org.apache.spark.partial.{BoundedDouble, PartialResult}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.scheduler.ExecutorCacheTaskLocation
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.util.NextIterator
-
-import scala.annotation.tailrec
 
 /**
  * A batch-oriented interface for consuming from Kafka.
@@ -44,8 +41,8 @@ import scala.annotation.tailrec
  * with Kafka broker(s) specified in host1:port1,host2:port2 form.
  * @param offsetRanges offset ranges that define the Kafka data belonging to this RDD
  * @param preferredHosts map from TopicPartition to preferred host for processing that partition.
- * In most cases, use [[DirectKafkaInputDStream.preferConsistent]]
- * Use [[DirectKafkaInputDStream.preferBrokers]] if your executors are on same nodes as brokers.
+ * In most cases, use [[LocationStrategies.PreferConsistent]]
+ * Use [[LocationStrategies.PreferBrokers]] if your executors are on same nodes as brokers.
  * @param useConsumerCache whether to use a consumer from a per-jvm cache
  * @tparam K type of Kafka message key
  * @tparam V type of Kafka message value
@@ -86,11 +83,11 @@ private[spark] class KafkaRDD[K, V](
 
   override def getPartitions: Array[Partition] = {
     offsetRanges.zipWithIndex.map { case (o, i) =>
-      new KafkaRDDPartition(i, o.topic, o.partition, o.fromOffset, o.untilOffset)
+        new KafkaRDDPartition(i, o.topic, o.partition, o.fromOffset, o.untilOffset)
     }.toArray
   }
 
-  //  override def count(): Long = offsetRanges.map(_.count).sum
+  override def count(): Long = offsetRanges.map(_.count).sum
 
   override def countApprox(
       timeout: Long,
@@ -148,11 +145,6 @@ private[spark] class KafkaRDD[K, V](
       a.host > b.host
     }
 
-  /**
-   * Non-negative modulus, from java 8 math
-   */
-  private def floorMod(a: Int, b: Int): Int = ((a % b) + b) % b
-
   override def getPreferredLocations(thePart: Partition): Seq[String] = {
     // The intention is best-effort consistent executor for a given topicpartition,
     // so that caching consumers can be effective.
@@ -167,7 +159,7 @@ private[spark] class KafkaRDD[K, V](
       Seq()
     } else {
       // execs is sorted, tp.hashCode depends only on topic and partition, so consistent index
-      val index = this.floorMod(tp.hashCode, execs.length)
+      val index = Math.floorMod(tp.hashCode, execs.length)
       val chosen = execs(index)
       Seq(chosen.toString)
     }
@@ -196,7 +188,7 @@ private[spark] class KafkaRDD[K, V](
    */
   private class KafkaRDDIterator(
       part: KafkaRDDPartition,
-      context: TaskContext) extends NextIterator[ConsumerRecord[K, V]] {
+      context: TaskContext) extends Iterator[ConsumerRecord[K, V]] {
 
     logInfo(s"Computing topic ${part.topic}, partition ${part.partition} " +
       s"offsets ${part.fromOffset} -> ${part.untilOffset}")
@@ -207,7 +199,7 @@ private[spark] class KafkaRDD[K, V](
 
     val consumer = if (useConsumerCache) {
       CachedKafkaConsumer.init(cacheInitialCapacity, cacheMaxCapacity, cacheLoadFactor)
-      if (context.attemptNumber > 1) {
+      if (context.attemptNumber >= 1) {
         // just in case the prior attempt failures were cache related
         CachedKafkaConsumer.remove(groupId, part.topic, part.partition)
       }
@@ -218,41 +210,19 @@ private[spark] class KafkaRDD[K, V](
 
     var requestOffset = part.fromOffset
 
-    override def close(): Unit = {
+    def closeIfNeeded(): Unit = {
       if (!useConsumerCache && consumer != null) {
         consumer.close
       }
     }
 
-    //    override def hasNext(): Boolean = requestOffset < part.untilOffset
-    override def getNext(): ConsumerRecord[K, V] = {
+    override def hasNext(): Boolean = requestOffset < part.untilOffset
 
-      @tailrec
-      def skipGapsAndGetNext: ConsumerRecord[K, V] = {
-        if (requestOffset < part.untilOffset) {
-          val r = consumer.get(requestOffset, pollTimeout)
-
-          if (consumer.isStreams && r.offset() == 0) {
-            requestOffset = part.untilOffset
-            skipGapsAndGetNext
-          } else {
-            requestOffset = r.offset() + 1
-            r
-          }
-        } else {
-          finished = true
-          null.asInstanceOf[ConsumerRecord[K, V]]
-        }
-      }
-
-      skipGapsAndGetNext
+    override def next(): ConsumerRecord[K, V] = {
+      assert(hasNext(), "Can't call getNext() once untilOffset has been reached")
+      val r = consumer.get(requestOffset, pollTimeout)
+      requestOffset += 1
+      r
     }
-
-    //    override def next(): ConsumerRecord[K, V] = {
-    //      assert(hasNext, "Can't call getNext() once untilOffset has been reached")
-    //      val r = consumer.get(requestOffset, pollTimeout)
-    //      requestOffset += 1
-    //      r
-    //    }
   }
 }

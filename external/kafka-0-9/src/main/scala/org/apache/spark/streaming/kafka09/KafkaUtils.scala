@@ -18,24 +18,19 @@
 package org.apache.spark.streaming.kafka09
 
 import java.{util => ju}
-import java.io.OutputStream
-import java.lang.{Integer => JInt, Long => JLong}
 
-import com.google.common.base.Charsets.UTF_8
-import net.razorvine.pickle.{IObjectPickler, Opcodes, Pickler}
 import org.apache.kafka.clients.consumer._
 import org.apache.kafka.common.TopicPartition
 
-import org.apache.spark.{SparkContext, SparkEnv}
+import org.apache.spark.SparkContext
 import org.apache.spark.annotation.Experimental
 import org.apache.spark.api.java.{JavaRDD, JavaSparkContext}
-import org.apache.spark.api.java.function.{Function0 => JFunction0}
-import org.apache.spark.api.python.SerDeUtil
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.streaming.StreamingContext
-import org.apache.spark.streaming.api.java.{JavaDStream, JavaInputDStream, JavaStreamingContext}
-import org.apache.spark.streaming.dstream.InputDStream
+import org.apache.spark.streaming.api.java.{JavaInputDStream, JavaStreamingContext}
+import org.apache.spark.streaming.dstream._
+
 
 /**
  * :: Experimental ::
@@ -53,7 +48,7 @@ object KafkaUtils extends Logging {
    * configuration parameters</a>. Requires "bootstrap.servers" to be set
    * with Kafka broker(s) specified in host1:port1,host2:port2 form.
    * @param offsetRanges offset ranges that define the Kafka data belonging to this RDD
-   * @param locationStrategy In most cases, pass in LocationStrategies.preferConsistent,
+   * @param locationStrategy In most cases, pass in [[LocationStrategies.PreferConsistent]],
    *   see [[LocationStrategies]] for more details.
    * @tparam K type of Kafka message key
    * @tparam V type of Kafka message value
@@ -81,21 +76,20 @@ object KafkaUtils extends Logging {
   }
 
   /**
-  * :: Experimental ::
-  * Java constructor for a batch-oriented interface for consuming from Kafka.
-  * Starting and ending offsets are specified in advance,
-  * so that you can control exactly-once semantics.
-  *
-  * @param kafkaParams      Kafka
-  *                     <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
-  *                         configuration parameters</a>. Requires "bootstrap.servers" to be set
-  *                         with Kafka broker(s) specified in host1:port1,host2:port2 form.
-  * @param offsetRanges     offset ranges that define the Kafka data belonging to this RDD
-  * @param locationStrategy In most cases, pass in LocationStrategies.preferConsistent,
-  *                         see [[LocationStrategies]] for more details.
-  * @tparam K type of Kafka message key
-  * @tparam V type of Kafka message value
-  */
+   * :: Experimental ::
+   * Java constructor for a batch-oriented interface for consuming from Kafka.
+   * Starting and ending offsets are specified in advance,
+   * so that you can control exactly-once semantics.
+   * @param kafkaParams Kafka
+   * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
+   * configuration parameters</a>. Requires "bootstrap.servers" to be set
+   * with Kafka broker(s) specified in host1:port1,host2:port2 form.
+   * @param offsetRanges offset ranges that define the Kafka data belonging to this RDD
+   * @param locationStrategy In most cases, pass in [[LocationStrategies.PreferConsistent]],
+   *   see [[LocationStrategies]] for more details.
+   * @tparam K type of Kafka message key
+   * @tparam V type of Kafka message value
+   */
   @Experimental
   def createRDD[K, V](
       jsc: JavaSparkContext,
@@ -108,20 +102,19 @@ object KafkaUtils extends Logging {
   }
 
   /**
-  * :: Experimental ::
-  * Scala constructor for a DStream where
-  * each given Kafka topic/partition corresponds to an RDD partition.
-  * The spark configuration spark.streaming.kafka.maxRatePerPartition gives the maximum number
-  * of messages
-  * per second that each '''partition''' will accept.
-  *
-  * @param locationStrategy In most cases, pass in LocationStrategies.preferConsistent,
-  *                         see [[LocationStrategies]] for more details.
-  * @param consumerStrategy In most cases, pass in ConsumerStrategies.subscribe,
-  *                         see [[ConsumerStrategies]] for more details
-  * @tparam K type of Kafka message key
-  * @tparam V type of Kafka message value
-  */
+   * :: Experimental ::
+   * Scala constructor for a DStream where
+   * each given Kafka topic/partition corresponds to an RDD partition.
+   * The spark configuration spark.streaming.kafka.maxRatePerPartition gives the maximum number
+   *  of messages
+   * per second that each '''partition''' will accept.
+   * @param locationStrategy In most cases, pass in [[LocationStrategies.PreferConsistent]],
+   *   see [[LocationStrategies]] for more details.
+   * @param consumerStrategy In most cases, pass in [[ConsumerStrategies.Subscribe]],
+   *   see [[ConsumerStrategies]] for more details
+   * @tparam K type of Kafka message key
+   * @tparam V type of Kafka message value
+   */
   @Experimental
   def createDirectStream[K, V](
       ssc: StreamingContext,
@@ -136,9 +129,9 @@ object KafkaUtils extends Logging {
    * :: Experimental ::
    * Scala constructor for a DStream where
    * each given Kafka topic/partition corresponds to an RDD partition.
-   * @param locationStrategy In most cases, pass in LocationStrategies.preferConsistent,
+   * @param locationStrategy In most cases, pass in [[LocationStrategies.PreferConsistent]],
    *   see [[LocationStrategies]] for more details.
-   * @param consumerStrategy In most cases, pass in ConsumerStrategies.subscribe,
+   * @param consumerStrategy In most cases, pass in [[ConsumerStrategies.Subscribe]],
    *   see [[ConsumerStrategies]] for more details.
    * @param perPartitionConfig configuration of settings such as max rate on a per-partition basis.
    *   see [[PerPartitionConfig]] for more details.
@@ -159,9 +152,9 @@ object KafkaUtils extends Logging {
    * :: Experimental ::
    * Java constructor for a DStream where
    * each given Kafka topic/partition corresponds to an RDD partition.
-   * @param locationStrategy In most cases, pass in LocationStrategies.preferConsistent,
+   * @param locationStrategy In most cases, pass in [[LocationStrategies.PreferConsistent]],
    *   see [[LocationStrategies]] for more details.
-   * @param consumerStrategy In most cases, pass in ConsumerStrategies.subscribe,
+   * @param consumerStrategy In most cases, pass in [[ConsumerStrategies.Subscribe]],
    *   see [[ConsumerStrategies]] for more details
    * @tparam K type of Kafka message key
    * @tparam V type of Kafka message value
@@ -181,9 +174,9 @@ object KafkaUtils extends Logging {
    * :: Experimental ::
    * Java constructor for a DStream where
    * each given Kafka topic/partition corresponds to an RDD partition.
-   * @param locationStrategy In most cases, pass in LocationStrategies.preferConsistent,
+   * @param locationStrategy In most cases, pass in [[LocationStrategies.PreferConsistent]],
    *   see [[LocationStrategies]] for more details.
-   * @param consumerStrategy In most cases, pass in ConsumerStrategies.subscribe,
+   * @param consumerStrategy In most cases, pass in [[ConsumerStrategies.Subscribe]],
    *   see [[ConsumerStrategies]] for more details
    * @param perPartitionConfig configuration of settings such as max rate on a per-partition basis.
    *   see [[PerPartitionConfig]] for more details.
@@ -202,12 +195,14 @@ object KafkaUtils extends Logging {
         jssc.ssc, locationStrategy, consumerStrategy, perPartitionConfig))
   }
 
+  val eofOffset: Int = -1001
+
   /**
-  * Tweak kafka params to prevent issues on executors
-  */
+   * Tweak kafka params to prevent issues on executors
+   */
   private[kafka09] def fixKafkaParams(kafkaParams: ju.HashMap[String, Object]): Unit = {
-    logWarning(s"overriding ${ConsumerConfig.STREAMS_ZEROOFFSET_RECORD_ON_EOF_CONFIG} to true")
-    kafkaParams.put(ConsumerConfig.STREAMS_ZEROOFFSET_RECORD_ON_EOF_CONFIG, true: java.lang.Boolean)
+    logWarning(s"overriding ${"streams.negativeoffset.record.on.eof"} to true")
+    kafkaParams.put("streams.negativeoffset.record.on.eof", true: java.lang.Boolean)
 
     logWarning(s"overriding ${ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG} to false for executor")
     kafkaParams.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false: java.lang.Boolean)
@@ -230,78 +225,5 @@ object KafkaUtils extends Logging {
       logWarning(s"overriding ${ConsumerConfig.RECEIVE_BUFFER_CONFIG} to 65536 see KAFKA-3135")
       kafkaParams.put(ConsumerConfig.RECEIVE_BUFFER_CONFIG, 65536: java.lang.Integer)
     }
-  }
-
-  def waitForConsumerAssignment[K, V](consumer: KafkaConsumer[K, V]): Unit = {
-    val waitingForAssigmentTimeout = SparkEnv.get.conf.
-      getLong("spark.mapr.WaitingForAssignmentTimeout",
-        defaultValue = 10000)
-    var timeout = 0
-    while (consumer.assignment().isEmpty && timeout < waitingForAssigmentTimeout) {
-      Thread.sleep(500)
-      timeout += 500
-    }
-  }
-}
-
-object KafkaUtilsPythonHelper {
-  private var initialized = false
-
-  def initialize(): Unit = {
-    SerDeUtil.initialize()
-    synchronized {
-      if (!initialized) {
-        new PythonMessageAndMetadataPickler().register()
-        initialized = true
-      }
-    }
-  }
-
-  initialize()
-
-  def picklerIterator(iter: Iterator[ConsumerRecord[Array[Byte], Array[Byte]]]
-    ): Iterator[Array[Byte]] = {
-    new SerDeUtil.AutoBatchedPickler(iter)
-  }
-
-  class PythonMessageAndMetadataPickler extends IObjectPickler {
-    private val module = "pyspark.streaming.kafka"
-
-    def register(): Unit = {
-      Pickler.registerCustomPickler(classOf[ConsumerRecord[Any, Any]], this)
-      Pickler.registerCustomPickler(this.getClass, this)
-    }
-
-    def pickle(obj: Object, out: OutputStream, pickler: Pickler) {
-      if (obj == this) {
-        out.write(Opcodes.GLOBAL)
-        out.write(s"$module\nKafkaMessageAndMetadata\n".getBytes(UTF_8))
-      } else {
-        pickler.save(this)
-        val msgAndMetaData = obj.asInstanceOf[ConsumerRecord[Array[Byte], Array[Byte]]]
-        out.write(Opcodes.MARK)
-        pickler.save(msgAndMetaData.topic)
-        pickler.save(msgAndMetaData.partition)
-        pickler.save(msgAndMetaData.offset)
-        pickler.save(msgAndMetaData.key)
-        pickler.save(msgAndMetaData.value)
-        out.write(Opcodes.TUPLE)
-        out.write(Opcodes.REDUCE)
-      }
-    }
-  }
-
-  @Experimental
-  def createDirectStream(
-      jssc: JavaStreamingContext,
-      locationStrategy: LocationStrategy,
-      consumerStrategy: ConsumerStrategy[Array[Byte], Array[Byte]]
-    ): JavaDStream[(Array[Byte], Array[Byte])] = {
-
-    val dStream = KafkaUtils.createDirectStream[Array[Byte], Array[Byte]](
-      jssc.ssc, locationStrategy, consumerStrategy)
-      .map(cm => (cm.key, cm.value))
-
-    new JavaDStream[(Array[Byte], Array[Byte])](dStream)
   }
 }

@@ -16,13 +16,15 @@
  */
 
 package org.apache.spark.streaming.kafka09
+
 import java.{ util => ju }
 
-import collection.JavaConverters._
-import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, KafkaConsumer}
-import org.apache.kafka.common.{KafkaException, TopicPartition}
+import org.apache.kafka.clients.consumer.{ ConsumerConfig, ConsumerRecord, KafkaConsumer }
+import org.apache.kafka.common.{ KafkaException, TopicPartition }
 
+import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
+
 
 /**
  * Consumer of single topicpartition, intended for cached reuse.
@@ -78,7 +80,11 @@ class CachedKafkaConsumer[K, V] private(
 
     nextOffset = offset + 1
 
-    if (record.offset() == 0 && isStreams && buffer.hasNext) buffer.next() else record
+    if (record.offset() == KafkaUtils.eofOffset && isStreams && buffer.hasNext) {
+      buffer.next()
+    } else {
+      record
+    }
 // Offsets in MapR-streams can contains gaps
 /*    if (record.offset < offset) {
       logInfo(s"Buffer miss for $groupId $topic $partition $offset")
@@ -104,10 +110,10 @@ class CachedKafkaConsumer[K, V] private(
   private def poll(timeout: Long): Unit = {
     val p = consumer.poll(timeout)
     val r = p.records(topicPartition)
-
     logDebug(s"Polled ${p.partitions()}  ${r.size}")
-    buffer = r.iterator()
+    buffer = r.iterator
   }
+
 }
 
 private[kafka09]
