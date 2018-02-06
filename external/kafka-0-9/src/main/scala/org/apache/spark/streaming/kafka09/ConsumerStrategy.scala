@@ -17,7 +17,8 @@
 
 package org.apache.spark.streaming.kafka09
 
-import java.{ lang => jl, util => ju }
+import java.{lang => jl, util => ju}
+import java.util.Locale
 
 import scala.collection.JavaConverters._
 
@@ -32,7 +33,7 @@ import org.apache.spark.internal.Logging
  * :: Experimental ::
  * Choice of how to create and configure underlying Kafka Consumers on driver and executors.
  * See [[ConsumerStrategies]] to obtain instances.
- * Kafka 0.10 consumers can require additional, sometimes complex, setup after object
+ * Kafka 0.9 consumers can require additional, sometimes complex, setup after object
  *  instantiation. This interface encapsulates that process, and allows it to be checkpointed.
  * @tparam K type of Kafka message key
  * @tparam V type of Kafka message value
@@ -72,7 +73,7 @@ abstract class ConsumerStrategy[K, V] {
  * auto.offset.reset will be used.
  */
 private case class Subscribe[K, V](
-    topics: ju.List[jl.String],
+    topics: ju.Collection[jl.String],
     kafkaParams: ju.Map[String, Object],
     offsets: ju.Map[TopicPartition, jl.Long]
   ) extends ConsumerStrategy[K, V] with Logging {
@@ -93,10 +94,10 @@ private case class Subscribe[K, V](
       // but cant seek to a position before poll, because poll is what gets subscription partitions
       // So, poll, suppress the first exception, then seek
       val aor = kafkaParams.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG)
-      val shouldSuppress = aor != null && aor.asInstanceOf[String].toUpperCase == "NONE"
+      val shouldSuppress =
+        aor != null && aor.asInstanceOf[String].toUpperCase(Locale.ROOT) == "NONE"
       try {
-        // consumer.poll(0)
-        KafkaUtils.waitForConsumerAssignment(consumer)
+        consumer.poll(0)
       } catch {
         case x: NoOffsetForPartitionException if shouldSuppress =>
           logWarning("Catching NoOffsetForPartitionException since " +
@@ -105,10 +106,8 @@ private case class Subscribe[K, V](
       toSeek.asScala.foreach { case (topicPartition, offset) =>
           consumer.seek(topicPartition, offset)
       }
-
       // we've called poll, we must pause or next poll may consume messages and set position
-      val topicPartitions = consumer.assignment().asScala.toArray
-      consumer.pause(topicPartitions: _*)
+      consumer.pause(consumer.assignment())
     }
 
     consumer
@@ -148,10 +147,10 @@ private case class SubscribePattern[K, V](
     if (!toSeek.isEmpty) {
       // work around KAFKA-3370 when reset is none, see explanation in Subscribe above
       val aor = kafkaParams.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG)
-      val shouldSuppress = aor != null && aor.asInstanceOf[String].toUpperCase == "NONE"
+      val shouldSuppress =
+        aor != null && aor.asInstanceOf[String].toUpperCase(Locale.ROOT) == "NONE"
       try {
-        // consumer.poll(0)
-        KafkaUtils.waitForConsumerAssignment(consumer)
+        consumer.poll(0)
       } catch {
         case x: NoOffsetForPartitionException if shouldSuppress =>
           logWarning("Catching NoOffsetForPartitionException since " +
@@ -161,8 +160,7 @@ private case class SubscribePattern[K, V](
           consumer.seek(topicPartition, offset)
       }
       // we've called poll, we must pause or next poll may consume messages and set position
-      val topicPartitions = consumer.assignment().asScala.toArray
-      consumer.pause(topicPartitions: _*)
+      consumer.pause(consumer.assignment())
     }
 
     consumer
@@ -183,7 +181,7 @@ private case class SubscribePattern[K, V](
  * auto.offset.reset will be used.
  */
 private case class Assign[K, V](
-    topicPartitions: ju.List[TopicPartition],
+    topicPartitions: ju.Collection[TopicPartition],
     kafkaParams: ju.Map[String, Object],
     offsets: ju.Map[TopicPartition, jl.Long]
   ) extends ConsumerStrategy[K, V] {
@@ -277,7 +275,7 @@ object ConsumerStrategies {
    */
   @Experimental
   def Subscribe[K, V](
-      topics: ju.List[jl.String],
+      topics: ju.Collection[jl.String],
       kafkaParams: ju.Map[String, Object],
       offsets: ju.Map[TopicPartition, jl.Long]): ConsumerStrategy[K, V] = {
     new Subscribe[K, V](topics, kafkaParams, offsets)
@@ -296,7 +294,7 @@ object ConsumerStrategies {
    */
   @Experimental
   def Subscribe[K, V](
-      topics: ju.List[jl.String],
+      topics: ju.Collection[jl.String],
       kafkaParams: ju.Map[String, Object]): ConsumerStrategy[K, V] = {
     new Subscribe[K, V](topics, kafkaParams, ju.Collections.emptyMap[TopicPartition, jl.Long]())
   }
@@ -452,7 +450,7 @@ object ConsumerStrategies {
    */
   @Experimental
   def Assign[K, V](
-      topicPartitions: ju.List[TopicPartition],
+      topicPartitions: ju.Collection[TopicPartition],
       kafkaParams: ju.Map[String, Object],
       offsets: ju.Map[TopicPartition, jl.Long]): ConsumerStrategy[K, V] = {
     new Assign[K, V](topicPartitions, kafkaParams, offsets)
@@ -471,7 +469,7 @@ object ConsumerStrategies {
    */
   @Experimental
   def Assign[K, V](
-      topicPartitions: ju.List[TopicPartition],
+      topicPartitions: ju.Collection[TopicPartition],
       kafkaParams: ju.Map[String, Object]): ConsumerStrategy[K, V] = {
     new Assign[K, V](
       topicPartitions,

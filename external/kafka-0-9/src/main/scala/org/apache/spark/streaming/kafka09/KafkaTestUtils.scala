@@ -17,7 +17,7 @@
 
 package org.apache.spark.streaming.kafka09
 
-import java.io.File
+import java.io.{File, IOException}
 import java.lang.{Integer => JInt}
 import java.net.InetSocketAddress
 import java.util.{Map => JMap, Properties}
@@ -106,10 +106,10 @@ private[kafka09] class KafkaTestUtils extends Logging {
     // Kafka broker startup
     Utils.startServiceOnPort(brokerPort, port => {
       brokerPort = port
-      brokerConf = new KafkaConfig(brokerConfiguration)
+      brokerConf = new KafkaConfig(brokerConfiguration, doLog = false)
       server = new KafkaServer(brokerConf)
       server.startup()
-      brokerPort = server.boundPort()
+      brokerPort = server.boundPort(brokerConf.interBrokerListenerName)
       (server, brokerPort)
     }, new SparkConf(), "KafkaBroker")
 
@@ -134,10 +134,21 @@ private[kafka09] class KafkaTestUtils extends Logging {
 
     if (server != null) {
       server.shutdown()
+      server.awaitShutdown()
       server = null
     }
 
-    brokerConf.logDirs.foreach { f => Utils.deleteRecursively(new File(f)) }
+    // On Windows, `logDirs` is left open even after Kafka server above is completely shut down
+    // in some cases. It leads to test failures on Windows if the directory deletion failure
+    // throws an exception.
+    brokerConf.logDirs.foreach { f =>
+      try {
+        Utils.deleteRecursively(new File(f))
+      } catch {
+        case e: IOException if Utils.isWindows =>
+          logWarning(e.getMessage)
+      }
+    }
 
     if (zkUtils != null) {
       zkUtils.close()
@@ -242,7 +253,7 @@ private[kafka09] class KafkaTestUtils extends Logging {
   private def waitUntilMetadataIsPropagated(topic: String, partition: Int): Unit = {
     def isPropagated = server.apis.metadataCache.getPartitionInfo(topic, partition) match {
       case Some(partitionState) =>
-        val leaderAndInSyncReplicas = partitionState.leaderIsrAndControllerEpoch.leaderAndIsr
+        val leaderAndInSyncReplicas = partitionState.basePartitionState
 
         zkUtils.getLeaderForPartition(topic, partition).isDefined &&
           Request.isValidBrokerId(leaderAndInSyncReplicas.leader) &&
@@ -273,8 +284,21 @@ private[kafka09] class KafkaTestUtils extends Logging {
 
     def shutdown() {
       factory.shutdown()
-      Utils.deleteRecursively(snapshotDir)
-      Utils.deleteRecursively(logDir)
+      // The directories are not closed even if the ZooKeeper server is shut down.
+      // Please see ZOOKEEPER-1844, which is fixed in 3.4.6+. It leads to test failures
+      // on Windows if the directory deletion failure throws an exception.
+      try {
+        Utils.deleteRecursively(snapshotDir)
+      } catch {
+        case e: IOException if Utils.isWindows =>
+          logWarning(e.getMessage)
+      }
+      try {
+        Utils.deleteRecursively(logDir)
+      } catch {
+        case e: IOException if Utils.isWindows =>
+          logWarning(e.getMessage)
+      }
     }
   }
 }
