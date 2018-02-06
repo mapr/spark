@@ -42,14 +42,12 @@ import org.apache.spark.streaming.scheduler.rate.RateEstimator
  * The spark configuration spark.streaming.kafka.maxRatePerPartition gives the maximum number
  *  of messages
  * per second that each '''partition''' will accept.
- * @param locationStrategy In most cases, pass in [[PreferConsistent]],
+ * @param locationStrategy In most cases, pass in [[LocationStrategies.PreferConsistent]],
  *   see [[LocationStrategy]] for more details.
- * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
- * configuration parameters</a>.
- *   Requires  "bootstrap.servers" to be set with Kafka broker(s),
- *   NOT zookeeper servers, specified in host1:port1,host2:port2 form.
- * @param consumerStrategy In most cases, pass in [[Subscribe]],
+ * @param consumerStrategy In most cases, pass in [[ConsumerStrategies.Subscribe]],
  *   see [[ConsumerStrategy]] for more details
+ * @param ppc configuration of settings such as max rate on a per-partition basis.
+ *   see [[PerPartitionConfig]] for more details.
  * @tparam K type of Kafka message key
  * @tparam V type of Kafka message value
  */
@@ -110,7 +108,7 @@ private[spark] class DirectKafkaInputDStream[K, V](
   }
 
   // Keep this consistent with how other streams are named (e.g. "Flume polling stream [2]")
-  private[streaming] override def name: String = s"Kafka 0.09 direct stream [$id]"
+  private[streaming] override def name: String = s"Kafka 0.9 direct stream [$id]"
 
   protected[streaming] override val checkpointData =
     new DirectKafkaInputDStreamCheckpointData
@@ -159,17 +157,6 @@ private[spark] class DirectKafkaInputDStream[K, V](
     }
   }
 
-  private def adjustPosition(tp: TopicPartition) = {
-    val c = consumer
-    val pos = c.position(tp)
-    if (pos == 0) {
-      val isStreams = tp.topic().startsWith("/") || tp.topic().contains(":")
-      if (isStreams) 1L else 0L
-    } else {
-      pos
-    }
-  }
-
   /**
    * The concern here is that poll might consume messages despite being paused,
    * which would throw off consumer position.  Fix position if this happens.
@@ -200,12 +187,11 @@ private[spark] class DirectKafkaInputDStream[K, V](
     // make sure new partitions are reflected in currentOffsets
     val newPartitions = parts.diff(currentOffsets.keySet)
     // position for new partitions determined by auto.offset.reset if no commit
-    currentOffsets = currentOffsets ++ newPartitions.map(tp =>
-      tp -> adjustPosition(tp)).toMap
+    currentOffsets = currentOffsets ++ newPartitions.map(tp => tp -> c.position(tp)).toMap
     // don't want to consume messages, so pause
-    c.pause(newPartitions.toArray : _*)
+    c.pause(newPartitions.asJava)
     // find latest available offsets
-    c.seekToEnd(currentOffsets.keySet.toArray : _*)
+    c.seekToEnd(currentOffsets.keySet.asJava)
     parts.map(tp => tp -> c.position(tp)).toMap
   }
 
@@ -227,8 +213,10 @@ private[spark] class DirectKafkaInputDStream[K, V](
       val fo = currentOffsets(tp)
       OffsetRange(tp.topic, tp.partition, fo, uo)
     }
-    val rdd = new KafkaRDD[K, V](
-      context.sparkContext, executorKafkaParams, offsetRanges.toArray, getPreferredHosts, true)
+    val useConsumerCache = context.conf.getBoolean("spark.streaming.kafka.consumer.cache.enabled",
+      true)
+    val rdd = new KafkaRDD[K, V](context.sparkContext, executorKafkaParams, offsetRanges.toArray,
+      getPreferredHosts, useConsumerCache)
 
     // Report the record number and metadata of this batch interval to InputInfoTracker.
     val description = offsetRanges.filter { offsetRange =>
@@ -255,12 +243,12 @@ private[spark] class DirectKafkaInputDStream[K, V](
     paranoidPoll(c)
     if (currentOffsets.isEmpty) {
       currentOffsets = c.assignment().asScala.map { tp =>
-        tp -> adjustPosition(tp)
+        tp -> c.position(tp)
       }.toMap
     }
 
     // don't actually want to consume any messages, so pause all partitions
-    c.pause(currentOffsets.keySet.toArray: _*)
+    c.pause(currentOffsets.keySet.asJava)
   }
 
   override def stop(): Unit = this.synchronized {
@@ -330,7 +318,7 @@ private[spark] class DirectKafkaInputDStream[K, V](
            b.map(OffsetRange(_)),
            getPreferredHosts,
            // during restore, it's possible same partition will be consumed from multiple
-           // threads, so dont use cache
+           // threads, so do not use cache.
            false
          )
       }
