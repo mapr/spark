@@ -407,7 +407,7 @@ object PartitioningAwareFileIndex extends Logging {
         if (filter != null) allFiles.filter(f => filter.accept(f.getPath)) else allFiles
       }
 
-      allLeafStatuses.filterNot(status => shouldFilterOut(status.getPath.getName)).map {
+      allLeafStatuses.par.filterNot(status => shouldFilterOut(status.getPath.getName)).map {
         case f: LocatedFileStatus =>
           f
 
@@ -431,7 +431,7 @@ object PartitioningAwareFileIndex extends Logging {
             lfs.setSymlink(f.getSymlink)
           }
           lfs
-      }
+      }.seq
     }
   }
 
