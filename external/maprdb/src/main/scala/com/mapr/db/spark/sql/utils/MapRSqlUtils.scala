@@ -126,7 +126,7 @@ object MapRSqlUtils {
         documentReader.getString.getBytes
       case (DocumentReader.EventType.STRING, DateType) =>
         new java.sql.Date(
-          ODate.parse(documentReader.getString).toDaysSinceEpoch)
+          ODate.parse(documentReader.getString).toDate.getTime)
       case (DocumentReader.EventType.STRING, TimestampType) =>
         new java.sql.Timestamp(
           OTimestamp.parse(documentReader.getString).getMillis)
