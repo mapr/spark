@@ -195,6 +195,12 @@ fi
 if [ -f $SPARK_HOME/warden/warden.spark-historyserver.conf ] ; then
 	changeWardenConfig "service.ui.port" "service.ui.port=$sparkHSUIPort" "historyserver"
 fi
+if grep -q "spark.ssl.standalone.port" "$SPARK_HOME/conf/spark-defaults.conf"; then
+	sparkMasterSecureUIPort=$(sed -n -e '/^spark.ssl.standalone.port/p' $SPARK_HOME/conf/spark-defaults.conf | sed 's/.* //')
+fi
+if grep -q "spark.ssl.historyServer.port" "$SPARK_HOME/conf/spark-defaults.conf"; then
+	sparkHSSecureUIPort=$(sed -n -e '/^spark.ssl.historyServer.port/p' $SPARK_HOME/conf/spark-defaults.conf | sed 's/.* //')
+fi
 sed -i '/# SECURITY BLOCK/,/# END OF THE SECURITY CONFIGURATION BLOCK/d' "$SPARK_HOME"/conf/spark-defaults.conf
 if [ "$isSecure" == 1 ] ; then
 	source $MAPR_HOME/conf/env.sh
@@ -234,9 +240,11 @@ spark.io.encryption.keySizeBits 128
 EOM
 	if [ -f $SPARK_HOME/warden/warden.spark-master.conf ] ; then
 		changeWardenConfig "service.ui.port" "service.ui.port=$sparkMasterSecureUIPort" "master"
+		sed -i "/\# ssl/a spark.ssl.standalone.port $sparkMasterSecureUIPort" $SPARK_HOME/conf/spark-defaults.conf
 	fi
 	if [ -f $SPARK_HOME/warden/warden.spark-historyserver.conf ] ; then
 		changeWardenConfig "service.ui.port" "service.ui.port=$sparkHSSecureUIPort" "historyserver"
+		sed -i "/\# ssl/a spark.ssl.historyServer.port $sparkHSSecureUIPort" $SPARK_HOME/conf/spark-defaults.conf
 	fi
 	case "$CLUSTER_INFO" in
 		*"secure=true"*)
