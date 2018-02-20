@@ -62,11 +62,11 @@ sparkTSUIPort=4040
 isSparkTSUIPortDef=false
 sparkMasterPort=7077
 isSparkMasterPortDef=false
-sparkMasterUIPort=8080
+sparkMasterUIPort=8580
 isSparkMasterUIPortDef=false
 
 # secure ui ports
-sparkMasterSecureUIPort=8480
+sparkMasterSecureUIPort=8980
 sparkHSSecureUIPort=18480
 
 # indicates whether cluster is up or not
