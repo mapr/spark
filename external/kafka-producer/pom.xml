@@ -68,7 +68,7 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_${scala.binary.version}</artifactId>
-            <version>0.9.0.0-mapr-1707</version>
+            <version>1.0.1-mapr-SNAPSHOT</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.sun.jmx</groupId>
@@ -91,11 +91,12 @@
                     <artifactId>zookeeper</artifactId>
                 </exclusion>
             </exclusions>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
-            <version>0.9.0.0-mapr-1707</version>
+            <version>1.0.1-mapr-SNAPSHOT</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.sun.jmx</groupId>
