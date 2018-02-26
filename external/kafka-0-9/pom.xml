@@ -51,8 +51,9 @@
     </dependency>
     <dependency>
       <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka_${scala.kafka101.version}</artifactId>
-      <version>1.0.1-mapr-1801</version>
+      <artifactId>kafka_${scala.binary.version}</artifactId>
+      <version>1.0.1-mapr-SNAPSHOT</version>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <groupId>com.sun.jmx</groupId>
