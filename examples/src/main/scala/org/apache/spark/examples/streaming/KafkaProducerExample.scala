@@ -79,11 +79,11 @@ object KafkaProducerExample extends App {
   val producerConf = new ProducerConf(
     bootstrapServers = kafkaBrokers.split(",").toList)
 
-  val items = (0 until numMessages.toInt).map(i => Item(i, i))
-  val defaultRDD: RDD[Item] = ssc.sparkContext.parallelize(items)
-  val dStream: DStream[Item] = new ConstantInputDStream[Item](ssc, defaultRDD)
+  val items = (0 until numMessages.toInt).map(i => Item(i, i).toString)
+  val defaultRDD: RDD[String] = ssc.sparkContext.parallelize(items)
+  val dStream: DStream[String] = new ConstantInputDStream[String](ssc, defaultRDD)
 
-  dStream.sendToKafka[ItemJsonSerializer](topics, producerConf)
+  dStream.foreachRDD(_.sendToKafka(topics, producerConf))
   dStream.count().print()
 
   ssc.start()

@@ -33,17 +33,14 @@ case class ProducerConf(
     linger: Long = 0,
     others: Map[String, String] = Map.empty[String, String]) {
 
-  private var keySerializer: Option[String] = null
-
-  private var valueSerializer: Option[String] = null
+  private var keySerializer: String = ProducerConf.ByteArraySerializer
+  private var valueSerializer: String = ProducerConf.StringSerializer
 
   def asJMap(): java.util.Map[String, Object] = {
     val kafkaParams = Map[String, AnyRef](
       ProducerConfig.BOOTSTRAP_SERVERS_CONFIG -> bootstrapServers.mkString(","),
-      ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG -> keySerializer.getOrElse(
-        ProducerConf.ByteArraySerializer),
-      ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG -> valueSerializer.getOrElse(
-        ProducerConf.StringSerializer),
+      ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG -> keySerializer,
+      ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG -> valueSerializer,
       ProducerConfig.ACKS_CONFIG -> acks,
       ProducerConfig.BUFFER_MEMORY_CONFIG -> bufferMemory.toString,
       ProducerConfig.COMPRESSION_TYPE_CONFIG -> compressionType.getOrElse("none"),
@@ -56,12 +53,12 @@ case class ProducerConf(
   }
 
   def withKeySerializer(serializer: String): ProducerConf = {
-    this.keySerializer = Some(serializer)
+    this.keySerializer = serializer
     this
   }
 
   def withValueSerializer(serializer: String): ProducerConf = {
-    this.valueSerializer = Some(serializer)
+    this.valueSerializer = serializer
     this
   }
 }
@@ -71,7 +68,6 @@ object ProducerConf {
   private val Prefix = "spark.streaming.kafka"
 
   val ByteArraySerializer = "org.apache.kafka.common.serialization.ByteArraySerializer"
-
   val StringSerializer = "org.apache.kafka.common.serialization.StringSerializer"
 
   def apply(sparkConf: SparkConf): ProducerConf = {
