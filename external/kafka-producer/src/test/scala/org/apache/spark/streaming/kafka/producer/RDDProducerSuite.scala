@@ -17,15 +17,16 @@
 
 package org.apache.spark.streaming.kafka.producer
 
-import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.apache.kafka.common.TopicPartition
-import org.apache.kafka.common.serialization.StringSerializer
-import org.apache.spark.rdd.RDD
-import org.apache.spark.{SparkConf, SparkContext}
-
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 import scala.language.postfixOps
+
+import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.common.TopicPartition
+import org.apache.kafka.common.serialization.StringSerializer
+
+import org.apache.spark.rdd.RDD
+import org.apache.spark.{SparkConf, SparkContext}
 
 class RDDProducerSuite extends BaseKafkaProducerTest {
 
@@ -51,7 +52,7 @@ class RDDProducerSuite extends BaseKafkaProducerTest {
 
     val rdd: RDD[String] = sparkContext.parallelize(List.fill(numMessages)(recordValue))
 
-    rdd.sendToKafka[StringSerializer](topic, testConf)
+    rdd.sendToKafka(topic, testConf)
 
     consumer.assign(List(new TopicPartition(topic, partition)).asJava)
 
@@ -75,7 +76,7 @@ class RDDProducerSuite extends BaseKafkaProducerTest {
 
     val rdd = sparkContext.parallelize(List.fill(numMessages)(recordKey, recordValue))
 
-    rdd.sendToKafka[StringSerializer, StringSerializer](topic, testConf)
+    rdd.sendToKafka(topic, testConf)
 
     consumer.assign(List(new TopicPartition(topic, partition)).asJava)
 
