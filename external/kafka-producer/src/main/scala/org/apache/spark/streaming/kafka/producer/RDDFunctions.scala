@@ -17,29 +17,30 @@
 
 package org.apache.spark.streaming.kafka.producer
 
-import scala.reflect.ClassTag
+import scala.language.implicitConversions
 
-import org.apache.kafka.common.serialization.{ByteArraySerializer, Serializer}
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 
 import org.apache.spark.rdd.RDD
 
-class RDDFunctions[T: ClassTag](rdd: RDD[T]) extends Serializable {
-  def sendToKafka[S <: Serializer[T] : ClassTag](
-    topic: String,
-    conf: ProducerConf): Unit = {
-    rdd.sparkContext.runJob(
-      rdd,
-      new KafkaRDDWriter[Array[Byte], T, ByteArraySerializer, S](topic, conf).sendV _)
+class RDDFunctions[T](rdd: RDD[T]) {
+  def sendToKafka(topic: String, conf: ProducerConf): Unit = {
+    rdd.foreachPartition(iter => {
+      val producer = new KafkaProducer[String, T](conf.asJMap())
+      iter.foreach { item =>
+        producer.send(new ProducerRecord[String, T](topic, item))
+      }
+    })
   }
 }
 
-class PairRDDFunctions[K: ClassTag, V: ClassTag](rdd: RDD[(K, V)]) extends Serializable {
-  def sendToKafka[
-    KS <: Serializer[K] : ClassTag,
-    VS <: Serializer[V] : ClassTag
-  ](topic: String, conf: ProducerConf): Unit = {
-    rdd.sparkContext.runJob(
-      rdd,
-      new KafkaRDDWriter[K, V, KS, VS](topic, conf).sendKV _)
+class PairRDDFunctions[K, V](rdd: RDD[(K, V)]) {
+  def sendToKafka(topic: String, conf: ProducerConf): Unit = {
+    rdd.foreachPartition(iter => {
+      val producer = new KafkaProducer[K, V](conf.asJMap())
+      iter.foreach { item =>
+        producer.send(new ProducerRecord[K, V](topic, item._1, item._2))
+      }
+    })
   }
 }
