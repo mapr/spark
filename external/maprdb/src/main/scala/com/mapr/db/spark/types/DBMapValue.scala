@@ -67,14 +67,12 @@ private[spark] final class DBMapValue(
   override def hashCode(): Int = this.keySet.size
 
   override def equals(other: Any): Boolean = {
-    if (other.isInstanceOf[DBMapValue]) {
-      val that: DBMapValue = other.asInstanceOf[DBMapValue]
-      this == that
-    } else if (other.isInstanceOf[Map[_, _]]) {
-      val that: DBMapValue = new DBMapValue(
-        other.asInstanceOf[Map[String, AnyRef]])
-      this.getMap == that
-    } else false
-
+    other match {
+      case _: Map[_, _] =>
+        val that: DBMapValue = new DBMapValue(
+          other.asInstanceOf[Map[String, AnyRef]])
+        this.getMap == that
+      case _ => false
+    }
   }
 }
