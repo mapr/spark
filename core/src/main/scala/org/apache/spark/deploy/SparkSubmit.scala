@@ -669,10 +669,10 @@ object SparkSubmit extends CommandLineUtils {
       // Assigns a symbol link name "sparkr" to the shipped package.
       args.archives = mergeFileLists(args.archives,
         sparkRPackageURI + "#sparkr",
-        sysProps("spark.yarn.dist.archives"))
+        sysProps.getOrElse("spark.yarn.dist.archives", ""))
 
       // Distribute the R package archive containing all the built R packages.
-      if (!RUtils.rPackages.isEmpty) {
+      if (RUtils.rPackages.isDefined) {
         val rPackageFile =
           RPackageUtils.zipRLibraries(new File(RUtils.rPackages.get), R_PACKAGE_ARCHIVE)
         if (!rPackageFile.exists()) {
