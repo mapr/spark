@@ -220,7 +220,7 @@ spark.ssl.keyStorePassword mapr123
 spark.ssl.protocol TLSv1.2
 
 # - PAM
-spark.ui.filters  org.apache.spark.ui.filters.PAMWebUIFilter
+spark.ui.filters  org.apache.spark.deploy.yarn.YarnProxyRedirectFilter, org.apache.spark.ui.filters.PAMWebUIFilter
 
 # - ACLS
 spark.acls.enable       true
