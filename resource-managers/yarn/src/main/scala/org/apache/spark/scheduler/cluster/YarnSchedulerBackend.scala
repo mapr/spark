@@ -17,16 +17,9 @@
 
 package org.apache.spark.scheduler.cluster
 
-import java.util.concurrent.atomic.{AtomicBoolean}
+import java.util.concurrent.atomic.AtomicBoolean
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Failure, Success}
-import scala.util.control.NonFatal
-
-import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.records.{ApplicationAttemptId, ApplicationId}
-
 import org.apache.spark.SparkContext
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.internal.Logging
@@ -35,6 +28,11 @@ import org.apache.spark.scheduler._
 import org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages._
 import org.apache.spark.ui.JettyUtils
 import org.apache.spark.util.{RpcUtils, ThreadUtils}
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.util.control.NonFatal
+import scala.util.{Failure, Success}
 
 /**
  * Abstract Yarn scheduler backend that contains common logic
@@ -162,19 +160,22 @@ private[spark] abstract class YarnSchedulerBackend(
       filterName: String,
       filterParams: Map[String, String],
       proxyBase: String): Unit = {
-    if (proxyBase != null && proxyBase.nonEmpty) {
-      System.setProperty("spark.ui.proxyBase", proxyBase)
-    }
+    val amIpFilter = "org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter"
 
-    val hasFilter =
-      filterName != null && filterName.nonEmpty &&
-      filterParams != null && filterParams.nonEmpty
-    if (hasFilter) {
-      logInfo(s"Add WebUI Filter. $filterName, $filterParams, $proxyBase")
-      conf.set("spark.ui.filters", filterName)
-      filterParams.foreach { case (k, v) => conf.set(s"spark.$filterName.param.$k", v) }
-      scheduler.sc.ui.foreach { ui =>
-        ui.getDelegatingHandlers.foreach(_.addFilter(filterName, filterName, filterParams))
+    if (filterName != amIpFilter) {
+      if (proxyBase != null &&
+        proxyBase.nonEmpty) {
+        System.setProperty("spark.ui.proxyBase", proxyBase)
+      }
+
+      val hasFilter =
+          filterName != null && filterName.nonEmpty &&
+          filterParams != null && filterParams.nonEmpty
+      if (hasFilter) {
+        logInfo(s"Add WebUI Filter. $filterName, $filterParams, $proxyBase")
+        conf.set("spark.ui.filters", filterName)
+        filterParams.foreach { case (k, v) => conf.set(s"spark.$filterName.param.$k", v) }
+        scheduler.sc.ui.foreach { ui => JettyUtils.addFilters(ui.getHandlers, conf) }
       }
     }
   }
