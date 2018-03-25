@@ -201,6 +201,9 @@ fi
 if grep -q "spark.ssl.historyServer.port" "$SPARK_HOME/conf/spark-defaults.conf"; then
 	sparkHSSecureUIPort=$(sed -n -e '/^spark.ssl.historyServer.port/p' $SPARK_HOME/conf/spark-defaults.conf | sed 's/.* //')
 fi
+if [ -f $SPARK_HOME/warden/warden.spark-historyserver.conf ] ; then
+	changeSparkDefaults "spark.yarn.historyServer.address" "spark.yarn.historyServer.address $(hostname --fqdn):$sparkHSUIPort"
+fi
 sed -i '/# SECURITY BLOCK/,/# END OF THE SECURITY CONFIGURATION BLOCK/d' "$SPARK_HOME"/conf/spark-defaults.conf
 if [ "$isSecure" == 1 ] ; then
 	source $MAPR_HOME/conf/env.sh
@@ -245,6 +248,7 @@ EOM
 	if [ -f $SPARK_HOME/warden/warden.spark-historyserver.conf ] ; then
 		changeWardenConfig "service.ui.port" "service.ui.port=$sparkHSSecureUIPort" "historyserver"
 		sed -i "/\# ssl/a spark.ssl.historyServer.port $sparkHSSecureUIPort" $SPARK_HOME/conf/spark-defaults.conf
+		changeSparkDefaults "spark.yarn.historyServer.address" "spark.yarn.historyServer.address $(hostname --fqdn):$sparkHSSecureUIPort"
 	fi
 	case "$CLUSTER_INFO" in
 		*"secure=true"*)
