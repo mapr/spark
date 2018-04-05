@@ -23,10 +23,9 @@ import scala.language.postfixOps
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.TopicPartition
-import org.apache.kafka.common.serialization.StringSerializer
 
-import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.rdd.RDD
 
 class RDDProducerSuite extends BaseKafkaProducerTest {
 
@@ -74,7 +73,9 @@ class RDDProducerSuite extends BaseKafkaProducerTest {
     val topic = createTestTopic("key.value.rdd.kafka")
     val consumer = consumerForTopic(topic)
 
-    val rdd = sparkContext.parallelize(List.fill(numMessages)(recordKey, recordValue))
+    val messages = List.fill(numMessages)(recordKey -> recordValue)
+
+    val rdd = sparkContext.parallelize(messages)
 
     rdd.sendToKafka(topic, testConf)
 
