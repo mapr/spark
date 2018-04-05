@@ -29,7 +29,6 @@ import org.apache.hadoop.fs.Path
 import org.apache.parquet.avro.AvroParquetWriter
 import org.apache.parquet.hadoop.ParquetWriter
 
-import org.apache.spark.HadoopUtil
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.execution.datasources.parquet.test.avro._
 import org.apache.spark.sql.test.SharedSQLContext
@@ -44,8 +43,7 @@ class ParquetAvroCompatibilitySuite extends ParquetCompatibilityTest with Shared
          |${schema.toString(true)}
        """.stripMargin)
 
-    val writer = AvroParquetWriter.builder[T](new Path(path)).withSchema(schema)
-      .withConf(HadoopUtil.createAndGetHadoopConfiguration()).build()
+    val writer = AvroParquetWriter.builder[T](new Path(path)).withSchema(schema).build()
     try f(writer) finally writer.close()
   }
 
