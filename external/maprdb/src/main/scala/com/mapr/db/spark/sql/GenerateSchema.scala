@@ -4,21 +4,20 @@ package com.mapr.db.spark.sql
 import java.util.Arrays.sort
 import java.util.Comparator
 
-import scala.reflect.runtime.universe._
 import scala.Array._
+import scala.reflect.runtime.universe._
 
-import com.mapr.db.spark.exceptions.SchemaMappingException
 import com.mapr.db.spark.RDD.MapRDBBaseRDD
+import com.mapr.db.spark.exceptions.SchemaMappingException
 import com.mapr.db.spark.impl.OJAIDocument
 import com.mapr.db.spark.utils.MapRSpark
 import org.ojai.DocumentReader
 
-import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.{JavaTypeInference, ScalaReflection}
 import org.apache.spark.sql.catalyst.analysis.TypeCoercion
-import org.apache.spark.sql.types._
-import org.apache.spark.sql.types.{DataType, DataTypes, StructField, StructType}
+import org.apache.spark.sql.types.{DataType, DataTypes, StructField, StructType, _}
 
 
 object GenerateSchema {
@@ -159,7 +158,7 @@ object GenerateSchema {
 
   private def compatibleType(failureOnConflict: Boolean)
                             (dt1: DataType, dt2: DataType): DataType = {
-    TypeCoercion.findTightestCommonTypeOfTwo(dt1, dt2).getOrElse {
+    TypeCoercion.findTightestCommonType(dt1, dt2).getOrElse {
       (dt1, dt2) match {
         case (st1@StructType(fields1), st2@StructType(fields2)) =>
           if (isInvalidType(st1)) return st1
