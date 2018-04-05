@@ -485,7 +485,7 @@ class ParquetIOSuite extends QueryTest with ParquetTest with SharedSQLContext {
     }
   }
 
-  ignore("SPARK-6330 regression test") {
+  test("SPARK-6330 regression test") {
     // In 1.3.0, save to fs other than file: without configuring core-site.xml would get:
     // IllegalArgumentException: Wrong FS: hdfs://..., expected: file:///
     intercept[Throwable] {
@@ -648,7 +648,7 @@ class ParquetIOSuite extends QueryTest with ParquetTest with SharedSQLContext {
     }
   }
 
-  ignore("VectorizedParquetRecordReader - direct path read") {
+  test("VectorizedParquetRecordReader - direct path read") {
     val data = (0 to 10).map(i => (i, (i + 'a').toChar.toString))
     withTempPath { dir =>
       spark.createDataFrame(data).repartition(1).write.parquet(dir.getCanonicalPath)
@@ -719,7 +719,7 @@ class ParquetIOSuite extends QueryTest with ParquetTest with SharedSQLContext {
     }
   }
 
-  ignore("VectorizedParquetRecordReader - partition column types") {
+  test("VectorizedParquetRecordReader - partition column types") {
     withTempPath { dir =>
       Seq(1).toDF().repartition(1).write.parquet(dir.getCanonicalPath)
 
