@@ -38,7 +38,7 @@ fi 2> /dev/null
 initCfgEnv
 
 MAPR_CONF_DIR=${MAPR_CONF_DIR:-"$MAPR_HOME/conf"}
-SPARK_VERSION="2.2.1"
+SPARK_VERSION=`cat $MAPR_HOME/spark/sparkversion`
 HIVE_VERSION=`cat $MAPR_HOME/hive/hiveversion`
 SPARK_HOME="$MAPR_HOME"/spark/spark-"$SPARK_VERSION"
 HIVE_HOME="$MAPR_HOME"/hive/hive-"$HIVE_VERSION"
