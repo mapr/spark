@@ -25,11 +25,9 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <groupId>org.apache.spark</groupId>
   <artifactId>spark-streaming-kafka-0-9_2.11</artifactId>
   <properties>
     <sbt.project.name>streaming-kafka-0-9</sbt.project.name>
-    <scala.kafka101.version>2.12</scala.kafka101.version>
   </properties>
   <packaging>jar</packaging>
   <name>Spark Integration for Kafka 0.9</name>
