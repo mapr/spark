@@ -600,9 +600,13 @@ class PairRDDFunctionsSuite extends SparkFunSuite with SharedSparkContext {
   }
 
   test("saveAsHadoopFile should respect configured output committers") {
+
     val pairs = sc.parallelize(Array((new Integer(1), new Integer(1))))
     val conf = new JobConf()
     conf.setOutputCommitter(classOf[FakeOutputCommitter])
+
+    conf.set("fs.defaultFS", "file:///");
+    conf.set("fs.default.name", "file:///");
 
     FakeOutputCommitter.ran = false
     pairs.saveAsHadoopFile(
@@ -629,6 +633,9 @@ class PairRDDFunctionsSuite extends SparkFunSuite with SharedSparkContext {
   test("failure callbacks should be called before calling writer.close() in saveAsHadoopFile") {
     val pairs = sc.parallelize(Array((new Integer(1), new Integer(2))), 1)
     val conf = new JobConf()
+
+    conf.set("fs.defaultFS", "file:///");
+    conf.set("fs.default.name", "file:///");
 
     FakeWriterWithCallback.calledBy = ""
     FakeWriterWithCallback.exception = null
