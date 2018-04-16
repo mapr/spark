@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.Accumulator;
 import org.apache.spark.AccumulatorParam;
 import org.apache.spark.Partitioner;
@@ -1092,10 +1093,18 @@ public class JavaAPISuite implements Serializable {
     rdd.mapToPair(pair -> new Tuple2<>(new IntWritable(pair._1()), new Text(pair._2())))
       .saveAsHadoopFile(outputDir, IntWritable.class, Text.class, SequenceFileOutputFormat.class);
 
+    Job job = Job.getInstance();
+    job.getConfiguration().set("fs.defaultFS", System.getProperties().getProperty("spark.hadoop.fs.defaultFS"));
+    job.getConfiguration().set("fs.default.name", System.getProperties().getProperty("spark.hadoop.fs.default.name"));
+
     JavaPairRDD<IntWritable, Text> output = sc.newAPIHadoopFile(outputDir,
       org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat.class,
-      IntWritable.class, Text.class, Job.getInstance().getConfiguration());
-    assertEquals(pairs.toString(), output.map(Tuple2::toString).collect().toString());
+      IntWritable.class, Text.class, job.getConfiguration());
+
+    assertEquals(pairs.toString(), output
+            .map(Tuple2::toString)
+            .collect()
+            .toString());
   }
 
   @Test
