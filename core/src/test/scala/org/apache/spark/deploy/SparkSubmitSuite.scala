@@ -458,6 +458,7 @@ class SparkSubmitSuite
       "--master", "local",
       "--conf", "spark.ui.enabled=false",
       "--conf", "spark.master.rest.enabled=false",
+      "--conf", "spark.eventLog.enabled=false",
       unusedJar.toString)
     runSparkSubmit(args)
   }
@@ -501,9 +502,10 @@ class SparkSubmitSuite
     val args = Seq(
       "--class", JarCreationTest.getClass.getName.stripSuffix("$"),
       "--name", "testApp",
-      "--master", "local-cluster[2,1,1024]",
+      "--master", "local-cluster[2,1,2048]",
       "--conf", "spark.ui.enabled=false",
       "--conf", "spark.master.rest.enabled=false",
+      "--conf", "spark.eventLog.enabled=false",
       "--jars", jarsString,
       unusedJar.toString, "SparkSubmitClassA", "SparkSubmitClassB")
     runSparkSubmit(args)
@@ -518,12 +520,13 @@ class SparkSubmitSuite
       val args = Seq(
         "--class", JarCreationTest.getClass.getName.stripSuffix("$"),
         "--name", "testApp",
-        "--master", "local-cluster[2,1,1024]",
+        "--master", "local-cluster[2,1,2048]",
         "--packages", Seq(main, dep).mkString(","),
         "--repositories", repo,
         "--conf", "spark.ui.enabled=false",
         "--conf", "spark.master.rest.enabled=false",
         "--conf", s"spark.jars.ivySettings=${emptyIvySettings.getAbsolutePath()}",
+        "--conf", "spark.eventLog.enabled=false",
         unusedJar.toString,
         "my.great.lib.MyLib", "my.great.dep.MyLib")
       runSparkSubmit(args)
@@ -538,12 +541,13 @@ class SparkSubmitSuite
       val args = Seq(
         "--class", JarCreationTest.getClass.getName.stripSuffix("$"),
         "--name", "testApp",
-        "--master", "local-cluster[2,1,1024]",
+        "--master", "local-cluster[2,1,2048]",
         "--conf", "spark.jars.packages=my.great.lib:mylib:0.1,my.great.dep:mylib:0.1",
         "--conf", s"spark.jars.repositories=$repo",
         "--conf", "spark.ui.enabled=false",
         "--conf", "spark.master.rest.enabled=false",
         "--conf", s"spark.jars.ivySettings=${emptyIvySettings.getAbsolutePath()}",
+        "--conf", "spark.eventLog.enabled=false",
         unusedJar.toString,
         "my.great.lib.MyLib", "my.great.dep.MyLib")
       runSparkSubmit(args)
@@ -563,7 +567,7 @@ class SparkSubmitSuite
     IvyTestUtils.withRepository(main, None, None, withR = true) { repo =>
       val args = Seq(
         "--name", "testApp",
-        "--master", "local-cluster[2,1,1024]",
+        "--master", "local-cluster[2,1,2048]",
         "--packages", main.toString,
         "--repositories", repo,
         "--conf", s"spark.jars.ivySettings=${emptyIvySettings.getAbsolutePath()}",

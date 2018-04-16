@@ -1094,6 +1094,9 @@ class RDDSuite extends SparkFunSuite with SharedSparkContext {
   test("custom RDD coalescer") {
     val maxSplitSize = 512
     val outDir = new File(tempDir, "output").getAbsolutePath
+    sc.hadoopConfiguration.set("fs.defaultFS", "file:///");
+    sc.hadoopConfiguration.set("fs.default.name", "file:///");
+
     sc.makeRDD(1 to 1000, 10).saveAsTextFile(outDir)
     val hadoopRDD =
       sc.hadoopFile(outDir, classOf[TextInputFormat], classOf[LongWritable], classOf[Text])
