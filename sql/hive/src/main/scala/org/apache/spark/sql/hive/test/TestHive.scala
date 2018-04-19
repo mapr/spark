@@ -108,7 +108,7 @@ private[hive] class TestHiveSharedState(
  * Calling [[reset]] will delete all tables and other state in the database, leaving the database
  * in a "clean" state.
  *
-  * 
+  *
  * TestHive is singleton object version of this class because instantiating multiple copies of the
  * hive metastore seems to lead to weird non-deterministic failures.  Therefore, the execution of
  * test cases that rely on TestHive must be serialized.
