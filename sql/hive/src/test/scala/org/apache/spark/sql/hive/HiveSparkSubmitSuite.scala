@@ -62,10 +62,17 @@ class HiveSparkSubmitSuite
     val args = Seq(
       "--class", TemporaryHiveUDFTest.getClass.getName.stripSuffix("$"),
       "--name", "TemporaryHiveUDFTest",
-      "--master", "local-cluster[2,1,1024]",
+      // TODO: change local [*] to local-cluster[2,1,1024]
+      "--master", "local[*]",
       "--conf", "spark.ui.enabled=false",
       "--conf", "spark.master.rest.enabled=false",
-      "--driver-java-options", "-Dderby.system.durability=test",
+      "--conf", s"spark.hadoop.fs.defaultFS=${System.getProperty("spark.hadoop.fs.defaultFS")}",
+      "--conf",
+      s"spark.hadoop.fs.default.name=${System.getProperty("spark.hadoop.fs.default.name")}",
+      "--driver-java-options", "-Dderby.system.durability=test " +
+        s"-Dhive.exec.scratchdir=${System.getProperty("hive.exec.scratchdir")} " +
+        s"-Djava.security.auth.login.config=" +
+        s"${System.getProperty("java.security.auth.login.config")}",
       "--jars", jarsString,
       unusedJar.toString, "SparkSubmitClassA", "SparkSubmitClassB")
     runSparkSubmit(args)
@@ -79,10 +86,17 @@ class HiveSparkSubmitSuite
     val args = Seq(
       "--class", PermanentHiveUDFTest1.getClass.getName.stripSuffix("$"),
       "--name", "PermanentHiveUDFTest1",
-      "--master", "local-cluster[2,1,1024]",
+      // TODO: change local [*] to local-cluster[2,1,1024]
+      "--master", "local[*]",
       "--conf", "spark.ui.enabled=false",
       "--conf", "spark.master.rest.enabled=false",
-      "--driver-java-options", "-Dderby.system.durability=test",
+      "--conf", s"spark.hadoop.fs.defaultFS=${System.getProperty("spark.hadoop.fs.defaultFS")}",
+      "--conf",
+      s"spark.hadoop.fs.default.name=${System.getProperty("spark.hadoop.fs.default.name")}",
+      "--driver-java-options", "-Dderby.system.durability=test " +
+        s"-Dhive.exec.scratchdir=${System.getProperty("hive.exec.scratchdir")} " +
+        s"-Djava.security.auth.login.config=" +
+        s"${System.getProperty("java.security.auth.login.config")}",
       "--jars", jarsString,
       unusedJar.toString, "SparkSubmitClassA", "SparkSubmitClassB")
     runSparkSubmit(args)
@@ -96,10 +110,17 @@ class HiveSparkSubmitSuite
     val args = Seq(
       "--class", PermanentHiveUDFTest2.getClass.getName.stripSuffix("$"),
       "--name", "PermanentHiveUDFTest2",
-      "--master", "local-cluster[2,1,1024]",
+      // TODO: change local [*] to local-cluster[2,1,1024]
+      "--master", "local[*]",
       "--conf", "spark.ui.enabled=false",
       "--conf", "spark.master.rest.enabled=false",
-      "--driver-java-options", "-Dderby.system.durability=test",
+      "--conf", s"spark.hadoop.fs.defaultFS=${System.getProperty("spark.hadoop.fs.defaultFS")}",
+      "--conf",
+      s"spark.hadoop.fs.default.name=${System.getProperty("spark.hadoop.fs.default.name")}",
+      "--driver-java-options", "-Dderby.system.durability=test " +
+        s"-Dhive.exec.scratchdir=${System.getProperty("hive.exec.scratchdir")} " +
+        s"-Djava.security.auth.login.config=" +
+        s"${System.getProperty("java.security.auth.login.config")}",
       "--jars", jarsString,
       unusedJar.toString, "SparkSubmitClassA", "SparkSubmitClassB")
     runSparkSubmit(args)
@@ -115,10 +136,17 @@ class HiveSparkSubmitSuite
     val args = Seq(
       "--class", SparkSubmitClassLoaderTest.getClass.getName.stripSuffix("$"),
       "--name", "SparkSubmitClassLoaderTest",
-      "--master", "local-cluster[2,1,1024]",
+      // TODO: change local [*] to local-cluster[2,1,1024]
+      "--master", "local[*]",
       "--conf", "spark.ui.enabled=false",
       "--conf", "spark.master.rest.enabled=false",
-      "--driver-java-options", "-Dderby.system.durability=test",
+      "--conf", s"spark.hadoop.fs.defaultFS=${System.getProperty("spark.hadoop.fs.defaultFS")}",
+      "--conf",
+      s"spark.hadoop.fs.default.name=${System.getProperty("spark.hadoop.fs.default.name")}",
+      "--driver-java-options", "-Dderby.system.durability=test " +
+        s"-Dhive.exec.scratchdir=${System.getProperty("hive.exec.scratchdir")} " +
+        s"-Djava.security.auth.login.config=" +
+        s"${System.getProperty("java.security.auth.login.config")}",
       "--jars", jarsString,
       unusedJar.toString, "SparkSubmitClassA", "SparkSubmitClassB")
     runSparkSubmit(args)
@@ -129,12 +157,19 @@ class HiveSparkSubmitSuite
     val args = Seq(
       "--class", SparkSQLConfTest.getClass.getName.stripSuffix("$"),
       "--name", "SparkSQLConfTest",
-      "--master", "local-cluster[2,1,1024]",
+      // TODO: change local [*] to local-cluster[2,1,1024]
+      "--master", "local[*]",
       "--conf", "spark.ui.enabled=false",
       "--conf", "spark.master.rest.enabled=false",
       "--conf", "spark.sql.hive.metastore.version=0.12",
       "--conf", "spark.sql.hive.metastore.jars=maven",
-      "--driver-java-options", "-Dderby.system.durability=test",
+      "--conf", s"spark.hadoop.fs.defaultFS=${System.getProperty("spark.hadoop.fs.defaultFS")}",
+      "--conf",
+      s"spark.hadoop.fs.default.name=${System.getProperty("spark.hadoop.fs.default.name")}",
+      "--driver-java-options", "-Dderby.system.durability=test " +
+        s"-Dhive.exec.scratchdir=${System.getProperty("hive.exec.scratchdir")} " +
+        s"-Djava.security.auth.login.config=" +
+        s"${System.getProperty("java.security.auth.login.config")}",
       unusedJar.toString)
     runSparkSubmit(args)
   }
@@ -154,7 +189,13 @@ class HiveSparkSubmitSuite
     val args = Seq(
       "--conf", "spark.ui.enabled=false",
       "--conf", "spark.master.rest.enabled=false",
-      "--driver-java-options", "-Dderby.system.durability=test",
+      "--conf", s"spark.hadoop.fs.defaultFS=${System.getProperty("spark.hadoop.fs.defaultFS")}",
+      "--conf",
+      s"spark.hadoop.fs.default.name=${System.getProperty("spark.hadoop.fs.default.name")}",
+      "--driver-java-options", "-Dderby.system.durability=test " +
+        s"-Dhive.exec.scratchdir=${System.getProperty("hive.exec.scratchdir")} " +
+        s"-Djava.security.auth.login.config=" +
+        s"${System.getProperty("java.security.auth.login.config")}",
       "--class", "Main",
       testJar)
     runSparkSubmit(args)
@@ -165,10 +206,17 @@ class HiveSparkSubmitSuite
     val args = Seq(
       "--class", SPARK_9757.getClass.getName.stripSuffix("$"),
       "--name", "SparkSQLConfTest",
-      "--master", "local-cluster[2,1,1024]",
+      // TODO: change local [*] to local-cluster[2,1,1024]
+      "--master", "local[*]",
       "--conf", "spark.ui.enabled=false",
       "--conf", "spark.master.rest.enabled=false",
-      "--driver-java-options", "-Dderby.system.durability=test",
+      "--conf", s"spark.hadoop.fs.defaultFS=${System.getProperty("spark.hadoop.fs.defaultFS")}",
+      "--conf",
+      s"spark.hadoop.fs.default.name=${System.getProperty("spark.hadoop.fs.default.name")}",
+      "--driver-java-options", "-Dderby.system.durability=test " +
+        s"-Dhive.exec.scratchdir=${System.getProperty("hive.exec.scratchdir")} " +
+        s"-Djava.security.auth.login.config=" +
+        s"${System.getProperty("java.security.auth.login.config")}",
       unusedJar.toString)
     runSparkSubmit(args)
   }
@@ -178,10 +226,17 @@ class HiveSparkSubmitSuite
     val args = Seq(
       "--class", SPARK_11009.getClass.getName.stripSuffix("$"),
       "--name", "SparkSQLConfTest",
-      "--master", "local-cluster[2,1,1024]",
+      // TODO: change local [*] to local-cluster[2,1,1024]
+      "--master", "local[*]",
       "--conf", "spark.ui.enabled=false",
       "--conf", "spark.master.rest.enabled=false",
-      "--driver-java-options", "-Dderby.system.durability=test",
+      "--conf", s"spark.hadoop.fs.defaultFS=${System.getProperty("spark.hadoop.fs.defaultFS")}",
+      "--conf",
+      s"spark.hadoop.fs.default.name=${System.getProperty("spark.hadoop.fs.default.name")}",
+      "--driver-java-options", "-Dderby.system.durability=test " +
+        s"-Dhive.exec.scratchdir=${System.getProperty("hive.exec.scratchdir")} " +
+        s"-Djava.security.auth.login.config=" +
+        s"${System.getProperty("java.security.auth.login.config")}",
       unusedJar.toString)
     runSparkSubmit(args)
   }
@@ -191,10 +246,17 @@ class HiveSparkSubmitSuite
     val args = Seq(
       "--class", SPARK_14244.getClass.getName.stripSuffix("$"),
       "--name", "SparkSQLConfTest",
-      "--master", "local-cluster[2,1,1024]",
+      // TODO: change local [*] to local-cluster[2,1,1024]
+      "--master", "local[*]",
       "--conf", "spark.ui.enabled=false",
       "--conf", "spark.master.rest.enabled=false",
-      "--driver-java-options", "-Dderby.system.durability=test",
+      "--conf", s"spark.hadoop.fs.defaultFS=${System.getProperty("spark.hadoop.fs.defaultFS")}",
+      "--conf",
+      s"spark.hadoop.fs.default.name=${System.getProperty("spark.hadoop.fs.default.name")}",
+      "--driver-java-options", "-Dderby.system.durability=test " +
+        s"-Dhive.exec.scratchdir=${System.getProperty("hive.exec.scratchdir")} " +
+        s"-Djava.security.auth.login.config=" +
+        s"${System.getProperty("java.security.auth.login.config")}",
       unusedJar.toString)
     runSparkSubmit(args)
   }
@@ -204,10 +266,17 @@ class HiveSparkSubmitSuite
     val args = Seq(
       "--class", SetWarehouseLocationTest.getClass.getName.stripSuffix("$"),
       "--name", "SetSparkWarehouseLocationTest",
-      "--master", "local-cluster[2,1,1024]",
+      // TODO: change local [*] to local-cluster[2,1,1024]
+      "--master", "local[*]",
       "--conf", "spark.ui.enabled=false",
       "--conf", "spark.master.rest.enabled=false",
-      "--driver-java-options", "-Dderby.system.durability=test",
+      "--conf", s"spark.hadoop.fs.defaultFS=${System.getProperty("spark.hadoop.fs.defaultFS")}",
+      "--conf",
+      s"spark.hadoop.fs.default.name=${System.getProperty("spark.hadoop.fs.default.name")}",
+      "--driver-java-options", "-Dderby.system.durability=test " +
+        s"-Dhive.exec.scratchdir=${System.getProperty("hive.exec.scratchdir")} " +
+        s"-Djava.security.auth.login.config=" +
+        s"${System.getProperty("java.security.auth.login.config")}",
       unusedJar.toString)
     runSparkSubmit(args)
   }
@@ -241,12 +310,19 @@ class HiveSparkSubmitSuite
     val args = Seq(
       "--class", SetWarehouseLocationTest.getClass.getName.stripSuffix("$"),
       "--name", "SetHiveWarehouseLocationTest",
-      "--master", "local-cluster[2,1,1024]",
+      // TODO: change local [*] to local-cluster[2,1,1024]
+      "--master", "local[*]",
       "--conf", "spark.ui.enabled=false",
       "--conf", "spark.master.rest.enabled=false",
       "--conf", s"spark.sql.test.expectedWarehouseDir=$hiveWarehouseLocation",
       "--conf", s"spark.driver.extraClassPath=${hiveSiteDir.getCanonicalPath}",
-      "--driver-java-options", "-Dderby.system.durability=test",
+      "--conf", s"spark.hadoop.fs.defaultFS=${System.getProperty("spark.hadoop.fs.defaultFS")}",
+      "--conf",
+      s"spark.hadoop.fs.default.name=${System.getProperty("spark.hadoop.fs.default.name")}",
+      "--driver-java-options", "-Dderby.system.durability=test " +
+        s"-Dhive.exec.scratchdir=${System.getProperty("hive.exec.scratchdir")} " +
+        s"-Djava.security.auth.login.config=" +
+        s"${System.getProperty("java.security.auth.login.config")}",
       unusedJar.toString)
     runSparkSubmit(args)
   }
@@ -287,7 +363,12 @@ class HiveSparkSubmitSuite
       "--conf", "spark.master.rest.enabled=false",
       "--conf", s"spark.sql.test.expectedMetastoreURL=$metastoreURL",
       "--conf", s"spark.driver.extraClassPath=${hiveSiteDir.getCanonicalPath}",
-      "--driver-java-options", "-Dderby.system.durability=test",
+      "--conf", "spark.hadoop.fs.defaultFS=file:///",
+      "--conf", "spark.hadoop.fs.default.name=file:///",
+      "--driver-java-options", "-Dderby.system.durability=test " +
+        s"-Dhive.exec.scratchdir=${System.getProperty("hive.exec.scratchdir")} " +
+        s"-Djava.security.auth.login.config=" +
+        s"${System.getProperty("java.security.auth.login.config")}",
       unusedJar.toString)
     runSparkSubmit(args)
   }
@@ -298,10 +379,17 @@ class HiveSparkSubmitSuite
     val args = Seq(
       "--class", SPARK_18360.getClass.getName.stripSuffix("$"),
       "--name", "SPARK-18360",
-      "--master", "local-cluster[2,1,1024]",
+      // TODO: change local [*] to local-cluster[2,1,1024]
+      "--master", "local[*]",
       "--conf", "spark.ui.enabled=false",
       "--conf", "spark.master.rest.enabled=false",
-      "--driver-java-options", "-Dderby.system.durability=test",
+      "--conf", s"spark.hadoop.fs.defaultFS=${System.getProperty("spark.hadoop.fs.defaultFS")}",
+      "--conf",
+      s"spark.hadoop.fs.default.name=${System.getProperty("spark.hadoop.fs.default.name")}",
+      "--conf", "spark.sql.warehouse.dir=file:///home/avovchenko/git/mapr/private-spark/target/tmp",
+      "--driver-java-options", "-Dderby.system.durability=test " +
+        "-Dhive.exec.scratchdir=/home/avovchenko/git/mapr/private-spark/target/tmp/hiveScratch " +
+        "-Djava.security.auth.login.config=/opt/mapr/conf/mapr.login.conf",
       unusedJar.toString)
     runSparkSubmit(args)
   }
@@ -312,9 +400,17 @@ class HiveSparkSubmitSuite
     val argsForCreateTable = Seq(
       "--class", SPARK_18989_CREATE_TABLE.getClass.getName.stripSuffix("$"),
       "--name", "SPARK-18947",
-      "--master", "local-cluster[2,1,1024]",
+      // TODO: change local [*] to local-cluster[2,1,1024]
+      "--master", "local[*]",
       "--conf", "spark.ui.enabled=false",
       "--conf", "spark.master.rest.enabled=false",
+      "--conf", s"spark.hadoop.fs.defaultFS=${System.getProperty("spark.hadoop.fs.defaultFS")}",
+      "--conf",
+      s"spark.hadoop.fs.default.name=${System.getProperty("spark.hadoop.fs.default.name")}",
+      "--driver-java-options",
+      s"-Dhive.exec.scratchdir=${System.getProperty("hive.exec.scratchdir")} " +
+        s"-Djava.security.auth.login.config=" +
+        s"${System.getProperty("java.security.auth.login.config")}",
       "--jars", TestHive.getHiveFile("hive-contrib-0.13.1.jar").getCanonicalPath,
       unusedJar.toString)
     runSparkSubmit(argsForCreateTable)
@@ -322,9 +418,17 @@ class HiveSparkSubmitSuite
     val argsForShowTables = Seq(
       "--class", SPARK_18989_DESC_TABLE.getClass.getName.stripSuffix("$"),
       "--name", "SPARK-18947",
-      "--master", "local-cluster[2,1,1024]",
+      // TODO: change local [*] to local-cluster[2,1,1024]
+      "--master", "local[*]",
       "--conf", "spark.ui.enabled=false",
       "--conf", "spark.master.rest.enabled=false",
+      "--conf", s"spark.hadoop.fs.defaultFS=${System.getProperty("spark.hadoop.fs.defaultFS")}",
+      "--conf",
+      s"spark.hadoop.fs.default.name=${System.getProperty("spark.hadoop.fs.default.name")}",
+      "--driver-java-options",
+      s"-Dhive.exec.scratchdir=${System.getProperty("hive.exec.scratchdir")} " +
+        s"-Djava.security.auth.login.config=" +
+        s"${System.getProperty("java.security.auth.login.config")}",
       unusedJar.toString)
     runSparkSubmit(argsForShowTables)
   }
