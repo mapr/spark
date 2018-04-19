@@ -195,7 +195,12 @@ class HiveExternalCatalogVersionsSuite extends SparkSubmitTestUtils {
       "--conf", "spark.ui.enabled=false",
       "--conf", "spark.master.rest.enabled=false",
       "--conf", s"spark.sql.warehouse.dir=${wareHousePath.getCanonicalPath}",
-      "--driver-java-options", s"-Dderby.system.home=${wareHousePath.getCanonicalPath}",
+      "--conf", "spark.hadoop.fs.defaultFS=file:///",
+      "--conf", "spark.hadoop.fs.default.name=file:///",
+      "--driver-java-options", s"-Dderby.system.home=${wareHousePath.getCanonicalPath} " +
+        s"-Dhive.exec.scratchdir=${System.getProperty("hive.exec.scratchdir")} " +
+        s"-Djava.security.auth.login.config=" +
+        s"${System.getProperty("java.security.auth.login.config")}",
       unusedJar.toString)
     runSparkSubmit(args)
   }

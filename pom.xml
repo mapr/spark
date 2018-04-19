@@ -2214,6 +2214,8 @@
               <spark.unsafe.exceptionOnMemoryLeak>true</spark.unsafe.exceptionOnMemoryLeak>
               <spark.hadoop.fs.defaultFS>file:///</spark.hadoop.fs.defaultFS>
               <spark.hadoop.fs.default.name>file:///</spark.hadoop.fs.default.name>
+              <java.security.auth.login.config>/opt/mapr/conf/mapr.login.conf</java.security.auth.login.config>
+              <hive.exec.scratchdir>${project.build.directory}/tmp/hiveScratch</hive.exec.scratchdir>
               <!-- Needed by sql/hive tests. -->
               <test.src.tables>__not_used__</test.src.tables>
             </systemProperties>
