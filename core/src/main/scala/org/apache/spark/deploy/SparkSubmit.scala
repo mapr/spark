@@ -1045,6 +1045,13 @@ private[spark] object SparkSubmitUtils {
     sp.setRoot("http://dl.bintray.com/spark-packages/maven")
     sp.setName("spark-packages")
     cr.add(sp)
+
+    val mp: IBiblioResolver = new IBiblioResolver
+    mp.setM2compatible(true)
+    mp.setUsepoms(true)
+    mp.setRoot("http://repo.mapr:8081/artifactory/remote-repos")
+    mp.setName("mapr-repo")
+    cr.add(mp)
     cr
   }
 
