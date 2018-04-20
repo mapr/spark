@@ -39,11 +39,14 @@ class BufferHolderSparkSubmitSuite
     val argsForSparkSubmit = Seq(
       "--class", BufferHolderSparkSubmitSuite.getClass.getName.stripSuffix("$"),
       "--name", "SPARK-22222",
-      "--master", "local-cluster[1,1,4096]",
+      "--master", "local-cluster[2,1,1024]",
       "--driver-memory", "4g",
       "--conf", "spark.ui.enabled=false",
       "--conf", "spark.master.rest.enabled=false",
       "--conf", "spark.driver.extraJavaOptions=-ea",
+      "--driver-java-options",
+        s"-Djava.security.auth.login.config=" +
+        s"${System.getProperty("java.security.auth.login.config")}",
       unusedJar.toString)
     SparkSubmitSuite.runSparkSubmit(argsForSparkSubmit, "../..")
   }
