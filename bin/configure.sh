@@ -98,13 +98,6 @@ mkdir -p "$SPARK_HOME/logs"
 chmod  a+rwxt "$SPARK_HOME"/logs
 
 #
-# Create spark-defaults.conf file
-#
-if [ -f "$SPARK_HOME/conf/spark-defaults.conf.template" ] ; then
-  cp "$SPARK_HOME/conf/spark-defaults.conf.template" "$SPARK_HOME/conf/spark-defaults.conf"
-fi
-
-#
 # create tmp directory with rwx, and set the sticky bit.
 #
 mkdir -p "$SPARK_HOME/tmp"
