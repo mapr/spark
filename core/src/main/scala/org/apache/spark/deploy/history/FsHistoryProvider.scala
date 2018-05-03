@@ -319,14 +319,21 @@ private[history] class FsHistoryProvider(conf: SparkConf, clock: Clock)
       // scan for modified applications, replay and merge them
       val logInfos: Seq[FileStatus] = statusList
         .filter { entry =>
-          val prevFileSize = fileToAppInfo.get(entry.getPath()).map{_.fileSize}.getOrElse(0L)
-          !entry.isDirectory() &&
-            // FsHistoryProvider generates a hidden file which can't be read.  Accidentally
-            // reading a garbage file is safe, but we would log an error which can be scary to
-            // the end-user.
-            !entry.getPath().getName().startsWith(".") &&
-            prevFileSize < entry.getLen() &&
-            SparkHadoopUtil.get.checkAccessPermission(entry, FsAction.READ)
+          try {
+            val prevFileSize = fileToAppInfo.get(entry.getPath()).map{_.fileSize}.getOrElse(0L)
+            !entry.isDirectory() &&
+              // FsHistoryProvider generates a hidden file which can't be read.  Accidentally
+              // reading a garbage file is safe, but we would log an error which can be scary to
+              // the end-user.
+              !entry.getPath().getName().startsWith(".") &&
+              prevFileSize < entry.getLen()
+          } catch {
+            case e: AccessControlException =>
+              // Do not use "logInfo" since these messages can get pretty noisy if printed on
+              // every poll.
+              logDebug(s"No permission to read $entry, ignoring.")
+              false
+          }
         }
         .flatMap { entry => Some(entry) }
         .sortWith { case (entry1, entry2) =>
