@@ -407,12 +407,19 @@ private[history] class FsHistoryProvider(conf: SparkConf, clock: Clock)
 
       val updated = Option(fs.listStatus(new Path(logDir))).map(_.toSeq).getOrElse(Nil)
         .filter { entry =>
+        try {
           !entry.isDirectory() &&
             // FsHistoryProvider generates a hidden file which can't be read.  Accidentally
             // reading a garbage file is safe, but we would log an error which can be scary to
             // the end-user.
-            !entry.getPath().getName().startsWith(".") &&
-            SparkHadoopUtil.get.checkAccessPermission(entry, FsAction.READ)
+            !entry.getPath().getName().startsWith(".")
+        } catch {
+          case e: AccessControlException =>
+          // Do not use "logInfo" since these messages can get pretty noisy if printed on
+          // every poll.
+          logDebug(s"No permission to read $entry, ignoring.")
+          false
+      }
         }
         .filter { entry =>
           try {
