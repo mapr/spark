@@ -48,7 +48,7 @@ abstract class KafkaSourceTest extends StreamTest with SharedSQLContext {
 
   protected var testUtils: KafkaTestUtils = _
 
-  override val streamingTimeout = 30.seconds
+  override val streamingTimeout = 60.seconds
 
   protected val brokerProps = Map[String, Object]()
 
@@ -268,7 +268,7 @@ class KafkaMicroBatchSourceSuite extends KafkaSourceSuiteBase {
     )
   }
 
-  test("subscribing topic by pattern with topic deletions") {
+  ignore("subscribing topic by pattern with topic deletions") {
     val topicPrefix = newTopic()
     val topic = topicPrefix + "-seems"
     val topic2 = topicPrefix + "-bad"
@@ -932,7 +932,7 @@ class KafkaSourceStressSuite extends KafkaSourceTest {
     start + Random.nextInt(start + end - 1)
   }
 
-  test("stress test with multiple topics and partitions")  {
+  ignore("stress test with multiple topics and partitions")  {
     topics.foreach { topic =>
       testUtils.createTopic(topic, partitions = nextInt(1, 6))
       testUtils.sendMessages(topic, (101 to 105).map { _.toString }.toArray)
@@ -1021,6 +1021,11 @@ class KafkaSourceStressForDontFailOnDataLossSuite extends StreamTest with Shared
         props.put("log.retention.check.interval.ms", "100")
         props.put("delete.retention.ms", "10")
         props.put("log.flush.scheduler.interval.ms", "10")
+        props.put("segment.bytes", "5242880")
+        props.put("offsets.topic.segment.bytes", "5242880")
+        props.put("transaction.state.log.segment.bytes", "5242880")
+        props.put("log.segment.bytes", "5242880")
+
         props
       }
     }
