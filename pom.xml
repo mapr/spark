@@ -2164,6 +2164,9 @@
               <spark.memory.debugFill>true</spark.memory.debugFill>
               <spark.hadoop.fs.defaultFS>file:///</spark.hadoop.fs.defaultFS>
               <spark.hadoop.fs.default.name>file:///</spark.hadoop.fs.default.name>
+              <zookeeper.sasl.serverconfig>Server_simple</zookeeper.sasl.serverconfig>
+              <zookeeper.sasl.clientconfig>Client_simple</zookeeper.sasl.clientconfig>
+              <zookeeper.saslprovider>com.mapr.security.simplesasl.SimpleSaslProvider</zookeeper.saslprovider>
               <!-- Needed by sql/hive tests. -->
               <test.src.tables>src</test.src.tables>
             </systemProperties>
@@ -2216,6 +2219,9 @@
               <spark.hadoop.fs.default.name>file:///</spark.hadoop.fs.default.name>
               <java.security.auth.login.config>/opt/mapr/conf/mapr.login.conf</java.security.auth.login.config>
               <hive.exec.scratchdir>${project.build.directory}/tmp/hiveScratch</hive.exec.scratchdir>
+              <zookeeper.sasl.serverconfig>Server_simple</zookeeper.sasl.serverconfig>
+              <zookeeper.sasl.clientconfig>Client_simple</zookeeper.sasl.clientconfig>
+              <zookeeper.saslprovider>com.mapr.security.simplesasl.SimpleSaslProvider</zookeeper.saslprovider>
               <!-- Needed by sql/hive tests. -->
               <test.src.tables>__not_used__</test.src.tables>
             </systemProperties>

@@ -20,13 +20,12 @@ package org.apache.spark.sql.kafka010
 import java.io.{File, IOException}
 import java.lang.{Integer => JInt}
 import java.net.InetSocketAddress
-import java.util.{Map => JMap, Properties}
+import java.util.{Properties, Map => JMap}
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
 import scala.language.postfixOps
 import scala.util.Random
-
 import kafka.admin.AdminUtils
 import kafka.api.Request
 import kafka.common.TopicAndPartition
@@ -35,11 +34,12 @@ import kafka.utils.ZkUtils
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer._
 import org.apache.kafka.common.TopicPartition
+import org.apache.kafka.common.network.ListenerName
+import org.apache.kafka.common.security.auth.SecurityProtocol
 import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
 import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
 import org.scalatest.concurrent.Eventually._
 import org.scalatest.time.SpanSugar._
-
 import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.Utils
@@ -113,7 +113,7 @@ class KafkaTestUtils(withBrokerProps: Map[String, Object] = Map.empty) extends L
       brokerConf = new KafkaConfig(brokerConfiguration, doLog = false)
       server = new KafkaServer(brokerConf)
       server.startup()
-//      brokerPort = server.boundPort()
+      brokerPort = server.boundPort(ListenerName.forSecurityProtocol(SecurityProtocol.PLAINTEXT))
       (server, brokerPort)
     }, new SparkConf(), "KafkaBroker")
 
@@ -203,11 +203,15 @@ class KafkaTestUtils(withBrokerProps: Map[String, Object] = Map.empty) extends L
 
   /** Add new partitions to a Kafka topic */
   def addPartitions(topic: String, partitions: Int): Unit = {
-//    AdminUtils.addPartitions(zkUtils, topic, partitions)
-//    // wait until metadata is propagated
-//    (0 until partitions).foreach { p =>
-//      waitUntilMetadataIsPropagated(topic, p)
-//    }
+    val brokerMetadatas = AdminUtils.getBrokerMetadatas(zkUtils)
+    val existingAssignment = zkUtils.getReplicaAssignmentForTopics(List(topic)).map {
+      case (topicPartition, replicas) => topicPartition.partition -> replicas
+    }
+    AdminUtils.addPartitions(zkUtils, topic, existingAssignment, brokerMetadatas, partitions)
+    // wait until metadata is propagated
+    (0 until partitions).foreach { p =>
+      waitUntilMetadataIsPropagated(topic, p)
+    }
   }
 
   /** Java-friendly function for sending messages to the Kafka broker */
@@ -296,6 +300,12 @@ class KafkaTestUtils(withBrokerProps: Map[String, Object] = Map.empty) extends L
     props.put("replica.socket.timeout.ms", "1500")
     props.put("delete.topic.enable", "true")
     props.put("offsets.topic.num.partitions", "1")
+    props.put("default.replication.factor", "1")
+    props.put("offsets.topic.replication.factor", "1")
+    props.put("segment.bytes", "5242880")
+    props.put("offsets.topic.segment.bytes", "5242880")
+    props.put("transaction.state.log.segment.bytes", "5242880")
+    props.put("log.segment.bytes", "5242880")
     // Can not use properties.putAll(propsMap.asJava) in scala-2.12
     // See https://github.com/scala/bug/issues/10418
     withBrokerProps.foreach { case (k, v) => props.put(k, v) }
