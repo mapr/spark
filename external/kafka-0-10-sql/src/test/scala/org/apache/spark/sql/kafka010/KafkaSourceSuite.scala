@@ -599,7 +599,7 @@ abstract class KafkaSourceSuiteBase extends KafkaSourceTest {
         "failOnDataLoss" -> failOnDataLoss.toString)
     }
 
-    test(s"subscribing topic by name from latest offsets (failOnDataLoss: $failOnDataLoss)") {
+    ignore(s"subscribing topic by name from latest offsets (failOnDataLoss: $failOnDataLoss)") {
       val topic = newTopic()
       testFromLatestOffsets(
         topic,
