@@ -45,6 +45,7 @@ private[spark] final class EmbeddedKafka(
       "broker.id" -> "1",
       "zookeeper.connect" -> zkConnect,
       "host.name" -> "localhost",
+      "offsets.topic.replication.factor" -> "1",
       "log.dir" -> logDir.toString)
 
     val props = kafkaProps.getOrElse(new Properties())
