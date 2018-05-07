@@ -34,6 +34,8 @@ class RDDProducerSuite extends BaseKafkaProducerTest {
   private val recordValue = "value"
   private val partition = 0
   private val testConf = new ProducerConf(bootstrapServers = List("localhost:9092"))
+    .withKeySerializer("org.apache.kafka.common.serialization.StringSerializer")
+
   private var sparkContext: SparkContext = _
 
   before {
