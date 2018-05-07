@@ -106,5 +106,31 @@
   <build>
     <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
     <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
+    <plugins>
+      <!-- Surefire runs all Java tests -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.20.1</version>
+        <!-- Note config is repeated in scalatest config -->
+        <configuration>
+          <systemProperties>
+            <java.security.auth.login.config>${project.basedir}/src/test/resources/mapr.login.conf</java.security.auth.login.config>
+          </systemProperties>
+        </configuration>
+      </plugin>
+      <!-- Scalatest runs all Scala tests -->
+      <plugin>
+        <groupId>org.scalatest</groupId>
+        <artifactId>scalatest-maven-plugin</artifactId>
+        <version>1.0</version>
+        <!-- Note config is repeated in surefire config -->
+        <configuration>
+          <systemProperties>
+            <java.security.auth.login.config>${project.basedir}/src/test/resources/mapr.login.conf</java.security.auth.login.config>
+          </systemProperties>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
 </project>

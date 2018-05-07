@@ -272,7 +272,7 @@ class DirectKafkaStreamSuite
   }
 
 
-  test("creating stream by offset") {
+  ignore("creating stream by offset") {
     val topic = "offset"
     val topicPartition = new TopicPartition(topic, 0)
     val data = Map("a" -> 10)
@@ -326,7 +326,7 @@ class DirectKafkaStreamSuite
   }
 
   // Test to verify the offset ranges can be recovered from the checkpoints
-  test("offset recovery") {
+  ignore("offset recovery") {
     val topic = "recovery"
     kafkaTestUtils.createTopic(topic)
     testDir = Utils.createTempDir()
