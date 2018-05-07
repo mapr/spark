@@ -92,6 +92,13 @@ if [ -f $MAPR_HOME/MapRBuildVersion ]; then
 fi
 
 #
+# Create spark-defaults.conf from spark-defaults.conf.template
+#
+if [ -f $SPARK_HOME/conf/spark-defaults.conf.template ] && [ ! -f $SPARK_HOME/conf/spark-defaults.conf ] ; then
+	cp "$SPARK_HOME/conf/spark-defaults.conf.template" "$SPARK_HOME/conf/spark-defaults.conf"
+fi
+
+#
 # Make the logs directory rwx, and set the sticky bit.
 #
 mkdir -p "$SPARK_HOME/logs"
