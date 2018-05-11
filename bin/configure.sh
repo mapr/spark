@@ -412,6 +412,18 @@ function copyWardenConfFiles() {
 	copyWardenFile thriftserver
 }
 
+function copyOldConfiguration() {
+	if [ -f $SPARK_HOME/conf/spark-defaults.conf ]  ; then
+		cp "$SPARK_HOME/conf/spark-defaults.conf" "$SPARK_HOME/conf/spark-defaults.conf.old"
+	fi
+	if [ -f $SPARK_HOME/conf/spark-env.sh ]  ; then
+		cp "$SPARK_HOME/conf/spark-env.sh" "$SPARK_HOME/conf/spark-env.sh.old"
+	fi
+	if [ -f $SPARK_HOME/conf/hive-site.xml ]  ; then
+		cp "$SPARK_HOME/conf/hive-site.xml" "$SPARK_HOME/conf/hive-site.xml.old"
+	fi
+}
+
 function stopService() {
 	if [ -e ${MAPR_CONF_DIR}/conf.d/warden.spark-${1}.conf ]; then
 		logInfo "Stopping spark-$1..."
@@ -420,9 +432,14 @@ function stopService() {
 }
 
 function stopServicesForRestartByWarden() {
-	stopService master master
-	stopService historyserver history-server
-	stopService thriftserver thriftserver
+	spark_defaults_diff=`diff ${SPARK_HOME}/conf/spark-defaults.conf ${SPARK_HOME}/conf/spark-defaults.conf.old; echo $?`
+	spark_env_sh_diff=`diff ${SPARK_HOME}/conf/spark-env.sh ${SPARK_HOME}/conf/spark-env.sh.old; echo $?`
+	spark_hive_site_diff=`diff ${SPARK_HOME}/conf/hive-site.xml ${SPARK_HOME}/conf/hive-site.xml.old; echo $?`
+	if [ ! "$spark_defaults_diff" = "0" ] || [ ! "$spark_env_sh_diff" = "0" ] || [ ! "$spark_hive_site_diff" = "0" ] ; then
+		stopService master master
+		stopService historyserver history-server
+		stopService thriftserver thriftserver
+	fi
 }
 
 #
@@ -501,6 +518,7 @@ fi
 change_permissions
 copyWardenConfFiles
 stopServicesForRestartByWarden
+copyOldConfiguration
 
 rm -f "$SPARK_HOME"/etc/.not_configured_yet
 
