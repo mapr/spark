@@ -18,19 +18,22 @@
 package org.apache.spark.streaming.kafka09
 
 import java.{util => ju}
+import java.io.OutputStream
 
+import com.google.common.base.Charsets.UTF_8
+import net.razorvine.pickle.{IObjectPickler, Opcodes, Pickler}
 import org.apache.kafka.clients.consumer._
 import org.apache.kafka.common.TopicPartition
 
 import org.apache.spark.SparkContext
 import org.apache.spark.annotation.Experimental
 import org.apache.spark.api.java.{JavaRDD, JavaSparkContext}
+import org.apache.spark.api.python.SerDeUtil
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.streaming.StreamingContext
-import org.apache.spark.streaming.api.java.{JavaInputDStream, JavaStreamingContext}
-import org.apache.spark.streaming.dstream._
-
+import org.apache.spark.streaming.api.java.{JavaDStream, JavaInputDStream, JavaStreamingContext}
+import org.apache.spark.streaming.dstream.InputDStream
 
 /**
  * :: Experimental ::
@@ -225,5 +228,68 @@ object KafkaUtils extends Logging {
       logWarning(s"overriding ${ConsumerConfig.RECEIVE_BUFFER_CONFIG} to 65536 see KAFKA-3135")
       kafkaParams.put(ConsumerConfig.RECEIVE_BUFFER_CONFIG, 65536: java.lang.Integer)
     }
+  }
+
+}
+
+object KafkaUtilsPythonHelper {
+  private var initialized = false
+
+  def initialize(): Unit = {
+    SerDeUtil.initialize()
+    synchronized {
+      if (!initialized) {
+        new PythonMessageAndMetadataPickler().register()
+        initialized = true
+      }
+    }
+  }
+
+  initialize()
+
+  def picklerIterator(iter: Iterator[ConsumerRecord[Array[Byte], Array[Byte]]]
+    ): Iterator[Array[Byte]] = {
+    new SerDeUtil.AutoBatchedPickler(iter)
+  }
+
+  class PythonMessageAndMetadataPickler extends IObjectPickler {
+    private val module = "pyspark.streaming.kafka"
+
+    def register(): Unit = {
+      Pickler.registerCustomPickler(classOf[ConsumerRecord[Any, Any]], this)
+      Pickler.registerCustomPickler(this.getClass, this)
+    }
+
+    def pickle(obj: Object, out: OutputStream, pickler: Pickler) {
+      if (obj == this) {
+        out.write(Opcodes.GLOBAL)
+        out.write(s"$module\nKafkaMessageAndMetadata\n".getBytes(UTF_8))
+      } else {
+        pickler.save(this)
+        val msgAndMetaData = obj.asInstanceOf[ConsumerRecord[Array[Byte], Array[Byte]]]
+        out.write(Opcodes.MARK)
+        pickler.save(msgAndMetaData.topic)
+        pickler.save(msgAndMetaData.partition)
+        pickler.save(msgAndMetaData.offset)
+        pickler.save(msgAndMetaData.key)
+        pickler.save(msgAndMetaData.value)
+        out.write(Opcodes.TUPLE)
+        out.write(Opcodes.REDUCE)
+      }
+    }
+  }
+
+  @Experimental
+  def createDirectStream(
+      jssc: JavaStreamingContext,
+      locationStrategy: LocationStrategy,
+      consumerStrategy: ConsumerStrategy[Array[Byte], Array[Byte]]
+    ): JavaDStream[(Array[Byte], Array[Byte])] = {
+
+    val dStream = KafkaUtils.createDirectStream[Array[Byte], Array[Byte]](
+      jssc.ssc, locationStrategy, consumerStrategy)
+      .map(cm => (cm.key, cm.value))
+
+    new JavaDStream[(Array[Byte], Array[Byte])](dStream)
   }
 }
