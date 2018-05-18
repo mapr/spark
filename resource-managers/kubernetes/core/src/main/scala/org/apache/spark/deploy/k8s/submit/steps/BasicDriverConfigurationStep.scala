@@ -93,8 +93,6 @@ private[spark] class BasicDriverConfigurationStep(
           .build()
       }
 
-    val driverCustomPodCmds = sparkConf.get(KUBERNETES_DRIVER_POD_COMMANDS).split(",").toList
-
     val driverAnnotations = driverCustomAnnotations ++ Map(SPARK_APP_NAME_ANNOTATION -> appName)
 
     val nodeSelector = KubernetesUtils.parsePrefixedKeyValuePairs(
@@ -145,7 +143,6 @@ private[spark] class BasicDriverConfigurationStep(
         .addToLimits(maybeCpuLimitQuantity.toMap.asJava)
         .endResources()
       .addToArgs("driver")
-      .withCommand(driverCustomPodCmds.asJava)
       .build()
 
     val baseDriverPod = new PodBuilder(driverSpec.driverPod)
