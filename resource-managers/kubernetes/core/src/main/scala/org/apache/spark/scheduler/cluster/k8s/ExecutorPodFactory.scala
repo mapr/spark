@@ -178,8 +178,6 @@ private[spark] class ExecutorPodFactory(
           .build()
       }
 
-    val driverCustomPodCmds = sparkConf.get(KUBERNETES_DRIVER_POD_COMMANDS).split(",").toList
-
     val executorContainer = new ContainerBuilder()
       .withName("executor")
       .withImage(executorContainerImage)
@@ -193,7 +191,6 @@ private[spark] class ExecutorPodFactory(
       .addAllToEnv(executorEnv.asJava)
       .withPorts(requiredPorts.asJava)
       .addToArgs("executor")
-      .withCommand(driverCustomPodCmds.asJava)
       .build()
 
     val executorPod = new PodBuilder()

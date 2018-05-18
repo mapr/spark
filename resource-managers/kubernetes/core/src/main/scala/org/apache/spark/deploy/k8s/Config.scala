@@ -330,8 +330,6 @@ private[spark] object Config extends Logging {
 
   val KUBERNETES_DRIVER_ENV_KEY = "spark.kubernetes.driverEnv."
 
-  val KUBERNETES_DRIVER_POD_COMMANDS = "spark.kubernetes.driver.pod.commands"
-
   val KUBERNETES_CLUSTER_ENV_KEY = "spark.kubernetes.clusterEnv"
 
 }
