@@ -19,6 +19,8 @@
 # echo commands to the terminal output
 set -ex
 
+SPARK_HOME="/opt/mapr/spark/spark-2.3.0"
+
 # Check whether there is a passwd entry for the container UID
 myuid=$(id -u)
 mygid=$(id -g)
@@ -136,6 +138,11 @@ case "$SPARK_K8S_CMD" in
     echo "Unknown command: $SPARK_K8S_CMD" 1>&2
     exit 1
 esac
+
+#Run configure.sh
+if [ ! $SPARK_K8S_CMD == "init" ]; then
+  /opt/mapr/server/configure.sh -c -C $MAPR_CLDB_HOSTS -Z $MAPR_ZK_HOSTS -N $MAPR_CLUSTER
+fi
 
 # Execute the container CMD under tini for better hygiene
 exec /usr/bin/tini -s -- "${CMD[@]}"
