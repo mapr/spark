@@ -37,6 +37,12 @@ if [ -z "$uidentry" ] ; then
 fi
 
 SPARK_K8S_CMD="$1"
+if [ -z "$SPARK_K8S_CMD" ]; then
+  echo "No command to execute has been provided." 1>&2
+  exit 1
+fi
+shift 1
+. "${SPARK_HOME}"/bin/load-spark-env.sh
 case "$SPARK_K8S_CMD" in
     driver | driver-py | driver-r | executor)
       shift 1
@@ -61,6 +67,8 @@ if [ -n "$PYSPARK_FILES" ]; then
     PYTHONPATH="$PYTHONPATH:$PYSPARK_FILES"
 fi
 
+if [ -n "$SPARK_MOUNTED_FILES_DIR" ]; then
+  cp -R "$SPARK_MOUNTED_FILES_DIR/." .
 PYSPARK_ARGS=""
 if [ -n "$PYSPARK_APP_ARGS" ]; then
     PYSPARK_ARGS="$PYSPARK_APP_ARGS"
