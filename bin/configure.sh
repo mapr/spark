@@ -214,7 +214,7 @@ fi
 sed -i '/# SECURITY BLOCK/,/# END OF THE SECURITY CONFIGURATION BLOCK/d' "$SPARK_HOME"/conf/spark-defaults.conf
 if [ "$isSecure" == 1 ] ; then
 	source $MAPR_HOME/conf/env.sh
-    cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOM
+    cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOF
 # SECURITY BLOCK
 # ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK
 
@@ -245,9 +245,9 @@ spark.network.sasl.serverAlwaysEncrypt  true
 # - IO Encryption
 spark.io.encryption.enabled     true
 spark.io.encryption.keySizeBits 128
-# END OF THE SECURITY CONFIGURATION BLOCK
 
-EOM
+# END OF THE SECURITY CONFIGURATION BLOCK
+EOF
 	if [ -f $SPARK_HOME/warden/warden.spark-master.conf ] ; then
 		changeWardenConfig "service.ui.port" "service.ui.port=$sparkMasterSecureUIPort" "master"
 		sed -i "/\# ssl/a spark.ssl.standalone.port $sparkMasterSecureUIPort" $SPARK_HOME/conf/spark-defaults.conf
@@ -432,9 +432,15 @@ function stopService() {
 }
 
 function stopServicesForRestartByWarden() {
-	spark_defaults_diff=`diff ${SPARK_HOME}/conf/spark-defaults.conf ${SPARK_HOME}/conf/spark-defaults.conf.old; echo $?`
-	spark_env_sh_diff=`diff ${SPARK_HOME}/conf/spark-env.sh ${SPARK_HOME}/conf/spark-env.sh.old; echo $?`
-	spark_hive_site_diff=`diff ${SPARK_HOME}/conf/hive-site.xml ${SPARK_HOME}/conf/hive-site.xml.old; echo $?`
+	if [ -f $SPARK_HOME/conf/spark-defaults.conf ] && [ -f $SPARK_HOME/conf/spark-defaults.conf.old ] ; then
+		spark_defaults_diff=`diff ${SPARK_HOME}/conf/spark-defaults.conf ${SPARK_HOME}/conf/spark-defaults.conf.old; echo $?`
+	fi
+	if [ -f $SPARK_HOME/conf/spark-env.sh ] && [ -f $SPARK_HOME/conf/spark-env.sh.old ] ; then
+		spark_env_sh_diff=`diff ${SPARK_HOME}/conf/spark-env.sh ${SPARK_HOME}/conf/spark-env.sh.old; echo $?`
+	fi
+	if [ -f $SPARK_HOME/conf/hive-site.xml ] && [ -f $SPARK_HOME/conf/hive-site.xml.old ] ; then
+		spark_hive_site_diff=`diff ${SPARK_HOME}/conf/hive-site.xml ${SPARK_HOME}/conf/hive-site.xml.old; echo $?`
+	fi
 	if [ ! "$spark_defaults_diff" = "0" ] || [ ! "$spark_env_sh_diff" = "0" ] || [ ! "$spark_hive_site_diff" = "0" ] ; then
 		stopService master master
 		stopService historyserver history-server
