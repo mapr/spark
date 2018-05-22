@@ -30,7 +30,11 @@ private[history] class HistoryPage(parent: HistoryServer) extends WebUIPage("") 
     val requestedIncomplete =
       Option(UIUtils.stripXSS(request.getParameter("showIncomplete"))).getOrElse("false").toBoolean
 
-    val allAppsSize = parent.getApplicationList().count(_.completed != requestedIncomplete)
+    // val allAppsSize = parent.getApplicationList().count(_.completed != requestedIncomplete)
+    val user = Option(request.getRemoteUser)
+    val allAppsSize = parent.getApplicationListForUser(user)
+      .count(_.completed != requestedIncomplete)
+
     val eventLogsUnderProcessCount = parent.getEventLogsUnderProcess()
     val lastUpdatedTime = parent.getLastUpdatedTime()
     val providerConfig = parent.getProviderConfig()

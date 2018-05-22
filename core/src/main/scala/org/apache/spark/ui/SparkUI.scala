@@ -24,8 +24,7 @@ import scala.collection.JavaConverters._
 import org.apache.spark.{SecurityManager, SparkConf, SparkContext}
 import org.apache.spark.internal.Logging
 import org.apache.spark.scheduler._
-import org.apache.spark.status.api.v1.{ApiRootResource, ApplicationAttemptInfo, ApplicationInfo,
-  UIRoot}
+import org.apache.spark.status.api.v1.{ApiRootResource, ApplicationAttemptInfo, ApplicationInfo, UIRoot}
 import org.apache.spark.storage.StorageStatusListener
 import org.apache.spark.ui.JettyUtils._
 import org.apache.spark.ui.env.{EnvironmentListener, EnvironmentTab}
@@ -123,8 +122,22 @@ private[spark] class SparkUI private (
     ))
   }
 
+  // TODO Method will be implemented in future
+  override def getApplicationInfoListForUser(user: Option[String]
+                                            ): Iterator[ApplicationInfo] = {
+    Iterator.empty
+  }
+
   def getApplicationInfo(appId: String): Option[ApplicationInfo] = {
     getApplicationInfoList.find(_.id == appId)
+  }
+
+  // TODO Method will be implemented in future
+  override def getApplicationInfoForUser(
+                                          user: Option[String],
+                                          appId: String
+                                        ): Option[ApplicationInfo] = {
+    None
   }
 
   def getStreamingJobProgressListener: Option[SparkListener] = streamingJobProgressListener

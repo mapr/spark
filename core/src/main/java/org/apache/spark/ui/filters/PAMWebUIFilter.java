@@ -42,7 +42,8 @@ public class PAMWebUIFilter implements Filter {
                                         this.getClass().getCanonicalName());
                             }
 
-                            filterChain.doFilter(servletRequest, servletResponse);
+                            HttpServletRequest requestWrapper = new RemoteUserWrapper(username, request);
+                            filterChain.doFilter(requestWrapper, servletResponse);
                         } else {
                             unauthorized(response, "Unauthorized:" +
                                     this.getClass().getCanonicalName());

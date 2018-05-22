@@ -24,16 +24,17 @@ import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
 import scala.util.control.NonFatal
 import scala.xml.Node
 
+import org.apache.hadoop.security.UserGroupInformation
 import org.eclipse.jetty.servlet.{ServletContextHandler, ServletHolder}
 
-import org.apache.spark.{SecurityManager, SparkConf}
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.internal.Logging
 import org.apache.spark.internal.config._
 import org.apache.spark.status.api.v1.{ApiRootResource, ApplicationInfo, ApplicationsListResource, UIRoot}
-import org.apache.spark.ui.{SparkUI, UIUtils, WebUI}
 import org.apache.spark.ui.JettyUtils._
+import org.apache.spark.ui.{SparkUI, UIUtils, WebUI}
 import org.apache.spark.util.{ShutdownHookManager, SystemClock, Utils}
+import org.apache.spark.{SecurityManager, SparkConf}
 
 /**
  * A web server that renders SparkUIs of completed applications.
@@ -179,6 +180,17 @@ class HistoryServer(
     provider.getListing()
   }
 
+  def getApplicationListForUser(user: Option[String]): Iterator[ApplicationHistoryInfo] = {
+    val realUser = user.getOrElse("")
+    if (realUser.isEmpty || UserGroupInformation.getCurrentUser.getUserName == realUser) {
+      provider.getListing()
+    } else {
+      provider
+        .getListing()
+        .filter(_.attempts.last.sparkUser == realUser)
+    }
+  }
+
   def getEventLogsUnderProcess(): Int = {
     provider.getEventLogsUnderProcess()
   }
@@ -191,9 +203,31 @@ class HistoryServer(
     getApplicationList().map(ApplicationsListResource.appHistoryInfoToPublicAppInfo)
   }
 
+  override def getApplicationInfoListForUser(user: Option[String]): Iterator[ApplicationInfo] = {
+    getApplicationListForUser(user).map(ApplicationsListResource.appHistoryInfoToPublicAppInfo)
+  }
+
   def getApplicationInfo(appId: String): Option[ApplicationInfo] = {
     provider.getApplicationInfo(appId).map(ApplicationsListResource.appHistoryInfoToPublicAppInfo)
   }
+
+  override def getApplicationInfoForUser(
+                                          user: Option[String],
+                                          appId: String
+                                        ): Option[ApplicationInfo] = {
+
+    val realUser = user.getOrElse("")
+    if (realUser.isEmpty || UserGroupInformation.getCurrentUser.getUserName == realUser) {
+      provider.getApplicationInfo(appId)
+        .map(ApplicationsListResource.appHistoryInfoToPublicAppInfo)
+    } else {
+      provider.getApplicationInfo(appId)
+        .filter(_.attempts.last.sparkUser == realUser)
+        .map(ApplicationsListResource.appHistoryInfoToPublicAppInfo)
+    }
+  }
+
+
 
   override def writeEventLogs(
       appId: String,
