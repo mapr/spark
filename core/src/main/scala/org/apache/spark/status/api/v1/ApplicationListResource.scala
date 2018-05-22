@@ -17,8 +17,9 @@
 package org.apache.spark.status.api.v1
 
 import java.util.{Date, List => JList}
+import javax.servlet.http.HttpServletRequest
 import javax.ws.rs.{DefaultValue, GET, Produces, QueryParam}
-import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.{Context, MediaType}
 
 import org.apache.spark.deploy.history.ApplicationHistoryInfo
 
@@ -27,6 +28,7 @@ private[v1] class ApplicationListResource(uiRoot: UIRoot) {
 
   @GET
   def appList(
+      @Context request: HttpServletRequest,
       @QueryParam("status") status: JList[ApplicationStatus],
       @DefaultValue("2010-01-01") @QueryParam("minDate") minDate: SimpleDateParam,
       @DefaultValue("3000-01-01") @QueryParam("maxDate") maxDate: SimpleDateParam,
@@ -39,7 +41,8 @@ private[v1] class ApplicationListResource(uiRoot: UIRoot) {
     val includeCompleted = status.isEmpty || status.contains(ApplicationStatus.COMPLETED)
     val includeRunning = status.isEmpty || status.contains(ApplicationStatus.RUNNING)
 
-    uiRoot.getApplicationInfoList.filter { app =>
+    val user = Option(request.getRemoteUser)
+    uiRoot.getApplicationInfoListForUser(user).filter { app =>
       val anyRunning = app.attempts.exists(!_.completed)
       // if any attempt is still running, we consider the app to also still be running;
       // keep the app if *any* attempts fall in the right time window
