@@ -39,6 +39,7 @@ initCfgEnv
 
 MAPR_CONF_DIR=${MAPR_CONF_DIR:-"$MAPR_HOME/conf"}
 SPARK_VERSION=`cat $MAPR_HOME/spark/sparkversion`
+LATEST_SPARK_TIMESTAMP=0
 HIVE_VERSION=`cat $MAPR_HOME/hive/hiveversion`
 SPARK_HOME="$MAPR_HOME"/spark/spark-"$SPARK_VERSION"
 HIVE_HOME="$MAPR_HOME"/hive/hive-"$HIVE_VERSION"
@@ -51,6 +52,10 @@ CLUSTER_INFO=`cat $MAPR_HOME/conf/mapr-clusters.conf`
 IS_FIRST_RUN=false
 if [ -f $SPARK_HOME/etc/.not_configured_yet ] ; then
 	IS_FIRST_RUN=true
+fi
+JUST_UPDATED=false
+if [ -f $SPARK_HOME/etc/.just_updated ] ; then
+	JUST_UPDATED=true
 fi
 
 # Spark ports
@@ -448,6 +453,24 @@ function stopServicesForRestartByWarden() {
 	fi
 }
 
+function findLatestTimestamp() {
+	if [ $(find "$MAPR_HOME"/spark/ -type d -name "spark-$SPARK_VERSION.*" | wc -l ) != "0" ] ; then
+		for file in /opt/mapr/spark/spark-${SPARK_VERSION}.*; do
+        	if [ ${file##*.} -gt ${LATEST_SPARK_TIMESTAMP} ] ; then
+        		LATEST_SPARK_TIMESTAMP=${file##*.}
+       		fi
+		done
+	fi
+}
+
+function replaceConfigFromPreviousVersion() {
+	findLatestTimestamp
+	if [ ${LATEST_SPARK_TIMESTAMP} -ne 0 ] ; then
+		cp "$SPARK_HOME.$LATEST_SPARK_TIMESTAMP/conf/spark-defaults.conf" "$SPARK_HOME/conf/spark-defaults.conf"
+		cp "$SPARK_HOME.$LATEST_SPARK_TIMESTAMP/conf/spark-env.sh" "$SPARK_HOME/conf/spark-env.sh"
+	fi
+}
+
 #
 # Parse options
 #
@@ -525,6 +548,10 @@ change_permissions
 copyWardenConfFiles
 stopServicesForRestartByWarden
 copyOldConfiguration
+if [ "$JUST_UPDATED" = true ] ; then
+	replaceConfigFromPreviousVersion
+	rm -f "$SPARK_HOME"/etc/.just_updated
+fi
 
 rm -f "$SPARK_HOME"/etc/.not_configured_yet
 
