@@ -18,7 +18,7 @@ package org.apache.spark.deploy.k8s.submit.steps
 
 import scala.collection.JavaConverters._
 
-import io.fabric8.kubernetes.api.model.{ContainerBuilder, EnvVarBuilder, EnvVarSourceBuilder, PodBuilder, QuantityBuilder}
+import io.fabric8.kubernetes.api.model._
 
 import org.apache.spark.{SparkConf, SparkException}
 import org.apache.spark.deploy.k8s.Config._
@@ -111,6 +111,8 @@ private[spark] class BasicDriverConfigurationStep(
       ("cpu", new QuantityBuilder(false).withAmount(limitCores).build())
     }
 
+    val clusterConfMap = sparkConf.get(MAPR_CLUSTER_CONFIGMAP).toString
+
     val driverContainer = new ContainerBuilder(driverSpec.driverContainer)
       .withName(DRIVER_CONTAINER_NAME)
       .withImage(driverContainerImage)
@@ -135,6 +137,27 @@ private[spark] class BasicDriverConfigurationStep(
         .withValueFrom(new EnvVarSourceBuilder()
           .withNewFieldRef("v1", "status.podIP")
           .build())
+        .endEnv()
+      .addNewEnv()
+        .withName(CLDB_HOSTS)
+        .withNewValueFrom()
+        .withConfigMapKeyRef(
+          new ConfigMapKeySelector(CLDB_HOSTS, clusterConfMap, true))
+        .endValueFrom()
+        .endEnv()
+      .addNewEnv()
+        .withName(ZK_HOSTS)
+        .withNewValueFrom()
+        .withConfigMapKeyRef(
+          new ConfigMapKeySelector(ZK_HOSTS, clusterConfMap, true))
+        .endValueFrom()
+        .endEnv()
+      .addNewEnv()
+        .withName(CLUSTER_NAME)
+        .withNewValueFrom()
+        .withConfigMapKeyRef(
+          new ConfigMapKeySelector(CLUSTER_NAME, clusterConfMap, true))
+        .endValueFrom()
         .endEnv()
       .withNewResources()
         .addToRequests("cpu", driverCpuQuantity)

@@ -78,4 +78,9 @@ private[spark] object Constants {
   val KUBERNETES_MASTER_INTERNAL_URL = "https://kubernetes.default.svc"
   val DRIVER_CONTAINER_NAME = "spark-kubernetes-driver"
   val MEMORY_OVERHEAD_MIN_MIB = 384L
+
+  // Mapr specific Constants
+  val CLDB_HOSTS = "MAPR_CLDB_HOSTS"
+  val ZK_HOSTS = "MAPR_ZK_HOSTS"
+  val CLUSTER_NAME = "MAPR_CLUSTER"
 }
