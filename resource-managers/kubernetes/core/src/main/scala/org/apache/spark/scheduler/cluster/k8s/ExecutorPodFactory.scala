@@ -178,11 +178,34 @@ private[spark] class ExecutorPodFactory(
           .build()
       }
 
+    val clusterConfMap = sparkConf.get(MAPR_CLUSTER_CONFIGMAP).toString
+
     val executorContainer = new ContainerBuilder()
       .withName("executor")
       .withImage(executorContainerImage)
       .withImagePullPolicy(imagePullPolicy)
       .addAllToEnv(clusterEnvs.asJava)
+      .addNewEnv()
+        .withName(CLDB_HOSTS)
+        .withNewValueFrom()
+        .withConfigMapKeyRef(
+           new ConfigMapKeySelector(CLDB_HOSTS, clusterConfMap, false))
+        .endValueFrom()
+        .endEnv()
+      .addNewEnv()
+        .withName(ZK_HOSTS)
+        .withNewValueFrom()
+        .withConfigMapKeyRef(
+          new ConfigMapKeySelector(ZK_HOSTS, clusterConfMap, false))
+        .endValueFrom()
+        .endEnv()
+      .addNewEnv()
+        .withName(CLUSTER_NAME)
+        .withNewValueFrom()
+        .withConfigMapKeyRef(
+          new ConfigMapKeySelector(CLUSTER_NAME, clusterConfMap, false))
+        .endValueFrom()
+        .endEnv()
       .withNewResources()
         .addToRequests("memory", executorMemoryQuantity)
         .addToLimits("memory", executorMemoryLimitQuantity)
