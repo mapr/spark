@@ -299,6 +299,12 @@ private[spark] object Config extends Logging {
       .stringConf
       .createOptional
 
+  val MAPR_CLUSTER_CONFIGMAP =
+    ConfigBuilder("spark.mapr.cluster.configMap")
+      .doc("Name of the mapr cluster config map")
+      .stringConf
+      .createWithDefault("mapr-cluster-configmap")
+
   val KUBERNETES_AUTH_SUBMISSION_CONF_PREFIX =
     "spark.kubernetes.authenticate.submission"
 
