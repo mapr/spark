@@ -676,14 +676,8 @@ class Dataset[T] private[sql](
   // defined on a derived column cannot referenced elsewhere in the plan.
   def withWatermark(eventTime: String, delayThreshold: String): Dataset[T] = withTypedPlan {
     val parsedDelay =
-      try {
-        CalendarInterval.fromCaseInsensitiveString(delayThreshold)
-      } catch {
-        case e: IllegalArgumentException =>
-          throw new AnalysisException(
-            s"Unable to parse time delay '$delayThreshold'",
-            cause = Some(e))
-      }
+      Option(CalendarInterval.fromString("interval " + delayThreshold))
+        .getOrElse(throw new AnalysisException(s"Unable to parse time delay '$delayThreshold'"))
     require(parsedDelay.milliseconds >= 0 && parsedDelay.months >= 0,
       s"delay threshold ($delayThreshold) should not be negative.")
     EliminateEventTimeWatermark(
@@ -3280,11 +3274,12 @@ class Dataset[T] private[sql](
   /**
    * Collect a Dataset as Arrow batches and serve stream to PySpark.
    */
+
   private[sql] def collectAsArrowToPython(): Array[Any] = {
     val timeZoneId = sparkSession.sessionState.conf.sessionLocalTimeZone
-
-    withAction("collectAsArrowToPython", queryExecution) { plan =>
-      PythonRDD.serveToStreamWithSync("serve-Arrow") { out =>
+    withNewExecutionId {
+      val iter = toArrowPayload.collect().iterator.map(_.asPythonSerializable)
+      PythonRDD.serveIterator(iter, "serve-Arrow") { out =>
         val batchWriter = new ArrowBatchStreamWriter(schema, out, timeZoneId)
         val arrowBatchRdd = toArrowBatchRdd(plan)
         val numPartitions = arrowBatchRdd.partitions.length
