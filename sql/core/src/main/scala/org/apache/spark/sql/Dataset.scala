@@ -3200,10 +3200,10 @@ class Dataset[T] private[sql](
   /**
    * Collect a Dataset as ArrowPayload byte arrays and serve to PySpark.
    */
+
   private[sql] def collectAsArrowToPython(): Array[Any] = {
-    withAction("collectAsArrowToPython", queryExecution) { plan =>
-      val iter: Iterator[Array[Byte]] =
-        toArrowPayload(plan).collect().iterator.map(_.asPythonSerializable)
+    withNewExecutionId {
+      val iter = toArrowPayload.collect().iterator.map(_.asPythonSerializable)
       PythonRDD.serveIterator(iter, "serve-Arrow")
     }
   }

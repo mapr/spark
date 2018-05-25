@@ -19,7 +19,6 @@ package org.apache.spark.deploy
 
 import java.io.File
 import java.net.{InetAddress, URI}
-import java.nio.file.Files
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -49,17 +48,11 @@ object PythonRunner {
 
     // Format python file paths before adding them to the PYTHONPATH
     val formattedPythonFile = formatPath(pythonFile)
-    val formattedPyFiles = resolvePyFiles(formatPaths(pyFiles))
+    val formattedPyFiles = formatPaths(pyFiles)
 
     // Launch a Py4J gateway server for the process to connect to; this will let it see our
     // Java system properties and such
-    val localhost = InetAddress.getLoopbackAddress()
-    val gatewayServer = new py4j.GatewayServer.GatewayServerBuilder()
-      .authToken(secret)
-      .javaPort(0)
-      .javaAddress(localhost)
-      .callbackClient(py4j.GatewayServer.DEFAULT_PYTHON_PORT, localhost, secret)
-      .build()
+    val gatewayServer = new py4j.GatewayServer(null, 0)
     val thread = new Thread(new Runnable() {
       override def run(): Unit = Utils.logUncaughtExceptions {
         gatewayServer.start()
