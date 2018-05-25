@@ -46,7 +46,6 @@ private[spark] class PythonWorkerFactory(pythonExec: String, envVars: Map[String
     !System.getProperty("os.name").startsWith("Windows") && useDaemonEnabled
   }
 
-
   private val authHelper = new SocketAuthHelper(SparkEnv.get.conf)
 
   var daemon: Process = null
