@@ -397,6 +397,9 @@ private[spark] class Client(
     val nearestTimeOfNextRenewal = credentialManager.obtainCredentials(hadoopConf, credentials)
 
     if (credentials != null) {
+      // Add credentials to current user's UGI, so that following operations don't need to use the
+      // Kerberos tgt to get delegations again in the client side.
+      UserGroupInformation.getCurrentUser.addCredentials(credentials)
       logDebug(YarnSparkHadoopUtil.get.dumpTokens(credentials).mkString("\n"))
     }
 
@@ -1184,7 +1187,7 @@ private[spark] class Client(
         val pyArchivesFile = new File(pyLibPath, "pyspark.zip")
         require(pyArchivesFile.exists(),
           s"$pyArchivesFile not found; cannot run pyspark application in YARN mode.")
-        val py4jFile = new File(pyLibPath, "py4j-0.10.4-src.zip")
+        val py4jFile = new File(pyLibPath, "py4j-0.10.7-src.zip")
         require(py4jFile.exists(),
           s"$py4jFile not found; cannot run pyspark application in YARN mode.")
         Seq(pyArchivesFile.getAbsolutePath(), py4jFile.getAbsolutePath())

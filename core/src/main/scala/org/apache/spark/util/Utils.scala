@@ -18,12 +18,14 @@
 package org.apache.spark.util
 
 import java.io._
+import java.lang.{Byte => JByte}
 import java.lang.management.{LockInfo, ManagementFactory, MonitorInfo, ThreadInfo}
 import java.net._
 import java.nio.ByteBuffer
-import java.nio.channels.Channels
+import java.nio.channels.{Channels, FileChannel}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
+import java.security.SecureRandom
 import java.util.{Locale, Properties, Random, UUID}
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicBoolean
@@ -38,9 +40,11 @@ import scala.io.Source
 import scala.reflect.ClassTag
 import scala.util.Try
 import scala.util.control.{ControlThrowable, NonFatal}
+import scala.util.matching.Regex
 
 import _root_.io.netty.channel.unix.Errors.NativeIoException
 import com.google.common.cache.{CacheBuilder, CacheLoader, LoadingCache}
+import com.google.common.hash.HashCodes
 import com.google.common.io.{ByteStreams, Files => GFiles}
 import com.google.common.net.InetAddresses
 import org.apache.commons.lang3.SystemUtils
@@ -55,7 +59,7 @@ import org.slf4j.Logger
 import org.apache.spark._
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.internal.Logging
-import org.apache.spark.internal.config.{DYN_ALLOCATION_INITIAL_EXECUTORS, DYN_ALLOCATION_MIN_EXECUTORS, EXECUTOR_INSTANCES}
+import org.apache.spark.internal.config._
 import org.apache.spark.network.util.JavaUtils
 import org.apache.spark.serializer.{DeserializationStream, SerializationStream, SerializerInstance}
 import org.apache.spark.util.logging.RollingFileAppender
@@ -2574,18 +2578,52 @@ private[spark] object Utils extends Logging {
       sparkJars.map(_.split(",")).map(_.filter(_.nonEmpty)).toSeq.flatten
     }
   }
+
+  private[util] val REDACTION_REPLACEMENT_TEXT = "*********(redacted)"
+
+  def redact(conf: SparkConf, kvs: Seq[(String, String)]): Seq[(String, String)] = {
+    val redactionPattern = conf.get(SECRET_REDACTION_PATTERN).r
+    redact(redactionPattern, kvs)
+  }
+
+  private def redact(redactionPattern: Regex, kvs: Seq[(String, String)]): Seq[(String, String)] = {
+    kvs.map { kv =>
+      redactionPattern.findFirstIn(kv._1)
+        .map { _ => (kv._1, REDACTION_REPLACEMENT_TEXT) }
+        .getOrElse(kv)
+    }
+  }
+
+  /**
+   * Looks up the redaction regex from within the key value pairs and uses it to redact the rest
+   * of the key value pairs. No care is taken to make sure the redaction property itself is not
+   * redacted. So theoretically, the property itself could be configured to redact its own value
+   * when printing.
+   */
+  def redact(kvs: Map[String, String]): Seq[(String, String)] = {
+    val redactionPattern = kvs.getOrElse(
+      SECRET_REDACTION_PATTERN.key,
+      SECRET_REDACTION_PATTERN.defaultValueString
+    ).r
+    redact(redactionPattern, kvs.toArray)
+  }
+
+  def createSecret(conf: SparkConf): String = {
+    val bits = conf.get(AUTH_SECRET_BIT_LENGTH)
+    val rnd = new SecureRandom()
+    val secretBytes = new Array[Byte](bits / JByte.SIZE)
+    rnd.nextBytes(secretBytes)
+    HashCodes.fromBytes(secretBytes).toString()
+  }
+
 }
 
 private[util] object CallerContext extends Logging {
   val callerContextSupported: Boolean = {
     SparkHadoopUtil.get.conf.getBoolean("hadoop.caller.context.enabled", false) && {
       try {
-        // `Utils.classForName` will make `ReplSuite` fail with `ClassCircularityError` in
-        // master Maven build, so do not use it before resolving SPARK-17714.
-        // scalastyle:off classforname
-        Class.forName("org.apache.hadoop.ipc.CallerContext")
-        Class.forName("org.apache.hadoop.ipc.CallerContext$Builder")
-        // scalastyle:on classforname
+        Utils.classForName("org.apache.hadoop.ipc.CallerContext")
+        Utils.classForName("org.apache.hadoop.ipc.CallerContext$Builder")
         true
       } catch {
         case _: ClassNotFoundException =>
