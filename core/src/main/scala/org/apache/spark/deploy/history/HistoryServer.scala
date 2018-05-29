@@ -24,6 +24,7 @@ import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
 import scala.util.control.NonFatal
 import scala.xml.Node
 
+import org.apache.hadoop.security.UserGroupInformation
 import org.eclipse.jetty.servlet.{ServletContextHandler, ServletHolder}
 
 import org.apache.spark.{SecurityManager, SparkConf}
@@ -184,6 +185,17 @@ class HistoryServer(
     provider.getListing()
   }
 
+  def getApplicationListForUser(user: Option[String]): Iterator[ApplicationInfo] = {
+    val realUser = user.getOrElse("")
+    if (realUser.isEmpty || UserGroupInformation.getCurrentUser.getUserName == realUser) {
+      provider.getListing()
+    } else {
+      provider
+        .getListing()
+        .filter(_.attempts.last.sparkUser == realUser)
+    }
+  }
+
   def getEventLogsUnderProcess(): Int = {
     provider.getEventLogsUnderProcess()
   }
@@ -196,8 +208,25 @@ class HistoryServer(
     getApplicationList()
   }
 
+  override def getApplicationInfoListForUser(user: Option[String]): Iterator[ApplicationInfo] = {
+    getApplicationListForUser(user)
+  }
+
   def getApplicationInfo(appId: String): Option[ApplicationInfo] = {
     provider.getApplicationInfo(appId)
+  }
+
+  override def getApplicationInfoForUser(
+                                          user: Option[String],
+                                          appId: String
+                                        ): Option[ApplicationInfo] = {
+    val realUser = user.getOrElse("")
+    if (realUser.isEmpty || UserGroupInformation.getCurrentUser.getUserName == realUser) {
+      provider.getApplicationInfo(appId)
+    } else {
+      provider.getApplicationInfo(appId)
+        .filter(_.attempts.last.sparkUser == realUser)
+    }
   }
 
   override def writeEventLogs(
