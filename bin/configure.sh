@@ -235,12 +235,14 @@ spark.ssl.keyStorePassword mapr123
 spark.ssl.protocol TLSv1.2
 
 # - PAM
-spark.ui.filters  org.apache.spark.deploy.yarn.YarnProxyRedirectFilter, org.apache.spark.ui.filters.PAMWebUIFilter
+spark.ui.filters  org.apache.spark.deploy.yarn.YarnProxyRedirectFilter, org.apache.spark.ui.filters.MultiauthWebUiFilter
 
 # - ACLS
-spark.acls.enable       true
+spark.acls.enable       false
 spark.admin.acls        mapr
 spark.admin.acls.groups mapr
+spark.ui.view.acls      mapruser1
+
 # - Authorization and Network Encryption
 spark.authenticate      true
 # - - This secret will be used only by local/standalone modes. YARN will override this with its own secret
