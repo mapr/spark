@@ -17,15 +17,14 @@
 package org.apache.spark.deploy.k8s.submit.steps
 
 import scala.collection.JavaConverters._
-
 import io.fabric8.kubernetes.api.model._
-
 import org.apache.spark.{SparkConf, SparkException}
 import org.apache.spark.deploy.k8s.Config._
 import org.apache.spark.deploy.k8s.Constants._
 import org.apache.spark.deploy.k8s.KubernetesUtils
 import org.apache.spark.deploy.k8s.submit.KubernetesDriverSpec
 import org.apache.spark.internal.config.{DRIVER_CLASS_PATH, DRIVER_MEMORY, DRIVER_MEMORY_OVERHEAD}
+import org.apache.spark.util.Utils
 
 /**
  * Performs basic configuration for the driver pod.
@@ -112,6 +111,16 @@ private[spark] class BasicDriverConfigurationStep(
     }
 
     val clusterConfMap = sparkConf.get(MAPR_CLUSTER_CONFIGMAP).toString
+    val clusterUserSecrets = sparkConf.get(MAPR_CLUSTER_USER_SECRETS).toString
+
+    val username = Utils.getCurrentUserName()
+    val userGroups = Utils.getCurrentUserGroups(sparkConf, username)
+    val userId = Utils.getCurrentUserId()
+    val userGroupsIds = Utils.getCurrentUserGroupsIds(sparkConf, username)
+
+    if (userId.length() == 0 || userGroupsIds.size == 0) {
+      throw new RuntimeException(s"Error getting uid/gid for user=$username")
+    }
 
     val driverContainer = new ContainerBuilder(driverSpec.driverContainer)
       .withName(DRIVER_CONTAINER_NAME)
@@ -120,6 +129,22 @@ private[spark] class BasicDriverConfigurationStep(
       .addAllToEnv(driverCustomEnvs.asJava)
       .addAllToEnv(clusterEnvs.asJava)
       .addToEnv(driverExtraClasspathEnv.toSeq: _*)
+      .addNewEnv()
+        .withName(CURRENT_USER)
+        .withValue(username)
+        .endEnv()
+      .addNewEnv()
+        .withName(USER_GROUPS)
+        .withValue(userGroups.mkString(" "))
+        .endEnv()
+      .addNewEnv()
+        .withName(CURRENT_USER_ID)
+        .withValue(userId)
+        .endEnv()
+      .addNewEnv()
+        .withName(USER_GROUPS_IDS)
+        .withValue(userGroupsIds.mkString(" "))
+        .endEnv()
       .addNewEnv()
         .withName(ENV_DRIVER_MEMORY)
         .withValue(driverMemoryString)
@@ -138,27 +163,16 @@ private[spark] class BasicDriverConfigurationStep(
           .withNewFieldRef("v1", "status.podIP")
           .build())
         .endEnv()
-      .addNewEnv()
-        .withName(CLDB_HOSTS)
-        .withNewValueFrom()
-        .withConfigMapKeyRef(
-          new ConfigMapKeySelector(CLDB_HOSTS, clusterConfMap, true))
-        .endValueFrom()
-        .endEnv()
-      .addNewEnv()
-        .withName(ZK_HOSTS)
-        .withNewValueFrom()
-        .withConfigMapKeyRef(
-          new ConfigMapKeySelector(ZK_HOSTS, clusterConfMap, true))
-        .endValueFrom()
-        .endEnv()
-      .addNewEnv()
-        .withName(CLUSTER_NAME)
-        .withNewValueFrom()
-        .withConfigMapKeyRef(
-          new ConfigMapKeySelector(CLUSTER_NAME, clusterConfMap, true))
-        .endValueFrom()
-        .endEnv()
+        .addNewEnvFrom()
+          .withNewConfigMapRef()
+            .withName(clusterConfMap)
+            .endConfigMapRef()
+          .endEnvFrom()
+      .addNewEnvFrom()
+        .withNewSecretRef()
+          .withName(clusterUserSecrets)
+          .endSecretRef()
+        .endEnvFrom()
       .withNewResources()
         .addToRequests("cpu", driverCpuQuantity)
         .addToRequests("memory", driverMemoryQuantity)
