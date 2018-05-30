@@ -139,10 +139,34 @@ case "$SPARK_K8S_CMD" in
     exit 1
 esac
 
+function createUserGroups() {
+  groups=($USER_GROUPS)
+  groupIds=($USER_GROUPS_IDS)
+
+  for i in "${!groups[@]}"
+  do
+    groupadd -f -g ${groupIds[i]} ${groups[i]}
+    usermod -a -G  ${groups[i]} $CURRENT_USER
+  done
+}
+
+function createUser() {
+  if ! id $CURRENT_USER >/dev/null 2>&1; then
+    adduser -u $USER_ID $CURRENT_USER
+  fi
+}
+
 #Run configure.sh
 if [ ! $SPARK_K8S_CMD == "init" ]; then
   /opt/mapr/server/configure.sh -c -C $MAPR_CLDB_HOSTS -Z $MAPR_ZK_HOSTS -N $MAPR_CLUSTER
-fi
+  createUser
+  createUserGroups
+  if [ $SPARK_K8S_CMD == "executor" ]; then
+    chown $CURRENT_USER ./
+  fi
 
-# Execute the container CMD under tini for better hygiene
+  exec sudo -u $CURRENT_USER "${CMD[@]}"
+else
+# Execute the container CMD
 exec /usr/bin/tini -s -- "${CMD[@]}"
+fi

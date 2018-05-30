@@ -79,8 +79,9 @@ private[spark] object Constants {
   val DRIVER_CONTAINER_NAME = "spark-kubernetes-driver"
   val MEMORY_OVERHEAD_MIN_MIB = 384L
 
-  // Mapr specific Constants
-  val CLDB_HOSTS = "MAPR_CLDB_HOSTS"
-  val ZK_HOSTS = "MAPR_ZK_HOSTS"
-  val CLUSTER_NAME = "MAPR_CLUSTER"
+  // User specific Constants
+  val CURRENT_USER = "CURRENT_USER"
+  val USER_GROUPS = "USER_GROUPS"
+  val CURRENT_USER_ID = "USER_ID"
+  val USER_GROUPS_IDS = "USER_GROUPS_IDS"
 }
