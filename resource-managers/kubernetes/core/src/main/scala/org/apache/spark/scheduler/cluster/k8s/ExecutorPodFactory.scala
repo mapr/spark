@@ -17,10 +17,8 @@
 package org.apache.spark.scheduler.cluster.k8s
 
 import scala.collection.JavaConverters._
-
 import io.fabric8.kubernetes.api.model._
-
-import org.apache.spark.{SparkConf, SparkException}
+import org.apache.spark.{SparkConf, SparkContext, SparkException}
 import org.apache.spark.deploy.k8s.{InitContainerBootstrap, KubernetesUtils, MountSecretsBootstrap, PodWithDetachedInitContainer}
 import org.apache.spark.deploy.k8s.Config._
 import org.apache.spark.deploy.k8s.Constants._
@@ -179,6 +177,16 @@ private[spark] class ExecutorPodFactory(
       }
 
     val clusterConfMap = sparkConf.get(MAPR_CLUSTER_CONFIGMAP).toString
+    val clusterUserSecrets = sparkConf.get(MAPR_CLUSTER_USER_SECRETS).toString
+
+    val username = Utils.getCurrentUserName()
+    val userGroups = Utils.getCurrentUserGroups(sparkConf, username)
+    val userId = Utils.getCurrentUserId()
+    val userGroupsIds = Utils.getCurrentUserGroupsIds(sparkConf, username)
+
+    if (userId.length() == 0 || userGroupsIds.size == 0) {
+      throw new RuntimeException(s"Error getting uid/gid for user=$username")
+    }
 
     val executorContainer = new ContainerBuilder()
       .withName("executor")
@@ -186,26 +194,31 @@ private[spark] class ExecutorPodFactory(
       .withImagePullPolicy(imagePullPolicy)
       .addAllToEnv(clusterEnvs.asJava)
       .addNewEnv()
-        .withName(CLDB_HOSTS)
-        .withNewValueFrom()
-        .withConfigMapKeyRef(
-           new ConfigMapKeySelector(CLDB_HOSTS, clusterConfMap, false))
-        .endValueFrom()
+        .withName(CURRENT_USER)
+        .withValue(username)
         .endEnv()
       .addNewEnv()
-        .withName(ZK_HOSTS)
-        .withNewValueFrom()
-        .withConfigMapKeyRef(
-          new ConfigMapKeySelector(ZK_HOSTS, clusterConfMap, false))
-        .endValueFrom()
+        .withName(USER_GROUPS)
+        .withValue(userGroups.mkString(" "))
         .endEnv()
       .addNewEnv()
-        .withName(CLUSTER_NAME)
-        .withNewValueFrom()
-        .withConfigMapKeyRef(
-          new ConfigMapKeySelector(CLUSTER_NAME, clusterConfMap, false))
-        .endValueFrom()
+        .withName(CURRENT_USER_ID)
+        .withValue(userId)
         .endEnv()
+      .addNewEnv()
+        .withName(USER_GROUPS_IDS)
+        .withValue(userGroupsIds.mkString(" "))
+        .endEnv()
+      .addNewEnvFrom()
+        .withNewConfigMapRef()
+          .withName(clusterConfMap)
+          .endConfigMapRef()
+        .endEnvFrom()
+      .addNewEnvFrom()
+        .withNewSecretRef()
+          .withName(clusterUserSecrets)
+          .endSecretRef()
+        .endEnvFrom()
       .withNewResources()
         .addToRequests("memory", executorMemoryQuantity)
         .addToLimits("memory", executorMemoryLimitQuantity)
