@@ -227,7 +227,8 @@ class HadoopRDD[K, V](
       // Sets InputFileBlockHolder for the file block's information
       split.inputSplit.value match {
         case fs: FileSplit =>
-          InputFileBlockHolder.set(fs.getPath.toString, fs.getStart, fs.getLength)
+          val splitLength = if (isMaprdbTable()) 0 else fs.getLength
+          InputFileBlockHolder.set(fs.getPath.toString, fs.getStart, splitLength)
         case _ =>
           InputFileBlockHolder.unset()
       }
@@ -323,6 +324,11 @@ class HadoopRDD[K, V](
       }
     }
     new InterruptibleIterator[(K, V)](context, iter)
+  }
+
+  def isMaprdbTable(): Boolean = {
+    val maprdbTableName = getJobConf().get("maprdb.table.name")
+    maprdbTableName != null && maprdbTableName != ""
   }
 
   override def compute(theSplit: Partition, context: TaskContext): InterruptibleIterator[(K, V)] = {
