@@ -24,6 +24,7 @@ import javax.net.ssl.SSLContext
 import org.apache.hadoop.conf.Configuration
 import org.eclipse.jetty.util.ssl.SslContextFactory
 
+import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.internal.Logging
 
 /**
@@ -181,16 +182,22 @@ private[spark] object SSLOptions extends Logging {
       require(p >= 0, "Port number must be a non-negative value.")
     }
 
+    val hadoopConf = SparkHadoopUtil.get.conf
+
     val keyStore = conf.getWithSubstitution(s"$ns.keyStore").map(new File(_))
         .orElse(defaults.flatMap(_.keyStore))
 
-    val keyStorePassword = conf.getWithSubstitution(s"$ns.keyStorePassword")
-        .orElse(Option(hadoopConf.getPassword(s"$ns.keyStorePassword")).map(new String(_)))
+    val keyStorePassword = Option(hadoopConf.getPassword("spark.ssl.keyStorePassword")) match {
+      case Some(s) => Option(s.mkString)
+      case None => conf.getWithSubstitution(s"$ns.keyStorePassword")
         .orElse(defaults.flatMap(_.keyStorePassword))
+    }
 
-    val keyPassword = conf.getWithSubstitution(s"$ns.keyPassword")
-        .orElse(Option(hadoopConf.getPassword(s"$ns.keyPassword")).map(new String(_)))
+    val keyPassword = Option(hadoopConf.getPassword("spark.ssl.keyPassword")) match {
+      case Some(s) => Option(s.mkString)
+      case None => conf.getWithSubstitution(s"$ns.keyPassword")
         .orElse(defaults.flatMap(_.keyPassword))
+    }
 
     val keyStoreType = conf.getWithSubstitution(s"$ns.keyStoreType")
         .orElse(defaults.flatMap(_.keyStoreType))
@@ -201,9 +208,11 @@ private[spark] object SSLOptions extends Logging {
     val trustStore = conf.getWithSubstitution(s"$ns.trustStore").map(new File(_))
         .orElse(defaults.flatMap(_.trustStore))
 
-    val trustStorePassword = conf.getWithSubstitution(s"$ns.trustStorePassword")
-        .orElse(Option(hadoopConf.getPassword(s"$ns.trustStorePassword")).map(new String(_)))
+    val trustStorePassword = Option(hadoopConf.getPassword("spark.ssl.trustStorePassword")) match {
+      case Some(s) => Option(s.mkString)
+      case None => conf.getWithSubstitution(s"$ns.trustStorePassword")
         .orElse(defaults.flatMap(_.trustStorePassword))
+    }
 
     val trustStoreType = conf.getWithSubstitution(s"$ns.trustStoreType")
         .orElse(defaults.flatMap(_.trustStoreType))
