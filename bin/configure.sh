@@ -46,6 +46,11 @@ HIVE_HOME="$MAPR_HOME"/hive/hive-"$HIVE_VERSION"
 SPARK_BIN="$SPARK_HOME"/bin
 SPARK_LOGS="$SPARK_HOME"/logs
 DAEMON_CONF=${MAPR_HOME}/conf/daemon.conf
+MAPR_USER=$( awk -F = '$1 == "mapr.daemon.user" { print $2 }' $DAEMON_CONF)
+MAPR_GROUP=$( awk -F = '$1 == "mapr.daemon.group" { print $2 }' $DAEMON_CONF)
+SPARK_CREDENTIAL_PROVIDER_PATH="jceks://maprfs/user/$MAPR_USER/spark-security-provider.jceks"
+DEFAULT_CREDENTIAL_PROVIDER_LOCAL="$SPARK_HOME/conf/spark-security-provider.jceks"
+DEFAULT_CREDENTIAL_PROVIDER_MAPRFS="/user/$MAPR_USER/spark-security-provider.jceks"
 
 CLUSTER_INFO=`cat $MAPR_HOME/conf/mapr-clusters.conf`
 
@@ -179,9 +184,6 @@ function changeWardenConfig() {
 
 function change_permissions() {
     if [ -f $DAEMON_CONF ]; then
-        MAPR_USER=$( awk -F = '$1 == "mapr.daemon.user" { print $2 }' $DAEMON_CONF)
-        MAPR_GROUP=$( awk -F = '$1 == "mapr.daemon.group" { print $2 }' $DAEMON_CONF)
-
         if [ ! -z "$MAPR_USER" ]; then
             chown -R ${MAPR_USER} ${SPARK_HOME}
         fi
@@ -196,6 +198,12 @@ function change_permissions() {
 #
 # Configure security
 #
+
+function putProviderWithDefaultPasswordsToMaprfs() {
+	if [ "$IS_FIRST_RUN" = true ] ; then
+		sudo -u "$MAPR_USER" hadoop fs -put ${DEFAULT_CREDENTIAL_PROVIDER_LOCAL} ${DEFAULT_CREDENTIAL_PROVIDER_MAPRFS}
+	fi
+}
 
 function configureSecurity() {
 if [ -f $SPARK_HOME/warden/warden.spark-master.conf ] ; then
@@ -218,20 +226,21 @@ if [ -f $SPARK_HOME/warden/warden.spark-historyserver.conf ] ; then
 fi
 sed -i '/# SECURITY BLOCK/,/# END OF THE SECURITY CONFIGURATION BLOCK/d' "$SPARK_HOME"/conf/spark-defaults.conf
 if [ "$isSecure" == 1 ] ; then
+	putProviderWithDefaultPasswordsToMaprfs
 	source $MAPR_HOME/conf/env.sh
     cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOF
 # SECURITY BLOCK
 # ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK
 
+# credential provider
+spark.hadoop.security.credential.provider.path ${SPARK_CREDENTIAL_PROVIDER_PATH}
+
 # ssl
 spark.ssl.enabled true
 spark.ssl.ui.enabled false
 spark.ssl.fs.enabled true
-spark.ssl.keyPassword mapr123
 spark.ssl.trustStore $MAPR_HOME/conf/ssl_truststore
-spark.ssl.trustStorePassword mapr123
 spark.ssl.keyStore $MAPR_HOME/conf/ssl_keystore
-spark.ssl.keyStorePassword mapr123
 spark.ssl.protocol TLSv1.2
 
 # - PAM
