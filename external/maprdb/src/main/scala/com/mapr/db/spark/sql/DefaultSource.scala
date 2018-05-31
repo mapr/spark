@@ -46,7 +46,7 @@ class DefaultSource
                               schema: StructType): BaseRelation = {
     val condition: Option[QueryCondition] = parameters
       .get("QueryCondition")
-      .map(cond => ConditionImpl.parseFrom(ByteBuffer.wrap(cond.getBytes)))
+      .map(cond => ConditionImpl.parseFrom(ByteBuffer.wrap(cond.getBytes("ISO-8859-1"))))
 
     createMapRDBRelation(
       sqlContext,
