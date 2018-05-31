@@ -174,7 +174,6 @@ case class MapRSpark(sparkSession: Option[SparkSession],
       .option("tablePath", this.tableName.get)
       .option("sampleSize", sampleSize)
 
-    val readerWithCondition =
       if (cond.isDefined) {
         reader.option("QueryCondition",
         new String(
@@ -182,12 +181,11 @@ case class MapRSpark(sparkSession: Option[SparkSession],
             .asInstanceOf[ConditionImpl]
             .getDescriptor
             .getSerialized
-            .array))
-    }
+            .array,
+          "ISO-8859-1"
+        ))
+      }
 
-
-
-    val readerWithProjection =
       if (columns.isDefined) {
       reader.option(
         "ColumnProjection",
