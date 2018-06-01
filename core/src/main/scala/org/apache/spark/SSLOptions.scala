@@ -176,7 +176,7 @@ private[spark] object SSLOptions extends Logging {
       require(p >= 0, "Port number must be a non-negative value.")
     }
 
-    val hadoopConf = SparkHadoopUtil.get.conf
+    val hadoopConf = SparkHadoopUtil.newConfiguration(conf)
 
     val keyStore = conf.getWithSubstitution(s"$ns.keyStore").map(new File(_))
         .orElse(defaults.flatMap(_.keyStore))
