@@ -504,7 +504,7 @@ object SparkHadoopUtil {
       hadoopConf: Configuration): Unit = {
 
     hadoopConf.set("hadoop.security.credential.provider.path",
-      conf.get("spark.hadoop.security.credential.provider.path"))
+      conf.get("spark.hadoop.security.credential.provider.path", ""))
   }
 
   private def appendSparkHadoopConfigs(conf: SparkConf, hadoopConf: Configuration): Unit = {
