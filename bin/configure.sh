@@ -155,6 +155,16 @@ EOM
         fi
 
 #####################################
+#	      MapRFS functions
+#####################################
+
+function putIntoMaprfs() {
+	if ! sudo -u "$MAPR_USER" -E hadoop fs -test -e $2 ; then
+		sudo -u "$MAPR_USER" hadoop fs -put -p $1 $2
+	fi
+}
+
+#####################################
 #     Functions warden/permission
 #####################################
 
@@ -199,12 +209,6 @@ function change_permissions() {
 # Configure security
 #
 
-function putProviderWithDefaultPasswordsToMaprfs() {
-	if [ "$IS_FIRST_RUN" = true ] ; then
-		sudo -u "$MAPR_USER" hadoop fs -put ${DEFAULT_CREDENTIAL_PROVIDER_LOCAL} ${DEFAULT_CREDENTIAL_PROVIDER_MAPRFS}
-	fi
-}
-
 function configureSecurity() {
 if [ -f $SPARK_HOME/warden/warden.spark-master.conf ] ; then
 	changeWardenConfig "service.ui.port" "service.ui.port=$sparkMasterUIPort" "master"
@@ -226,7 +230,7 @@ if [ -f $SPARK_HOME/warden/warden.spark-historyserver.conf ] ; then
 fi
 sed -i '/# SECURITY BLOCK/,/# END OF THE SECURITY CONFIGURATION BLOCK/d' "$SPARK_HOME"/conf/spark-defaults.conf
 if [ "$isSecure" == 1 ] ; then
-	putProviderWithDefaultPasswordsToMaprfs
+	putIntoMaprfs ${DEFAULT_CREDENTIAL_PROVIDER_LOCAL} ${DEFAULT_CREDENTIAL_PROVIDER_MAPRFS}
 	source $MAPR_HOME/conf/env.sh
     cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOF
 # SECURITY BLOCK
