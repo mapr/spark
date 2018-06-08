@@ -53,13 +53,13 @@ case "$SPARK_K8S_CMD" in
       ;;
     *)
       echo "Non-spark-on-k8s command provided, proceeding in pass-through mode..."
-      exec /usr/bin/tini -s -- "$@"
+      exec /sbin/tini -s -- "$@"
       ;;
 esac
 
 SPARK_CLASSPATH="$SPARK_CLASSPATH:${SPARK_HOME}/jars/*:$MAPR_SPARK_CLASSPATH"
-env | grep SPARK_JAVA_OPT_ | sort -t_ -k4 -n | sed 's/[^=]*=\(.*\)/\1/g' > /tmp/java_opts.txt
-readarray -t SPARK_EXECUTOR_JAVA_OPTS < /tmp/java_opts.txt
+env | grep SPARK_JAVA_OPT_ | sort -t_ -k4 -n | sed 's/[^=]*=\(.*\)/\1/g' > ${SPARK_HOME}/java_opts.txt
+readarray -t SPARK_EXECUTOR_JAVA_OPTS < ${SPARK_HOME}/java_opts.txt
 
 if [ -n "$SPARK_EXTRA_CLASSPATH" ]; then
   SPARK_CLASSPATH="$SPARK_CLASSPATH:$SPARK_EXTRA_CLASSPATH"
@@ -134,6 +134,14 @@ case "$SPARK_K8S_CMD" in
     )
     ;;
 
+  init)
+    CMD=(
+      "$SPARK_HOME/bin/spark-class"
+      "org.apache.spark.deploy.k8s.SparkPodInitContainer"
+      "$@"
+    )
+    ;;
+
   *)
     echo "Unknown command: $SPARK_K8S_CMD" 1>&2
     exit 1
@@ -158,15 +166,21 @@ function createUser() {
 
 #Run configure.sh
 if [ ! $SPARK_K8S_CMD == "init" ]; then
-  /opt/mapr/server/configure.sh -c -C $MAPR_CLDB_HOSTS -Z $MAPR_ZK_HOSTS -N $MAPR_CLUSTER
   createUser
   createUserGroups
+
+  if [ ! -z "$MAPR_TICKETFILE_LOCATION" ] ; then
+    /opt/mapr/server/configure.sh -c -C $MAPR_CLDB_HOSTS -Z $MAPR_ZK_HOSTS -N $MAPR_CLUSTER -secure
+  else
+    /opt/mapr/server/configure.sh -c -C $MAPR_CLDB_HOSTS -Z $MAPR_ZK_HOSTS -N $MAPR_CLUSTER
+  fi
+
   if [ $SPARK_K8S_CMD == "executor" ]; then
     chown $CURRENT_USER ./
   fi
 
-  exec sudo -u $CURRENT_USER "${CMD[@]}"
+  exec sudo -u $CURRENT_USER -E "${CMD[@]}"
 else
 # Execute the container CMD
-exec /usr/bin/tini -s -- "${CMD[@]}"
+exec "${CMD[@]}"
 fi

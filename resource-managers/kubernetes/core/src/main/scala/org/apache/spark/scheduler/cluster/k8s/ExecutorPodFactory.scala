@@ -176,6 +176,20 @@ private[spark] class ExecutorPodFactory(
           .build()
       }
 
+    val maprTicketSecret =
+      s"$KUBERNETES_EXECUTOR_SECRETS_PREFIX" +
+        s"${sparkConf.get(MAPR_TICKET_SECRET_PREFIX)}"
+
+    val maprTicketEnv = sparkConf
+      .getAllWithPrefix(maprTicketSecret).toSeq
+      .map { env =>
+        new EnvVarBuilder()
+        .withName(MAPR_TICKETFILE_LOCATION)
+        .withValue(env._2 + s"/${sparkConf.get(MAPR_TICKET_SECRET_KEY)}")
+        .build()
+    }
+
+
     val clusterConfMap = sparkConf.get(MAPR_CLUSTER_CONFIGMAP).toString
     val clusterUserSecrets = sparkConf.get(MAPR_CLUSTER_USER_SECRETS).toString
 
@@ -193,6 +207,7 @@ private[spark] class ExecutorPodFactory(
       .withImage(executorContainerImage)
       .withImagePullPolicy(imagePullPolicy)
       .addAllToEnv(clusterEnvs.asJava)
+      .addAllToEnv(maprTicketEnv.asJava)
       .addNewEnv()
         .withName(CURRENT_USER)
         .withValue(username)
