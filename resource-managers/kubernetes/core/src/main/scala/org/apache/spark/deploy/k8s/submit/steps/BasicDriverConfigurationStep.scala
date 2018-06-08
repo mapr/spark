@@ -92,6 +92,19 @@ private[spark] class BasicDriverConfigurationStep(
           .build()
       }
 
+    val maprTicketSecret =
+      s"$KUBERNETES_DRIVER_SECRETS_PREFIX" +
+        s"${sparkConf.get(MAPR_TICKET_SECRET_PREFIX)}"
+
+    val maprTicketEnv = sparkConf
+      .getAllWithPrefix(maprTicketSecret).toSeq
+      .map { env =>
+        new EnvVarBuilder()
+          .withName(MAPR_TICKETFILE_LOCATION)
+          .withValue(env._2 + s"/${sparkConf.get(MAPR_TICKET_SECRET_KEY)}")
+          .build()
+      }
+
     val driverAnnotations = driverCustomAnnotations ++ Map(SPARK_APP_NAME_ANNOTATION -> appName)
 
     val nodeSelector = KubernetesUtils.parsePrefixedKeyValuePairs(
@@ -128,6 +141,7 @@ private[spark] class BasicDriverConfigurationStep(
       .withImagePullPolicy(imagePullPolicy)
       .addAllToEnv(driverCustomEnvs.asJava)
       .addAllToEnv(clusterEnvs.asJava)
+      .addAllToEnv(maprTicketEnv.asJava)
       .addToEnv(driverExtraClasspathEnv.toSeq: _*)
       .addNewEnv()
         .withName(CURRENT_USER)
