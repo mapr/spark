@@ -490,9 +490,9 @@ function replaceConfigFromPreviousVersion() {
 # Parse options
 #
 
-USAGE="usage: $0 [-s|--secure || -u|--unsecure || -cs|--customSecure] [-R] [--EC] [-h|--help]]"
+USAGE="usage: $0 [-s|--secure || -u|--unsecure || -cs|--customSecure] [-R] [--EC <common args>] [-h|--help]]"
 
-{ OPTS=`getopt -n "$0" -a -o suhR --long secure,unsecure,customSecure,help,EC,sparkHSUIPort:,sparkMasterPort:,sparkTSPort:,sparkMasterUIPort:,sparkTSUIPort: -- "$@"`; } 2>/dev/null
+{ OPTS=`getopt -n "$0" -a -o suhR --long secure,unsecure,customSecure,help,EC:,sparkHSUIPort:,sparkMasterPort:,sparkTSPort:,sparkMasterUIPort:,sparkTSUIPort: -- "$@"`; } 2>/dev/null
 
 eval set -- "$OPTS"
 
@@ -520,7 +520,7 @@ while [ ${#} -gt 0 ] ; do
       ;;
     --EC|-EC)
       #ignoring
-      shift;;
+      shift 2;;
     --sparkHSUIPort)
       sparkHSUIPort=$2
       isSparkHSUIPortDef=true
