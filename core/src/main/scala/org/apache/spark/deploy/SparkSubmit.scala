@@ -907,6 +907,9 @@ object SparkSubmit extends CommandLineUtils with Logging {
             throw t
         }
     }
+    if (!isThriftServer(childMainClass)) {
+      sys.exit(0)
+    }
   }
 
   private[deploy] def addJarToClasspath(localJar: String, loader: MutableURLClassLoader) {
