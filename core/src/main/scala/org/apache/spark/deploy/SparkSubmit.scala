@@ -884,6 +884,9 @@ private[spark] class SparkSubmit extends Logging {
       case t: Throwable =>
         throw findCause(t)
     }
+    if (!isThriftServer(childMainClass)) {
+      sys.exit(0)
+    }
   }
 
   /** Throw a SparkException with the given error message. */
