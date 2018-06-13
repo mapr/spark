@@ -444,7 +444,6 @@ object SparkHadoopUtil {
   private[spark] def newConfiguration(conf: SparkConf): Configuration = {
     val hadoopConf = new Configuration()
     appendS3AndSparkHadoopConfigurations(conf, hadoopConf)
-    appendHadoopCredProviderConfigurations(conf, hadoopConf)
     hadoopConf
   }
 
@@ -474,14 +473,6 @@ object SparkHadoopUtil {
       val bufferSize = conf.get("spark.buffer.size", "65536")
       hadoopConf.set("io.file.buffer.size", bufferSize)
     }
-  }
-
-  private def appendHadoopCredProviderConfigurations(
-      conf: SparkConf,
-      hadoopConf: Configuration): Unit = {
-
-    hadoopConf.set("hadoop.security.credential.provider.path",
-      conf.get("spark.hadoop.security.credential.provider.path", ""))
   }
 
   private def appendSparkHadoopConfigs(conf: SparkConf, hadoopConf: Configuration): Unit = {
