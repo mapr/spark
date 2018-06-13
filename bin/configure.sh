@@ -204,8 +204,11 @@ fi
 if [ -f $SPARK_HOME/warden/warden.spark-historyserver.conf ] ; then
 	changeSparkDefaults "spark.yarn.historyServer.address" "spark.yarn.historyServer.address $(hostname --fqdn):$sparkHSUIPort"
 fi
+
 sed -i '/# SECURITY BLOCK/,/# END OF THE SECURITY CONFIGURATION BLOCK/d' "$SPARK_HOME"/conf/spark-defaults.conf
+
 if [ "$isSecure" == 1 ] ; then
+sed -i '/^spark.ui.filters/ d' "$SPARK_HOME"/conf/spark-defaults.conf
 	source $MAPR_HOME/conf/env.sh
     cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOM
 # SECURITY BLOCK
