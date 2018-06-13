@@ -706,7 +706,6 @@ private[spark] object SparkConf extends Logging {
     name.startsWith("spark.ssl") ||
     name.startsWith("spark.rpc") ||
     name.startsWith("spark.network") ||
-    name == "spark.hadoop.security.credential.provider.path" ||
     isSparkPortConf(name)
   }
 
