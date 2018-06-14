@@ -185,7 +185,9 @@ private[spark] object SSLOptions extends Logging {
       .orElse(defaults.flatMap(_.keyStorePassword))
       .orElse(Option(sslConfig.getClientKeystorePassword.mkString))
 
-    val keyPassword = keyStorePassword
+    val keyPassword = conf.getWithSubstitution(s"$ns.keyPassword")
+      .orElse(defaults.flatMap(_.keyPassword))
+      .orElse(Option(sslConfig.getClientKeyPassword.mkString))
 
     val keyStoreType = conf.getWithSubstitution(s"$ns.keyStoreType")
         .orElse(defaults.flatMap(_.keyStoreType))
