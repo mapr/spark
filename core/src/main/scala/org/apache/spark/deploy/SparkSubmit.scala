@@ -882,10 +882,19 @@ private[spark] class SparkSubmit extends Logging {
       app.start(childArgs.toArray, sparkConf)
     } catch {
       case t: Throwable =>
-        throw findCause(t)
+        findCause(t) match {
+          case SparkUserAppException(exitCode) =>
+            System.exit(exitCode)
+
+          case t: Throwable =>
+            // TODO: fix MultiauthWebUiFilter and return standart Spark behavior
+            log.error(t.getMessage, t)
+            System.exit(1)
+        }
     }
+    // TODO: fix MultiauthWebUiFilter and return standart Spark behavior
     if (!isThriftServer(childMainClass)) {
-      sys.exit(0)
+      System.exit(0)
     }
   }
 
