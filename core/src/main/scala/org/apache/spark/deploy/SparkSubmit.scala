@@ -904,11 +904,14 @@ object SparkSubmit extends CommandLineUtils with Logging {
             System.exit(exitCode)
 
           case t: Throwable =>
-            throw t
+            // TODO: fix MultiauthWebUiFilter and return standart Spark behavior
+            log.error(t.getMessage, t)
+            System.exit(1)
         }
     }
+    // TODO: fix MultiauthWebUiFilter and return standart Spark behavior
     if (!isThriftServer(childMainClass)) {
-      sys.exit(0)
+      System.exit(0)
     }
   }
 
