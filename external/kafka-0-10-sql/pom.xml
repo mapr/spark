@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.spark</groupId>
     <artifactId>spark-parent_2.11</artifactId>
-    <version>2.4.5</version>
+    <version>2.4.0-mapr-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -32,7 +32,7 @@
     <kafka.version>1.0.1-mapr-1803</kafka.version>
   </properties>
   <packaging>jar</packaging>
-  <name>Kafka 0.10+ Source for Structured Streaming</name>
+  <name>Kafka 0.10 Source for Structured Streaming</name>
   <url>http://spark.apache.org/</url>
 
   <dependencies>
@@ -153,5 +153,14 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>scala-2.12</id>
+      <properties>
+        <kafka.version>0.10.1.1</kafka.version>
+      </properties>
+    </profile>
+  </profiles>
 
 </project>
