@@ -294,7 +294,10 @@ object InMemoryFileIndex extends Logging {
       if (filter != null) allFiles.filter(f => filter.accept(f.getPath)) else allFiles
     }
 
-    allLeafStatuses.par.filterNot(status => shouldFilterOut(status.getPath.getName)).map {
+    val missingFiles = mutable.ArrayBuffer.empty[String]
+    val filteredLeafStatuses = allLeafStatuses.filterNot(
+      status => shouldFilterOut(status.getPath.getName))
+    val resolvedLeafStatuses = filteredLeafStatuses.flatMap {
       case f: LocatedFileStatus =>
         Some(f)
 
@@ -324,8 +327,14 @@ object InMemoryFileIndex extends Logging {
             missingFiles += f.getPath.toString
             None
         }
-        lfs
-    }.seq
+    }
+
+    if (missingFiles.nonEmpty) {
+      logWarning(
+        s"the following files were missing during file scan:\n  ${missingFiles.mkString("\n  ")}")
+    }
+
+    resolvedLeafStatuses
   }
 
   /** Checks if we should filter out this path name. */
