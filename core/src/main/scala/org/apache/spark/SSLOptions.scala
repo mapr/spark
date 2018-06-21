@@ -21,6 +21,7 @@ import java.io.File
 import java.security.NoSuchAlgorithmException
 import javax.net.ssl.SSLContext
 
+import com.mapr.web.security.SslConfig.SslConfigScope
 import com.mapr.web.security.WebSecurityManager
 import org.eclipse.jetty.util.ssl.SslContextFactory
 
@@ -176,7 +177,7 @@ private[spark] object SSLOptions extends Logging {
       require(p >= 0, "Port number must be a non-negative value.")
     }
 
-    val sslConfig = WebSecurityManager.getSslConfig
+    val sslConfig = WebSecurityManager.getSslConfig(SslConfigScope.SCOPE_CLIENT_ONLY)
 
     val keyStore = conf.getWithSubstitution(s"$ns.keyStore").map(new File(_))
         .orElse(defaults.flatMap(_.keyStore))
