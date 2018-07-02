@@ -160,8 +160,12 @@ function createUserGroups() {
 
 function createUser() {
   if ! id $CURRENT_USER >/dev/null 2>&1; then
-    adduser -u $USER_ID $CURRENT_USER
+    adduser -u $USER_ID $CURRENT_USER -m -d /home/$CURRENT_USER
+    if [ -d /home/$CURRENT_USER ]; then
+      cd /home/$CURRENT_USER
+    fi
   fi
+  chown $CURRENT_USER ./
 }
 
 #Run configure.sh
@@ -173,10 +177,6 @@ if [ ! $SPARK_K8S_CMD == "init" ]; then
     /opt/mapr/server/configure.sh -c -C $MAPR_CLDB_HOSTS -Z $MAPR_ZK_HOSTS -N $MAPR_CLUSTER -secure
   else
     /opt/mapr/server/configure.sh -c -C $MAPR_CLDB_HOSTS -Z $MAPR_ZK_HOSTS -N $MAPR_CLUSTER
-  fi
-
-  if [ $SPARK_K8S_CMD == "executor" ]; then
-    chown $CURRENT_USER ./
   fi
 
   exec sudo -u $CURRENT_USER -E "${CMD[@]}"
