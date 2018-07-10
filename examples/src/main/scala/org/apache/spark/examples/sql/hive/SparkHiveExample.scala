@@ -20,7 +20,7 @@ package org.apache.spark.examples.sql.hive
 import java.io.File
 
 import com.google.common.io.{ByteStreams, Files}
-
+import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 // $example off:spark_hive$
 
@@ -108,7 +108,7 @@ object SparkHiveExample {
 
     // Create a Hive managed Parquet table, with HQL syntax instead of the Spark SQL native syntax
     // `USING hive`
-    sql("CREATE TABLE hive_records(key int, value string) STORED AS PARQUET")
+    sql("CREATE TABLE IF NOT EXISTS hive_records(key int, value string) STORED AS PARQUET")
     // Save DataFrame to the Hive managed table
     val df = spark.table("src")
     df.write.mode(SaveMode.Overwrite).saveAsTable("hive_records")
@@ -124,9 +124,13 @@ object SparkHiveExample {
 
     // Prepare a Parquet data directory
     val dataDir = "/tmp/parquet_data"
-    spark.range(10).write.parquet(dataDir)
+    val filePath = new Path(dataDir)
+    val fs = filePath.getFileSystem(spark.sparkContext.hadoopConfiguration)
+    if (!fs.exists(filePath)) {
+      spark.range(10).write.parquet(dataDir)
+    }
     // Create a Hive external Parquet table
-    sql(s"CREATE EXTERNAL TABLE hive_ints(key int) STORED AS PARQUET LOCATION '$dataDir'")
+    sql(s"CREATE EXTERNAL TABLE IF NOT EXISTS hive_ints(key int) STORED AS PARQUET LOCATION '$dataDir'")
     // The Hive external table should already have data
     sql("SELECT * FROM hive_ints").show()
     // +---+
@@ -140,6 +144,8 @@ object SparkHiveExample {
     // Turn on flag for Hive Dynamic Partitioning
     spark.sqlContext.setConf("hive.exec.dynamic.partition", "true")
     spark.sqlContext.setConf("hive.exec.dynamic.partition.mode", "nonstrict")
+    // Drop table if exists
+    sql("DROP TABLE IF EXISTS hive_part_tbl")
     // Create a Hive partitioned table using DataFrame API
     df.write.partitionBy("key").format("hive").saveAsTable("hive_part_tbl")
     // Partitioned column `key` will be moved to the end of the schema.
