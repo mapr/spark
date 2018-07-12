@@ -157,6 +157,7 @@ private[spark] case class PairedDocumentRDDFunctions[K, V](rdd: RDD[(K, V)])(
               Writer.initialize(tableName, cnf.value, isnewAndBulkLoad, true)
             while (iter.hasNext) {
               val element = iter.next
+              checkElementForNull(element)
               f.write(v.getValue(element._2), f.getValue(element._1), writer)
             }
             writer.close()
@@ -183,10 +184,18 @@ private[spark] case class PairedDocumentRDDFunctions[K, V](rdd: RDD[(K, V)])(
               Writer.initialize(tablename, cnf.value, isnewAndBulkLoad, false)
             while (iter.hasNext) {
               val element = iter.next
+              checkElementForNull(element)
               f.write(v.getValue(element._2), f.getValue(element._1), writer)
             }
             writer.close()
       }
     )
+  }
+
+  def checkElementForNull(element: (K, V)): Boolean = {
+    if (element._1 == null || element._2 == null) {
+      throw  new IllegalArgumentException("Key/Value cannot be null")
+    }
+    true
   }
 }
