@@ -21,6 +21,8 @@ import java.io.File
 import java.security.NoSuchAlgorithmException
 import javax.net.ssl.SSLContext
 
+import scala.util.Try
+
 import com.mapr.web.security.SslConfig.SslConfigScope
 import com.mapr.web.security.WebSecurityManager
 import org.eclipse.jetty.util.ssl.SslContextFactory
@@ -177,18 +179,19 @@ private[spark] object SSLOptions extends Logging {
       require(p >= 0, "Port number must be a non-negative value.")
     }
 
-    val sslConfig = WebSecurityManager.getSslConfig(SslConfigScope.SCOPE_CLIENT_ONLY)
+    val maybeSslConfig =
+      Try(WebSecurityManager.getSslConfig(SslConfigScope.SCOPE_CLIENT_ONLY)).toOption
 
     val keyStore = conf.getWithSubstitution(s"$ns.keyStore").map(new File(_))
         .orElse(defaults.flatMap(_.keyStore))
 
     val keyStorePassword = conf.getWithSubstitution(s"$ns.keyStorePassword")
       .orElse(defaults.flatMap(_.keyStorePassword))
-      .orElse(Option(sslConfig.getClientKeystorePassword.mkString))
+      .orElse(maybeSslConfig.map(_.getClientKeystorePassword.mkString))
 
     val keyPassword = conf.getWithSubstitution(s"$ns.keyPassword")
       .orElse(defaults.flatMap(_.keyPassword))
-      .orElse(Option(sslConfig.getClientKeyPassword.mkString))
+      .orElse(maybeSslConfig.map(_.getClientKeyPassword.mkString))
 
     val keyStoreType = conf.getWithSubstitution(s"$ns.keyStoreType")
         .orElse(defaults.flatMap(_.keyStoreType))
@@ -201,7 +204,7 @@ private[spark] object SSLOptions extends Logging {
 
     val trustStorePassword = conf.getWithSubstitution(s"$ns.trustStorePassword")
       .orElse(defaults.flatMap(_.trustStorePassword))
-      .orElse(Option(sslConfig.getClientTruststorePassword.mkString))
+      .orElse(maybeSslConfig.map(_.getClientTruststorePassword.mkString))
 
     val trustStoreType = conf.getWithSubstitution(s"$ns.trustStoreType")
         .orElse(defaults.flatMap(_.trustStoreType))
