@@ -42,6 +42,7 @@ SPARK_VERSION=`cat $MAPR_HOME/spark/sparkversion`
 LATEST_SPARK_TIMESTAMP=0
 HIVE_VERSION=`cat $MAPR_HOME/hive/hiveversion`
 SPARK_HOME="$MAPR_HOME"/spark/spark-"$SPARK_VERSION"
+SPARK_CONF="$SPARK_HOME"/conf
 HIVE_HOME="$MAPR_HOME"/hive/hive-"$HIVE_VERSION"
 SPARK_BIN="$SPARK_HOME"/bin
 SPARK_LOGS="$SPARK_HOME"/logs
@@ -59,6 +60,8 @@ JUST_UPDATED=false
 if [ -f $SPARK_HOME/etc/.just_updated ] ; then
 	JUST_UPDATED=true
 fi
+
+declare -a SPARK_CONF_FILES=("$SPARK_CONF/spark-defaults.conf" "$SPARK_CONF/spark-env.sh" "$SPARK_CONF/hive-site.xml" "$SPARK_CONF/log4j.properties")
 
 # Spark ports
 sparkHSUIPort=18080
@@ -290,12 +293,10 @@ fi
 #
 
 function configureOnHive() {
-	rm -f $SPARK_HOME/conf/hive-site.xml.old
-	if [ -f $SPARK_HOME/conf/hive-site.xml ] ; then
-		mv $SPARK_HOME/conf/hive-site.xml $SPARK_HOME/conf/hive-site.xml.old
-	fi
-	if [ -f $HIVE_HOME/conf/hive-site.xml ] ; then
-		cp $HIVE_HOME/conf/hive-site.xml $SPARK_HOME/conf/hive-site.xml
+	if [ -f $HIVE_HOME/conf/hive-site.xml ]; then
+		if [ ! "$isSecure" -eq 2 ] || [ "$IS_FIRST_RUN" = true ]; then
+			cp $HIVE_HOME/conf/hive-site.xml $SPARK_HOME/conf/hive-site.xml
+		fi
 	fi
 	if [ -f $SPARK_HOME/conf/hive-site.xml ] ; then
 		TEZ_PROP_VALUE="<value>tez</value>"
@@ -418,16 +419,13 @@ function copyWardenConfFiles() {
 	copyWardenFile thriftserver
 }
 
-function copyOldConfiguration() {
-	if [ -f $SPARK_HOME/conf/spark-defaults.conf ]  ; then
-		cp "$SPARK_HOME/conf/spark-defaults.conf" "$SPARK_HOME/conf/spark-defaults.conf.old"
-	fi
-	if [ -f $SPARK_HOME/conf/spark-env.sh ]  ; then
-		cp "$SPARK_HOME/conf/spark-env.sh" "$SPARK_HOME/conf/spark-env.sh.old"
-	fi
-	if [ -f $SPARK_HOME/conf/hive-site.xml ]  ; then
-		cp "$SPARK_HOME/conf/hive-site.xml" "$SPARK_HOME/conf/hive-site.xml.old"
-	fi
+function mkBackupForOldConfigs() {
+	for i in "${SPARK_CONF_FILES[@]}"
+	do
+		if [ -f ${i} ]  ; then
+			cp "$i" "$i.old"
+		fi
+	done
 }
 
 function stopService() {
@@ -447,7 +445,10 @@ function stopServicesForRestartByWarden() {
 	if [ -f $SPARK_HOME/conf/hive-site.xml ] && [ -f $SPARK_HOME/conf/hive-site.xml.old ] ; then
 		spark_hive_site_diff=`diff ${SPARK_HOME}/conf/hive-site.xml ${SPARK_HOME}/conf/hive-site.xml.old; echo $?`
 	fi
-	if [ ! "$spark_defaults_diff" = "0" ] || [ ! "$spark_env_sh_diff" = "0" ] || [ ! "$spark_hive_site_diff" = "0" ] ; then
+	if [ -f $SPARK_HOME/conf/log4j.properties ] && [ -f $SPARK_HOME/conf/log4j.properties.old ] ; then
+		spark_log4j_diff=`diff ${SPARK_HOME}/conf/log4j.properties ${SPARK_HOME}/conf/log4j.properties.old; echo $?`
+	fi
+	if [ ! "$spark_defaults_diff" = "0" ] || [ ! "$spark_env_sh_diff" = "0" ] || [ ! "$spark_hive_site_diff" = "0" ] || [ ! "$spark_log4j_diff" = "0" ]; then
 		stopService master master
 		stopService historyserver history-server
 		stopService thriftserver thriftserver
@@ -540,6 +541,7 @@ while [ ${#} -gt 0 ] ; do
   esac
 done
 
+mkBackupForOldConfigs
 configureOnHive
 registerServicePorts
 if [ ! "$isSecure" -eq 2 ] ; then
@@ -548,7 +550,7 @@ fi
 change_permissions
 copyWardenConfFiles
 stopServicesForRestartByWarden
-copyOldConfiguration
+
 if [ "$JUST_UPDATED" = true ] ; then
 	replaceConfigFromPreviousVersion
 	rm -f "$SPARK_HOME"/etc/.just_updated
