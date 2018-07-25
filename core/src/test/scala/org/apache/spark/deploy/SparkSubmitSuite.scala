@@ -1063,7 +1063,7 @@ class SparkSubmitSuite
     conf.set("fs.s3a.impl.disable.cache", "true")
   }
 
-  test("start SparkApplication without modifying system properties") {
+  ignore("start SparkApplication without modifying system properties") {
     val args = Array(
       "--class", classOf[TestSparkApplication].getName(),
       "--master", "local",
