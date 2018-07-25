@@ -19,6 +19,8 @@ package org.apache.spark.sql.execution.joins
 
 import scala.reflect.ClassTag
 
+import org.scalatest.Ignore
+
 import org.apache.spark.AccumulatorSuite
 import org.apache.spark.sql.{Dataset, QueryTest, Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.{BitwiseAnd, BitwiseOr, Cast, Literal, ShiftLeft}
@@ -37,6 +39,7 @@ import org.apache.spark.sql.types.{LongType, ShortType}
  * unsafe map in [[org.apache.spark.sql.execution.joins.UnsafeHashedRelation]] is not triggered
  * without serializing the hashed relation, which does not happen in local mode.
  */
+@Ignore // TODO Fix local-cluster mode
 class BroadcastJoinSuite extends QueryTest with SQLTestUtils {
   import testImplicits._
 
