@@ -2166,7 +2166,7 @@
               <derby.system.durability>test</derby.system.durability>
               <java.awt.headless>true</java.awt.headless>
               <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
-              <java.security.auth.login.config>/opt/mapr/conf/mapr.login.conf</java.security.auth.login.config>
+              <java.security.auth.login.config>file:src/test/resources/test.login.conf</java.security.auth.login.config>
               <spark.test.home>${spark.test.home}</spark.test.home>
               <spark.testing>1</spark.testing>
               <spark.master.rest.enabled>false</spark.master.rest.enabled>
@@ -2229,7 +2229,7 @@
               <spark.unsafe.exceptionOnMemoryLeak>true</spark.unsafe.exceptionOnMemoryLeak>
               <spark.hadoop.fs.defaultFS>file:///</spark.hadoop.fs.defaultFS>
               <spark.hadoop.fs.default.name>file:///</spark.hadoop.fs.default.name>
-              <java.security.auth.login.config>/opt/mapr/conf/mapr.login.conf</java.security.auth.login.config>
+              <java.security.auth.login.config>file:src/test/resources/test.login.conf</java.security.auth.login.config>
               <hive.exec.scratchdir>${project.build.directory}/tmp/hiveScratch</hive.exec.scratchdir>
               <zookeeper.sasl.serverconfig>Server_simple</zookeeper.sasl.serverconfig>
               <zookeeper.sasl.clientconfig>Client_simple</zookeeper.sasl.clientconfig>

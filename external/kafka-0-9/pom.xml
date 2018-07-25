@@ -115,7 +115,7 @@
         <!-- Note config is repeated in scalatest config -->
         <configuration>
           <systemProperties>
-            <java.security.auth.login.config>${project.basedir}/src/test/resources/mapr.login.conf</java.security.auth.login.config>
+            <java.security.auth.login.config>${project.basedir}/src/test/resources/test.login.conf</java.security.auth.login.config>
           </systemProperties>
         </configuration>
       </plugin>
@@ -127,7 +127,7 @@
         <!-- Note config is repeated in surefire config -->
         <configuration>
           <systemProperties>
-            <java.security.auth.login.config>${project.basedir}/src/test/resources/mapr.login.conf</java.security.auth.login.config>
+            <java.security.auth.login.config>${project.basedir}/src/test/resources/test.login.conf</java.security.auth.login.config>
           </systemProperties>
         </configuration>
       </plugin>

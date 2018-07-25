@@ -115,7 +115,7 @@
         <!-- Note config is repeated in scalatest config -->
         <configuration>
           <systemProperties>
-            <java.security.auth.login.config>${project.basedir}/src/test/resources/mapr.login.conf</java.security.auth.login.config>
+            <skipTests>true</skipTests>
           </systemProperties>
         </configuration>
       </plugin>
