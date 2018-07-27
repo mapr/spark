@@ -138,6 +138,10 @@ private[kafka010] class KafkaSourceRDD(
     if (range.fromOffset == range.untilOffset) {
       logInfo(s"Beginning offset ${range.fromOffset} is the same as ending offset " +
         s"skipping ${range.topic} ${range.partition}")
+
+      // MapR[SPARK-296] Release consumer to prevent memory leak
+      consumer.release()
+
       Iterator.empty
     } else {
       val underlying = new NextIterator[ConsumerRecord[Array[Byte], Array[Byte]]]() {
