@@ -50,9 +50,11 @@ install_app() {
     # check if we already have the tarball
     # check if we have curl installed
     # download application
-    [ ! -f "${local_tarball}" ] && [ $(command -v curl) ] && \
-      echo "exec: curl ${curl_opts} ${remote_tarball}" 1>&2 && \
-      curl ${curl_opts} "${remote_tarball}" > "${local_tarball}"
+# DEVOPS-2752 - temporarily removed curl for file downloading
+#    [ ! -f "${local_tarball}" ] && [ $(command -v curl) ] && \
+#      echo "exec: curl ${curl_opts} ${remote_tarball}" 1>&2 && \
+#      curl ${curl_opts} "${remote_tarball}" > "${local_tarball}"
+
     # if the file still doesn't exist, lets try `wget` and cross our fingers
     [ ! -f "${local_tarball}" ] && [ $(command -v wget) ] && \
       echo "exec: wget ${wget_opts} ${remote_tarball}" 1>&2 && \
