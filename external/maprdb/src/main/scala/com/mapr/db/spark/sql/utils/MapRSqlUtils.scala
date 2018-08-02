@@ -117,9 +117,6 @@ object MapRSqlUtils {
       case (DocumentReader.EventType.START_MAP, st: StructType) =>
         convertObject(documentReader, schema.asInstanceOf[StructType])
       case (DocumentReader.EventType.NULL | null, _) => null
-      case (DocumentReader.EventType.STRING, _)
-          if documentReader.getString.length < 1 =>
-        null
       case (DocumentReader.EventType.STRING, StringType) =>
         documentReader.getString
       case (DocumentReader.EventType.STRING, BinaryType) =>
