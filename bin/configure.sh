@@ -281,12 +281,10 @@ fi
 #
 
 function configureOnHive() {
-	rm -f $SPARK_HOME/conf/hive-site.xml.old
-	if [ -f $SPARK_HOME/conf/hive-site.xml ] ; then
-		mv $SPARK_HOME/conf/hive-site.xml $SPARK_HOME/conf/hive-site.xml.old
-	fi
-	if [ -f $HIVE_HOME/conf/hive-site.xml ] ; then
-		cp $HIVE_HOME/conf/hive-site.xml $SPARK_HOME/conf/hive-site.xml
+	if [ -f $HIVE_HOME/conf/hive-site.xml ]; then
+		if [ ! "$isSecure" -eq 2 ] || [ "$IS_FIRST_RUN" = true ]; then
+			cp $HIVE_HOME/conf/hive-site.xml $SPARK_HOME/conf/hive-site.xml
+		fi
 	fi
 	if [ -f $SPARK_HOME/conf/hive-site.xml ] ; then
 		TEZ_PROP_VALUE="<value>tez</value>"
