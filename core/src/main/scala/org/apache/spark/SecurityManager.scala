@@ -535,7 +535,8 @@ private[spark] class SecurityManager(
     }
 
     if (sparkConf.get(SparkLauncher.SPARK_MASTER, null) != "yarn") {
-      require(sparkConf.contains(SPARK_AUTH_SECRET_CONF),
+      require(sparkConf.contains(SPARK_AUTH_SECRET_CONF)
+        || sparkConf.getenv(ENV_AUTH_SECRET) != null,
         s"A secret key must be specified via the $SPARK_AUTH_SECRET_CONF config.")
       return
     }
