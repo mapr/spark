@@ -353,14 +353,11 @@ private[spark] class SecurityManager(
       return
     }
 
-    val master = sparkConf.get(SparkLauncher.SPARK_MASTER, "")
-    master match {
-      case "yarn" | "local" | LOCAL_N_REGEX(_) | LOCAL_N_FAILURES_REGEX(_, _) =>
-        // Secret generation allowed here
-      case _ =>
-        require(sparkConf.contains(SPARK_AUTH_SECRET_CONF),
-          s"A secret key must be specified via the $SPARK_AUTH_SECRET_CONF config.")
-        return
+    if (sparkConf.get(SparkLauncher.SPARK_MASTER, null) != "yarn") {
+      require(sparkConf.contains(SPARK_AUTH_SECRET_CONF)
+        || sparkConf.getenv(ENV_AUTH_SECRET) != null,
+        s"A secret key must be specified via the $SPARK_AUTH_SECRET_CONF config.")
+      return
     }
 
     secretKey = Utils.createSecret(sparkConf)
