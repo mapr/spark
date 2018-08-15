@@ -209,6 +209,7 @@ private[spark] class KafkaRDD[K, V](
     }
 
     var requestOffset = part.fromOffset
+    var currentRecord: ConsumerRecord[K, V] = _
 
     def closeIfNeeded(): Unit = {
       if (!useConsumerCache && consumer != null) {
@@ -216,13 +217,39 @@ private[spark] class KafkaRDD[K, V](
       }
     }
 
-    override def hasNext(): Boolean = requestOffset < part.untilOffset
+    private def setNext() = {
+      if (currentRecord == null) {
+        currentRecord = consumer.get(requestOffset, pollTimeout)
+
+        requestOffset =
+          if (currentRecord == null) {
+            logInfo(s"Skipping offsets from $requestOffset to ${part.untilOffset}")
+            part.untilOffset
+          } else {
+            currentRecord.offset() + 1
+          }
+      }
+    }
+
+    override def hasNext(): Boolean = {
+      if (currentRecord != null) {
+        true
+      } else if (requestOffset < part.untilOffset) {
+        setNext()
+
+        currentRecord != null
+      } else {
+        false
+      }
+    }
 
     override def next(): ConsumerRecord[K, V] = {
       assert(hasNext(), "Can't call getNext() once untilOffset has been reached")
-      val r = consumer.get(requestOffset, pollTimeout)
-      requestOffset += 1
-      r
+
+      val rec = currentRecord
+      currentRecord = null
+
+      rec
     }
   }
 }
