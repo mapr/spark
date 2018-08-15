@@ -51,8 +51,6 @@ class CachedKafkaConsumer[K, V] private(
     c
   }
 
-  val isStreams = topic.startsWith("/") && topic.contains(":")
-
   // TODO if the buffer was kept around as a random-access structure,
   // could possibly optimize re-calculating of an RDD in the same batch
   protected var buffer = ju.Collections.emptyList[ConsumerRecord[K, V]]().iterator
@@ -80,8 +78,9 @@ class CachedKafkaConsumer[K, V] private(
 
     nextOffset = offset + 1
 
-    if (record.offset() == KafkaUtils.eofOffset && isStreams && buffer.hasNext) {
-      buffer.next()
+    if (record.offset() == KafkaUtils.eofOffset) {
+      log.debug("EOF message is received")
+      if (buffer.hasNext) buffer.next() else null
     } else {
       record
     }
