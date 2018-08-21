@@ -19,7 +19,7 @@
 # echo commands to the terminal output
 set -ex
 
-SPARK_HOME="/opt/mapr/spark/spark-2.3.0"
+SPARK_HOME="/opt/mapr/spark/spark-2.3.1"
 
 # Check whether there is a passwd entry for the container UID
 myuid=$(id -u)
