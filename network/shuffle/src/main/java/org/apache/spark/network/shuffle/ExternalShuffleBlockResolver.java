@@ -18,6 +18,7 @@
 package org.apache.spark.network.shuffle;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -272,7 +273,7 @@ public class ExternalShuffleBlockResolver {
 
     DataInputStream in = null;
     try {
-      in = new DataInputStream(new FileInputStream(indexFile));
+      in =  new DataInputStream(Files.newInputStream(indexFile.toPath()));
       in.skipBytes(reduceId * 8);
       long offset = in.readLong();
       long nextOffset = in.readLong();
