@@ -17,12 +17,13 @@
 
 package org.apache.spark.streaming.kafka09
 
-import java.{ util => ju }
+import java.{util => ju}
 
-import org.apache.kafka.clients.consumer.{ ConsumerConfig, ConsumerRecord, KafkaConsumer }
-import org.apache.kafka.common.{ KafkaException, TopicPartition }
+import scala.annotation.tailrec
 
-import org.apache.spark.SparkConf
+import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, KafkaConsumer}
+import org.apache.kafka.common.{KafkaException, TopicPartition}
+
 import org.apache.spark.internal.Logging
 
 
@@ -78,12 +79,7 @@ class CachedKafkaConsumer[K, V] private(
 
     nextOffset = offset + 1
 
-    if (record.offset() == KafkaUtils.eofOffset) {
-      log.debug("EOF message is received")
-      if (buffer.hasNext) buffer.next() else null
-    } else {
-      record
-    }
+    skipNegativeOffsets(record)
 // Offsets in MapR-streams can contains gaps
 /*    if (record.offset < offset) {
       logInfo(s"Buffer miss for $groupId $topic $partition $offset")
@@ -99,6 +95,16 @@ class CachedKafkaConsumer[K, V] private(
     nextOffset = offset + 1
     record
         */
+  }
+
+  @tailrec
+  private def skipNegativeOffsets(record: ConsumerRecord[K, V]): ConsumerRecord[K, V] = {
+    if (record.offset() == KafkaUtils.eofOffset) {
+      log.debug("EOF message is received")
+      if (buffer.hasNext) skipNegativeOffsets(buffer.next()) else null
+    } else {
+      record
+    }
   }
 
   private def seek(offset: Long): Unit = {
