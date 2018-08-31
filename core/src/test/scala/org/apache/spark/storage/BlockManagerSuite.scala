@@ -40,13 +40,13 @@ import org.apache.spark.memory.UnifiedMemoryManager
 import org.apache.spark.network.{BlockDataManager, BlockTransferService}
 import org.apache.spark.network.buffer.{ManagedBuffer, NioManagedBuffer}
 import org.apache.spark.network.netty.NettyBlockTransferService
-import org.apache.spark.network.shuffle.{BlockFetchingListener, TempShuffleFileManager}
+import org.apache.spark.network.shuffle.{BlockFetchingListener, TempFileManager}
 import org.apache.spark.rpc.RpcEnv
 import org.apache.spark.scheduler.LiveListenerBus
 import org.apache.spark.security.{CryptoStreamUtils, EncryptionFunSuite}
 import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, SerializerManager}
 import org.apache.spark.shuffle.sort.SortShuffleManager
-import org.apache.spark.storage.BlockManagerMessages.BlockManagerHeartbeat
+import org.apache.spark.storage.BlockManagerMessages._
 import org.apache.spark.util._
 import org.apache.spark.util.io.ChunkedByteBuffer
 
@@ -506,8 +506,8 @@ class BlockManagerSuite extends SparkFunSuite with Matchers with BeforeAndAfterE
     when(bmMaster.getLocations(mc.any[BlockId])).thenReturn(Seq(bmId1, bmId2, bmId3))
 
     val blockManager = makeBlockManager(128, "exec", bmMaster)
-    val getLocations = PrivateMethod[Seq[BlockManagerId]]('getLocations)
-    val locations = blockManager invokePrivate getLocations(BroadcastBlockId(0))
+    val sortLocations = PrivateMethod[Seq[BlockManagerId]]('sortLocations)
+    val locations = blockManager invokePrivate sortLocations(bmMaster.getLocations("test"))
     assert(locations.map(_.host).toSet === Set(localHost, localHost, otherHost))
   }
 
@@ -1213,13 +1213,18 @@ class BlockManagerSuite extends SparkFunSuite with Matchers with BeforeAndAfterE
     // so that we have a chance to do location refresh
     val blockManagerIds = (0 to maxFailuresBeforeLocationRefresh)
       .map { i => BlockManagerId(s"id-$i", s"host-$i", i + 1) }
-    when(mockBlockManagerMaster.getLocations(mc.any[BlockId])).thenReturn(blockManagerIds)
+    when(mockBlockManagerMaster.getLocationsAndStatus(mc.any[BlockId])).thenReturn(
+      Option(BlockLocationsAndStatus(blockManagerIds, BlockStatus.empty)))
+    when(mockBlockManagerMaster.getLocations(mc.any[BlockId])).thenReturn(
+      blockManagerIds)
+
     store = makeBlockManager(8000, "executor1", mockBlockManagerMaster,
       transferService = Option(mockBlockTransferService))
     val block = store.getRemoteBytes("item")
       .asInstanceOf[Option[ByteBuffer]]
     assert(block.isDefined)
-    verify(mockBlockManagerMaster, times(2)).getLocations("item")
+    verify(mockBlockManagerMaster, times(1)).getLocationsAndStatus("item")
+    verify(mockBlockManagerMaster, times(1)).getLocations("item")
   }
 
   test("SPARK-17484: block status is properly updated following an exception in put()") {
@@ -1255,8 +1260,32 @@ class BlockManagerSuite extends SparkFunSuite with Matchers with BeforeAndAfterE
     assert(master.getLocations("item").isEmpty)
   }
 
+  test("fetch remote block to local disk if block size is larger than threshold") {
+    conf.set(MAX_REMOTE_BLOCK_SIZE_FETCH_TO_MEM, 1000L)
+
+    val mockBlockManagerMaster = mock(classOf[BlockManagerMaster])
+    val mockBlockTransferService = new MockBlockTransferService(0)
+    val blockLocations = Seq(BlockManagerId("id-0", "host-0", 1))
+    val blockStatus = BlockStatus(StorageLevel.DISK_ONLY, 0L, 2000L)
+
+    when(mockBlockManagerMaster.getLocationsAndStatus(mc.any[BlockId])).thenReturn(
+      Option(BlockLocationsAndStatus(blockLocations, blockStatus)))
+    when(mockBlockManagerMaster.getLocations(mc.any[BlockId])).thenReturn(blockLocations)
+
+    store = makeBlockManager(8000, "executor1", mockBlockManagerMaster,
+      transferService = Option(mockBlockTransferService))
+    val block = store.getRemoteBytes("item")
+      .asInstanceOf[Option[ByteBuffer]]
+
+    assert(block.isDefined)
+    assert(mockBlockTransferService.numCalls === 1)
+    // assert FileManager is not null if the block size is larger than threshold.
+    assert(mockBlockTransferService.tempFileManager === store.remoteBlockTempFileManager)
+  }
+
   class MockBlockTransferService(val maxFailures: Int) extends BlockTransferService {
     var numCalls = 0
+    var tempFileManager: TempFileManager = null
 
     override def init(blockDataManager: BlockDataManager): Unit = {}
 
@@ -1266,7 +1295,7 @@ class BlockManagerSuite extends SparkFunSuite with Matchers with BeforeAndAfterE
         execId: String,
         blockIds: Array[String],
         listener: BlockFetchingListener,
-        tempShuffleFileManager: TempShuffleFileManager): Unit = {
+        tempFileManager: TempFileManager): Unit = {
       listener.onBlockFetchSuccess("mockBlockId", new NioManagedBuffer(ByteBuffer.allocate(1)))
     }
 
@@ -1278,7 +1307,8 @@ class BlockManagerSuite extends SparkFunSuite with Matchers with BeforeAndAfterE
 
     override def uploadBlock(
         hostname: String,
-        port: Int, execId: String,
+        port: Int,
+        execId: String,
         blockId: BlockId,
         blockData: ManagedBuffer,
         level: StorageLevel,
@@ -1291,12 +1321,14 @@ class BlockManagerSuite extends SparkFunSuite with Matchers with BeforeAndAfterE
         host: String,
         port: Int,
         execId: String,
-        blockId: String): ManagedBuffer = {
+        blockId: String,
+        tempFileManager: TempFileManager): ManagedBuffer = {
       numCalls += 1
+      this.tempFileManager = tempFileManager
       if (numCalls <= maxFailures) {
         throw new RuntimeException("Failing block fetch in the mock block transfer service")
       }
-      super.fetchBlockSync(host, port, execId, blockId)
+      super.fetchBlockSync(host, port, execId, blockId, tempFileManager)
     }
   }
 }
