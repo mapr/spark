@@ -221,6 +221,7 @@ fi
 
 sed -i '/# SECURITY BLOCK/,/# END OF THE SECURITY CONFIGURATION BLOCK/d' "$SPARK_HOME"/conf/spark-defaults.conf
 
+# TODO: Removed spark.ui.filters property. With this property spark job can't be finished. Revert this commit after this issue will be fixed
 if [ "$isSecure" == 1 ] ; then
 sed -i '/^spark.ui.filters/ d' "$SPARK_HOME"/conf/spark-defaults.conf
 	source $MAPR_HOME/conf/env.sh
@@ -237,7 +238,7 @@ spark.ssl.keyStore $MAPR_HOME/conf/ssl_keystore
 spark.ssl.protocol TLSv1.2
 
 # - PAM
-spark.ui.filters  org.apache.spark.deploy.yarn.YarnProxyRedirectFilter, org.apache.spark.ui.filters.MultiauthWebUiFilter
+#spark.ui.filters  org.apache.spark.deploy.yarn.YarnProxyRedirectFilter, org.apache.spark.ui.filters.MultiauthWebUiFilter
 
 # - ACLS
 spark.acls.enable       false
