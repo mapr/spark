@@ -20,6 +20,7 @@
 set -ex
 
 SPARK_HOME="/opt/mapr/spark/spark-2.3.1"
+secConf="$SPARK_HOME"/kubernetes/dockerfiles/spark/securityConfig.sh
 
 # Check whether there is a passwd entry for the container UID
 myuid=$(id -u)
@@ -28,6 +29,8 @@ mygid=$(id -g)
 set +e
 uidentry=$(getent passwd $myuid)
 set -e
+
+source $secConf
 
 # If there is no passwd entry for the container UID, attempt to create one
 if [ -z "$uidentry" ] ; then
@@ -147,31 +150,11 @@ case "$SPARK_K8S_CMD" in
     exit 1
 esac
 
-function createUserGroups() {
-  groups=($USER_GROUPS)
-  groupIds=($USER_GROUPS_IDS)
-
-  for i in "${!groups[@]}"
-  do
-    groupadd -f -g ${groupIds[i]} ${groups[i]}
-    usermod -a -G  ${groups[i]} $CURRENT_USER
-  done
-}
-
-function createUser() {
-  if ! id $CURRENT_USER >/dev/null 2>&1; then
-    adduser -u $USER_ID $CURRENT_USER -m -d /home/$CURRENT_USER
-    if [ -d /home/$CURRENT_USER ]; then
-      cd /home/$CURRENT_USER
-    fi
-  fi
-  chown $CURRENT_USER ./
-}
-
 #Run configure.sh
 if [ ! $SPARK_K8S_CMD == "init" ]; then
   createUser
   createUserGroups
+  copySecurity
 
   if [ ! -z "$MAPR_TICKETFILE_LOCATION" ] ; then
     /opt/mapr/server/configure.sh -c -C $MAPR_CLDB_HOSTS -Z $MAPR_ZK_HOSTS -N $MAPR_CLUSTER -secure

@@ -130,15 +130,23 @@ private[spark] class ExecutorPodFactory(
         .withValue(cp)
         .build()
     }
-    val executorExtraJavaOptionsEnv = sparkConf
-      .get(EXECUTOR_JAVA_OPTIONS)
-      .map { opts =>
-        val delimitedOpts = Utils.splitCommandString(opts)
-        delimitedOpts.zipWithIndex.map {
-          case (opt, index) =>
-            new EnvVarBuilder().withName(s"$ENV_JAVA_OPT_PREFIX$index").withValue(opt).build()
-        }
-      }.getOrElse(Seq.empty[EnvVar])
+    val executorJavaOpts = sparkConf.get(EXECUTOR_JAVA_OPTIONS)
+
+    val resolvedExecutorJavaOpts = sparkConf
+      .remove(EXECUTOR_JAVA_OPTIONS)
+      .getAll
+      .map {
+        case (confKey, confValue) => s"-D$confKey=$confValue"
+      } ++ executorJavaOpts.map(Utils.splitCommandString).getOrElse(Seq.empty)
+
+    val executorExtraJavaOptionsEnv = resolvedExecutorJavaOpts.zipWithIndex.map {
+      case (option, index) =>
+        new EnvVarBuilder()
+          .withName(s"$ENV_JAVA_OPT_PREFIX$index")
+          .withValue(option)
+          .build()
+    }
+
     val executorEnv = (Seq(
       (ENV_DRIVER_URL, driverUrl),
       // Executor backend expects integral value for executor cores, so round it up to an int.
@@ -177,8 +185,7 @@ private[spark] class ExecutorPodFactory(
       }
 
     val maprTicketSecret =
-      s"$KUBERNETES_EXECUTOR_SECRETS_PREFIX" +
-        s"${sparkConf.get(MAPR_TICKET_SECRET_PREFIX)}"
+      s"$KUBERNETES_EXECUTOR_SECRETS_PREFIX${sparkConf.get(MAPR_TICKET_SECRET_PREFIX)}"
 
     val maprTicketEnv = sparkConf
       .getAllWithPrefix(maprTicketSecret).toSeq
@@ -189,6 +196,17 @@ private[spark] class ExecutorPodFactory(
         .build()
     }
 
+    val maprSslSecret =
+      s"$KUBERNETES_EXECUTOR_SECRETS_PREFIX${sparkConf.get(MAPR_SSL_SECRET_PREFIX)}"
+
+    val maprSslEnv = sparkConf
+      .getAllWithPrefix(maprSslSecret).toSeq
+      .map { env =>
+        new EnvVarBuilder()
+          .withName(MAPR_SSL_LOCATION)
+          .withValue(env._2)
+          .build()
+      }
 
     val clusterConfMap = sparkConf.get(MAPR_CLUSTER_CONFIGMAP).toString
     val clusterUserSecrets = sparkConf.get(MAPR_CLUSTER_USER_SECRETS).toString
@@ -208,6 +226,7 @@ private[spark] class ExecutorPodFactory(
       .withImagePullPolicy(imagePullPolicy)
       .addAllToEnv(clusterEnvs.asJava)
       .addAllToEnv(maprTicketEnv.asJava)
+      .addAllToEnv(maprSslEnv.asJava)
       .addNewEnv()
         .withName(CURRENT_USER)
         .withValue(username)
