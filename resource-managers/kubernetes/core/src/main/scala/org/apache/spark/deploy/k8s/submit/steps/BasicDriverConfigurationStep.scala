@@ -93,8 +93,7 @@ private[spark] class BasicDriverConfigurationStep(
       }
 
     val maprTicketSecret =
-      s"$KUBERNETES_DRIVER_SECRETS_PREFIX" +
-        s"${sparkConf.get(MAPR_TICKET_SECRET_PREFIX)}"
+      s"$KUBERNETES_DRIVER_SECRETS_PREFIX${sparkConf.get(MAPR_TICKET_SECRET_PREFIX)}"
 
     val maprTicketEnv = sparkConf
       .getAllWithPrefix(maprTicketSecret).toSeq
@@ -104,6 +103,19 @@ private[spark] class BasicDriverConfigurationStep(
           .withValue(env._2 + s"/${sparkConf.get(MAPR_TICKET_SECRET_KEY)}")
           .build()
       }
+
+    val maprSslSecret =
+      s"$KUBERNETES_DRIVER_SECRETS_PREFIX${sparkConf.get(MAPR_SSL_SECRET_PREFIX)}"
+
+    val maprSslEnv = sparkConf
+      .getAllWithPrefix(maprSslSecret).toSeq
+      .map { env =>
+        new EnvVarBuilder()
+          .withName(MAPR_SSL_LOCATION)
+          .withValue(env._2)
+          .build()
+      }
+
 
     val driverAnnotations = driverCustomAnnotations ++ Map(SPARK_APP_NAME_ANNOTATION -> appName)
 
@@ -142,6 +154,7 @@ private[spark] class BasicDriverConfigurationStep(
       .addAllToEnv(driverCustomEnvs.asJava)
       .addAllToEnv(clusterEnvs.asJava)
       .addAllToEnv(maprTicketEnv.asJava)
+      .addAllToEnv(maprSslEnv.asJava)
       .addToEnv(driverExtraClasspathEnv.toSeq: _*)
       .addNewEnv()
         .withName(CURRENT_USER)
