@@ -42,7 +42,7 @@ object ClasspathFilter {
 
   def resolveClasspath(classpath: Array[String]): Array[String] = {
     classpath.flatMap(path => {
-      if (path.endsWith("/*")) {
+      if (path.endsWith("/*") && path.startsWith("/")) {
         scanner.setBasedir(path.dropRight(1))
         scanner.scan()
         scanner.getIncludedFiles.map(jar => path.dropRight(1) + jar)
