@@ -17,11 +17,8 @@
 
 package org.apache.spark.ui
 
-import java.util.{Date, List => JList, ServiceLoader}
+import java.util.{Date, List => JList}
 
-import scala.collection.JavaConverters._
-
-import org.apache.spark.{JobExecutionStatus, SecurityManager, SparkConf, SparkContext}
 import org.apache.spark.internal.Logging
 import org.apache.spark.scheduler._
 import org.apache.spark.status.AppStatusStore
@@ -31,7 +28,7 @@ import org.apache.spark.ui.env.EnvironmentTab
 import org.apache.spark.ui.exec.ExecutorsTab
 import org.apache.spark.ui.jobs.{JobsTab, StagesTab}
 import org.apache.spark.ui.storage.StorageTab
-import org.apache.spark.util.Utils
+import org.apache.spark.{SecurityManager, SparkConf, SparkContext}
 
 /**
  * Top level user interface for a Spark application.
@@ -130,22 +127,20 @@ private[spark] class SparkUI private (
     ))
   }
 
-  // TODO Method will be implemented in future
   override def getApplicationInfoListForUser(user: Option[String]
                                             ): Iterator[ApplicationInfo] = {
-    Iterator.empty
+    getApplicationInfoList
   }
 
   def getApplicationInfo(appId: String): Option[ApplicationInfo] = {
     getApplicationInfoList.find(_.id == appId)
   }
 
-  // TODO Method will be implemented in future
   override def getApplicationInfoForUser(
                                           user: Option[String],
                                           appId: String
                                         ): Option[ApplicationInfo] = {
-    None
+    getApplicationInfo(appId)
   }
 
   def getStreamingJobProgressListener: Option[SparkListener] = streamingJobProgressListener
