@@ -130,22 +130,20 @@ private[spark] class SparkUI private (
     ))
   }
 
-  // TODO Method will be implemented in future
   override def getApplicationInfoListForUser(user: Option[String]
                                             ): Iterator[ApplicationInfo] = {
-    Iterator.empty
+    getApplicationInfoList
   }
 
   def getApplicationInfo(appId: String): Option[ApplicationInfo] = {
     getApplicationInfoList.find(_.id == appId)
   }
 
-  // TODO Method will be implemented in future
   override def getApplicationInfoForUser(
                                           user: Option[String],
                                           appId: String
                                         ): Option[ApplicationInfo] = {
-    None
+    getApplicationInfo(appId)
   }
 
   def getStreamingJobProgressListener: Option[SparkListener] = streamingJobProgressListener
