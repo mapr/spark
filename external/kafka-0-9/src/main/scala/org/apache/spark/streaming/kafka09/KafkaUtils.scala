@@ -233,7 +233,7 @@ object KafkaUtils extends Logging {
   def waitForConsumerAssignment[K, V](consumer: KafkaConsumer[K, V],
                                       partitions: ju.Set[TopicPartition]): Unit = {
     val waitingForAssigmentTimeout = SparkEnv.get.conf.
-      getLong("spark.mapr.WaitingForAssignmentTimeout", 10000)
+      getLong("spark.mapr.WaitingForAssignmentTimeout", 600000)
 
     var timeout = 0
     while (consumer.assignment().size() < partitions.size
