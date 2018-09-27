@@ -98,7 +98,7 @@ private case class Subscribe[K, V](
         aor != null && aor.asInstanceOf[String].toUpperCase(Locale.ROOT) == "NONE"
       try {
         // consumer.poll(0)
-        KafkaUtils.waitForConsumerAssignment(consumer)
+        KafkaUtils.waitForConsumerAssignment(consumer, toSeek.keySet())
       } catch {
         case x: NoOffsetForPartitionException if shouldSuppress =>
           logWarning("Catching NoOffsetForPartitionException since " +
@@ -152,7 +152,7 @@ private case class SubscribePattern[K, V](
         aor != null && aor.asInstanceOf[String].toUpperCase(Locale.ROOT) == "NONE"
       try {
         // consumer.poll(0)
-        KafkaUtils.waitForConsumerAssignment(consumer)
+        KafkaUtils.waitForConsumerAssignment(consumer, toSeek.keySet())
       } catch {
         case x: NoOffsetForPartitionException if shouldSuppress =>
           logWarning("Catching NoOffsetForPartitionException since " +
