@@ -236,7 +236,7 @@ object KafkaUtils extends Logging {
       getLong("spark.mapr.WaitingForAssignmentTimeout", 600000)
 
     var timeout = 0
-    while (consumer.assignment().size() < partitions.size
+    while ((consumer.assignment().isEmpty || consumer.assignment().size() < partitions.size)
       && timeout < waitingForAssigmentTimeout) {
 
       Thread.sleep(500)
