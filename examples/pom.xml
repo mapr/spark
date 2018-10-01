@@ -126,6 +126,12 @@
       <scope>provided</scope>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.mapr.db</groupId>
+      <artifactId>maprdb-spark</artifactId>
+      <scope>provided</scope>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 
   <build>
