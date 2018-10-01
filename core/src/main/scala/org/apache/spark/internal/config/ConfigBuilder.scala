@@ -180,6 +180,7 @@ private[spark] case class ConfigBuilder(key: String) {
   private[config] var _public = true
   private[config] var _doc = ""
   private[config] var _onCreate: Option[ConfigEntry[_] => Unit] = None
+  private[config] var _alternatives = List.empty[String]
 
   def internal(): ConfigBuilder = {
     _public = false
@@ -197,6 +198,11 @@ private[spark] case class ConfigBuilder(key: String) {
    */
   def onCreate(callback: ConfigEntry[_] => Unit): ConfigBuilder = {
     _onCreate = Option(callback)
+    this
+  }
+
+  def withAlternative(key: String): ConfigBuilder = {
+    _alternatives = _alternatives :+ key
     this
   }
 
