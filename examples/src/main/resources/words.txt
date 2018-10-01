@@ -1,0 +1,5 @@
+1 hello world
+2 this is the text for the wordcount example of the maprdb connector
+3 first word of each line will be saved as id column by the maprdb ojai connector
+4 word1 word2 word1 word2
+5 word1 word3 word3 word3
