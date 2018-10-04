@@ -17,18 +17,16 @@
 
 package org.apache.spark.streaming.kafka09
 
-import java.{ util => ju }
+import java.{util => ju}
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicReference
 
-import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.kafka.clients.consumer._
-import org.apache.kafka.common.{ PartitionInfo, TopicPartition }
+import org.apache.kafka.common.TopicPartition
 
-import org.apache.spark.SparkException
 import org.apache.spark.internal.Logging
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.{StreamingContext, Time}
@@ -72,6 +70,14 @@ private[spark] class DirectKafkaInputDStream[K, V](
       kc = consumerStrategy.onStart(currentOffsets.mapValues(l => new java.lang.Long(l)).asJava)
     }
     kc
+  }
+
+  def consumerForAssign(): KafkaConsumer[Long, String] = this.synchronized {
+    val properties = consumerStrategy.executorKafkaParams
+    properties.put("max.poll.records", "1")
+    properties.put(ConsumerConfig.GROUP_ID_CONFIG,
+      s"${properties.get(ConsumerConfig.GROUP_ID_CONFIG)}_assignGroup")
+    new KafkaConsumer[Long, String](properties)
   }
 
   override def persist(newLevel: StorageLevel): DStream[ConsumerRecord[K, V]] = {
@@ -240,10 +246,29 @@ private[spark] class DirectKafkaInputDStream[K, V](
 
   override def start(): Unit = {
     val c = consumer
+    val consumerAssign = consumerForAssign
+    val pollTimeout = ssc.sparkContext.getConf
+      .getLong("spark.streaming.kafka.consumer.driver.poll.ms", 120000)
     paranoidPoll(c)
     if (currentOffsets.isEmpty) {
       currentOffsets = c.assignment().asScala.map { tp =>
-        tp -> c.position(tp)
+        tp -> {
+          val position = c.position(tp)
+
+          consumerAssign.assign(ju.Arrays.asList(tp))
+          val records = consumerAssign.poll(pollTimeout).iterator()
+          val firstRecordOffset = if (records.hasNext) {
+            records.next().offset()
+          } else {
+            c.endOffsets(ju.Arrays.asList(tp)).get(tp).longValue()
+          }
+
+          if (position < firstRecordOffset) {
+            firstRecordOffset
+          } else {
+            position
+          }
+        }
       }.toMap
     }
 
