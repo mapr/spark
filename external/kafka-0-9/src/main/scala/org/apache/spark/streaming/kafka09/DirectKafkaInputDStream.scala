@@ -17,16 +17,19 @@
 
 package org.apache.spark.streaming.kafka09
 
-import java.{ util => ju }
+import java.{util => ju}
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicReference
 
+import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
 
 import org.apache.kafka.clients.consumer._
 import org.apache.kafka.common.TopicPartition
 
+import org.apache.spark.SparkEnv
 import org.apache.spark.internal.Logging
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.{StreamingContext, Time}
@@ -173,6 +176,8 @@ private[spark] class DirectKafkaInputDStream[K, V](
       serviceConsumer.assign(parts)
     }
     if (!msgs.isEmpty) {
+      val waitingForAssigmentTimeout = SparkEnv.get.conf.
+        getLong("spark.mapr.WaitingForAssignmentTimeout", 600000)
       // position should be minimum offset per topicpartition
       msgs.asScala.foldLeft(Map[TopicPartition, Long]()) { (acc, m) =>
         val tp = new TopicPartition(m.topic, m.partition)
@@ -181,8 +186,19 @@ private[spark] class DirectKafkaInputDStream[K, V](
       }.foreach { case (tp, off) =>
           logInfo(s"poll(0) returned messages, seeking $tp to $off to compensate")
           serviceConsumer.seek(tp, off)
-          c.seek(tp, off)
+          withRetries(waitingForAssigmentTimeout)(c.seek(tp, off))
       }
+    }
+  }
+
+  @tailrec
+  private def withRetries[T](t: Long)(f: => T): T = {
+    Try(f) match {
+      case Success(v) => v
+      case _ if t > 0 =>
+        Try(Thread.sleep(500))
+        withRetries(t-500)(f)
+      case Failure(e) => throw e
     }
   }
 
