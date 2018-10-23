@@ -23,10 +23,12 @@ import java.util.concurrent.atomic.AtomicReference
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
 
 import org.apache.kafka.clients.consumer._
 import org.apache.kafka.common.TopicPartition
 
+import org.apache.spark.SparkEnv
 import org.apache.spark.internal.Logging
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.{StreamingContext, Time}
@@ -71,6 +73,8 @@ private[spark] class DirectKafkaInputDStream[K, V](
     }
     kc
   }
+
+  @transient val serviceConsumer: Consumer[K, V] = consumerStrategy.serviceConsumer
 
   def consumerForAssign(): KafkaConsumer[Long, String] = this.synchronized {
     val properties = consumerStrategy.executorKafkaParams
@@ -169,7 +173,18 @@ private[spark] class DirectKafkaInputDStream[K, V](
    */
   private def paranoidPoll(c: Consumer[K, V]): Unit = {
     val msgs = c.poll(1000)
+
+    val newAssignment = c.assignment()
+    val parts = if (currentOffsets.size < newAssignment.size()) {
+      newAssignment
+    } else currentOffsets.keySet.asJava
+
+    if (serviceConsumer.assignment().size() < parts.size) {
+      serviceConsumer.assign(parts)
+    }
     if (!msgs.isEmpty) {
+      val waitingForAssigmentTimeout = SparkEnv.get.conf.
+        getLong("spark.mapr.WaitingForAssignmentTimeout", 600000)
       // position should be minimum offset per topicpartition
       msgs.asScala.foldLeft(Map[TopicPartition, Long]()) { (acc, m) =>
         val tp = new TopicPartition(m.topic, m.partition)
@@ -177,8 +192,20 @@ private[spark] class DirectKafkaInputDStream[K, V](
         acc + (tp -> off)
       }.foreach { case (tp, off) =>
           logInfo(s"poll(0) returned messages, seeking $tp to $off to compensate")
-          c.seek(tp, off)
+          serviceConsumer.seek(tp, off)
+          withRetries(waitingForAssigmentTimeout)(c.seek(tp, off))
       }
+    }
+  }
+
+  @tailrec
+  private def withRetries[T](t: Long)(f: => T): T = {
+    Try(f) match {
+      case Success(v) => v
+      case _ if t > 0 =>
+        Try(Thread.sleep(500))
+        withRetries(t-500)(f)
+      case Failure(e) => throw e
     }
   }
 
@@ -188,17 +215,32 @@ private[spark] class DirectKafkaInputDStream[K, V](
   protected def latestOffsets(): Map[TopicPartition, Long] = {
     val c = consumer
     paranoidPoll(c)
+
     val parts = c.assignment().asScala
+
+    if (parts.size < currentOffsets.keySet.size) {
+      logWarning("Assignment() returned fewer partitions than the previous call")
+    }
+
+    if (serviceConsumer.assignment().size() < parts.size) {
+      serviceConsumer.assign(parts.asJava)
+    }
 
     // make sure new partitions are reflected in currentOffsets
     val newPartitions = parts.diff(currentOffsets.keySet)
     // position for new partitions determined by auto.offset.reset if no commit
-    currentOffsets = currentOffsets ++ newPartitions.map(tp => tp -> c.position(tp)).toMap
+    currentOffsets = currentOffsets ++ newPartitions
+      .map(tp => tp -> serviceConsumer.position(tp)).toMap
     // don't want to consume messages, so pause
     c.pause(newPartitions.asJava)
     // find latest available offsets
-    c.seekToEnd(currentOffsets.keySet.asJava)
-    parts.map(tp => tp -> c.position(tp)).toMap
+
+    if (!serviceConsumer.assignment().isEmpty) {
+      serviceConsumer.seekToEnd(currentOffsets.keySet.asJava)
+    }
+
+//    c.seekToEnd(currentOffsets.keySet.asJava)
+    parts.map(tp => tp -> serviceConsumer.position(tp)).toMap
   }
 
   // limits the maximum number of messages per partition
@@ -280,6 +322,8 @@ private[spark] class DirectKafkaInputDStream[K, V](
     if (kc != null) {
       kc.close()
     }
+
+    serviceConsumer.close()
   }
 
   protected val commitQueue = new ConcurrentLinkedQueue[OffsetRange]
@@ -314,7 +358,7 @@ private[spark] class DirectKafkaInputDStream[K, V](
       osr = commitQueue.poll()
     }
     if (!m.isEmpty) {
-      consumer.commitAsync(m, commitCallback.get)
+      serviceConsumer.commitAsync(m, commitCallback.get)
     }
   }
 
