@@ -76,14 +76,6 @@ private[spark] class DirectKafkaInputDStream[K, V](
 
   @transient val serviceConsumer: Consumer[K, V] = consumerStrategy.serviceConsumer
 
-  def consumerForAssign(): KafkaConsumer[Long, String] = this.synchronized {
-    val properties = consumerStrategy.executorKafkaParams
-    properties.put("max.poll.records", "1")
-    properties.put(ConsumerConfig.GROUP_ID_CONFIG,
-      s"${properties.get(ConsumerConfig.GROUP_ID_CONFIG)}_assignGroup")
-    new KafkaConsumer[Long, String](properties)
-  }
-
   override def persist(newLevel: StorageLevel): DStream[ConsumerRecord[K, V]] = {
     logError("Kafka ConsumerRecord is not serializable. " +
       "Use .map to extract fields before calling .persist or .window")
@@ -288,17 +280,16 @@ private[spark] class DirectKafkaInputDStream[K, V](
 
   override def start(): Unit = {
     val c = consumer
-    val consumerAssign = consumerForAssign
     val pollTimeout = ssc.sparkContext.getConf
-      .getLong("spark.streaming.kafka.consumer.driver.poll.ms", 120000)
+      .getLong("spark.streaming.kafka.consumer.driver.poll.ms", 5000)
     paranoidPoll(c)
     if (currentOffsets.isEmpty) {
       currentOffsets = c.assignment().asScala.map { tp =>
         tp -> {
           val position = c.position(tp)
 
-          consumerAssign.assign(ju.Arrays.asList(tp))
-          val records = consumerAssign.poll(pollTimeout).iterator()
+          serviceConsumer.assign(ju.Arrays.asList(tp))
+          val records = serviceConsumer.poll(pollTimeout).iterator()
           val firstRecordOffset = if (records.hasNext) {
             records.next().offset()
           } else {
@@ -306,8 +297,10 @@ private[spark] class DirectKafkaInputDStream[K, V](
           }
 
           if (position < firstRecordOffset) {
+            serviceConsumer.seek(tp, firstRecordOffset)
             firstRecordOffset
           } else {
+            serviceConsumer.seek(tp, position)
             position
           }
         }
