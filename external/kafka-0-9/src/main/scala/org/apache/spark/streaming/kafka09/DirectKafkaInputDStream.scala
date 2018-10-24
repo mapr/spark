@@ -281,10 +281,30 @@ private[spark] class DirectKafkaInputDStream[K, V](
 
   override def start(): Unit = {
     val c = consumer
+    val pollTimeout = ssc.sparkContext.getConf
+      .getLong("spark.streaming.kafka.consumer.driver.poll.ms", 5000)
     paranoidPoll(c)
     if (currentOffsets.isEmpty) {
       currentOffsets = c.assignment().asScala.map { tp =>
-        tp -> c.position(tp)
+        tp -> {
+          val position = c.position(tp)
+
+          serviceConsumer.assign(ju.Arrays.asList(tp))
+          val records = serviceConsumer.poll(pollTimeout).iterator()
+          val firstRecordOffset = if (records.hasNext) {
+            records.next().offset()
+          } else {
+            c.endOffsets(ju.Arrays.asList(tp)).get(tp).longValue()
+          }
+
+          if (position < firstRecordOffset) {
+            serviceConsumer.seek(tp, firstRecordOffset)
+            firstRecordOffset
+          } else {
+            serviceConsumer.seek(tp, position)
+            position
+          }
+        }
       }.toMap
     }
 
