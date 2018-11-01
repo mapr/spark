@@ -44,6 +44,7 @@ import org.apache.ivy.plugins.resolver.{ChainResolver, FileSystemResolver, IBibl
 import org.apache.spark._
 import org.apache.spark.api.r.RUtils
 import org.apache.spark.deploy.rest._
+import org.apache.spark.internal.Logging
 import org.apache.spark.launcher.SparkLauncher
 import org.apache.spark.util._
 
@@ -62,7 +63,7 @@ private[deploy] object SparkSubmitAction extends Enumeration {
  * This program handles setting up the classpath with relevant Spark dependencies and provides
  * a layer over the different cluster managers and deploy modes that Spark supports.
  */
-object SparkSubmit extends CommandLineUtils {
+object SparkSubmit extends CommandLineUtils with Logging {
 
   // Cluster managers
   private val YARN = 1
@@ -743,8 +744,14 @@ object SparkSubmit extends CommandLineUtils {
             System.exit(exitCode)
 
           case t: Throwable =>
-            throw t
+            // TODO: fix MultiauthWebUiFilter and return standart Spark behavior
+            log.error(t.getMessage, t)
+            System.exit(1)
         }
+    }
+    // TODO: fix MultiauthWebUiFilter and return standart Spark behavior
+    if (!isThriftServer(childMainClass)) {
+      System.exit(0)
     }
   }
 
