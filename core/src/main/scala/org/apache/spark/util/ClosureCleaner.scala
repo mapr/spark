@@ -24,10 +24,9 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.{Map, Set, Stack}
 import scala.language.existentials
 
-import org.apache.commons.lang3.ClassUtils
 import org.apache.xbean.asm7.{ClassReader, ClassVisitor, MethodVisitor, Type}
 import org.apache.xbean.asm7.Opcodes._
-import org.apache.xbean.asm6.tree.{ClassNode, MethodNode}
+import org.apache.commons.lang3.ClassUtils
 
 import org.apache.spark.{SparkEnv, SparkException}
 import org.apache.spark.internal.Logging
