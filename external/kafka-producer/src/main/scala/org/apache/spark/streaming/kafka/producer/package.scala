@@ -17,21 +17,15 @@
 
 package org.apache.spark.streaming.kafka
 
-import scala.reflect.ClassTag
+import scala.language.implicitConversions
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.streaming.dstream.DStream
 
 package object producer {
-  implicit def toRDDFunctions[T: ClassTag](rdd: RDD[T]): RDDFunctions[T] =
+  implicit def toRDDFunctions[T](rdd: RDD[T]): RDDFunctions[T] =
     new RDDFunctions[T](rdd)
 
-  implicit def toStreamingFunctions[T: ClassTag](dStream: DStream[T]): StreamFunctions[T] =
-    new StreamFunctions[T](dStream)
+  implicit def toPairRDDFunctions[K, V](rdd: RDD[(K, V)]):
+      PairRDDFunctions[K, V] = new PairRDDFunctions[K, V](rdd)
 
-  implicit def toPairRDDFunctions[K: ClassTag, V: ClassTag](rdd: RDD[(K, V)]):
-    PairRDDFunctions[K, V] = new PairRDDFunctions[K, V](rdd)
-
-  implicit def toPairStreamingFunctions[K: ClassTag, V: ClassTag](dStream: DStream[(K, V)]):
-    PairStreamFunctions[K, V] = new PairStreamFunctions[K, V](dStream)
 }
