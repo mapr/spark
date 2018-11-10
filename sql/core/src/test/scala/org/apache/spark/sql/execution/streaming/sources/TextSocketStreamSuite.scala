@@ -90,7 +90,7 @@ class TextSocketStreamSuite extends StreamTest with SharedSQLContext with Before
 
   test("backward compatibility with old path") {
     DataSource.lookupDataSource("org.apache.spark.sql.execution.streaming.TextSocketSourceProvider",
-      spark.sqlContext.conf).newInstance() match {
+      spark.sqlContext.conf).getConstructor().newInstance() match {
       case ds: MicroBatchReadSupport =>
         assert(ds.isInstanceOf[TextSocketSourceProvider])
       case _ =>

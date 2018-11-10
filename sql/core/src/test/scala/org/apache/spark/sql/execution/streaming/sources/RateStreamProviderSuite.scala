@@ -55,11 +55,12 @@ class RateSourceSuite extends StreamTest {
 
   test("microbatch in registry") {
     withTempDir { temp =>
-      DataSource.lookupDataSource("rate", spark.sqlContext.conf).newInstance() match {
-        case ds: MicroBatchReadSupport =>
-          val reader = ds.createMicroBatchReader(
-            Optional.empty(), temp.getCanonicalPath, DataSourceOptions.empty())
-          assert(reader.isInstanceOf[RateStreamMicroBatchReader])
+      DataSource.lookupDataSource("rate", spark.sqlContext.conf).
+        getConstructor().newInstance() match {
+        case ds: MicroBatchReadSupportProvider =>
+          val readSupport = ds.createMicroBatchReadSupport(
+            temp.getCanonicalPath, DataSourceOptions.empty())
+          assert(readSupport.isInstanceOf[RateStreamMicroBatchReadSupport])
         case _ =>
           throw new IllegalStateException("Could not find read support for rate")
       }
@@ -68,8 +69,8 @@ class RateSourceSuite extends StreamTest {
 
   test("compatible with old path in registry") {
     DataSource.lookupDataSource("org.apache.spark.sql.execution.streaming.RateSourceProvider",
-      spark.sqlContext.conf).newInstance() match {
-      case ds: MicroBatchReadSupport =>
+      spark.sqlContext.conf).getConstructor().newInstance() match {
+      case ds: MicroBatchReadSupportProvider =>
         assert(ds.isInstanceOf[RateStreamProvider])
       case _ =>
         throw new IllegalStateException("Could not find read support for rate")
@@ -331,10 +332,11 @@ class RateSourceSuite extends StreamTest {
   }
 
   test("continuous in registry") {
-    DataSource.lookupDataSource("rate", spark.sqlContext.conf).newInstance() match {
-      case ds: ContinuousReadSupport =>
-        val reader = ds.createContinuousReader(Optional.empty(), "", DataSourceOptions.empty())
-        assert(reader.isInstanceOf[RateStreamContinuousReader])
+    DataSource.lookupDataSource("rate", spark.sqlContext.conf).getConstructor().newInstance() match {
+      case ds: ContinuousReadSupportProvider =>
+        val readSupport = ds.createContinuousReadSupport(
+          "", DataSourceOptions.empty())
+        assert(readSupport.isInstanceOf[RateStreamContinuousReadSupport])
       case _ =>
         throw new IllegalStateException("Could not find read support for continuous rate")
     }
