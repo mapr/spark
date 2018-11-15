@@ -18,4 +18,6 @@
 /**
  * Spark Integration for Kafka 0.9
  */
+
+@Deprecated
 package org.apache.spark.streaming.kafka09;

@@ -34,6 +34,7 @@ import org.apache.spark.annotation.Experimental
  * to keep cached consumers on appropriate executors, not recreate them for every partition.
  * Choice of location is only a preference, not an absolute; partitions may be scheduled elsewhere.
  */
+@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.2")
 @Experimental
 sealed abstract class LocationStrategy
 
@@ -47,6 +48,7 @@ private case class PreferFixed(hostMap: ju.Map[TopicPartition, String]) extends 
  * :: Experimental :: object to obtain instances of [[LocationStrategy]]
  *
  */
+@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.2")
 @Experimental
 object LocationStrategies {
   /**

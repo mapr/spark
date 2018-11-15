@@ -52,6 +52,7 @@ import org.apache.spark.streaming.scheduler.rate.RateEstimator
  * @tparam K type of Kafka message key
  * @tparam V type of Kafka message value
  */
+@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.2")
 private[spark] class DirectKafkaInputDStream[K, V](
     _ssc: StreamingContext,
     locationStrategy: LocationStrategy,
