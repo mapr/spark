@@ -38,9 +38,14 @@ object MaprDBJsonConnectorWordCount {
       .getOrCreate()
 
     import spark.implicits._
-    val wordSequenceDS = importDataIntoSeq(pathToFileWithData).toDS()
 
-    wordSequenceDS.saveToMapRDB(tableName, createTable = true)
+    val wordDF = spark.sparkContext.textFile(pathToFileWithData)
+      .map(line => {
+        val wordWithId = line.split(" ")
+        Word(wordWithId(0), wordWithId.drop(1).mkString(" "))
+      }).toDF()
+
+    wordDF.saveToMapRDB(tableName, createTable = true)
 
     val dfWithDataFromMaprDB = spark.loadFromMapRDB(tableName)
       .flatMap(line => line.getAs[String](1).split(" "))
@@ -68,21 +73,14 @@ object MaprDBJsonConnectorWordCount {
     val usage =
       """OJAI MaprDB connector wordcount example
         |Usage:
-        |1) path to the file with data (words.txt can be used for the test);
+        |1) path to the file with data (words.txt can be used for the test)
+        |   by default Spark will search file in maprfs. If you want to use local file
+        |   you need to add "file:///" before a path to a file;
         |2) name of the MaprDB table where data from file will be saved;
         |3) name of the MaprDB table where result will be saved;
         |""".stripMargin
 
     println(usage)
-  }
-
-  private def importDataIntoSeq(filePath: String): Seq[Word] = {
-    scala.io.Source.fromURL(filePath)
-      .getLines
-      .map(line => {
-        val wordWithId = line.split(" ")
-        Word(wordWithId(0), wordWithId.drop(1).mkString(" "))
-      }).toSeq
   }
 
   private case class Word(_id: String, words: String)
