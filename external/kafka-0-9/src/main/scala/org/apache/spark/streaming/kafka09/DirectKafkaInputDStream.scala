@@ -75,7 +75,13 @@ private[spark] class DirectKafkaInputDStream[K, V](
     kc
   }
 
-  @transient val serviceConsumer: Consumer[K, V] = consumerStrategy.serviceConsumer
+  @transient private var sc: Consumer[K, V] = null
+  def serviceConsumer: Consumer[K, V] = this.synchronized {
+    if (null == sc) {
+      sc = consumerStrategy.serviceConsumer
+    }
+    sc
+  }
 
   override def persist(newLevel: StorageLevel): DStream[ConsumerRecord[K, V]] = {
     logError("Kafka ConsumerRecord is not serializable. " +

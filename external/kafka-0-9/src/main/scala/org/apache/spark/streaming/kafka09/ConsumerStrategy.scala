@@ -60,7 +60,7 @@ abstract class ConsumerStrategy[K, V] {
 
   def serviceConsumer: Consumer[K, V] = {
     val serviceConsumerParams = new ju.HashMap[String, Object](executorKafkaParams)
-    val group = "service_" + executorKafkaParams.get(ConsumerConfig.GROUP_ID_CONFIG)
+    val group = executorKafkaParams.get(ConsumerConfig.GROUP_ID_CONFIG)
     serviceConsumerParams.put(ConsumerConfig.GROUP_ID_CONFIG, group)
 
     new KafkaConsumer[K, V](serviceConsumerParams)
