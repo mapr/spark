@@ -18,9 +18,8 @@
 
 # echo commands to the terminal output
 set -ex
-
-SPARK_HOME="/opt/mapr/spark/spark-2.3.1"
-secConf="$SPARK_HOME"/kubernetes/dockerfiles/spark/securityConfig.sh
+SPARK_HOME=${SPARK_HOME:-/opt/mapr/spark/spark-2.3.2}
+securityConf="${SPARK_HOME}/kubernetes/dockerfiles/spark/securityConfig.sh"
 
 # Check whether there is a passwd entry for the container UID
 myuid=$(id -u)
@@ -30,7 +29,7 @@ set +e
 uidentry=$(getent passwd $myuid)
 set -e
 
-source $secConf
+source $securityConf
 
 # If there is no passwd entry for the container UID, attempt to create one
 if [ -z "$uidentry" ] ; then
