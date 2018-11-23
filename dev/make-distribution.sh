@@ -191,11 +191,9 @@ if [ -f "$SPARK_HOME"/common/network-yarn/target/scala*/spark-*-yarn-shuffle.jar
 fi
 
 # Only create and copy the dockerfiles directory if the kubernetes artifacts were built.
-if [ -d "$SPARK_HOME"/resource-managers/kubernetes/core/target/ ]; then
-  mkdir -p "$DISTDIR/kubernetes/"
-  cp -a "$SPARK_HOME"/resource-managers/kubernetes/docker/src/main/dockerfiles "$DISTDIR/kubernetes/"
-  cp -a "$SPARK_HOME"/resource-managers/kubernetes/integration-tests/tests "$DISTDIR/kubernetes/"
-fi
+mkdir -p "$DISTDIR/kubernetes/"
+cp -a "$SPARK_HOME"/resource-managers/kubernetes/docker/src/main/dockerfiles "$DISTDIR/kubernetes/"
+cp -a "$SPARK_HOME"/resource-managers/kubernetes/integration-tests/tests "$DISTDIR/kubernetes/"
 
 # Copy examples and dependencies
 mkdir -p "$DISTDIR/examples/jars"
