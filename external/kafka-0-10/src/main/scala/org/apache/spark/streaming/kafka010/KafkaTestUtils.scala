@@ -109,7 +109,7 @@ private[kafka010] class KafkaTestUtils extends Logging {
       brokerConf = new KafkaConfig(brokerConfiguration, doLog = false)
       server = new KafkaServer(brokerConf)
       server.startup()
-      brokerPort = server.boundPort()
+      brokerPort = server.boundPort(brokerConf.interBrokerListenerName)
       (server, brokerPort)
     }, new SparkConf(), "KafkaBroker")
 
@@ -162,8 +162,8 @@ private[kafka010] class KafkaTestUtils extends Logging {
   }
 
   /** Create a Kafka topic and wait until it is propagated to the whole cluster */
-  def createTopic(topic: String, partitions: Int, config: Properties): Unit = {
-    AdminUtils.createTopic(zkUtils, topic, partitions, 1, config)
+  def createTopic(topic: String, partitions: Int): Unit = {
+    AdminUtils.createTopic(zkUtils, topic, partitions, 1)
     // wait until metadata is propagated
     (0 until partitions).foreach { p =>
       waitUntilMetadataIsPropagated(topic, p)
@@ -171,13 +171,8 @@ private[kafka010] class KafkaTestUtils extends Logging {
   }
 
   /** Create a Kafka topic and wait until it is propagated to the whole cluster */
-  def createTopic(topic: String, partitions: Int): Unit = {
-    createTopic(topic, partitions, new Properties())
-  }
-
-  /** Create a Kafka topic and wait until it is propagated to the whole cluster */
   def createTopic(topic: String): Unit = {
-    createTopic(topic, 1, new Properties())
+    createTopic(topic, 1)
   }
 
   /** Java-friendly function for sending messages to the Kafka broker */
@@ -201,27 +196,16 @@ private[kafka010] class KafkaTestUtils extends Logging {
     producer = null
   }
 
-  /** Send the array of (key, value) messages to the Kafka broker */
-  def sendMessages(topic: String, messages: Array[(String, String)]): Unit = {
-    producer = new KafkaProducer[String, String](producerConfiguration)
-    messages.foreach { message =>
-      producer.send(new ProducerRecord[String, String](topic, message._1, message._2))
-    }
-    producer.close()
-    producer = null
-  }
-
-  val brokerLogDir = Utils.createTempDir().getAbsolutePath
-
   private def brokerConfiguration: Properties = {
     val props = new Properties()
     props.put("broker.id", "0")
     props.put("host.name", "localhost")
     props.put("port", brokerPort.toString)
-    props.put("log.dir", brokerLogDir)
+    props.put("log.dir", Utils.createTempDir().getAbsolutePath)
     props.put("zookeeper.connect", zkAddress)
     props.put("log.flush.interval.messages", "1")
     props.put("replica.socket.timeout.ms", "1500")
+    props.put("offsets.topic.replication.factor", "1")
     props
   }
 
@@ -270,11 +254,11 @@ private[kafka010] class KafkaTestUtils extends Logging {
   private def waitUntilMetadataIsPropagated(topic: String, partition: Int): Unit = {
     def isPropagated = server.apis.metadataCache.getPartitionInfo(topic, partition) match {
       case Some(partitionState) =>
-        val leaderAndInSyncReplicas = partitionState.leaderIsrAndControllerEpoch.leaderAndIsr
+        val leaderAndInSyncReplicas = partitionState.basePartitionState
 
         zkUtils.getLeaderForPartition(topic, partition).isDefined &&
           Request.isValidBrokerId(leaderAndInSyncReplicas.leader) &&
-          leaderAndInSyncReplicas.isr.nonEmpty
+          leaderAndInSyncReplicas.isr.size >= 1
 
       case _ =>
         false

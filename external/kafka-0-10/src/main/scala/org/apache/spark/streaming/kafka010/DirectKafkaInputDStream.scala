@@ -17,16 +17,19 @@
 
 package org.apache.spark.streaming.kafka010
 
-import java.{ util => ju }
+import java.{util => ju}
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicReference
 
+import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
 
 import org.apache.kafka.clients.consumer._
 import org.apache.kafka.common.TopicPartition
 
+import org.apache.spark.SparkEnv
 import org.apache.spark.internal.Logging
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.{StreamingContext, Time}
@@ -72,6 +75,8 @@ private[spark] class DirectKafkaInputDStream[K, V](
     kc
   }
 
+  @transient val serviceConsumer: Consumer[K, V] = consumerStrategy.serviceConsumer
+
   override def persist(newLevel: StorageLevel): DStream[ConsumerRecord[K, V]] = {
     logError("Kafka ConsumerRecord is not serializable. " +
       "Use .map to extract fields before calling .persist or .window")
@@ -106,7 +111,7 @@ private[spark] class DirectKafkaInputDStream[K, V](
   }
 
   // Keep this consistent with how other streams are named (e.g. "Flume polling stream [2]")
-  private[streaming] override def name: String = s"Kafka 0.10 direct stream [$id]"
+  private[streaming] override def name: String = s"Kafka 0.9 direct stream [$id]"
 
   protected[streaming] override val checkpointData =
     new DirectKafkaInputDStreamCheckpointData
@@ -160,8 +165,19 @@ private[spark] class DirectKafkaInputDStream[K, V](
    * which would throw off consumer position.  Fix position if this happens.
    */
   private def paranoidPoll(c: Consumer[K, V]): Unit = {
-    val msgs = c.poll(0)
+    val msgs = c.poll(1000)
+
+    val newAssignment = c.assignment()
+    val parts = if (currentOffsets.size < newAssignment.size()) {
+      newAssignment
+    } else currentOffsets.keySet.asJava
+
+    if (serviceConsumer.assignment().size() < parts.size) {
+      serviceConsumer.assign(parts)
+    }
     if (!msgs.isEmpty) {
+      val waitingForAssigmentTimeout = SparkEnv.get.conf.
+        getLong("spark.mapr.WaitingForAssignmentTimeout", 600000)
       // position should be minimum offset per topicpartition
       msgs.asScala.foldLeft(Map[TopicPartition, Long]()) { (acc, m) =>
         val tp = new TopicPartition(m.topic, m.partition)
@@ -169,8 +185,20 @@ private[spark] class DirectKafkaInputDStream[K, V](
         acc + (tp -> off)
       }.foreach { case (tp, off) =>
           logInfo(s"poll(0) returned messages, seeking $tp to $off to compensate")
-          c.seek(tp, off)
+          serviceConsumer.seek(tp, off)
+          withRetries(waitingForAssigmentTimeout)(c.seek(tp, off))
       }
+    }
+  }
+
+  @tailrec
+  private def withRetries[T](t: Long)(f: => T): T = {
+    Try(f) match {
+      case Success(v) => v
+      case _ if t > 0 =>
+        Try(Thread.sleep(500))
+        withRetries(t-500)(f)
+      case Failure(e) => throw e
     }
   }
 
@@ -180,17 +208,32 @@ private[spark] class DirectKafkaInputDStream[K, V](
   protected def latestOffsets(): Map[TopicPartition, Long] = {
     val c = consumer
     paranoidPoll(c)
+
     val parts = c.assignment().asScala
+
+    if (parts.size < currentOffsets.keySet.size) {
+      logWarning("Assignment() returned fewer partitions than the previous call")
+    }
+
+    if (serviceConsumer.assignment().size() < parts.size) {
+      serviceConsumer.assign(parts.asJava)
+    }
 
     // make sure new partitions are reflected in currentOffsets
     val newPartitions = parts.diff(currentOffsets.keySet)
     // position for new partitions determined by auto.offset.reset if no commit
-    currentOffsets = currentOffsets ++ newPartitions.map(tp => tp -> c.position(tp)).toMap
+    currentOffsets = currentOffsets ++ newPartitions
+      .map(tp => tp -> serviceConsumer.position(tp)).toMap
     // don't want to consume messages, so pause
     c.pause(newPartitions.asJava)
     // find latest available offsets
-    c.seekToEnd(currentOffsets.keySet.asJava)
-    parts.map(tp => tp -> c.position(tp)).toMap
+
+    if (!serviceConsumer.assignment().isEmpty) {
+      serviceConsumer.seekToEnd(currentOffsets.keySet.asJava)
+    }
+
+//    c.seekToEnd(currentOffsets.keySet.asJava)
+    parts.map(tp => tp -> serviceConsumer.position(tp)).toMap
   }
 
   // limits the maximum number of messages per partition
@@ -238,10 +281,30 @@ private[spark] class DirectKafkaInputDStream[K, V](
 
   override def start(): Unit = {
     val c = consumer
+    val pollTimeout = ssc.sparkContext.getConf
+      .getLong("spark.streaming.kafka.consumer.driver.poll.ms", 5000)
     paranoidPoll(c)
     if (currentOffsets.isEmpty) {
       currentOffsets = c.assignment().asScala.map { tp =>
-        tp -> c.position(tp)
+        tp -> {
+          val position = c.position(tp)
+
+          serviceConsumer.assign(ju.Arrays.asList(tp))
+          val records = serviceConsumer.poll(pollTimeout).iterator()
+          val firstRecordOffset = if (records.hasNext) {
+            records.next().offset()
+          } else {
+            c.endOffsets(ju.Arrays.asList(tp)).get(tp).longValue()
+          }
+
+          if (position < firstRecordOffset) {
+            serviceConsumer.seek(tp, firstRecordOffset)
+            firstRecordOffset
+          } else {
+            serviceConsumer.seek(tp, position)
+            position
+          }
+        }
       }.toMap
     }
 
@@ -253,6 +316,8 @@ private[spark] class DirectKafkaInputDStream[K, V](
     if (kc != null) {
       kc.close()
     }
+
+    serviceConsumer.close()
   }
 
   protected val commitQueue = new ConcurrentLinkedQueue[OffsetRange]
@@ -287,7 +352,7 @@ private[spark] class DirectKafkaInputDStream[K, V](
       osr = commitQueue.poll()
     }
     if (!m.isEmpty) {
-      consumer.commitAsync(m, commitCallback.get)
+      serviceConsumer.commitAsync(m, commitCallback.get)
     }
   }
 

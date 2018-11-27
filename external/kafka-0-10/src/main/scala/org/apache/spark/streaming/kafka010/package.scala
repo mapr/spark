@@ -18,6 +18,6 @@
 package org.apache.spark.streaming
 
 /**
- * Spark Integration for Kafka 0.10
+ * Spark Integration for Kafka 0.9
  */
 package object kafka010 //scalastyle:ignore

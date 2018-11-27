@@ -33,7 +33,7 @@ import org.apache.spark.internal.Logging
  * :: Experimental ::
  * Choice of how to create and configure underlying Kafka Consumers on driver and executors.
  * See [[ConsumerStrategies]] to obtain instances.
- * Kafka 0.10 consumers can require additional, sometimes complex, setup after object
+ * Kafka 0.9 consumers can require additional, sometimes complex, setup after object
  *  instantiation. This interface encapsulates that process, and allows it to be checkpointed.
  * @tparam K type of Kafka message key
  * @tparam V type of Kafka message value
@@ -57,6 +57,14 @@ abstract class ConsumerStrategy[K, V] {
    * checkpoint.
    */
   def onStart(currentOffsets: ju.Map[TopicPartition, jl.Long]): Consumer[K, V]
+
+  def serviceConsumer: Consumer[K, V] = {
+    val serviceConsumerParams = new ju.HashMap[String, Object](executorKafkaParams)
+    val group = "service_" + executorKafkaParams.get(ConsumerConfig.GROUP_ID_CONFIG)
+    serviceConsumerParams.put(ConsumerConfig.GROUP_ID_CONFIG, group)
+
+    new KafkaConsumer[K, V](serviceConsumerParams)
+  }
 }
 
 /**
