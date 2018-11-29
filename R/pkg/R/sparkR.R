@@ -443,7 +443,7 @@ sparkR.session <- function(
   jvmVersionStrip <- gsub("-SNAPSHOT", "", jvmVersion)
   rPackageVersion <- paste0(packageVersion("SparkR"))
 
-  if (jvmVersionStrip != rPackageVersion) {
+  if (!grepl(paste("^", rPackageVersion, sep=""), jvmVersionStrip)) {
     warning(paste("Version mismatch between Spark JVM and SparkR package. JVM version was",
                   jvmVersion, ", while R package version was", rPackageVersion))
   }
