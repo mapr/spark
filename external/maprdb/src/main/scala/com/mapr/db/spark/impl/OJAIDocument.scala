@@ -2,15 +2,13 @@
 package com.mapr.db.spark.impl
 
 import java.nio.ByteBuffer
-
 import com.mapr.db.spark.documentTypeUtils.OJAIType
 import com.mapr.db.spark.types.{DBArrayValue, DBBinaryValue, DBMapValue}
 import com.mapr.db.spark.utils.DefaultClass.DefaultType
 import org.ojai.types._
-
 import scala.collection.JavaConverters._
-import scala.language.experimental.macros
 import scala.language.{dynamics, implicitConversions}
+import scala.language.experimental.macros
 
 /**
 * OJAIDocument represents a JSON document which can be accessed with dynamic object model

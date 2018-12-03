@@ -1,3 +1,4 @@
+/* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.streaming
 
 object MapRDBSourceConfig {

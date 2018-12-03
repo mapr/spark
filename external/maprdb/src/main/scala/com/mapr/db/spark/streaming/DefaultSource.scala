@@ -1,6 +1,8 @@
+/* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.streaming
 
 import com.mapr.db.spark.streaming.sink.MapRDBSink
+
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.execution.streaming.Sink

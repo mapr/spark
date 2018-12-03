@@ -1,16 +1,17 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark
 
+import scala.language.implicitConversions
+
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.serializers._
 import com.mapr.db.spark.configuration.SerializableConfiguration
+import com.mapr.db.spark.impl.OJAIDocument
+import com.mapr.db.spark.serializers._
 import com.mapr.db.spark.types.{DBArrayValue, DBBinaryValue, DBMapValue}
-import org.apache.spark.serializer.KryoRegistrator
 import org.ojai.types.{ODate, OInterval, OTime, OTimestamp}
 
-import scala.language.implicitConversions
-import com.mapr.db.spark.serializers._
-import com.mapr.db.spark.impl.OJAIDocument
+import org.apache.spark.serializer.KryoRegistrator
 
 /**
 * Custom registrator provided for registering classes specific to spark ojai connector

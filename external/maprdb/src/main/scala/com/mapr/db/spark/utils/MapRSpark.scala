@@ -9,13 +9,12 @@ import com.mapr.db.spark._
 import com.mapr.db.spark.RDD.{MapRDBBaseRDD, MapRDBTableScanRDD, RDDTYPE}
 import com.mapr.db.spark.condition.{DBQueryCondition, Predicate}
 import com.mapr.db.spark.configuration.SerializableConfiguration
-import com.mapr.db.spark.dbclient.DBClient
 import com.mapr.db.spark.impl.OJAIDocument
 import com.mapr.db.spark.sql.GenerateSchema
 import com.mapr.db.spark.sql.utils.MapRSqlUtils
 import com.mapr.db.spark.utils.DefaultClass.DefaultType
 import org.apache.hadoop.conf.Configuration
-import org.ojai.store.{DocumentMutation, QueryCondition}
+import org.ojai.store.QueryCondition
 
 import org.apache.spark.SparkContext
 import org.apache.spark.sql._
@@ -204,7 +203,7 @@ case class MapRSpark(sparkSession: Option[SparkSession],
       .sparkSession(sparkSession.get)
       .sparkContext(sc.get)
       .configuration()
-      .setDBCond(cond.getOrElse(null))
+      .setDBCond(cond.orNull)
       .setColumnProjection(columns)
       .setTable(tableName)
       .build()

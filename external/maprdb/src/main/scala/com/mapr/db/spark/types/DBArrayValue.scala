@@ -40,11 +40,13 @@ private[spark] class DBArrayValue[T]( @transient private[spark] var arr : Seq[T]
   def apply(idx: Int): T = {
     if (idx < 0 || idx>=length) throw new IndexOutOfBoundsException
     val element = arr(idx)
-    if (element.isInstanceOf[java.util.List[_]]) {
-      new DBArrayValue(element.asInstanceOf[java.util.List[Object]].asScala).asInstanceOf[T]
-    } else if (element.isInstanceOf[java.util.Map[_, _]]) {
-      new DBMapValue(element.asInstanceOf[util.Map[String, Object]].asScala.toMap).asInstanceOf[T]
-    } else element
+    element match {
+      case _: util.List[_] =>
+        new DBArrayValue(element.asInstanceOf[util.List[Object]].asScala).asInstanceOf[T]
+      case _: util.Map[_, _] =>
+        new DBMapValue(element.asInstanceOf[util.Map[String, Object]].asScala.toMap).asInstanceOf[T]
+      case _ => element
+    }
   }
 
   def length: Int = arr.size
@@ -74,14 +76,15 @@ private[spark] class DBArrayValue[T]( @transient private[spark] var arr : Seq[T]
   }
 
   override def equals(other: Any) : Boolean = {
-    if (other.isInstanceOf[DBArrayValue[_]]) {
-      val that = other.asInstanceOf[DBArrayValue[_]]
-      val result = this.sameElements(that)
-      return result
-    } else if (other.isInstanceOf[Seq[_]]) {
-      val that = new DBArrayValue(other.asInstanceOf[Seq[_]])
-      val result = this.arr.sameElements(that)
-      return result
+    other match {
+      case that: DBArrayValue[_] =>
+        val result = this.sameElements(that)
+        return result
+      case arr1: Seq[_] =>
+        val that = new DBArrayValue(arr1)
+        val result = this.arr.sameElements(that)
+        return result
+      case _ =>
     }
 
     false

@@ -6,12 +6,13 @@ import java.nio.ByteBuffer
 import org.ojai.Value
 import org.ojai.types._
 
-sealed trait convert[A,B] {
+sealed trait convert[A, B] {
   def get(value: A): B
 }
 
 object conversions {
-  //string to other datatypes conversions
+
+  // string to other datatypes conversions
   val string2intconversion = new convert[Value, Int] {
     def get(value: Value) : Int = value.getString.toInt
   }
