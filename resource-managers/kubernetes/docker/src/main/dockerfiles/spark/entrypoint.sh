@@ -21,6 +21,12 @@ set -ex
 SPARK_HOME=${SPARK_HOME:-/opt/mapr/spark/spark-2.3.2}
 securityConf="${SPARK_HOME}/kubernetes/dockerfiles/spark/securityConfig.sh"
 
+source $securityConf
+
+createUser
+createUserGroups
+copySecurity
+
 # Check whether there is a passwd entry for the container UID
 myuid=$(id -u)
 mygid=$(id -g)
@@ -28,8 +34,6 @@ mygid=$(id -g)
 set +e
 uidentry=$(getent passwd $myuid)
 set -e
-
-source $securityConf
 
 # If there is no passwd entry for the container UID, attempt to create one
 if [ -z "$uidentry" ] ; then
@@ -151,18 +155,12 @@ esac
 
 #Run configure.sh
 if [ ! $SPARK_K8S_CMD == "init" ]; then
-  createUser
-  createUserGroups
-  copySecurity
-
   if [ ! -z "$MAPR_TICKETFILE_LOCATION" ] ; then
     /opt/mapr/server/configure.sh -c -C $MAPR_CLDB_HOSTS -Z $MAPR_ZK_HOSTS -N $MAPR_CLUSTER -secure
   else
     /opt/mapr/server/configure.sh -c -C $MAPR_CLDB_HOSTS -Z $MAPR_ZK_HOSTS -N $MAPR_CLUSTER
   fi
-
-  exec sudo -u $CURRENT_USER -E "${CMD[@]}"
-else
-# Execute the container CMD
-exec "${CMD[@]}"
 fi
+
+exec sudo -u ${CURRENT_USER:-`whoami`} -E "${CMD[@]}"
+
