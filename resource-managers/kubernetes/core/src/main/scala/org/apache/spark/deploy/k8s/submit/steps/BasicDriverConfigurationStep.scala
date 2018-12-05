@@ -87,10 +87,10 @@ private[spark] class BasicDriverConfigurationStep(
       }
 
     val clusterEnvs = sparkConf.getAllWithPrefix(KUBERNETES_CLUSTER_ENV_KEY).toSeq
-      .map { env =>
+      .map { case (name, value) =>
         new EnvVarBuilder()
-          .withName(env._1)
-          .withValue(env._2)
+          .withName(name)
+          .withValue(value)
           .build()
       }
 
@@ -99,10 +99,10 @@ private[spark] class BasicDriverConfigurationStep(
 
     val maprTicketEnv = sparkConf
       .getAllWithPrefix(maprTicketSecret).toSeq
-      .map { env =>
+      .map { case (_, value) =>
         new EnvVarBuilder()
           .withName(MAPR_TICKETFILE_LOCATION)
-          .withValue(env._2 + s"/${sparkConf.get(MAPR_TICKET_SECRET_KEY)}")
+          .withValue(value + s"/${sparkConf.get(MAPR_TICKET_SECRET_KEY)}")
           .build()
       }
 
@@ -111,13 +111,12 @@ private[spark] class BasicDriverConfigurationStep(
 
     val maprSslEnv = sparkConf
       .getAllWithPrefix(maprSslSecret).toSeq
-      .map { env =>
+      .map { case (_, value) =>
         new EnvVarBuilder()
           .withName(MAPR_SSL_LOCATION)
-          .withValue(env._2)
+          .withValue(value)
           .build()
       }
-
 
     val driverAnnotations = driverCustomAnnotations ++ Map(SPARK_APP_NAME_ANNOTATION -> appName)
 
@@ -140,12 +139,16 @@ private[spark] class BasicDriverConfigurationStep(
     val clusterConfMap = sparkConf.get(MAPR_CLUSTER_CONFIGMAP).toString
     val clusterUserSecrets = sparkConf.get(MAPR_CLUSTER_USER_SECRETS).toString
 
-    val username = Utils.getCurrentUserName()
+    val username = sparkConf
+      .get(CONTAINER_USER_NAME)
+      .getOrElse(Utils.getCurrentUserName())
+    val userId = sparkConf
+      .get(CONTAINER_USER_ID)
+      .getOrElse(Utils.getCurrentUserId())
     val userGroups = Utils.getCurrentUserGroups(sparkConf, username)
-    val userId = Utils.getCurrentUserId()
     val userGroupsIds = Utils.getCurrentUserGroupsIds(sparkConf, username)
 
-    if (userId.length() == 0 || userGroupsIds.size == 0) {
+    if (userId.isEmpty || userGroupsIds.isEmpty) {
       throw new RuntimeException(s"Error getting uid/gid for user=$username")
     }
 
