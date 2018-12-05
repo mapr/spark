@@ -35,6 +35,8 @@ set +e
 uidentry=$(getent passwd $myuid)
 set -e
 
+source $securityConf
+
 # If there is no passwd entry for the container UID, attempt to create one
 if [ -z "$uidentry" ] ; then
     if [ -w /etc/passwd ] ; then
@@ -77,6 +79,8 @@ fi
 
 if [ -n "$SPARK_MOUNTED_FILES_DIR" ]; then
   cp -R "$SPARK_MOUNTED_FILES_DIR/." .
+fi
+
 PYSPARK_ARGS=""
 if [ -n "$PYSPARK_APP_ARGS" ]; then
     PYSPARK_ARGS="$PYSPARK_APP_ARGS"
@@ -163,4 +167,3 @@ if [ ! $SPARK_K8S_CMD == "init" ]; then
 fi
 
 exec sudo -u ${CURRENT_USER:-`whoami`} -E "${CMD[@]}"
-
