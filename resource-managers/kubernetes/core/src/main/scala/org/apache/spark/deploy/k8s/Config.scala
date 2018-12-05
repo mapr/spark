@@ -326,6 +326,16 @@ private[spark] object Config extends Logging {
       .stringConf
       .createWithDefault("mapr-cluster-secrets")
 
+  val CONTAINER_USER_NAME =
+    ConfigBuilder("spark.kubernetes.runtime.user.name")
+      .stringConf
+      .createOptional
+
+  val CONTAINER_USER_ID =
+    ConfigBuilder("spark.kubernetes.runtime.user.id")
+      .stringConf
+      .createOptional
+
   val KUBERNETES_AUTH_SUBMISSION_CONF_PREFIX =
     "spark.kubernetes.authenticate.submission"
 
