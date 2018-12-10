@@ -1,6 +1,8 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark
 
+import scala.language.implicitConversions
+
 import org.apache.spark.sql._
 
 package object sql {
@@ -17,7 +19,8 @@ package object sql {
     MapRDBDataFrameReaderFunctions(dfr)
   }
 
-  implicit def toMaprdbWriterFunctions(dfw: DataFrameWriter[_]): MapRDBDataFrameWriterFunctions = {
+  implicit def toMaprdbWriterFunctions(dfw: DataFrameWriter[Any]):
+  MapRDBDataFrameWriterFunctions[Any] = {
     MapRDBDataFrameWriterFunctions(dfw)
   }
 

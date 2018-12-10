@@ -22,8 +22,8 @@ import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 private[spark] class MapRDBTableScanRDD[T: ClassTag](
-    @transient sparkSession: SparkSession,
-    @transient sc: SparkContext,
+    @transient val sparkSession: SparkSession,
+    @transient override val sc: SparkContext,
     cnf: Broadcast[SerializableConfiguration],
     columns: Seq[String],
     val tableName: String,

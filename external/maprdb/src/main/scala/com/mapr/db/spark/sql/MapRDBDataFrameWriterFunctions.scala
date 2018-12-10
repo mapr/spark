@@ -6,8 +6,8 @@ import org.ojai.DocumentConstants
 
 import org.apache.spark.sql.DataFrameWriter
 
-private[spark] case class MapRDBDataFrameWriterFunctions(
-    @transient dfw: DataFrameWriter[_])
+private[spark] case class MapRDBDataFrameWriterFunctions[T](
+    @transient dfw: DataFrameWriter[T])
     extends LoggingTrait {
 
   def saveToMapRDB(tableName: String,

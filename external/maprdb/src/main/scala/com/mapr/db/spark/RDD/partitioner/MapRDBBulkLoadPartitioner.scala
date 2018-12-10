@@ -91,7 +91,7 @@ private[spark] abstract case class MapRDBSplitPartitioner[T]
   override def numPartitions: Int = splitsinBinary.size + 1
 
   override def getPartition(key: Any): Int = {
-    var partition: Int = 0;
+    var partition: Int = 0
     for (thisrange <- ranges) {
       if (MapRDBUtils.containsRow(ojaikey.getBytes(key), thisrange)) return partition
       else partition = partition + 1

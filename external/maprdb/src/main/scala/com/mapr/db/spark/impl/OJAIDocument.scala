@@ -51,7 +51,7 @@ class OJAIDocument(@transient private var dc: org.ojai.Document)
   }
 
   // Setter functionality of the dynamic object model is provided by the following function.
-  def updateDynamic[T <: Any](fieldPath: String)(v: T): Unit = {
+  def updateDynamic[T](fieldPath: String)(v: T): Unit = {
     v match {
       case null => getDoc.setNull(fieldPath)
       case str: String => getDoc.set(fieldPath, str)
@@ -69,12 +69,12 @@ class OJAIDocument(@transient private var dc: org.ojai.Document)
       case timestamp: OTimestamp => getDoc.set(fieldPath, timestamp)
       case _: Map[_, _] => getDoc.set(fieldPath, v.asInstanceOf[Map[String, AnyRef]].asJava)
       case _: Seq[Any] => getDoc.set(fieldPath, v.asInstanceOf[Seq[AnyRef]].asJava)
-      case value: DBMapValue => getDoc.set(fieldPath, value
-            .map({ case (k, v1) => k -> v1.asInstanceOf[AnyRef] })
-            .asJava)
+//      case value: DBMapValue => getDoc.set(fieldPath, value
+//            .map({ case (k, v1) => k -> v1.asInstanceOf[AnyRef] })
+//            .asJava)
 
-      case _: DBArrayValue[_] =>
-        getDoc.set(fieldPath, v.asInstanceOf[DBArrayValue[AnyRef]].arr.asJava)
+//      case _: DBArrayValue[_] =>
+//        getDoc.set(fieldPath, v.asInstanceOf[DBArrayValue[AnyRef]].arr.asJava)
 
       case value: DBBinaryValue => getDoc.set(fieldPath, value.getByteBuffer())
       case buffer: ByteBuffer => getDoc.set(fieldPath, buffer)

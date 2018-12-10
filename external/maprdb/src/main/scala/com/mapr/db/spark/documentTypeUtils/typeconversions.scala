@@ -58,12 +58,18 @@ object conversions {
 
   //boolean to other data types conversions
   val boolean2intconversion = new convert[Value, Int] {
-    def get(value: Value) : Int = value.getBoolean match { case true => 1
-    case false => 0 }
+    def get(value: Value) : Int = if (value.getBoolean) {
+      1
+    } else {
+      0
+    }
   }
   val boolean2shortconversion = new  convert[Value, Short] {
-    def get(value: Value): Short = value.getBoolean match { case true => 1
-    case false => 0}
+    def get(value: Value): Short = if (value.getBoolean) {
+      1
+    } else {
+      0
+    }
   }
   val boolean2binaryconversion = null
   val boolean2booleanconversion = new convert[Value, Boolean] {
@@ -72,8 +78,11 @@ object conversions {
   val boolean2arrayconversion = null
   val boolean2mapconversion = null
   val boolean2byteconversion = new convert[Value, Byte] {
-    def get(value: Value): Byte = value.getBoolean match { case true => 1
-    case false => 0}
+    def get(value: Value): Byte = if (value.getBoolean) {
+      1
+    } else {
+      0
+    }
   }
   val boolean2dateconversion = null
   val boolean2decimalconversion = null
@@ -81,8 +90,11 @@ object conversions {
   val boolean2floatconversion = null
   val boolean2intervalconversion = null
   val boolean2Longconversion = new convert[Value, Long]{
-    def get(value: Value): Long = value.getBoolean match { case true => 1
-    case false => 0}
+    def get(value: Value): Long = if (value.getBoolean) {
+      1
+    } else {
+      0
+    }
   }
   val boolean2Stringconversion = new convert[Value, String] {
     def get(value: Value): String = value.getBoolean.toString
@@ -108,7 +120,7 @@ object conversions {
     def get(value: Value): ODate = ODate.fromDaysSinceEpoch(value.getShort)
   }
   val short2decimalconversion = new convert[Value, BigDecimal] {
-    def get(value: Value): BigDecimal = BigDecimal(value.getShort.toFloat)
+    def get(value: Value): BigDecimal = BigDecimal.decimal(value.getShort.toFloat)
   }
   val short2doubleconversion = new convert[Value, Double] {
     def get(value: Value): Double = value.getShort.toDouble
@@ -427,7 +439,7 @@ object conversions {
   val float2byteconversion = null
   val float2dateconversion = null
   val float2decimalconversion = new convert[Value, BigDecimal] {
-    def get(value: Value): BigDecimal = BigDecimal(value.getFloat)
+    def get(value: Value): BigDecimal = BigDecimal.decimal(value.getFloat)
   }
   val float2doubleconversion = new convert[Value, Double] {
     def get(value: Value): Double = value.getFloat

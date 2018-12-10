@@ -15,8 +15,8 @@ public class OjaiJavaSerializer extends Serializer<Object> {
 
     public void write(Kryo kryo, Output output, Object object) {
         try {
-            ObjectMap ex = kryo.getGraphContext();
-            ObjectOutputStream objectStream = (ObjectOutputStream)ex.get(this);
+            ObjectMap<OjaiJavaSerializer, ObjectOutputStream> ex = kryo.getGraphContext();
+            ObjectOutputStream objectStream = ex.get(this);
             if(objectStream == null) {
                 objectStream = new ObjectOutputStream(output);
                 ex.put(this, objectStream);
@@ -31,8 +31,8 @@ public class OjaiJavaSerializer extends Serializer<Object> {
 
     public Object read(Kryo kryo, Input input, Class type) {
         try {
-            ObjectMap ex = kryo.getGraphContext();
-            ObjectInputStream objectStream = (ObjectInputStream)ex.get(this);
+            ObjectMap<OjaiJavaSerializer, ObjectInputStream> ex = kryo.getGraphContext();
+            ObjectInputStream objectStream = ex.get(this);
             if(objectStream == null) {
                 objectStream = new ObjectInputStream(input);
                 ex.put(this, objectStream);
