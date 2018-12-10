@@ -43,7 +43,7 @@ object MaprDBJsonConnectorWordCount {
       .map(line => {
         val wordWithId = line.split(" ")
         Word(wordWithId(0), wordWithId.drop(1).mkString(" "))
-      }).toDF()
+      }).toDF
 
     wordDF.saveToMapRDB(tableName, createTable = true)
 
