@@ -150,11 +150,12 @@
             <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
-      <dependency>
-          <groupId>com.mapr.ojai</groupId>
-          <artifactId>mapr-ojai-driver</artifactId>
-          <version>6.1.0-mapr-SNAPSHOT</version>
-      </dependency>
+        <dependency>
+            <groupId>com.mapr.ojai</groupId>
+            <artifactId>mapr-ojai-driver</artifactId>
+            <version>6.1.0-mapr</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>
