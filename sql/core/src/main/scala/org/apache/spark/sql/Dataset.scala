@@ -3274,12 +3274,11 @@ class Dataset[T] private[sql](
   /**
    * Collect a Dataset as Arrow batches and serve stream to PySpark.
    */
-
   private[sql] def collectAsArrowToPython(): Array[Any] = {
     val timeZoneId = sparkSession.sessionState.conf.sessionLocalTimeZone
-    withNewExecutionId {
-      val iter = toArrowPayload.collect().iterator.map(_.asPythonSerializable)
-      PythonRDD.serveIterator(iter, "serve-Arrow") { out =>
+
+    withAction("collectAsArrowToPython", queryExecution) { plan =>
+      PythonRDD.serveToStream("serve-Arrow") { out =>
         val batchWriter = new ArrowBatchStreamWriter(schema, out, timeZoneId)
         val arrowBatchRdd = toArrowBatchRdd(plan)
         val numPartitions = arrowBatchRdd.partitions.length
