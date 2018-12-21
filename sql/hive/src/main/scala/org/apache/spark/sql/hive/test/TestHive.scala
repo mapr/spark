@@ -61,7 +61,7 @@ object TestHive
         // SPARK-8910
         .set("spark.ui.enabled", "false")
         .set("spark.hadoop.fs.defaultFS", "file:///")
-        .set("spark.hadoop.fs.default.name", "file:///")))
+        .set("spark.hadoop.fs.default.name", "file:///")
         .set("spark.unsafe.exceptionOnMemoryLeak", "true")
         // Disable ConvertToLocalRelation for better test coverage. Test cases built on
         // LocalRelation will exercise the optimization rules better by disabling it as
@@ -108,6 +108,7 @@ private[hive] class TestHiveSharedState(
  * Calling [[reset]] will delete all tables and other state in the database, leaving the database
  * in a "clean" state.
  *
+  * 
  * TestHive is singleton object version of this class because instantiating multiple copies of the
  * hive metastore seems to lead to weird non-deterministic failures.  Therefore, the execution of
  * test cases that rely on TestHive must be serialized.
