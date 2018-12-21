@@ -224,7 +224,7 @@ org.scalanlp:breeze-macros_2.11
 org.scalanlp:breeze_2.11
 org.typelevel:macro-compat_2.11
 org.yaml:snakeyaml
-org.apache.xbean:xbean-asm5-shaded
+org.apache.xbean:xbean-asm6-shaded
 com.squareup.okhttp3:logging-interceptor
 com.squareup.okhttp3:okhttp
 com.squareup.okio:okio
