@@ -17,12 +17,15 @@
 package org.apache.spark.deploy.k8s.submit
 
 import org.apache.spark.deploy.k8s.{KubernetesConf, KubernetesDriverSpec, KubernetesDriverSpecificConf, KubernetesRoleSpecificConf}
-import org.apache.spark.deploy.k8s.features.{BasicDriverFeatureStep, DriverKubernetesCredentialsFeatureStep, DriverServiceFeatureStep, EnvSecretsFeatureStep, LocalDirsFeatureStep, MountSecretsFeatureStep, MountVolumesFeatureStep}
+import org.apache.spark.deploy.k8s.features._
 import org.apache.spark.deploy.k8s.features.bindings.{JavaDriverFeatureStep, PythonDriverFeatureStep, RDriverFeatureStep}
 
 private[spark] class KubernetesDriverBuilder(
     provideBasicStep: (KubernetesConf[KubernetesDriverSpecificConf]) => BasicDriverFeatureStep =
       new BasicDriverFeatureStep(_),
+    provideMaprStep: (KubernetesConf[_ <: KubernetesRoleSpecificConf])
+      => MaprConfigFeatureStep =
+      new MaprConfigFeatureStep(_),
     provideCredentialsStep: (KubernetesConf[KubernetesDriverSpecificConf])
       => DriverKubernetesCredentialsFeatureStep =
       new DriverKubernetesCredentialsFeatureStep(_),
@@ -57,6 +60,7 @@ private[spark] class KubernetesDriverBuilder(
     kubernetesConf: KubernetesConf[KubernetesDriverSpecificConf]): KubernetesDriverSpec = {
     val baseFeatures = Seq(
       provideBasicStep(kubernetesConf),
+      provideMaprStep(kubernetesConf),
       provideCredentialsStep(kubernetesConf),
       provideServiceStep(kubernetesConf),
       provideLocalDirsStep(kubernetesConf))

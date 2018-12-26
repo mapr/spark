@@ -24,6 +24,9 @@ private[spark] class KubernetesExecutorBuilder(
     provideBasicStep: (KubernetesConf [KubernetesExecutorSpecificConf])
       => BasicExecutorFeatureStep =
       new BasicExecutorFeatureStep(_),
+    provideMaprStep: (KubernetesConf[_ <: KubernetesRoleSpecificConf])
+      => MaprConfigFeatureStep =
+    new MaprConfigFeatureStep(_),
     provideSecretsStep: (KubernetesConf[_ <: KubernetesRoleSpecificConf])
       => MountSecretsFeatureStep =
       new MountSecretsFeatureStep(_),
@@ -40,7 +43,10 @@ private[spark] class KubernetesExecutorBuilder(
   def buildFromFeatures(
     kubernetesConf: KubernetesConf[KubernetesExecutorSpecificConf]): SparkPod = {
 
-    val baseFeatures = Seq(provideBasicStep(kubernetesConf), provideLocalDirsStep(kubernetesConf))
+    val baseFeatures = Seq(
+      provideBasicStep(kubernetesConf),
+      provideMaprStep(kubernetesConf),
+      provideLocalDirsStep(kubernetesConf))
     val secretFeature = if (kubernetesConf.roleSecretNamesToMountPaths.nonEmpty) {
       Seq(provideSecretsStep(kubernetesConf))
     } else Nil
