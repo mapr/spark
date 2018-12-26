@@ -18,10 +18,9 @@
 
 # echo commands to the terminal output
 set -ex
-SPARK_HOME=${SPARK_HOME:-/opt/mapr/spark/spark-2.3.2}
-securityConf="${SPARK_HOME}/kubernetes/dockerfiles/spark/securityConfig.sh"
-
-source $securityConf
+export SPARK_HOME=${SPARK_HOME:-/opt/mapr/spark/spark-2.4.0}
+export SPARK_CONF_DIR=${SPARK_HOME}/conf
+source ${SPARK_HOME}/kubernetes/dockerfiles/spark/securityConfig.sh
 
 createUser
 createUserGroups
@@ -35,8 +34,6 @@ set +e
 uidentry=$(getent passwd $myuid)
 set -e
 
-source $securityConf
-
 # If there is no passwd entry for the container UID, attempt to create one
 if [ -z "$uidentry" ] ; then
     if [ -w /etc/passwd ] ; then
@@ -47,12 +44,6 @@ if [ -z "$uidentry" ] ; then
 fi
 
 SPARK_K8S_CMD="$1"
-if [ -z "$SPARK_K8S_CMD" ]; then
-  echo "No command to execute has been provided." 1>&2
-  exit 1
-fi
-shift 1
-. "${SPARK_HOME}"/bin/load-spark-env.sh
 case "$SPARK_K8S_CMD" in
     driver | driver-py | driver-r | executor)
       shift 1
@@ -65,7 +56,9 @@ case "$SPARK_K8S_CMD" in
       ;;
 esac
 
-SPARK_CLASSPATH="$SPARK_CLASSPATH:${SPARK_HOME}/jars/*:$MAPR_SPARK_CLASSPATH"
+source ${SPARK_HOME}/bin/load-spark-env.sh
+
+SPARK_CLASSPATH="$SPARK_CLASSPATH:${SPARK_HOME}/jars/*:${MAPR_SPARK_CLASSPATH}"
 env | grep SPARK_JAVA_OPT_ | sort -t_ -k4 -n | sed 's/[^=]*=\(.*\)/\1/g' > ${SPARK_HOME}/java_opts.txt
 readarray -t SPARK_EXECUTOR_JAVA_OPTS < ${SPARK_HOME}/java_opts.txt
 
@@ -75,10 +68,6 @@ fi
 
 if [ -n "$PYSPARK_FILES" ]; then
     PYTHONPATH="$PYTHONPATH:$PYSPARK_FILES"
-fi
-
-if [ -n "$SPARK_MOUNTED_FILES_DIR" ]; then
-  cp -R "$SPARK_MOUNTED_FILES_DIR/." .
 fi
 
 PYSPARK_ARGS=""
@@ -144,26 +133,18 @@ case "$SPARK_K8S_CMD" in
     )
     ;;
 
-  init)
-    CMD=(
-      "$SPARK_HOME/bin/spark-class"
-      "org.apache.spark.deploy.k8s.SparkPodInitContainer"
-      "$@"
-    )
-    ;;
-
   *)
     echo "Unknown command: $SPARK_K8S_CMD" 1>&2
     exit 1
 esac
 
 #Run configure.sh
-if [ ! $SPARK_K8S_CMD == "init" ]; then
-  if [ ! -z "$MAPR_TICKETFILE_LOCATION" ] ; then
+
+if [ ! -z "$MAPR_TICKETFILE_LOCATION" ] ; then
     /opt/mapr/server/configure.sh -c -C $MAPR_CLDB_HOSTS -Z $MAPR_ZK_HOSTS -N $MAPR_CLUSTER -secure
-  else
+else
     /opt/mapr/server/configure.sh -c -C $MAPR_CLDB_HOSTS -Z $MAPR_ZK_HOSTS -N $MAPR_CLUSTER
-  fi
 fi
+
 
 exec sudo -u ${CURRENT_USER:-`whoami`} -E "${CMD[@]}"

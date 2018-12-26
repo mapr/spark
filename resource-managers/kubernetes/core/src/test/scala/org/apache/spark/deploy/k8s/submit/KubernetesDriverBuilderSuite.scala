@@ -34,9 +34,13 @@ class KubernetesDriverBuilderSuite extends SparkFunSuite {
   private val R_STEP_TYPE = "r-bindings"
   private val ENV_SECRETS_STEP_TYPE = "env-secrets"
   private val MOUNT_VOLUMES_STEP_TYPE = "mount-volumes"
+  private val MAPR_STEP_TYPE = "mapr"
 
   private val basicFeatureStep = KubernetesFeaturesTestUtils.getMockConfigStepForStepType(
     BASIC_STEP_TYPE, classOf[BasicDriverFeatureStep])
+
+  private val maprFeatureStep = KubernetesFeaturesTestUtils.getMockConfigStepForStepType(
+    MAPR_STEP_TYPE, classOf[MaprConfigFeatureStep])
 
   private val credentialsStep = KubernetesFeaturesTestUtils.getMockConfigStepForStepType(
     CREDENTIALS_STEP_TYPE, classOf[DriverKubernetesCredentialsFeatureStep])
@@ -68,6 +72,7 @@ class KubernetesDriverBuilderSuite extends SparkFunSuite {
   private val builderUnderTest: KubernetesDriverBuilder =
     new KubernetesDriverBuilder(
       _ => basicFeatureStep,
+      _ => maprFeatureStep,
       _ => credentialsStep,
       _ => serviceStep,
       _ => secretsStep,
