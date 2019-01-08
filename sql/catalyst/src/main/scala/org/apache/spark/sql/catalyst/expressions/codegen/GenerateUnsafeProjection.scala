@@ -49,25 +49,28 @@ object GenerateUnsafeProjection extends CodeGenerator[Seq[Expression], UnsafePro
       input: String,
       fieldTypes: Seq[DataType],
       bufferHolder: String): String = {
+    // Puts `input` in a local variable to avoid to re-evaluate it if it's a statement.
+    val tmpInput = ctx.freshName("tmpInput")
     val fieldEvals = fieldTypes.zipWithIndex.map { case (dt, i) =>
       val javaType = ctx.javaType(dt)
       val isNullVar = ctx.freshName("isNull")
       val valueVar = ctx.freshName("value")
       val defaultValue = ctx.defaultValue(dt)
-      val readValue = ctx.getValue(input, dt, i.toString)
+      val readValue = ctx.getValue(tmpInput, dt, i.toString)
       val code =
         s"""
-          boolean $isNullVar = $input.isNullAt($i);
+          boolean $isNullVar = $tmpInput.isNullAt($i);
           $javaType $valueVar = $isNullVar ? $defaultValue : $readValue;
         """
       ExprCode(code, isNullVar, valueVar)
     }
 
     s"""
-      if ($input instanceof UnsafeRow) {
-        ${writeUnsafeData(ctx, s"((UnsafeRow) $input)", bufferHolder)}
+      final InternalRow $tmpInput = $input;
+      if ($tmpInput instanceof UnsafeRow) {
+        ${writeUnsafeData(ctx, s"((UnsafeRow) $tmpInput)", bufferHolder)}
       } else {
-        ${writeExpressionsToBuffer(ctx, input, fieldEvals, fieldTypes, bufferHolder)}
+        ${writeExpressionsToBuffer(ctx, tmpInput, fieldEvals, fieldTypes, bufferHolder)}
       }
     """
   }
