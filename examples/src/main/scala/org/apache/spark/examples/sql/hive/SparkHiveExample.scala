@@ -121,6 +121,7 @@ object SparkHiveExample {
     // | 86| val_86|
     // |311|val_311|
     // ...
+    sql("DROP TABLE hive_records")
 
     // Prepare a Parquet data directory
     val dataDir = "/tmp/parquet_data"
