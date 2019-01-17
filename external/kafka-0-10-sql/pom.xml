@@ -67,11 +67,39 @@
       <groupId>org.apache.kafka</groupId>
       <artifactId>kafka-clients</artifactId>
       <version>${kafka.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.mapr.hadoop</groupId>
+          <artifactId>maprfs</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.mapr.streams</groupId>
+          <artifactId>mapr-streams</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.mapr.db</groupId>
+          <artifactId>maprdb</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.kafka</groupId>
       <artifactId>kafka_${scala.binary.version}</artifactId>
       <version>${kafka.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.mapr.hadoop</groupId>
+          <artifactId>maprfs</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.mapr.streams</groupId>
+          <artifactId>mapr-streams</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.mapr.db</groupId>
+          <artifactId>maprdb</artifactId>
+        </exclusion>
+      </exclusions>
       <scope>test</scope>
     </dependency>
     <dependency>
