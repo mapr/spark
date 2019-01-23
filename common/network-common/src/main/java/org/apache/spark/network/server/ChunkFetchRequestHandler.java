@@ -17,6 +17,7 @@
 
 package org.apache.spark.network.server;
 
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import java.net.SocketAddress;
 
 import com.google.common.base.Throwables;
@@ -24,7 +25,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +48,7 @@ import static org.apache.spark.network.util.NettyUtils.*;
  * time to process, and could lead to client timing out on either performing SASL authentication,
  * registering executors, or waiting for response for an OpenBlocks messages.
  */
-public class ChunkFetchRequestHandler extends SimpleChannelInboundHandler<ChunkFetchRequest> {
+public class ChunkFetchRequestHandler extends ChannelInboundHandlerAdapter {
   private static final Logger logger = LoggerFactory.getLogger(ChunkFetchRequestHandler.class);
 
   private final TransportClient client;
@@ -68,30 +68,33 @@ public class ChunkFetchRequestHandler extends SimpleChannelInboundHandler<ChunkF
   }
 
   @Override
-  protected void channelRead0(
-      ChannelHandlerContext ctx,
-      final ChunkFetchRequest msg) throws Exception {
-    Channel channel = ctx.channel();
-    if (logger.isTraceEnabled()) {
-      logger.trace("Received req from {} to fetch block {}", getRemoteAddress(channel),
-        msg.streamChunkId);
-    }
-    ManagedBuffer buf;
-    try {
-      streamManager.checkAuthorization(client, msg.streamChunkId.streamId);
-      streamManager.registerChannel(channel, msg.streamChunkId.streamId);
-      buf = streamManager.getChunk(msg.streamChunkId.streamId, msg.streamChunkId.chunkIndex);
-    } catch (Exception e) {
-      logger.error(String.format("Error opening block %s for request from %s",
-        msg.streamChunkId, getRemoteAddress(channel)), e);
-      respond(channel, new ChunkFetchFailure(msg.streamChunkId,
-        Throwables.getStackTraceAsString(e)));
-      return;
-    }
+  public void channelRead(ChannelHandlerContext ctx, Object request) throws Exception {
+    if (request instanceof ChunkFetchRequest) {
+      ChunkFetchRequest msg = (ChunkFetchRequest) request;
+      Channel channel = ctx.channel();
+      if (logger.isTraceEnabled()) {
+        logger.trace("Received req from {} to fetch block {}", getRemoteAddress(channel),
+            msg.streamChunkId);
+      }
+      ManagedBuffer buf;
+      try {
+        streamManager.checkAuthorization(client, msg.streamChunkId.streamId);
+        streamManager.registerChannel(channel, msg.streamChunkId.streamId);
+        buf = streamManager.getChunk(msg.streamChunkId.streamId, msg.streamChunkId.chunkIndex);
+      } catch (Exception e) {
+        logger.error(String.format("Error opening block %s for request from %s",
+            msg.streamChunkId, getRemoteAddress(channel)), e);
+        respond(channel, new ChunkFetchFailure(msg.streamChunkId,
+            Throwables.getStackTraceAsString(e)));
+        return;
+      }
 
-    streamManager.chunkBeingSent(msg.streamChunkId.streamId);
-    respond(channel, new ChunkFetchSuccess(msg.streamChunkId, buf)).addListener(
-      (ChannelFutureListener) future -> streamManager.chunkSent(msg.streamChunkId.streamId));
+      streamManager.chunkBeingSent(msg.streamChunkId.streamId);
+      respond(channel, new ChunkFetchSuccess(msg.streamChunkId, buf)).addListener(
+          (ChannelFutureListener) future -> streamManager.chunkSent(msg.streamChunkId.streamId));
+    } else {
+      ctx.fireChannelRead(request);
+    }
   }
 
   /**
