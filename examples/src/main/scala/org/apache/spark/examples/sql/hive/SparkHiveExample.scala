@@ -121,7 +121,6 @@ object SparkHiveExample {
     // | 86| val_86|
     // |311|val_311|
     // ...
-    sql("DROP TABLE hive_records")
 
     // Prepare a Parquet data directory
     val dataDir = "/tmp/parquet_data"
@@ -158,6 +157,10 @@ object SparkHiveExample {
     // | val_86| 86|
     // |val_311|311|
     // ...
+
+    sql("DROP TABLE IF EXISTS hive_records")
+    sql("DROP TABLE IF EXISTS src")
+    sql("DROP TABLE IF EXISTS records")
 
     spark.stop()
     // $example off:spark_hive$
