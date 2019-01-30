@@ -19,8 +19,7 @@ package object sql {
     MapRDBDataFrameReaderFunctions(dfr)
   }
 
-  implicit def toMaprdbWriterFunctions(dfw: DataFrameWriter[Any]):
-  MapRDBDataFrameWriterFunctions[Any] = {
+  implicit def toMaprdbWriterFunctions(dfw: DataFrameWriter[_]): MapRDBDataFrameWriterFunctions = {
     MapRDBDataFrameWriterFunctions(dfw)
   }
 
