@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.spark</groupId>
     <artifactId>spark-parent_2.11</artifactId>
-    <version>2.3.2.0-mapr-SNAPSHOT</version>
+    <version>2.3.2.0-mapr-1901</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -29,7 +29,7 @@
   <artifactId>spark-sql-kafka-0-10_2.11</artifactId>
   <properties>
     <sbt.project.name>sql-kafka-0-10</sbt.project.name>
-    <kafka.version>1.1.1-mapr-SNAPSHOT</kafka.version>
+    <kafka.version>1.1.1-mapr-1901</kafka.version>
   </properties>
   <packaging>jar</packaging>
   <name>Kafka 0.10 Source for Structured Streaming</name>
