@@ -21,6 +21,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
+import org.apache.spark.network.protocol.ChunkFetchRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,6 +115,12 @@ public class TransportChannelHandler extends ChannelInboundHandlerAdapter {
 
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object request) throws Exception {
+    // Delegate ChunkFetchRequest messages to ChunkFetchRequestHandler.
+    if (request instanceof ChunkFetchRequest) {
+      ctx.fireChannelRead(request);
+      return;
+    }
+
     if (request instanceof RequestMessage) {
       requestHandler.handle((RequestMessage) request);
     } else if (request instanceof ResponseMessage) {
