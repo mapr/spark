@@ -67,7 +67,7 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_${scala.binary.version}</artifactId>
-            <version>1.0.1-mapr-1803</version>
+            <version>${kafka.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.sun.jmx</groupId>
@@ -95,7 +95,7 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
-            <version>1.0.1-mapr-1803</version>
+            <version>${kafka.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.sun.jmx</groupId>
