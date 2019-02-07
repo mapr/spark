@@ -134,13 +134,13 @@
         <dependency>
             <groupId>org.ojai</groupId>
             <artifactId>ojai</artifactId>
-            <version>2.0-mapr-1710</version>
+            <version>3.0-mapr-1808</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.ojai</groupId>
             <artifactId>ojai-scala</artifactId>
-            <version>2.0-mapr-1710</version>
+            <version>3.0-mapr-1808</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -149,6 +149,12 @@
             <version>6.1.0-mapr</version>
             <classifier>tests</classifier>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.mapr.ojai</groupId>
+            <artifactId>mapr-ojai-driver</artifactId>
+            <version>6.1.0-mapr</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

@@ -49,26 +49,41 @@
     </dependency>
     <dependency>
       <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka-clients</artifactId>
-      <version>${kafka.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.kafka</groupId>
       <artifactId>kafka_${scala.binary.version}</artifactId>
-      <version>${kafka.version}</version>
-      <scope>test</scope>
+      <version>1.1.1-mapr-SNAPSHOT</version>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-core</artifactId>
+          <groupId>com.sun.jmx</groupId>
+          <artifactId>jmxri</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
+          <groupId>com.sun.jdmk</groupId>
+          <artifactId>jmxtools</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-annotations</artifactId>
+          <groupId>net.sf.jopt-simple</groupId>
+          <artifactId>jopt-simple</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-simple</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.zookeeper</groupId>
+          <artifactId>zookeeper</artifactId>
+        </exclusion>
+        <exclusion>
+            <groupId>com.mapr.hadoop</groupId>
+            <artifactId>maprfs</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.mapr.streams</groupId>
+          <artifactId>mapr-streams</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.mapr.db</groupId>
+          <artifactId>maprdb</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -100,7 +115,6 @@
     </dependency>
 
   </dependencies>
-
   <build>
     <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
     <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
@@ -112,7 +126,9 @@
         <version>2.20.1</version>
         <!-- Note config is repeated in scalatest config -->
         <configuration>
-          <skipTests>true</skipTests>
+          <systemProperties>
+            <java.security.auth.login.config>${project.basedir}/src/test/resources/test.login.conf</java.security.auth.login.config>
+          </systemProperties>
         </configuration>
       </plugin>
       <!-- Scalatest runs all Scala tests -->
@@ -122,19 +138,11 @@
         <version>1.0</version>
         <!-- Note config is repeated in surefire config -->
         <configuration>
-          <skipTests>true</skipTests>
+          <systemProperties>
+            <java.security.auth.login.config>${project.basedir}/src/test/resources/test.login.conf</java.security.auth.login.config>
+          </systemProperties>
         </configuration>
       </plugin>
     </plugins>
   </build>
-
-  <profiles>
-    <profile>
-      <id>scala-2.12</id>
-      <properties>
-        <kafka.version>0.10.1.1</kafka.version>
-      </properties>
-    </profile>
-  </profiles>
-
 </project>

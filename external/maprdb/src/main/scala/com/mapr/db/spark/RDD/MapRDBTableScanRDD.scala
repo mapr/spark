@@ -4,6 +4,7 @@ package com.mapr.db.spark.RDD
 import scala.language.existentials
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
+
 import com.mapr.db.impl.{ConditionImpl, IdCodec}
 import com.mapr.db.spark.RDD.partition.MaprDBPartition
 import com.mapr.db.spark.RDD.partitioner.MapRDBPartitioner
@@ -14,13 +15,15 @@ import com.mapr.db.spark.impl.OJAIDocument
 import com.mapr.db.spark.utils.DefaultClass.DefaultType
 import com.mapr.db.spark.utils.MapRSpark
 import org.ojai.{Document, Value}
+import org.ojai.store.DriverManager
+
 import org.apache.spark.{Partition, Partitioner, SparkContext, TaskContext}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 private[spark] class MapRDBTableScanRDD[T: ClassTag](
-    @transient sparkSession: SparkSession,
-    @transient sc: SparkContext,
+    @transient val sparkSession: SparkSession,
+    @transient override val sc: SparkContext,
     cnf: Broadcast[SerializableConfiguration],
     columns: Seq[String],
     val tableName: String,
@@ -116,12 +119,18 @@ private[spark] class MapRDBTableScanRDD[T: ClassTag](
 
     logDebug("Condition applied during table.find:" + combinedCond.toString)
 
+    val driver = DriverManager.getDriver("ojai:mapr:")
     var itrs: java.util.Iterator[Document] = null
     if (columns != null) {
       logDebug("Columns projected from table:" + columns)
-      itrs = table.find(combinedCond.build(), columns.toArray: _*).iterator()
+      itrs = table.find(driver
+        .newQuery()
+        .select(columns.toArray: _*)
+        .where(combinedCond.build()).build()).iterator()
     } else {
-      itrs = table.find(combinedCond.build()).iterator()
+      itrs = table.find(driver
+        .newQuery()
+        .where(combinedCond.build()).build()).iterator()
     }
     val ojaiCursor = reqType.getValue(itrs, beanClass)
 

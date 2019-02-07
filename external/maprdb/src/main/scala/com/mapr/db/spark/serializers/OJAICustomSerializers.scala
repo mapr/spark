@@ -3,12 +3,11 @@ package com.mapr.db.spark.serializers
 
 import scala.language.implicitConversions
 
-import java.nio.ByteBuffer
-
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.mapr.db.spark.types.DBBinaryValue
 import com.mapr.db.util.ByteBufs
+import java.nio.ByteBuffer
 import org.ojai.types.{ODate, OInterval, OTime, OTimestamp}
 
 

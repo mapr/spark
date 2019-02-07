@@ -122,6 +122,9 @@ public class JavaSparkHiveExample {
     // ...
     // $example off:spark_hive$
 
+    spark.sql("DROP TABLE IF EXISTS src");
+    spark.sql("DROP TABLE IF EXISTS records");
+
     spark.stop();
   }
 }
