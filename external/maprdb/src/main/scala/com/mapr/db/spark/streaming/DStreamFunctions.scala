@@ -7,8 +7,8 @@ import com.mapr.db.spark.utils.LoggingTrait
 import com.mapr.db.spark.writers.OJAIValue
 import org.ojai.DocumentConstants
 
-import org.apache.spark.streaming.dstream.DStream
 import org.apache.spark.SparkContext
+import org.apache.spark.streaming.dstream.DStream
 
 class DStreamFunctions[T](dStream: DStream[T])(implicit fv: OJAIValue[T])
     extends Serializable

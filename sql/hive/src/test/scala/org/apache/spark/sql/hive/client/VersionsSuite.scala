@@ -25,8 +25,6 @@ import org.apache.hadoop.hive.common.StatsSetupConst
 import org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
 import org.apache.hadoop.hive.serde2.`lazy`.LazySimpleSerDe
 import org.apache.hadoop.mapred.TextInputFormat
-import org.junit.Ignore
-
 import org.apache.spark.SparkFunSuite
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{AnalysisException, Row}
@@ -41,6 +39,7 @@ import org.apache.spark.sql.types.IntegerType
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.tags.ExtendedHiveTest
 import org.apache.spark.util.{MutableURLClassLoader, Utils}
+import org.scalatest.Ignore
 
 /**
  * A simple set of tests that call the methods of a [[HiveClient]], loading different version

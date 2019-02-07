@@ -1,29 +1,41 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.dbclient
 
-import com.mapr.db.{MapRDB, Table, TableDescriptor, TabletInfo}
-import com.mapr.db.impl.AdminImpl
+import com.mapr.db.{MapRDB, TableDescriptor}
+import com.mapr.db.impl.{AdminImpl, MetaTableImpl}
+import com.mapr.db.scan.ScanRange
+import com.mapr.ojai.store.impl.OjaiDocumentStore
 import org.ojai.{Document, DocumentBuilder, Value}
-import org.ojai.store.QueryCondition
+import org.ojai.store.{DocumentStore, DriverManager, QueryCondition}
+import scala.collection.JavaConverters._
 
 object DBOlderClientImpl extends DBClient {
 
+  private val connection = DriverManager.getConnection("ojai:mapr:")
+  private val driver = connection.getDriver
+
   override def newDocument(): Document = {
-    MapRDB.newDocument()
+    driver.newDocument()
   }
 
-  override def getTabletInfos(tablePath: String, cond: QueryCondition): Seq[TabletInfo] = {
-    MapRDB.getTable(tablePath).getTabletInfos(cond)
+  override def getTabletInfos(tablePath: String, cond: QueryCondition): Seq[ScanRange] = {
+    new MetaTableImpl(
+      connection.getStore(tablePath)
+        .asInstanceOf[OjaiDocumentStore].getTable
+    ).getScanRanges(cond).asScala
   }
 
-  override def getTabletInfos(tablePath: String): Seq[TabletInfo] = {
-    MapRDB.getTable(tablePath).getTabletInfos
+  override def getTabletInfos(tablePath: String): Seq[ScanRange] = {
+    new MetaTableImpl(
+      connection.getStore(tablePath)
+        .asInstanceOf[OjaiDocumentStore].getTable
+    ).getScanRanges().asScala
   }
 
   override def newDocument(jsonString: String): Document =
-    MapRDB.newDocument(jsonString)
+    driver.newDocument(jsonString)
 
-  override def newCondition(): QueryCondition = MapRDB.newCondition()
+  override def newCondition(): QueryCondition = driver.newCondition()
 
   override def deleteTable(tablePath: String): Unit =
     MapRDB.deleteTable(tablePath)
@@ -55,14 +67,14 @@ object DBOlderClientImpl extends DBClient {
   override def alterTable(tableDesc: TableDescriptor): Unit =
     MapRDB.newAdmin().alterTable(tableDesc)
 
-  override def getTable(tablePath: String): Table = MapRDB.getTable(tablePath)
+  override def getTable(tablePath: String): DocumentStore = connection.getStore(tablePath)
 
   override def getTableDescriptor(tablePath: String): TableDescriptor =
     MapRDB.newAdmin().getTableDescriptor(tablePath)
 
-  override def getEstimatedSize(scanRange: TabletInfo): Long = 0
+  override def getEstimatedSize(scanRange: ScanRange): Long = 0
 
   override def newDocumentBuilder(): DocumentBuilder =
-    MapRDB.newDocumentBuilder()
+    driver.newDocumentBuilder()
 
 }

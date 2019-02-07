@@ -9,8 +9,8 @@ import com.mapr.db.spark.condition.{DBQueryCondition, Predicate}
 import com.mapr.db.spark.dbclient.DBClient
 import org.ojai.store.QueryCondition
 
-import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 
 private[spark] abstract class MapRDBBaseRDD[T: ClassTag](
     @transient val sc: SparkContext,

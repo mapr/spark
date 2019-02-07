@@ -9,6 +9,7 @@ import com.mapr.db.spark.condition.quotes
 import com.mapr.db.spark.types.DBBinaryValue
 import com.mapr.db.spark.writers.{OJAIKey, OJAIValue}
 import com.mapr.org.apache.hadoop.hbase.util.Bytes
+import scala.language.implicitConversions
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD

@@ -1,17 +1,18 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.api.java
 
-import com.mapr.db.spark.RDD.api.java.MapRDBJavaRDD
 import com.mapr.db.spark.RDD.{PairedDocumentRDDFunctions, RDDTYPE}
+import com.mapr.db.spark.RDD.api.java.MapRDBJavaRDD
 import com.mapr.db.spark.impl.OJAIDocument
 import com.mapr.db.spark.utils.{MapRDBUtils, MapRSpark}
 import com.mapr.db.spark.writers.{OJAIKey, OJAIValue}
 import org.apache.hadoop.conf.Configuration
+import org.ojai.DocumentConstants
+
 import org.apache.spark.SparkContext
 import org.apache.spark.api.java.{JavaPairRDD, JavaRDD, JavaSparkContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
-import org.ojai.DocumentConstants
 
 class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
 

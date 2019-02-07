@@ -3,9 +3,9 @@ package com.mapr.db.spark.writers
 
 import java.nio.ByteBuffer
 
-import org.ojai.Document
 import com.mapr.db.rowcol.DBValueBuilderImpl
 import com.mapr.db.spark.condition.DBQueryCondition
+import org.ojai.Document
 import org.ojai.store.{DocumentMutation, DocumentStore}
 
 private[spark] case class TableInsertOrReplaceWriter(
@@ -73,7 +73,7 @@ private[spark] case class TableCheckAndMutateWriter(
   def write(mutation: DocumentMutation,
             queryCondition: DBQueryCondition,
             key: org.ojai.Value): Unit = {
-    table.checkAndMutate(key, queryCondition.condition, mutation)
+    table.checkAndUpdate(key, queryCondition.condition, mutation)
   }
 
   def close(): Unit = {

@@ -64,6 +64,7 @@ public class InProcessLauncher extends AbstractLauncher<InProcessLauncher> {
     }
 
     String secret = server.registerHandle(handle);
+    setConf("spark.byLauncher.started", "true");
     setConf(LauncherProtocol.CONF_LAUNCHER_PORT, String.valueOf(server.getPort()));
     setConf(LauncherProtocol.CONF_LAUNCHER_SECRET, secret);
 

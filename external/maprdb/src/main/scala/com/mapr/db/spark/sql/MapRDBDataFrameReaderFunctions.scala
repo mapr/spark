@@ -2,9 +2,10 @@
 package com.mapr.db.spark.sql
 
 import com.mapr.db.spark.utils.LoggingTrait
-import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.{DataFrame, DataFrameReader}
 import scala.reflect.runtime.universe._
+
+import org.apache.spark.sql.{DataFrame, DataFrameReader}
+import org.apache.spark.sql.types.StructType
 
 private[spark] case class MapRDBDataFrameReaderFunctions(
     @transient dfr: DataFrameReader)

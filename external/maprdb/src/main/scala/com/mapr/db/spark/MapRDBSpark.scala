@@ -8,12 +8,11 @@ import com.mapr.db.spark.dbclient.DBClient
 import com.mapr.db.spark.impl.OJAIDocument
 import com.mapr.db.spark.sql.utils.MapRSqlUtils
 import com.mapr.db.spark.types.DBBinaryValue
+import org.ojai.Document
 
 import org.apache.spark.Partitioner
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
-
-import org.ojai.Document
 
 /**
 * MapRDBSpark is a static class which contains factory methods to create scala's

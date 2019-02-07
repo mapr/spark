@@ -3,8 +3,9 @@ package com.mapr.db.spark.utils
 
 import java.io.ObjectInput
 import java.nio.ByteBuffer
-import com.mapr.db.exceptions.TableNotFoundException
+
 import com.mapr.db.exceptions.TableExistsException
+import com.mapr.db.exceptions.TableNotFoundException
 import com.mapr.db.impl.ConditionNode.RowkeyRange
 import com.mapr.db.spark.MapRDBSpark
 import com.mapr.db.spark.codec.BeanCodec
@@ -32,7 +33,6 @@ private[spark] object MapRDBUtils {
       tabDesc.setAutoSplit(true)
       tabDesc.setPath(tableName)
       tabDesc.setBulkLoad(bulkMode)
-      tabDesc.setInsertionOrder(false)
       if (keys.isEmpty) {
         DBClient().createTable(tabDesc)
       } else {
@@ -43,7 +43,7 @@ private[spark] object MapRDBUtils {
     } else if (createTable) {
       throw new TableExistsException("Table: " + tableName + " already Exists")
     } else {
-      if (bulkMode == true) isBulkLoad = DBClient().isBulkLoad(tableName)
+      if (bulkMode) isBulkLoad = DBClient().isBulkLoad(tableName)
       (false, isBulkLoad)
     }
   }
@@ -86,42 +86,44 @@ private[spark] object MapRDBUtils {
   }
 
   def convertToSeq(value: Seq[Any]): Seq[AnyRef] = {
-    if (value.isInstanceOf[DBArrayValue[_]]) {
-      value.asInstanceOf[DBArrayValue[_]].arr.map(_.asInstanceOf[AnyRef])
-    } else {
-      value.map(convertToScalaCollection(_))
+    value match {
+      case value1: DBArrayValue[_] =>
+        value1.arr.map(_.asInstanceOf[AnyRef])
+      case _ =>
+        value.map(convertToScalaCollection)
     }
   }
 
   def convertToMap(value: Map[String, Any]): Map[String, AnyRef] = {
-    if (value.isInstanceOf[DBMapValue]) {
-      value.asInstanceOf[DBMapValue].value.map {
-        case (k, v) => k -> v.asInstanceOf[AnyRef]
-      }
-    } else {
-      value.map { case (k, v) => k -> convertToScalaCollection(v) }
+    value match {
+      case value1: DBMapValue =>
+        value1.value.map {
+          case (k, v) => k -> v.asInstanceOf[AnyRef]
+        }
+      case _ =>
+        value.map { case (k, v) => k -> convertToScalaCollection(v) }
     }
   }
 
   def convertToScalaCollection(value: Any): AnyRef = {
-    if (value.isInstanceOf[DBMapValue]) {
-      return value.asInstanceOf[DBMapValue].value.asJava.asInstanceOf[AnyRef]
-    } else if (value.isInstanceOf[DBArrayValue[_]]) {
-      return value.asInstanceOf[DBArrayValue[_]].arr.asJava.asInstanceOf[AnyRef]
-    } else if (value.isInstanceOf[Map[_, _]]) {
-      return value
-        .asInstanceOf[Map[String, Any]]
-        .map { case (k, v) => k -> convertToScalaCollection(v) }
-        .asJava
-        .asInstanceOf[AnyRef]
-    } else if (value.isInstanceOf[Seq[Any]]) {
-      return value
-        .asInstanceOf[Seq[Any]]
-        .map(convertToScalaCollection(_))
-        .asJava
-        .asInstanceOf[AnyRef]
-    } else {
-      return value.asInstanceOf[AnyRef]
+    value match {
+      case value1: DBMapValue =>
+        value1.value.asJava.asInstanceOf[AnyRef]
+      case value1: DBArrayValue[_] =>
+        value1.arr.asJava.asInstanceOf[AnyRef]
+      case _: Map[_, _] =>
+        value
+          .asInstanceOf[Map[String, Any]]
+          .map { case (k, v) => k -> convertToScalaCollection(v) }
+          .asJava
+          .asInstanceOf[AnyRef]
+      case seq: Seq[Any] =>
+        seq
+          .map(convertToScalaCollection)
+          .asJava
+          .asInstanceOf[AnyRef]
+      case _ =>
+        value.asInstanceOf[AnyRef]
     }
   }
 
@@ -139,7 +141,7 @@ private[spark] object MapRDBUtils {
           "Key with type:" + classTag[T].runtimeClass + " is not supported")
     }
 
-    return result.asInstanceOf[OJAIKey[T]]
+    result.asInstanceOf[OJAIKey[T]]
   }
 
   implicit class ClassTagOps[T](val classTag: ClassTag[T]) extends AnyVal {
