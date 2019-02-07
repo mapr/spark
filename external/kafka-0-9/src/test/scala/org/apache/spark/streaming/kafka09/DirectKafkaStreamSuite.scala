@@ -517,7 +517,8 @@ class DirectKafkaStreamSuite
   }
 
   test("maxMessagesPerPartition with backpressure disabled") {
-    val topic = "maxMessagesPerPartition"
+    val topic = "maxMessagesPerPartitionBackpressureDisabled"
+    kafkaTestUtils.createTopic(topic, 2)
     val kafkaStream = getDirectKafkaStream(topic, None, None)
 
     val input = Map(new TopicPartition(topic, 0) -> 50L, new TopicPartition(topic, 1) -> 50L)
@@ -526,7 +527,8 @@ class DirectKafkaStreamSuite
   }
 
   test("maxMessagesPerPartition with no lag") {
-    val topic = "maxMessagesPerPartition"
+    val topic = "maxMessagesPerPartitionNoLag"
+    kafkaTestUtils.createTopic(topic, 2)
     val rateController = Some(new ConstantRateController(0, new ConstantEstimator(100), 100))
     val kafkaStream = getDirectKafkaStream(topic, rateController, None)
 
@@ -535,7 +537,8 @@ class DirectKafkaStreamSuite
   }
 
   test("maxMessagesPerPartition respects max rate") {
-    val topic = "maxMessagesPerPartition"
+    val topic = "maxMessagesPerPartitionRespectsMaxRate"
+    kafkaTestUtils.createTopic(topic, 2)
     val rateController = Some(new ConstantRateController(0, new ConstantEstimator(100), 1000))
     val ppc = Some(new PerPartitionConfig {
       def maxRatePerPartition(tp: TopicPartition) =
@@ -642,7 +645,6 @@ class DirectKafkaStreamSuite
 
     val kafkaParams = getKafkaParams("auto.offset.reset" -> "earliest")
     val ekp = new JHashMap[String, Object](kafkaParams)
-    KafkaUtils.fixKafkaParams(ekp)
 
     val s = new DirectKafkaInputDStream[String, String](
       ssc,

@@ -158,6 +158,10 @@ object SparkHiveExample {
     // |val_311|311|
     // ...
 
+    sql("DROP TABLE IF EXISTS hive_records")
+    sql("DROP TABLE IF EXISTS src")
+    sql("DROP TABLE IF EXISTS records")
+
     spark.stop()
     // $example off:spark_hive$
   }

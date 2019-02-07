@@ -76,8 +76,9 @@ object KafkaProducerExample extends App {
     .setAppName(getClass.getCanonicalName)
   val ssc = new StreamingContext(sparkConf, batchTime)
 
-  val producerConf = new ProducerConf(
-    bootstrapServers = kafkaBrokers.split(",").toList)
+  val producerConf = new ProducerConf(bootstrapServers = kafkaBrokers.split(",").toList)
+    .withKeySerializer("org.apache.kafka.common.serialization.ByteArraySerializer")
+    .withValueSerializer("org.apache.kafka.common.serialization.StringSerializer")
 
   val items = (0 until numMessages.toInt).map(i => Item(i, i).toString)
   val defaultRDD: RDD[String] = ssc.sparkContext.parallelize(items)

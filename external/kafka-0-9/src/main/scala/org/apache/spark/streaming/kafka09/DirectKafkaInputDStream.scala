@@ -52,6 +52,7 @@ import org.apache.spark.streaming.scheduler.rate.RateEstimator
  * @tparam K type of Kafka message key
  * @tparam V type of Kafka message value
  */
+@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.2")
 private[spark] class DirectKafkaInputDStream[K, V](
     _ssc: StreamingContext,
     locationStrategy: LocationStrategy,
@@ -75,7 +76,13 @@ private[spark] class DirectKafkaInputDStream[K, V](
     kc
   }
 
-  @transient val serviceConsumer: Consumer[K, V] = consumerStrategy.serviceConsumer
+  @transient private var sc: Consumer[K, V] = null
+  def serviceConsumer: Consumer[K, V] = this.synchronized {
+    if (null == sc) {
+      sc = consumerStrategy.serviceConsumer
+    }
+    sc
+  }
 
   override def persist(newLevel: StorageLevel): DStream[ConsumerRecord[K, V]] = {
     logError("Kafka ConsumerRecord is not serializable. " +

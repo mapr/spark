@@ -27,6 +27,7 @@ import org.apache.spark.annotation.Experimental
  * Interface for user-supplied configurations that can't otherwise be set via Spark properties,
  * because they need tweaking on a per-partition basis,
  */
+@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.2")
 @Experimental
 abstract class PerPartitionConfig extends Serializable {
   /**

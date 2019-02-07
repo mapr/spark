@@ -33,6 +33,7 @@ import org.apache.spark.annotation.Experimental
  *   }
  * }}}
  */
+@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.2")
 trait HasOffsetRanges {
   def offsetRanges: Array[OffsetRange]
 }
@@ -56,6 +57,7 @@ trait HasOffsetRanges {
  *   })
  * }}}
  */
+@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.2")
 @Experimental
 trait CanCommitOffsets {
   /**
@@ -86,6 +88,7 @@ trait CanCommitOffsets {
  * @param fromOffset Inclusive starting offset
  * @param untilOffset Exclusive ending offset
  */
+@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.2")
 final class OffsetRange private(
     val topic: String,
     val partition: Int,
@@ -124,6 +127,7 @@ final class OffsetRange private(
 /**
  * Companion object the provides methods to create instances of [[OffsetRange]].
  */
+@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.2")
 object OffsetRange {
   def create(topic: String, partition: Int, fromOffset: Long, untilOffset: Long): OffsetRange =
     new OffsetRange(topic, partition, fromOffset, untilOffset)

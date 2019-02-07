@@ -11,9 +11,9 @@ import org.ojai.DocumentConstants
 import org.ojai.store.QueryCondition
 
 import org.apache.spark.sql.{DataFrame, SaveMode, SQLContext}
+import org.apache.spark.sql.SaveMode._
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.{StructField, StructType}
-import org.apache.spark.sql.SaveMode._
 
 class DefaultSource
     extends DataSourceRegister
