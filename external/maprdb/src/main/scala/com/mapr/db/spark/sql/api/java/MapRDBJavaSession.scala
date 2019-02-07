@@ -3,9 +3,11 @@ package com.mapr.db.spark.sql.api.java
 
 import com.mapr.db.spark.sql.GenerateSchema
 import com.mapr.db.spark.utils.MapRSpark
-import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.{DataFrame, Dataset, Encoders, SparkSession}
 import org.ojai.DocumentConstants
+
+import org.apache.spark.sql.{DataFrame, Dataset, Encoders, SparkSession}
+import org.apache.spark.sql.types.StructType
+
 
 class MapRDBJavaSession(spark: SparkSession) {
 

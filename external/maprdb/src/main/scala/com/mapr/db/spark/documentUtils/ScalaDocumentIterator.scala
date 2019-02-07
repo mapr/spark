@@ -2,7 +2,6 @@
 package com.mapr.db.spark.documentUtils
 
 import java.util
-import java.util.Map
 
 import com.mapr.db.spark.codec.BeanCodec
 import com.mapr.db.spark.impl.OJAIDocument

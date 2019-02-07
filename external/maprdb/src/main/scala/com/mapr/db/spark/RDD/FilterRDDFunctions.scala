@@ -11,10 +11,13 @@ import com.mapr.db.spark.impl.OJAIDocument
 import com.mapr.db.spark.utils.DefaultClass.DefaultType
 import com.mapr.db.spark.writers.OJAIKey
 import org.ojai.DocumentConstants
+import org.ojai.store.DriverManager
 
 import org.apache.spark.rdd.RDD
 
 case class FilterRDDFunctions[K: OJAIKey: quotes](rdd: RDD[K]) {
+
+  val driver = DriverManager.getConnection("ojai:mapr:").getDriver
 
   def joinWithMapRDB[D: ClassTag](tableName: String)(
       implicit e: D DefaultType OJAIDocument,
@@ -24,8 +27,10 @@ case class FilterRDDFunctions[K: OJAIKey: quotes](rdd: RDD[K]) {
 
       partition.flatMap(item => {
         val condition = field(DocumentConstants.ID_KEY) === item
-        reqType.getValue(table.find(condition.build).iterator(),
-                         classTag[D].runtimeClass.asInstanceOf[Class[D]])
+        reqType.getValue(table.find(
+          driver.newQuery().where(condition.build).build
+        ).iterator(),
+            classTag[D].runtimeClass.asInstanceOf[Class[D]])
       })
     })
   }
@@ -43,7 +48,9 @@ case class FilterRDDFunctions[K: OJAIKey: quotes](rdd: RDD[K]) {
         if (gets.size == 4) {
           val condition = field(DocumentConstants.ID_KEY) in gets
           res = res ++ reqType.getValue(
-            table.find(condition.build).iterator(),
+            table.find(
+              driver.newQuery().where(condition.build).build
+            ).iterator(),
             classTag[D].runtimeClass.asInstanceOf[Class[D]])
           gets = Seq[K]()
         }
@@ -52,7 +59,9 @@ case class FilterRDDFunctions[K: OJAIKey: quotes](rdd: RDD[K]) {
       if (gets.nonEmpty) {
         val condition = field(DocumentConstants.ID_KEY) in gets
         res = res ++ reqType.getValue(
-          table.find(condition.build).iterator(),
+          table.find(
+            driver.newQuery().where(condition.build).build
+          ).iterator(),
           classTag[D].runtimeClass.asInstanceOf[Class[D]])
         gets = Seq[K]()
       }

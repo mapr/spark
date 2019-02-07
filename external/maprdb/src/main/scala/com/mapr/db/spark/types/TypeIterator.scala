@@ -14,13 +14,14 @@ class MapIterator(m: Map[String, AnyRef])
 
   def next(): (String, AnyRef) = {
     val nextElem = mapIterator.next()
-    if (nextElem._2.isInstanceOf[java.util.List[_]]) {
-      (nextElem._1, new DBArrayValue(nextElem._2.asInstanceOf[java.util.List[Object]].asScala))
-    } else if (nextElem._2.isInstanceOf[java.util.Map[_, _]]) {
-      (nextElem._1,
-       new DBMapValue(nextElem._2.asInstanceOf[util.Map[String, Object]].asScala.toMap))
-    } else {
-      nextElem
+    nextElem._2 match {
+      case _: util.List[_] =>
+        (nextElem._1, new DBArrayValue(nextElem._2.asInstanceOf[util.List[Object]].asScala))
+      case _: util.Map[_, _] =>
+        (nextElem._1,
+          new DBMapValue(nextElem._2.asInstanceOf[util.Map[String, Object]].asScala.toMap))
+      case _ =>
+        nextElem
     }
   }
 }
@@ -32,15 +33,16 @@ class ListIterator[T](s: Seq[T]) extends Iterator[T] {
 
   def next(): T = {
     val nextElem = seqIterator.next()
-    if (nextElem.isInstanceOf[java.util.List[_]]) {
-      new DBArrayValue(nextElem.asInstanceOf[java.util.List[Object]].asScala)
-        .asInstanceOf[T]
-    } else if (nextElem.isInstanceOf[java.util.Map[_, _]]) {
-      new DBMapValue(
-        nextElem.asInstanceOf[util.Map[String, Object]].asScala.toMap)
-        .asInstanceOf[T]
-    } else {
-      nextElem
+    nextElem match {
+      case _: util.List[_] =>
+        new DBArrayValue(nextElem.asInstanceOf[util.List[Object]].asScala)
+          .asInstanceOf[T]
+      case _: util.Map[_, _] =>
+        new DBMapValue(
+          nextElem.asInstanceOf[util.Map[String, Object]].asScala.toMap)
+          .asInstanceOf[T]
+      case _ =>
+        nextElem
     }
   }
 }

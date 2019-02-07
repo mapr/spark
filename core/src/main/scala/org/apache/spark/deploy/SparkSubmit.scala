@@ -893,7 +893,8 @@ private[spark] class SparkSubmit extends Logging {
         }
     }
     // TODO: fix MultiauthWebUiFilter and return standart Spark behavior
-    if (!isThriftServer(childMainClass)) {
+    if (!isThriftServer(childMainClass)
+      && !sparkConf.getBoolean("spark.byLauncher.started", false)) {
       System.exit(0)
     }
   }
@@ -1129,7 +1130,7 @@ private[spark] object SparkSubmitUtils {
     val mp: IBiblioResolver = new IBiblioResolver
     mp.setM2compatible(true)
     mp.setUsepoms(true)
-    mp.setRoot("http://repo.mapr:8081/artifactory/remote-repos")
+    mp.setRoot("http://repository.mapr.com/maven/")
     mp.setName("mapr-repo")
     cr.add(mp)
     cr

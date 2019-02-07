@@ -2,10 +2,12 @@
 package com.mapr.db.spark.RDD.api.java;
 
 import scala.reflect.ClassTag
-import org.apache.spark.api.java.JavaRDD
 
 import com.mapr.db.spark.RDD.MapRDBBaseRDD
 import org.ojai.store.QueryCondition
+
+import org.apache.spark.api.java.JavaRDD
+
 
 case class MapRDBJavaRDD[R: ClassTag](override val rdd: MapRDBBaseRDD[R])
     extends JavaRDD[R](rdd) {

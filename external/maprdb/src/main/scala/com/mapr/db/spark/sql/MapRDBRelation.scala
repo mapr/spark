@@ -1,8 +1,9 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.sql
 
-import scala.collection.mutable.ArrayBuffer
+import java.util.Calendar
 
+import scala.collection.mutable.ArrayBuffer
 import com.mapr.db.spark.RDD.MapRDBBaseRDD
 import com.mapr.db.spark.condition.Predicate
 import com.mapr.db.spark.field
@@ -11,9 +12,8 @@ import com.mapr.db.spark.sql.utils._
 import com.mapr.db.spark.utils.LoggingTrait
 import org.ojai.store.QueryCondition
 import org.ojai.types.{ODate, OTimestamp}
-
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row, SaveMode, SQLContext}
+import org.apache.spark.sql.{DataFrame, Row, SQLContext, SaveMode}
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.{StructField, StructType}
 
@@ -105,14 +105,14 @@ private[spark] case class MapRDBRelation(
       case d: Double => getPredicate(d)
       case str: String => getPredicate(str)
       case decimal: BigDecimal => getPredicate(decimal)
-      case date: java.sql.Date => getPredicate(convertToODate(date))
+      case _: java.sql.Date => getPredicate(convertToODate)
       case timestamp: java.sql.Timestamp => getPredicate(convertToOTimeStamp(timestamp))
       case _ => throw new RuntimeException(s"Cannot convert $value to a MapRDB predicate")
     }
   }
 
-  private def convertToODate(dt: java.sql.Date): ODate = {
-    new ODate(dt.getDay)
+  private def convertToODate: ODate = {
+    new ODate(Calendar.DAY_OF_WEEK)
   }
 
   private def convertToOTimeStamp(timeStamp: java.sql.Timestamp): OTimestamp = {

@@ -1,14 +1,15 @@
+/* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.streaming.sink
-
 
 import com.mapr.db.spark._
 import com.mapr.db.spark.streaming.MapRDBSourceConfig
+import org.ojai.DocumentConstants
+
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.plans.logical.{Command, LocalRelation, LogicalPlan, Union}
 import org.apache.spark.sql.execution.streaming.Sink
-import org.ojai.DocumentConstants
 
 private[streaming] class MapRDBSink(parameters: Map[String, String]) extends Sink with Logging {
 
@@ -22,10 +23,13 @@ private[streaming] class MapRDBSink(parameters: Map[String, String]) extends Sin
     } else {
 
       val tablePath = parameters.get(MapRDBSourceConfig.TablePathOption)
-      require(tablePath.isDefined, s"'${MapRDBSourceConfig.TablePathOption}' option must be defined")
+      require(tablePath.isDefined,
+        s"'${MapRDBSourceConfig.TablePathOption}' option must be defined")
 
-      val idFieldPath = parameters.getOrElse(MapRDBSourceConfig.IdFieldPathOption, DocumentConstants.ID_KEY)
-      val createTable = parameters.getOrElse(MapRDBSourceConfig.CreateTableOption, "false").toBoolean
+      val idFieldPath = parameters
+        .getOrElse(MapRDBSourceConfig.IdFieldPathOption, DocumentConstants.ID_KEY)
+      val createTable = parameters
+        .getOrElse(MapRDBSourceConfig.CreateTableOption, "false").toBoolean
       val bulkInsert = parameters.getOrElse(MapRDBSourceConfig.BulkModeOption, "false").toBoolean
 
       val logicalPlan: LogicalPlan = {
@@ -44,7 +48,8 @@ private[streaming] class MapRDBSink(parameters: Map[String, String]) extends Sin
       val encoder = RowEncoder(data.schema).resolveAndBind(
         logicalPlan.output,
         data.sparkSession.sessionState.analyzer)
-      data.queryExecution.toRdd.map(encoder.fromRow).saveToMapRDB(tablePath.get, createTable, bulkInsert, idFieldPath)
+      data.queryExecution.toRdd.map(encoder.fromRow)
+        .saveToMapRDB(tablePath.get, createTable, bulkInsert, idFieldPath)
 
       latestBatchId = batchId
     }
