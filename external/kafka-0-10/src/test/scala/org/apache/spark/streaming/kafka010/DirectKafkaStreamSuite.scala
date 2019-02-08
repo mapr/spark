@@ -20,7 +20,6 @@ package org.apache.spark.streaming.kafka010
 import java.io.File
 import java.lang.{ Long => JLong }
 import java.util.{ Arrays, HashMap => JHashMap, Map => JMap }
-import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -518,7 +517,8 @@ class DirectKafkaStreamSuite
   }
 
   test("maxMessagesPerPartition with backpressure disabled") {
-    val topic = "maxMessagesPerPartition"
+    val topic = "maxMessagesPerPartitionBackpressureDisabled"
+    kafkaTestUtils.createTopic(topic, 2)
     val kafkaStream = getDirectKafkaStream(topic, None, None)
 
     val input = Map(new TopicPartition(topic, 0) -> 50L, new TopicPartition(topic, 1) -> 50L)
@@ -527,7 +527,8 @@ class DirectKafkaStreamSuite
   }
 
   test("maxMessagesPerPartition with no lag") {
-    val topic = "maxMessagesPerPartition"
+    val topic = "maxMessagesPerPartitionNoLag"
+    kafkaTestUtils.createTopic(topic, 2)
     val rateController = Some(new ConstantRateController(0, new ConstantEstimator(100), 100))
     val kafkaStream = getDirectKafkaStream(topic, rateController, None)
 
@@ -536,7 +537,8 @@ class DirectKafkaStreamSuite
   }
 
   test("maxMessagesPerPartition respects max rate") {
-    val topic = "maxMessagesPerPartition"
+    val topic = "maxMessagesPerPartitionRespectsMaxRate"
+    kafkaTestUtils.createTopic(topic, 2)
     val rateController = Some(new ConstantRateController(0, new ConstantEstimator(100), 1000))
     val ppc = Some(new PerPartitionConfig {
       def maxRatePerPartition(tp: TopicPartition) =
@@ -619,105 +621,6 @@ class DirectKafkaStreamSuite
     ssc.stop()
   }
 
-  test("backpressure.initialRate should honor maxRatePerPartition") {
-    backpressureTest(maxRatePerPartition = 1000, initialRate = 500, maxMessagesPerPartition = 250)
-  }
-
-  test("use backpressure.initialRate with backpressure") {
-    backpressureTest(maxRatePerPartition = 300, initialRate = 1000, maxMessagesPerPartition = 150)
-  }
-
-  private def backpressureTest(
-      maxRatePerPartition: Int,
-      initialRate: Int,
-      maxMessagesPerPartition: Int) = {
-
-    val topic = UUID.randomUUID().toString
-    val kafkaParams = getKafkaParams("auto.offset.reset" -> "earliest")
-    val sparkConf = new SparkConf()
-      // Safe, even with streaming, because we're using the direct API.
-      // Using 1 core is useful to make the test more predictable.
-      .setMaster("local[1]")
-      .setAppName(this.getClass.getSimpleName)
-      .set("spark.streaming.backpressure.enabled", "true")
-      .set("spark.streaming.backpressure.initialRate", initialRate.toString)
-      .set("spark.streaming.kafka.maxRatePerPartition", maxRatePerPartition.toString)
-
-    val messages = Map("foo" -> 5000)
-    kafkaTestUtils.sendMessages(topic, messages)
-
-    ssc = new StreamingContext(sparkConf, Milliseconds(500))
-
-    val kafkaStream = withClue("Error creating direct stream") {
-      new DirectKafkaInputDStream[String, String](
-        ssc,
-        preferredHosts,
-        ConsumerStrategies.Subscribe[String, String](List(topic), kafkaParams.asScala),
-        new DefaultPerPartitionConfig(sparkConf)
-      )
-    }
-    kafkaStream.start()
-
-    val input = Map(new TopicPartition(topic, 0) -> 1000L)
-
-    assert(kafkaStream.maxMessagesPerPartition(input).get ==
-      Map(new TopicPartition(topic, 0) -> maxMessagesPerPartition)) // we run for half a second
-
-    kafkaStream.stop()
-  }
-
-  test("maxMessagesPerPartition with zero offset and rate equal to the specified" +
-    " minimum with default 1") {
-    val topic = "backpressure"
-    val kafkaParams = getKafkaParams()
-    val batchIntervalMilliseconds = 60000
-    val sparkConf = new SparkConf()
-      // Safe, even with streaming, because we're using the direct API.
-      // Using 1 core is useful to make the test more predictable.
-      .setMaster("local[1]")
-      .setAppName(this.getClass.getSimpleName)
-      .set("spark.streaming.kafka.maxRatePerPartition", "100")
-      .set("spark.streaming.kafka.minRatePerPartition", "5")
-
-
-    // Setup the streaming context
-    ssc = new StreamingContext(sparkConf, Milliseconds(batchIntervalMilliseconds))
-    val estimateRate = 1L
-    val fromOffsets = Map(
-      new TopicPartition(topic, 0) -> 0L,
-      new TopicPartition(topic, 1) -> 0L,
-      new TopicPartition(topic, 2) -> 0L,
-      new TopicPartition(topic, 3) -> 0L
-    )
-    val kafkaStream = withClue("Error creating direct stream") {
-      new DirectKafkaInputDStream[String, String](
-        ssc,
-        preferredHosts,
-        ConsumerStrategies.Subscribe[String, String](List(topic), kafkaParams.asScala),
-        new DefaultPerPartitionConfig(sparkConf)
-      ) {
-        currentOffsets = fromOffsets
-        override val rateController = Some(new ConstantRateController(id, null, estimateRate))
-      }
-    }
-
-    val offsets = Map[TopicPartition, Long](
-      new TopicPartition(topic, 0) -> 0,
-      new TopicPartition(topic, 1) -> 100L,
-      new TopicPartition(topic, 2) -> 200L,
-      new TopicPartition(topic, 3) -> 300L
-    )
-    val result = kafkaStream.maxMessagesPerPartition(offsets)
-    val expected = Map(
-      new TopicPartition(topic, 0) -> 5L,
-      new TopicPartition(topic, 1) -> 10L,
-      new TopicPartition(topic, 2) -> 20L,
-      new TopicPartition(topic, 3) -> 30L
-    )
-    assert(result.contains(expected), s"Number of messages per partition must be at least equal" +
-      s" to the specified minimum")
-  }
-
   /** Get the generated offset ranges from the DirectKafkaStream */
   private def getOffsetRanges[K, V](
       kafkaStream: DStream[ConsumerRecord[K, V]]): Seq[(Time, Array[OffsetRange])] = {
@@ -742,7 +645,6 @@ class DirectKafkaStreamSuite
 
     val kafkaParams = getKafkaParams("auto.offset.reset" -> "earliest")
     val ekp = new JHashMap[String, Object](kafkaParams)
-    KafkaUtils.fixKafkaParams(ekp)
 
     val s = new DirectKafkaInputDStream[String, String](
       ssc,
