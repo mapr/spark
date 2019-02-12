@@ -111,7 +111,7 @@ else
 fi
 
 if [ "$SPARK_PID_DIR" = "" ]; then
-  SPARK_PID_DIR=/tmp
+  SPARK_PID_DIR=${SPARK_HOME}/pid
 fi
 
 if [ "$SPARK_MAPR_PID_DIR" = "" ]; then

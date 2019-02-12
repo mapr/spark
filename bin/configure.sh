@@ -541,7 +541,6 @@ while [ ${#} -gt 0 ] ; do
   esac
 done
 
-mkBackupForOldConfigs
 configureOnHive
 registerServicePorts
 if [ ! "$isSecure" -eq 2 ] ; then
@@ -550,6 +549,7 @@ fi
 change_permissions
 copyWardenConfFiles
 stopServicesForRestartByWarden
+mkBackupForOldConfigs
 
 if [ "$JUST_UPDATED" = true ] ; then
 	replaceConfigFromPreviousVersion
