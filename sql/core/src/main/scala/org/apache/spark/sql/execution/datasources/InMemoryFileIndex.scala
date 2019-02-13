@@ -189,6 +189,7 @@ object InMemoryFileIndex extends Logging {
     val numParallelism = Math.min(paths.size, parallelPartitionDiscoveryParallelism)
 
     val previousJobDescription = sparkContext.getLocalProperty(SparkContext.SPARK_JOB_DESCRIPTION)
+    val previousDoAsUser = sparkContext.getJobDoAsUser();
     val statusMap = try {
       val description = paths.size match {
         case 0 =>
@@ -199,6 +200,7 @@ object InMemoryFileIndex extends Logging {
           s"Listing leaf files and directories for $s paths:<br/>${paths(0)}, ..."
       }
       sparkContext.setJobDescription(description)
+      sparkContext.setJobDoAsUser()
       sparkContext
         .parallelize(serializedPaths, numParallelism)
         .mapPartitions { pathStrings =>
@@ -237,6 +239,7 @@ object InMemoryFileIndex extends Logging {
       }.collect()
     } finally {
       sparkContext.setJobDescription(previousJobDescription)
+      sparkContext.setJobDoAsUser(previousDoAsUser)
     }
 
     // turn SerializableFileStatus back to Status
