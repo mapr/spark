@@ -123,6 +123,8 @@ private[spark] class DirectKafkaInputDStream[K, V](
   protected[streaming] override val checkpointData =
     new DirectKafkaInputDStreamCheckpointData
 
+  // Indicates whether Apache Kafka is used instead of MapR Streams
+  private var isStreams : Boolean = false
 
   /**
    * Asynchronously maintains & sends new rate limits to the receiver through the receiver tracker.
@@ -315,6 +317,9 @@ private[spark] class DirectKafkaInputDStream[K, V](
       }.toMap
     }
 
+    // Determine if Apache Kafka is used instead of MapR Streams
+    isStreams = currentOffsets.keys.map(_.topic()).exists(topic => topic.startsWith("/") && topic.contains(":"))
+
     // don't actually want to consume any messages, so pause all partitions
     c.pause(currentOffsets.keySet.asJava)
   }
@@ -359,7 +364,11 @@ private[spark] class DirectKafkaInputDStream[K, V](
       osr = commitQueue.poll()
     }
     if (!m.isEmpty) {
-      serviceConsumer.commitAsync(m, commitCallback.get)
+      if(isStreams) {
+        serviceConsumer.commitAsync(m, commitCallback.get)
+      } else {
+        consumer.commitAsync(m, commitCallback.get)
+      }
     }
   }
 
