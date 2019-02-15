@@ -288,6 +288,11 @@ EOF
 fi
 }
 
+function createAppsSparkFolder() {
+	sudo -u ${MAPR_USER} hadoop fs -mkdir -p /apps/spark > /dev/null 2>&1
+	sudo -u ${MAPR_USER} hadoop fs -chmod 777 /apps/spark > /dev/null 2>&1
+}
+
 #
 # Creating spark-env.sh
 #
@@ -653,6 +658,7 @@ if [ ! "$isSecure" -eq 2 ] ; then
 	configureSecurity
 fi
 createSparkEnvShConf
+createAppsSparkFolder
 change_permissions
 copyWardenConfFiles
 stopServicesForRestartByWarden
