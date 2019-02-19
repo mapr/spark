@@ -352,28 +352,8 @@ class HadoopRDD[K, V](
     maprdbTableName != null && maprdbTableName != ""
   }
 
-  override def compute(theSplit: Partition, context: TaskContext): InterruptibleIterator[(K, V)] = {
-    val ugi = UserGroupInformation.getCurrentUser
-
-    if (ugi.getUserName == doAsUserName) {
-      doCompute(theSplit: Partition, context: TaskContext)
-    } else {
-      val doAsAction = new PrivilegedExceptionAction[InterruptibleIterator[(K, V)]]() {
-        override def run(): InterruptibleIterator[(K, V)] = {
-          try {
-            doCompute(theSplit: Partition, context: TaskContext)
-          } catch {
-            case e: Exception =>
-              log.error("Error when HadoopRDD computing: ", e)
-              throw e
-          }
-        }
-      }
-
-      val proxyUgi = UserGroupInformation.createProxyUser(doAsUserName, ugi)
-      proxyUgi.doAs(doAsAction)
-    }
-  }
+  override def compute(theSplit: Partition, context: TaskContext): InterruptibleIterator[(K, V)] =
+    doCompute(theSplit: Partition, context: TaskContext)
 
   /** Maps over a partition, providing the InputSplit that was used as the base of the partition. */
   @DeveloperApi
