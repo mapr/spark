@@ -47,8 +47,9 @@ HIVE_HOME="$MAPR_HOME"/hive/hive-"$HIVE_VERSION"
 SPARK_BIN="$SPARK_HOME"/bin
 SPARK_LOGS="$SPARK_HOME"/logs
 DAEMON_CONF=${MAPR_HOME}/conf/daemon.conf
-MAPR_USER=$( awk -F = '$1 == "mapr.daemon.user" { print $2 }' $DAEMON_CONF)
-MAPR_GROUP=$( awk -F = '$1 == "mapr.daemon.group" { print $2 }' $DAEMON_CONF)
+
+MAPR_USER=${MAPR_USER:-$( awk -F = '$1 == "mapr.daemon.user" { print $2 }' $DAEMON_CONF)}
+MAPR_GROUP=${MAPR_GROUP:-$( awk -F = '$1 == "mapr.daemon.group" { print $2 }' $DAEMON_CONF)}
 
 CLUSTER_INFO=`cat $MAPR_HOME/conf/mapr-clusters.conf`
 
@@ -78,6 +79,9 @@ isSparkMasterUIPortDef=false
 # secure ui ports
 sparkMasterSecureUIPort=8980
 sparkHSSecureUIPort=18480
+
+# spark mapr-client usage
+isClient=false
 
 # indicates whether cluster is up or not
 SPARK_IS_RUNNING=false
@@ -590,7 +594,7 @@ function replaceConfigFromPreviousVersion() {
 
 USAGE="usage: $0 [-s|--secure || -u|--unsecure || -cs|--customSecure] [-R] [--EC <common args>] [-h|--help]]"
 
-{ OPTS=`getopt -n "$0" -a -o suhR --long secure,unsecure,customSecure,help,EC:,sparkHSUIPort:,sparkMasterPort:,sparkTSPort:,sparkMasterUIPort:,sparkTSUIPort: -- "$@"`; } 2>/dev/null
+{ OPTS=`getopt -n "$0" -a -o suhR --long secure,unsecure,customSecure,client,help,EC:,sparkHSUIPort:,sparkMasterPort:,sparkTSPort:,sparkMasterUIPort:,sparkTSUIPort: -- "$@"`; } 2>/dev/null
 
 eval set -- "$OPTS"
 
@@ -608,6 +612,9 @@ while [ ${#} -gt 0 ] ; do
       else
       	isSecure=2;
       fi
+      shift 1;;
+    --client|-c)
+      isClient=true;
       shift 1;;
      --R|-R)
       SPARK_IS_READY=true;
@@ -652,21 +659,24 @@ while [ ${#} -gt 0 ] ; do
   esac
 done
 
-configureOnHive
 registerServicePorts
 if [ ! "$isSecure" -eq 2 ] ; then
 	configureSecurity
 fi
+configureOnHive
 createSparkEnvShConf
 createAppsSparkFolder
 change_permissions
-copyWardenConfFiles
-stopServicesForRestartByWarden
 mkBackupForOldConfigs
 
-if [ "$JUST_UPDATED" = true ] ; then
-	replaceConfigFromPreviousVersion
-	rm -f "$SPARK_HOME"/etc/.just_updated
+if [ "$isClient" = false ]; then
+	copyWardenConfFiles
+	stopServicesForRestartByWarden
+
+	if [ "$JUST_UPDATED" = true ] ; then
+		replaceConfigFromPreviousVersion
+		rm -f "$SPARK_HOME"/etc/.just_updated
+	fi
 fi
 
 rm -f "$SPARK_HOME"/etc/.not_configured_yet
