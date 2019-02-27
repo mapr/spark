@@ -583,8 +583,8 @@ function findLatestTimestamp() {
 function replaceConfigFromPreviousVersion() {
 	findLatestTimestamp
 	if [ ${LATEST_SPARK_TIMESTAMP} -ne 0 ] ; then
-		cp "$SPARK_HOME.$LATEST_SPARK_TIMESTAMP/conf/spark-defaults.conf" "$SPARK_HOME/conf/spark-defaults.conf"
-		cp "$SPARK_HOME.$LATEST_SPARK_TIMESTAMP/conf/spark-env.sh" "$SPARK_HOME/conf/spark-env.sh"
+		cp ${SPARK_HOME}.*.${LATEST_SPARK_TIMESTAMP}/conf/spark-defaults.conf ${SPARK_HOME}/conf/spark-defaults.conf
+		cp ${SPARK_HOME}.*.${LATEST_SPARK_TIMESTAMP}/conf/spark-env.sh ${SPARK_HOME}/conf/spark-env.sh
 	fi
 }
 
