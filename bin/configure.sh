@@ -28,29 +28,42 @@ RETURN_ERR_OTHER=4
 #
 
 MAPR_HOME="${MAPR_HOME:-/opt/mapr}"
-. ${MAPR_HOME}/server/common-ecosystem.sh 2> /dev/null # prevent verbose output, set by 'set -x'
-if [ $? -ne 0 ]; then
-  echo 'Error: Seems that MAPR_HOME is not correctly set or mapr-core is not installed.'
-  exit 1
-fi 2> /dev/null
-{ set +x; } 2>/dev/null
-
-initCfgEnv
 
 MAPR_CONF_DIR=${MAPR_CONF_DIR:-"$MAPR_HOME/conf"}
 SPARK_VERSION=`cat $MAPR_HOME/spark/sparkversion`
 LATEST_SPARK_TIMESTAMP=0
-HIVE_VERSION=`cat $MAPR_HOME/hive/hiveversion`
+
+# Hive properties
+HIVE_INSTALLED=false
+if [ -f $MAPR_HOME/hive/hiveversion ]; then
+	HIVE_INSTALLED=true
+fi
+if [ "$HIVE_INSTALLED" = true ]; then
+	HIVE_VERSION=`cat $MAPR_HOME/hive/hiveversion`
+	HIVE_HOME="$MAPR_HOME"/hive/hive-"$HIVE_VERSION"
+fi
+
 SPARK_HOME="$MAPR_HOME"/spark/spark-"$SPARK_VERSION"
 SPARK_CONF="$SPARK_HOME"/conf
-HIVE_HOME="$MAPR_HOME"/hive/hive-"$HIVE_VERSION"
 SPARK_BIN="$SPARK_HOME"/bin
 SPARK_LOGS="$SPARK_HOME"/logs
 DAEMON_CONF=${MAPR_HOME}/conf/daemon.conf
 
-MAPR_USER=${MAPR_USER:-$( awk -F = '$1 == "mapr.daemon.user" { print $2 }' $DAEMON_CONF)}
-MAPR_GROUP=${MAPR_GROUP:-$( awk -F = '$1 == "mapr.daemon.group" { print $2 }' $DAEMON_CONF)}
 
+if [ "$isClient" = false ]; then
+	MAPR_USER=${MAPR_USER:-$( awk -F = '$1 == "mapr.daemon.user" { print $2 }' $DAEMON_CONF)}
+	MAPR_GROUP=${MAPR_GROUP:-$( awk -F = '$1 == "mapr.daemon.group" { print $2 }' $DAEMON_CONF)}
+
+	. ${MAPR_HOME}/server/common-ecosystem.sh 2> /dev/null # prevent verbose output, set by 'set -x'
+	if [ $? -ne 0 ]; then
+	  echo 'Error: Seems that MAPR_HOME is not correctly set or mapr-core is not installed.'
+	  exit 1
+	fi 2> /dev/null
+	{ set +x; } 2>/dev/null
+
+	initCfgEnv
+
+fi
 CLUSTER_INFO=`cat $MAPR_HOME/conf/mapr-clusters.conf`
 
 IS_FIRST_RUN=false
@@ -663,7 +676,9 @@ registerServicePorts
 if [ ! "$isSecure" -eq 2 ] ; then
 	configureSecurity
 fi
-configureOnHive
+if [ "$HIVE_INSTALLED" = true ]; then
+	configureOnHive
+fi
 createSparkEnvShConf
 createAppsSparkFolder
 change_permissions
