@@ -20,11 +20,8 @@
 set -ex
 export SPARK_HOME=${SPARK_HOME:-/opt/mapr/spark/spark-2.4.0}
 export SPARK_CONF_DIR=${SPARK_HOME}/conf
+export SPARK_CONF_PATH=${SPARK_CONF_DIR}/spark-defaults.conf
 source ${SPARK_HOME}/kubernetes/dockerfiles/spark/securityConfig.sh
-
-createUser
-createUserGroups
-copySecurity
 
 # Check whether there is a passwd entry for the container UID
 myuid=$(id -u)
@@ -55,6 +52,9 @@ case "$SPARK_K8S_CMD" in
       exec /sbin/tini -s -- "$@"
       ;;
 esac
+
+#Run configure.sh
+configurePod
 
 source ${SPARK_HOME}/bin/load-spark-env.sh
 
@@ -138,13 +138,7 @@ case "$SPARK_K8S_CMD" in
     exit 1
 esac
 
-#Run configure.sh
+# use Spark defaults as runtime configuration
+CMD_WITH_CONF=$(sed 's|--properties-file '/opt/spark/conf/spark.properties'|--properties-file '$SPARK_CONF_PATH'|g' <<< "${CMD[@]}")
 
-if [ ! -z "$MAPR_TICKETFILE_LOCATION" ] ; then
-    /opt/mapr/server/configure.sh -c -C $MAPR_CLDB_HOSTS -Z $MAPR_ZK_HOSTS -N $MAPR_CLUSTER -secure
-else
-    /opt/mapr/server/configure.sh -c -C $MAPR_CLDB_HOSTS -Z $MAPR_ZK_HOSTS -N $MAPR_CLUSTER
-fi
-
-
-exec sudo -u ${CURRENT_USER:-`whoami`} -E "${CMD[@]}"
+exec sudo -u ${MAPR_SPARK_USER:-`whoami`} -E ${CMD_WITH_CONF}
