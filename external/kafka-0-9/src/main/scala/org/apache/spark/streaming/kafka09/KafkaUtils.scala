@@ -25,7 +25,7 @@ import net.razorvine.pickle.{IObjectPickler, Opcodes, Pickler}
 import org.apache.kafka.clients.consumer._
 import org.apache.kafka.common.TopicPartition
 
-import org.apache.spark.SparkContext
+import org.apache.spark.{SparkContext, SparkEnv}
 import org.apache.spark.annotation.Experimental
 import org.apache.spark.api.java.{JavaRDD, JavaSparkContext}
 import org.apache.spark.api.python.SerDeUtil
@@ -231,6 +231,19 @@ object KafkaUtils extends Logging {
     }
   }
 
+  def waitForConsumerAssignment[K, V](consumer: KafkaConsumer[K, V],
+                                      partitions: ju.Set[TopicPartition]): Unit = {
+    val waitingForAssigmentTimeout = SparkEnv.get.conf.
+      getLong("spark.mapr.WaitingForAssignmentTimeout", 600000)
+
+    var timeout = 0
+    while ((consumer.assignment().isEmpty || consumer.assignment().size() < partitions.size)
+      && timeout < waitingForAssigmentTimeout) {
+
+      Thread.sleep(500)
+      timeout += 500
+    }
+  }
 }
 
 @deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.2")
