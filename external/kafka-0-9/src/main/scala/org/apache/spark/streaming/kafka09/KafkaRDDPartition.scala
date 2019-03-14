@@ -28,7 +28,7 @@ import org.apache.spark.Partition
  * @param fromOffset inclusive starting offset
  * @param untilOffset exclusive ending offset
  */
-@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.2")
+@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.3")
 private[kafka09]
 class KafkaRDDPartition(
   val index: Int,

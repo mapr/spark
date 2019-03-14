@@ -39,7 +39,7 @@ import org.apache.spark.streaming.dstream.InputDStream
  * :: Experimental ::
  * object for constructing Kafka streams and RDDs
  */
-@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.2")
+@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.3")
 @Experimental
 object KafkaUtils extends Logging {
   /**
@@ -246,7 +246,7 @@ object KafkaUtils extends Logging {
   }
 }
 
-@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.2")
+@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.3")
 object KafkaUtilsPythonHelper {
   private var initialized = false
 

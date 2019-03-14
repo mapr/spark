@@ -38,7 +38,7 @@ import org.apache.spark.internal.Logging
  * @tparam K type of Kafka message key
  * @tparam V type of Kafka message value
  */
-@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.2")
+@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.3")
 @Experimental
 abstract class ConsumerStrategy[K, V] {
   /**
@@ -222,7 +222,7 @@ private case class Assign[K, V](
  * :: Experimental ::
  * object for obtaining instances of [[ConsumerStrategy]]
  */
-@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.2")
+@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.3")
 @Experimental
 object ConsumerStrategies {
   /**
