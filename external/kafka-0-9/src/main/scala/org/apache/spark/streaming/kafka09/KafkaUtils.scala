@@ -244,6 +244,11 @@ object KafkaUtils extends Logging {
       timeout += 500
     }
   }
+
+  // Determine if Apache Kafka is used instead of MapR Streams
+  def isStreams(currentOffsets: Map[TopicPartition, Long]): Boolean =
+    currentOffsets.keys.map(_.topic()).exists(topic => topic.startsWith("/") && topic.contains(":"))
+
 }
 
 @deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.2")
