@@ -52,18 +52,18 @@ function configureSecurity() {
          MAPR_SECURE="-unsecure"
     fi
 
-    /opt/mapr/server/configure.sh -c -C $MAPR_CLDB_HOSTS -Z $MAPR_ZK_HOSTS -N $MAPR_CLUSTER -genkeys "${MAPR_SECURE}"
-    ${SPARK_HOME}/bin/configure.sh -c "-${MAPR_SECURE}"
+    /opt/mapr/server/configure.sh -c -C $MAPR_CLDB_HOSTS -Z $MAPR_ZK_HOSTS -N $MAPR_CLUSTER "${MAPR_SECURE}"
 }
 
 function configureK8SProperties() {
     cat >> $SPARK_CONF_PATH <<EOM
-spark.authenticate false
-spark.authenticate.enableSaslEncryption false
-spark.io.encryption.enabled     false
 spark.hadoop.yarn.resourcemanager.ha.custom-ha-enabled  false
 spark.hadoop.yarn.resourcemanager.recovery.enabled      false
 EOM
+
+    if [ "$SECURE_CLUSTER" == "true" ]; then
+        configureSecureK8SProperties
+    fi
 
     # copy k8s submit properties to spark-defaults
     defaultK8SConfMount=/opt/spark/conf/spark.properties
@@ -72,12 +72,13 @@ EOM
     fi
 }
 
-function configureLogs() {
-    log4jConf=$SPARK_CONF_DIR/log4j.properties
-    if [ -f ${log4jConf} ]; then
-        sed 's/rootCategory=WARN/rootCategory=INFO/' ${log4jConf}
-    fi
+
+function configureSecureK8SProperties() {
+    cat >> $SPARK_CONF_PATH <<EOM
+spark.ui.filters  org.apache.spark.ui.filters.MultiauthWebUiFilter
+EOM
 }
+
 
 function configurePod() {
     validateUserCredentials
@@ -86,5 +87,4 @@ function configurePod() {
     copySecurity
     configureSecurity
     configureK8SProperties
-    configureLogs
 }
