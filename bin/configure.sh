@@ -573,7 +573,6 @@ fi
 if [ "$HIVE_INSTALLED" = true ]; then
 	configureOnHive
 fi
-createSparkEnvShConf
 createAppsSparkFolder
 change_permissions
 mkBackupForOldConfigs
