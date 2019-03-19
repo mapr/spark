@@ -258,18 +258,7 @@
     <repository>
       <id>mapr-repo</id>
       <name>MapR Repository</name>
-      <url>http://repository.mapr.com/maven/</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-    <repository>
-      <id>mapr-repo cv</id>
-      <name>MapR Repository cv</name>
-      <url>http://repository_cv.mapr.com/maven/</url>
+      <url>${env.MAPR_MAVEN_REPO}</url>
       <releases>
         <enabled>true</enabled>
       </releases>
