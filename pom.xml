@@ -254,7 +254,7 @@
     <repository>
       <id>mapr-repo</id>
       <name>MapR Repository</name>
-      <url>http://repository.mapr.com/maven/</url>
+      <url>${env.MAPR_MAVEN_REPO}</url>
       <releases>
         <enabled>true</enabled>
       </releases>
@@ -2851,54 +2851,6 @@
         </repository>
       </repositories>
     </profile>
-    <!--
-     Allows to add repository using 'MAPR_MAVEN_REPO' environment variable.
-     Declares default Snapshots repository if the variable is not set.
-     Should be deleted before release!
-   -->
-    <profile>
-      <id>additional-mapr-repository-defined</id>
-      <activation>
-        <property>
-          <name>env.MAPR_MAVEN_REPO</name>
-        </property>
-      </activation>
-      <repositories>
-        <repository>
-          <id>mapr-additional-repo</id>
-          <name>MapR Additional Repository</name>
-          <url>${env.MAPR_MAVEN_REPO}</url>
-          <releases>
-            <enabled>true</enabled>
-          </releases>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
-        </repository>
-      </repositories>
-    </profile>
-    <profile>
-      <id>additional-mapr-repository-undefined</id>
-      <activation>
-        <property>
-          <name>!env.MAPR_MAVEN_REPO</name>
-        </property>
-      </activation>
-      <repositories>
-        <repository>
-          <id>mapr-additional-repo</id>
-          <name>MapR Additional Repository</name>
-          <url>http://maven.corp.maprtech.com/nexus/content/repositories/snapshots/</url>
-          <releases>
-            <enabled>true</enabled>
-          </releases>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
-        </repository>
-      </repositories>
-    </profile>
-
   <!--
     These empty profiles are available in some sub-modules. Declare them here so that
     maven does not complain when they're provided on the command line for a sub-module
