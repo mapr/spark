@@ -122,7 +122,6 @@ private[spark] class DirectKafkaInputDStream[K, V](
   protected[streaming] override val checkpointData =
     new DirectKafkaInputDStreamCheckpointData
 
-
   /**
    * Asynchronously maintains & sends new rate limits to the receiver through the receiver tracker.
    */
