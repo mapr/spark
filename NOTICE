@@ -1,4 +1,8 @@
 Apache Spark
+
+License: Apache License, Version 2.0
+http://www.apache.org/licenses/LICENSE-2.0.html
+
 Copyright 2014 and onwards The Apache Software Foundation.
 
 This product includes software developed at
@@ -26,3 +30,18 @@ The following provides more details on the included cryptographic software:
 This software uses Apache Commons Crypto (https://commons.apache.org/proper/commons-crypto/) to
 support authentication, and encryption and decryption of data sent across the network between
 services.
+
+Apache Software Foundation License 2.0
+--------------------------------------
+
+Python Software Foundation License
+----------------------------------
+
+BSD 3-Clause
+------------
+
+MIT License
+-----------
+
+Creative Commons CC0 1.0 Universal Public Domain Dedication
+-----------------------------------------------------------
