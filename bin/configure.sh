@@ -120,6 +120,13 @@ if [ -f $SPARK_HOME/conf/spark-defaults.conf.template ] && [ ! -f $SPARK_HOME/co
 fi
 
 #
+# Create metrics.properties from metrics.properties.template
+#
+if [ -f $SPARK_HOME/conf/metrics.properties.template ] && [ ! -f $SPARK_HOME/conf/metrics.properties ] ; then
+	cp "$SPARK_HOME/conf/metrics.properties.template" "$SPARK_HOME/conf/metrics.properties"
+fi
+
+#
 # Make the logs directory rwx, and set the sticky bit.
 #
 mkdir -p "$SPARK_HOME/logs"
