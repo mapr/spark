@@ -128,7 +128,7 @@
 
 ## Examples
 # Enable JmxSink for all instances by class name
-#*.sink.jmx.class=org.apache.spark.metrics.sink.JmxSink
+*.sink.jmx.class=org.apache.spark.metrics.sink.JmxSink
 
 # Enable ConsoleSink for all instances by class name
 #*.sink.console.class=org.apache.spark.metrics.sink.ConsoleSink
@@ -173,10 +173,10 @@
 #*.sink.slf4j.unit=minutes
 
 # Enable JvmSource for instance master, worker, driver and executor
-#master.source.jvm.class=org.apache.spark.metrics.source.JvmSource
+master.source.jvm.class=org.apache.spark.metrics.source.JvmSource
 
-#worker.source.jvm.class=org.apache.spark.metrics.source.JvmSource
+worker.source.jvm.class=org.apache.spark.metrics.source.JvmSource
 
-#driver.source.jvm.class=org.apache.spark.metrics.source.JvmSource
+driver.source.jvm.class=org.apache.spark.metrics.source.JvmSource
 
-#executor.source.jvm.class=org.apache.spark.metrics.source.JvmSource
+executor.source.jvm.class=org.apache.spark.metrics.source.JvmSource
