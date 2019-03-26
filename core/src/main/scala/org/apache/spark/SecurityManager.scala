@@ -261,6 +261,18 @@ private[spark] class SecurityManager(
     viewAclsGroups.exists(currentUserGroups.contains(_))
   }
 
+  def checkHSViewPermissions(user: String): Boolean = {
+    logDebug("user=" + user + " aclsEnabled=" + aclsEnabled() + " adminAcls=" +
+      adminAcls.mkString(",") + " adminAclsGroups=" + adminAclsGroups.mkString(","))
+    if (!aclsEnabled || user == null || adminAcls.contains(user) ||
+      adminAcls.contains(WILDCARD_ACL) || adminAclsGroups.contains(WILDCARD_ACL)) {
+      return true
+    }
+    val currentUserGroups = Utils.getCurrentUserGroups(sparkConf, user)
+    logDebug("userGroups=" + currentUserGroups.mkString(","))
+    adminAclsGroups.exists(currentUserGroups.contains(_))
+  }
+
   /**
    * Checks the given user against the modify acl and groups list to see if they have
    * authorization to modify the application. If the modify acls are disabled
