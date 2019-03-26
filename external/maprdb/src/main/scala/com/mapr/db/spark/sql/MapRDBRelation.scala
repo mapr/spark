@@ -144,11 +144,11 @@ private[spark] case class MapRDBRelation(
         if (!inNot) getPredicate(fld, QueryCondition.Op.LESS_OR_EQUAL, value)
         else getPredicate(fld, QueryCondition.Op.GREATER, value)
       case IsNull(fld) =>
-        if (!inNot) field(fld) notexists
-        else field(fld) exists
+        if (!inNot) field(fld).typeof("NULL")
+        else field(fld).nottypeof("NULL")
       case IsNotNull(fld) =>
-        if (!inNot) field(fld) exists
-        else field(fld) notexists
+        if (!inNot) field(fld).nottypeof("NULL")
+        else field(fld).typeof("NULL")
       case And(leftFilter, rightFilter) =>
         if (!inNot) {
           convertToCondition(Array(leftFilter), inNot) and
