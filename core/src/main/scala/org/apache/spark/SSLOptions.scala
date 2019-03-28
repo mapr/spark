@@ -120,16 +120,31 @@ private[spark] case class SSLOptions(
 
     val providerAlgorithms = context.getServerSocketFactory.getSupportedCipherSuites.toSet
 
+    val secureAlgorithms = Set("TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+      "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+      "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+      "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+      "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+      "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+      "TLS_ECDHE_ECDSA_WITH_AES_256_CCM",
+      "TLS_ECDHE_ECDSA_WITH_AES_128_CCM",
+      "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
+      "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256")
+
     // Log which algorithms we are discarding
     (enabledAlgorithms &~ providerAlgorithms).foreach { cipher =>
       logDebug(s"Discarding unsupported cipher $cipher")
+    }
+
+    (providerAlgorithms &~ secureAlgorithms).foreach { cipher =>
+      logDebug(s"Discarding less secure cipher $cipher")
     }
 
     val supported = enabledAlgorithms & providerAlgorithms
     require(supported.nonEmpty || sys.env.contains("SPARK_TESTING"),
       "SSLContext does not support any of the enabled algorithms: " +
         enabledAlgorithms.mkString(","))
-    supported
+    supported & secureAlgorithms
   }
 
   /** Returns a string representation of this SSLOptions with all the passwords masked. */
