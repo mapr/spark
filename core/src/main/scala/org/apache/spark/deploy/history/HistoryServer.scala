@@ -182,7 +182,8 @@ class HistoryServer(
 
   def getApplicationListForUser(user: Option[String]): Iterator[ApplicationHistoryInfo] = {
     val realUser = user.getOrElse("")
-    if (realUser.isEmpty || UserGroupInformation.getCurrentUser.getUserName == realUser) {
+    if (realUser.isEmpty || UserGroupInformation.getCurrentUser.getUserName == realUser  ||
+      securityManager.checkHSViewPermissions(realUser) ) {
       provider.getListing()
     } else {
       provider
@@ -217,7 +218,8 @@ class HistoryServer(
                                         ): Option[ApplicationInfo] = {
 
     val realUser = user.getOrElse("")
-    if (realUser.isEmpty || UserGroupInformation.getCurrentUser.getUserName == realUser) {
+    if (realUser.isEmpty || UserGroupInformation.getCurrentUser.getUserName == realUser ||
+      securityManager.checkHSViewPermissions(realUser)  ) {
       provider.getApplicationInfo(appId)
         .map(ApplicationsListResource.appHistoryInfoToPublicAppInfo)
     } else {
@@ -343,7 +345,11 @@ object HistoryServer extends Logging {
       config.set("spark.ui.acls.enable", "false")
     }
 
-    new SecurityManager(config)
+    val secManager = new SecurityManager(config)
+    secManager.setAcls(config.getBoolean("spark.history.ui.acls.enable", false))
+    secManager.setAdminAcls(config.get("spark.history.ui.admin.acls", ""))
+    secManager.setAdminAclsGroups(config.get("spark.history.ui.admin.acls.groups", ""))
+    secManager
   }
 
   def initSecurity() {
