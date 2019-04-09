@@ -134,8 +134,8 @@
     <curator.version>2.7.1</curator.version>
     <hive.group>org.apache.hive</hive.group>
     <!-- Version used in Maven Hive dependency -->
-    <hive.version>1.2.0-mapr-spark-MEP-6.0.0-1901</hive.version>
-    <hive.2.version>2.3.3-mapr-1901</hive.2.version>
+    <hive.version>1.2.0-mapr-spark-MEP-6.0.0-SNAPSHOT</hive.version>
+    <hive.2.version>2.3.3-mapr-SNAPSHOT</hive.2.version>
     <!-- Kafka version -->
     <kafka.version>1.1.1-mapr-1901</kafka.version>
     <!-- Version used for internal directory structure -->
@@ -260,10 +260,10 @@
       <name>MapR Repository</name>
       <url>${env.MAPR_MAVEN_REPO}</url>
       <releases>
-        <enabled>true</enabled>
+        <enabled>false</enabled>
       </releases>
       <snapshots>
-        <enabled>false</enabled>
+        <enabled>true</enabled>
       </snapshots>
     </repository>
     <repository>
