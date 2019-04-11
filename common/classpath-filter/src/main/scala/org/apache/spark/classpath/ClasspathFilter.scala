@@ -28,7 +28,7 @@ object ClasspathFilter {
 
 
   def main(args: Array[String]): Unit = {
-    val classpath = resolveClasspath(args(0).split(":"))
+    val classpath = resolveClasspath(args(0).split(":")).toSet
     val blacklist = scala.io.Source.fromFile(new File(args(1))).mkString
 
     val filteredClasspath =
