@@ -48,11 +48,22 @@ function configureSecurity() {
 
     if [ "$SECURE_CLUSTER" == "true" ]; then
          MAPR_SECURE="-secure"
+
+         # FIXME: (Copy Metrics ticket)
+         METRICS_TICKET_DIR=$(dirname "${MAPR_TICKETFILE_LOCATION}")
+         METRICS_TICKET_FILE=$METRICS_TICKET_DIR/METRICS_TICKET
+         cp $METRICS_TICKET_FILE $MAPR_HOME/conf/mapruserticket
     else
          MAPR_SECURE="-unsecure"
     fi
 
-    /opt/mapr/server/configure.sh -c -C $MAPR_CLDB_HOSTS -Z $MAPR_ZK_HOSTS -N $MAPR_CLUSTER "${MAPR_SECURE}"
+    local args="-no-autostart -on-prompt-cont y -v -f -nocerts"
+    /opt/mapr/server/configure.sh $MAPR_SECURE $args -c -C $MAPR_CLDB_HOSTS -Z $MAPR_ZK_HOSTS -N $MAPR_CLUSTER -OT $MAPR_TSDB_HOSTS -ES $MAPR_ES_HOSTS
+
+    # Configure collectd
+    echo "Configuring collectd.."
+    echo $MAPR_CLUSTER_ID >> $MAPR_HOME/conf/clusterid
+    /opt/mapr/collectd/collectd-${collectd_version}/bin/configure.sh $MAPR_SECURE -nocerts -OT "$MAPR_TSDB_HOSTS"
 }
 
 function configureK8SProperties() {
@@ -79,6 +90,21 @@ spark.ui.filters  org.apache.spark.ui.filters.MultiauthWebUiFilter
 EOM
 }
 
+function startCollectdForMetrics() {
+
+    if [ -v SPARK_EXECUTOR_ID ]; then
+      echo "Skipping collectd for spark executor pod.."
+    else
+      echo "Starting CollectD for spark driver pod.."
+      local collectd="/opt/mapr/collectd/collectd-${collectd_version}/etc/init.d/collectd"
+
+      if [ ! -f $collectd ]; then
+          echo "Could not find collectd start file at: ${collectd}"
+      else
+          ${collectd} start &
+      fi
+    fi
+}
 
 function configurePod() {
     validateUserCredentials
@@ -86,5 +112,6 @@ function configurePod() {
     createUserGroups
     copySecurity
     configureSecurity
+    startCollectdForMetrics
     configureK8SProperties
 }
