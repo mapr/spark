@@ -33,9 +33,9 @@ from __future__ import print_function
 import sys
 from pyspark import SparkContext
 from pyspark.streaming import StreamingContext
-from pyspark.streaming.kafka09 import KafkaUtils
-from pyspark.streaming.kafka09 import ConsumerStrategies
-from pyspark.streaming.kafka09 import LocationStrategies
+from pyspark.streaming.kafka010 import KafkaUtils
+from pyspark.streaming.kafka010 import ConsumerStrategies
+from pyspark.streaming.kafka010 import LocationStrategies
 
 if __name__ == "__main__":
 
