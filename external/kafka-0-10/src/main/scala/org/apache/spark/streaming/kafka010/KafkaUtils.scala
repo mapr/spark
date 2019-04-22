@@ -20,6 +20,7 @@ package org.apache.spark.streaming.kafka010
 import java.{util => ju}
 import java.io.OutputStream
 
+import scala.collection.JavaConverters._
 import com.google.common.base.Charsets.UTF_8
 import net.razorvine.pickle.{IObjectPickler, Opcodes, Pickler}
 import org.apache.kafka.clients.consumer._
@@ -310,5 +311,40 @@ object KafkaUtilsPythonHelper {
       .map(cm => (cm.key, cm.value))
 
     new JavaDStream[(Array[Byte], Array[Byte])](dStream)
+  }
+
+  @Experimental
+  def createRDDWithoutMessageHandler(jsc: JavaSparkContext,
+                                     kafkaParams: ju.Map[String, Object],
+                                     offsetRanges: ju.List[OffsetRange],
+                                     locationStrategy: LocationStrategy): JavaRDD[(Array[Byte], Array[Byte])] = {
+
+    val rdd = KafkaUtils.createRDD[Array[Byte], Array[Byte]](
+      jsc.sc, kafkaParams, offsetRanges.asScala.toArray, locationStrategy)
+      .map(cm => (cm.key, cm.value))
+
+    new JavaRDD[(Array[Byte], Array[Byte])](rdd)
+  }
+
+  @Experimental
+  def createOffsetRange(topic: String, partition: Integer, fromOffset: java.lang.Long, untilOffset: java.lang.Long
+                       ): OffsetRange = OffsetRange(topic, partition, fromOffset, untilOffset)
+
+  @Experimental
+  def createTopicAndPartition(topic: String, partition: java.lang.Integer): TopicPartition =
+    new TopicPartition(topic, partition)
+
+  @Experimental
+  def offsetRangesOfKafkaRDD(rdd: RDD[_]): ju.List[OffsetRange] = {
+    val parentRDDs = rdd.getNarrowAncestors
+    val kafkaRDDs = parentRDDs.filter(rdd => rdd.isInstanceOf[KafkaRDD[_, _]])
+
+    require(
+      kafkaRDDs.length == 1,
+      "Cannot get offset ranges, as there may be multiple Kafka RDDs or no Kafka RDD associated" +
+        "with this RDD, please call this method only on a Kafka RDD.")
+
+    val kafkaRDD = kafkaRDDs.head.asInstanceOf[KafkaRDD[_, _]]
+    kafkaRDD.offsetRanges.toSeq.asJava
   }
 }
