@@ -88,7 +88,7 @@ def run_individual_python_test(target_dir, test_name, pyspark_python):
 
     # Also override the JVM's temp directory by setting driver and executor options.
     spark_args = [
-        "--conf", "spark.driver.extraJavaOptions=-Djava.io.tmpdir={0}".format(tmp_dir),
+        "--conf", "\"spark.driver.extraJavaOptions=-Djava.io.tmpdir={0} -Dzookeeper.sasl.serverconfig=Server_simple -Dzookeeper.sasl.clientconfig=Client_simple -Dzookeeper.saslprovider=com.mapr.security.simplesasl.SimpleSaslProvider\"".format(tmp_dir),
         "--conf", "spark.executor.extraJavaOptions=-Djava.io.tmpdir={0}".format(tmp_dir),
         "pyspark-shell"
     ]

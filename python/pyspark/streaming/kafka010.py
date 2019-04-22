@@ -65,7 +65,7 @@ class KafkaUtils(object):
             return (utf8_decoder(k_v[0]), utf8_decoder(k_v[1]))
 
         ser = PairDeserializer(NoOpSerializer(), NoOpSerializer())
-        jstream = ssc._sc._jvm.org.apache.spark.streaming.kafka09.KafkaUtilsPythonHelper. \
+        jstream = ssc._sc._jvm.org.apache.spark.streaming.kafka010.KafkaUtilsPythonHelper. \
             createDirectStream(ssc._jssc, locationStrategy, consumerStrategy)
 
         stream = DStream(jstream, ssc, ser).map(funcWithoutMessageHandler)
@@ -107,7 +107,7 @@ class KafkaUtils(object):
     @staticmethod
     def _get_helper(sc):
         try:
-            return sc._jvm.org.apache.spark.streaming.kafka09.KafkaUtilsPythonHelper
+            return sc._jvm.org.apache.spark.streaming.kafka010.KafkaUtilsPythonHelper
         except TypeError as e:
             if str(e) == "'JavaPackage' object is not callable":
                 KafkaUtils._printErrorMsg(sc)
@@ -123,13 +123,13 @@ ________________________________________________________________________________
   1. Include the Kafka library and its dependencies with in the
      spark-submit command as
 
-     $ bin/spark-submit --packages org.apache.spark:spark-streaming-kafka-0-9:%s ...
+     $ bin/spark-submit --packages org.apache.spark:spark-streaming-kafka-0-10:%s ...
 
   2. Download the JAR of the artifact from Maven Central http://search.maven.org/,
-     Group Id = org.apache.spark, Artifact Id = spark-streaming-kafka-0-9-assembly, Version = %s.
+     Group Id = org.apache.spark, Artifact Id = spark-streaming-kafka-0-10-assembly, Version = %s.
      Then, include the jar in the spark-submit command as
 
-     $ bin/spark-submit --jars <spark-streaming-kafka-0-9-assembly.jar> ...
+     $ bin/spark-submit --jars <spark-streaming-kafka-0-10-assembly.jar> ...
 
 ________________________________________________________________________________________________
 
@@ -342,7 +342,7 @@ class LocationStrategies(object):
         """
         Use this only if your executors are on the same nodes as your Kafka brokers.
         """
-        return sc._jvm.org.apache.spark.streaming.kafka09.LocationStrategies.PreferBrokers()
+        return sc._jvm.org.apache.spark.streaming.kafka010.LocationStrategies.PreferBrokers()
 
     @staticmethod
     def PreferConsistent(sc):
@@ -350,7 +350,7 @@ class LocationStrategies(object):
         .. note:: Experimental
         Use this in most cases, it will consistently distribute partitions across all executors.
         """
-        return sc._jvm.org.apache.spark.streaming.kafka09.LocationStrategies.PreferConsistent()
+        return sc._jvm.org.apache.spark.streaming.kafka010.LocationStrategies.PreferConsistent()
 
     @staticmethod
     def PreferFixed(sc, host_dict):
@@ -367,11 +367,11 @@ class LocationStrategies(object):
         if not host_dict:
             host_dict = {}
         for tp, v in host_dict.items():
-            jtp = sc._jvm.org.apache.spark.streaming.kafka09.KafkaUtilsPythonHelper\
+            jtp = sc._jvm.org.apache.spark.streaming.kafka010.KafkaUtilsPythonHelper\
                 .createTopicAndPartition(tp._topic, tp._partition)
             jm[jtp] = v
 
-        return sc._jvm.org.apache.spark.streaming.kafka09.LocationStrategies.PreferFixed(jm)
+        return sc._jvm.org.apache.spark.streaming.kafka010.LocationStrategies.PreferFixed(jm)
 
 
 class ConsumerStrategies(object):
@@ -405,7 +405,7 @@ class ConsumerStrategies(object):
             raise TypeError("topics should be list")
 
         if offsets is None:
-            return sc._jvm.org.apache.spark.streaming.kafka09. \
+            return sc._jvm.org.apache.spark.streaming.kafka010. \
                 ConsumerStrategies.Subscribe(topics, kafkaParams)
 
         if not isinstance(offsets, dict):
@@ -413,11 +413,11 @@ class ConsumerStrategies(object):
 
         joffsets = sc._jvm.java.util.HashMap()
         for tp, v in offsets.items():
-            jtp = sc._jvm.org.apache.spark.streaming.kafka09.KafkaUtilsPythonHelper \
+            jtp = sc._jvm.org.apache.spark.streaming.kafka010.KafkaUtilsPythonHelper \
                                   .createTopicAndPartition(tp._topic, tp._partition)
             joffsets[jtp] = v
 
-        return sc._jvm.org.apache.spark.streaming.kafka09. \
+        return sc._jvm.org.apache.spark.streaming.kafka010. \
             ConsumerStrategies.Subscribe(topics, kafkaParams, joffsets)
 
     @staticmethod
@@ -444,7 +444,7 @@ class ConsumerStrategies(object):
         jpattern = sc._jvm.java.util.regex.Pattern.compile(pattern)
 
         if offsets is None:
-            return sc._jvm.org.apache.spark.streaming.kafka09. \
+            return sc._jvm.org.apache.spark.streaming.kafka010. \
                 ConsumerStrategies.SubscribePattern(jpattern, kafkaParams)
 
         if not isinstance(offsets, dict):
@@ -452,11 +452,11 @@ class ConsumerStrategies(object):
 
         joffsets = sc._jvm.java.util.HashMap()
         for tp, v in offsets.items():
-            jtp = sc._jvm.org.apache.spark.streaming.kafka09.KafkaUtilsPythonHelper\
+            jtp = sc._jvm.org.apache.spark.streaming.kafka010.KafkaUtilsPythonHelper\
                 .createTopicAndPartition(tp._topic, tp._partition)
             joffsets[jtp] = v
 
-        return sc._jvm.org.apache.spark.streaming.kafka09. \
+        return sc._jvm.org.apache.spark.streaming.kafka010. \
             ConsumerStrategies.SubscribePattern(jpattern, kafkaParams, joffsets)
 
     @staticmethod
@@ -484,12 +484,12 @@ class ConsumerStrategies(object):
 
         jtopicPartitions = sc._jvm.java.util.ArrayList()
         for topicPartition in jtopicPartitions:
-            jtp = sc._jvm.org.apache.spark.streaming.kafka09.KafkaUtilsPythonHelper \
+            jtp = sc._jvm.org.apache.spark.streaming.kafka010.KafkaUtilsPythonHelper \
                 .createTopicAndPartition(topicPartition._topic, topicPartition._partition)
             jtopicPartitions.add(jtp)
 
         if offsets is None:
-            return sc._jvm.org.apache.spark.streaming.kafka09. \
+            return sc._jvm.org.apache.spark.streaming.kafka010. \
                 ConsumerStrategies.Assign(jtopicPartitions, kafkaParams)
 
         if not isinstance(offsets, dict):
@@ -497,9 +497,9 @@ class ConsumerStrategies(object):
 
         joffsets = sc._jvm.java.util.HashMap()
         for tp, v in offsets.items():
-            jtp = sc._jvm.org.apache.spark.streaming.kafka09.KafkaUtilsPythonHelper \
+            jtp = sc._jvm.org.apache.spark.streaming.kafka010.KafkaUtilsPythonHelper \
                 .createTopicAndPartition(tp._topic, tp._partition)
             joffsets[jtp] = v
 
-        return sc._jvm.org.apache.spark.streaming.kafka09. \
+        return sc._jvm.org.apache.spark.streaming.kafka010. \
             ConsumerStrategies.Assign(jtopicPartitions, kafkaParams, joffsets)
