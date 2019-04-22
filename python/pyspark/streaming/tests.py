@@ -26,6 +26,7 @@ import random
 import struct
 import shutil
 from functools import reduce
+import subprocess
 
 try:
     import xmlrunner
@@ -47,7 +48,6 @@ if sys.version >= "3":
 from pyspark.context import SparkConf, SparkContext, RDD
 from pyspark.storagelevel import StorageLevel
 from pyspark.streaming.context import StreamingContext
-from pyspark.streaming.kafka08 import Broker, KafkaUtils, OffsetRange, TopicAndPartition
 from pyspark.streaming.flume import FlumeUtils
 from pyspark.streaming.kinesis import KinesisUtils, InitialPositionInStream
 from pyspark.streaming.listener import StreamingListener
@@ -1047,18 +1047,18 @@ class CheckpointTests(unittest.TestCase):
         # Stop everything
         self.ssc.stop(True, True)
 
-
-class KafkaStreamTests(PySparkStreamingTestCase):
+from pyspark.streaming import kafka08
+class Kafka08StreamTests(PySparkStreamingTestCase):
     timeout = 20  # seconds
     duration = 1
 
     def setUp(self):
-        super(KafkaStreamTests, self).setUp()
+        super(Kafka08StreamTests, self).setUp()
         self._kafkaTestUtils = self.ssc._jvm.org.apache.spark.streaming.kafka.KafkaTestUtils()
         self._kafkaTestUtils.setup()
 
     def tearDown(self):
-        super(KafkaStreamTests, self).tearDown()
+        super(Kafka08StreamTests, self).tearDown()
 
         if self._kafkaTestUtils is not None:
             self._kafkaTestUtils.teardown()
@@ -1081,7 +1081,7 @@ class KafkaStreamTests(PySparkStreamingTestCase):
             result[i] = result.get(i, 0) + 1
         self.assertEqual(sendData, result)
 
-    def test_kafka_stream(self):
+    def test_kafka08_stream(self):
         """Test the Python Kafka stream API."""
         topic = self._randomTopic()
         sendData = {"a": 3, "b": 5, "c": 10}
@@ -1089,12 +1089,12 @@ class KafkaStreamTests(PySparkStreamingTestCase):
         self._kafkaTestUtils.createTopic(topic)
         self._kafkaTestUtils.sendMessages(topic, sendData)
 
-        stream = KafkaUtils.createStream(self.ssc, self._kafkaTestUtils.zkAddress(),
+        stream = kafka08.KafkaUtils.createStream(self.ssc, self._kafkaTestUtils.zkAddress(),
                                          "test-streaming-consumer", {topic: 1},
                                          {"auto.offset.reset": "smallest"})
         self._validateStreamResult(sendData, stream)
 
-    def test_kafka_direct_stream(self):
+    def test_kafka08_direct_stream(self):
         """Test the Python direct Kafka stream API."""
         topic = self._randomTopic()
         sendData = {"a": 1, "b": 2, "c": 3}
@@ -1104,61 +1104,61 @@ class KafkaStreamTests(PySparkStreamingTestCase):
         self._kafkaTestUtils.createTopic(topic)
         self._kafkaTestUtils.sendMessages(topic, sendData)
 
-        stream = KafkaUtils.createDirectStream(self.ssc, [topic], kafkaParams)
+        stream = kafka08.KafkaUtils.createDirectStream(self.ssc, [topic], kafkaParams)
         self._validateStreamResult(sendData, stream)
 
-    def test_kafka_direct_stream_from_offset(self):
+    def test_kafka08_direct_stream_from_offset(self):
         """Test the Python direct Kafka stream API with start offset specified."""
         topic = self._randomTopic()
         sendData = {"a": 1, "b": 2, "c": 3}
-        fromOffsets = {TopicAndPartition(topic, 0): long(0)}
+        fromOffsets = {kafka08.TopicAndPartition(topic, 0): long(0)}
         kafkaParams = {"metadata.broker.list": self._kafkaTestUtils.brokerAddress()}
 
         self._kafkaTestUtils.createTopic(topic)
         self._kafkaTestUtils.sendMessages(topic, sendData)
 
-        stream = KafkaUtils.createDirectStream(self.ssc, [topic], kafkaParams, fromOffsets)
+        stream = kafka08.KafkaUtils.createDirectStream(self.ssc, [topic], kafkaParams, fromOffsets)
         self._validateStreamResult(sendData, stream)
 
-    def test_kafka_rdd(self):
+    def test_kafka08_rdd(self):
         """Test the Python direct Kafka RDD API."""
         topic = self._randomTopic()
         sendData = {"a": 1, "b": 2}
-        offsetRanges = [OffsetRange(topic, 0, long(0), long(sum(sendData.values())))]
+        offsetRanges = [kafka08.OffsetRange(topic, 0, long(0), long(sum(sendData.values())))]
         kafkaParams = {"metadata.broker.list": self._kafkaTestUtils.brokerAddress()}
 
         self._kafkaTestUtils.createTopic(topic)
         self._kafkaTestUtils.sendMessages(topic, sendData)
-        rdd = KafkaUtils.createRDD(self.sc, kafkaParams, offsetRanges)
+        rdd = kafka08.KafkaUtils.createRDD(self.sc, kafkaParams, offsetRanges)
         self._validateRddResult(sendData, rdd)
 
-    def test_kafka_rdd_with_leaders(self):
+    def test_kafka08_rdd_with_leaders(self):
         """Test the Python direct Kafka RDD API with leaders."""
         topic = self._randomTopic()
         sendData = {"a": 1, "b": 2, "c": 3}
-        offsetRanges = [OffsetRange(topic, 0, long(0), long(sum(sendData.values())))]
+        offsetRanges = [kafka08.OffsetRange(topic, 0, long(0), long(sum(sendData.values())))]
         kafkaParams = {"metadata.broker.list": self._kafkaTestUtils.brokerAddress()}
         address = self._kafkaTestUtils.brokerAddress().split(":")
-        leaders = {TopicAndPartition(topic, 0): Broker(address[0], int(address[1]))}
+        leaders = {kafka08.TopicAndPartition(topic, 0): kafka08.Broker(address[0], int(address[1]))}
 
         self._kafkaTestUtils.createTopic(topic)
         self._kafkaTestUtils.sendMessages(topic, sendData)
-        rdd = KafkaUtils.createRDD(self.sc, kafkaParams, offsetRanges, leaders)
+        rdd = kafka08.KafkaUtils.createRDD(self.sc, kafkaParams, offsetRanges, leaders)
         self._validateRddResult(sendData, rdd)
 
-    def test_kafka_rdd_get_offsetRanges(self):
+    def test_kafka08_rdd_get_offsetRanges(self):
         """Test Python direct Kafka RDD get OffsetRanges."""
         topic = self._randomTopic()
         sendData = {"a": 3, "b": 4, "c": 5}
-        offsetRanges = [OffsetRange(topic, 0, long(0), long(sum(sendData.values())))]
+        offsetRanges = [kafka08.OffsetRange(topic, 0, long(0), long(sum(sendData.values())))]
         kafkaParams = {"metadata.broker.list": self._kafkaTestUtils.brokerAddress()}
 
         self._kafkaTestUtils.createTopic(topic)
         self._kafkaTestUtils.sendMessages(topic, sendData)
-        rdd = KafkaUtils.createRDD(self.sc, kafkaParams, offsetRanges)
+        rdd = kafka08.KafkaUtils.createRDD(self.sc, kafkaParams, offsetRanges)
         self.assertEqual(offsetRanges, rdd.offsetRanges())
 
-    def test_kafka_direct_stream_foreach_get_offsetRanges(self):
+    def test_kafka08_direct_stream_foreach_get_offsetRanges(self):
         """Test the Python direct Kafka stream foreachRDD get offsetRanges."""
         topic = self._randomTopic()
         sendData = {"a": 1, "b": 2, "c": 3}
@@ -1168,7 +1168,7 @@ class KafkaStreamTests(PySparkStreamingTestCase):
         self._kafkaTestUtils.createTopic(topic)
         self._kafkaTestUtils.sendMessages(topic, sendData)
 
-        stream = KafkaUtils.createDirectStream(self.ssc, [topic], kafkaParams)
+        stream = kafka08.KafkaUtils.createDirectStream(self.ssc, [topic], kafkaParams)
 
         offsetRanges = []
 
@@ -1180,9 +1180,9 @@ class KafkaStreamTests(PySparkStreamingTestCase):
         self.ssc.start()
         self.wait_for(offsetRanges, 1)
 
-        self.assertEqual(offsetRanges, [OffsetRange(topic, 0, long(0), long(6))])
+        self.assertEqual(offsetRanges, [kafka08.OffsetRange(topic, 0, long(0), long(6))])
 
-    def test_kafka_direct_stream_transform_get_offsetRanges(self):
+    def test_kafka08_direct_stream_transform_get_offsetRanges(self):
         """Test the Python direct Kafka stream transform get offsetRanges."""
         topic = self._randomTopic()
         sendData = {"a": 1, "b": 2, "c": 3}
@@ -1192,7 +1192,7 @@ class KafkaStreamTests(PySparkStreamingTestCase):
         self._kafkaTestUtils.createTopic(topic)
         self._kafkaTestUtils.sendMessages(topic, sendData)
 
-        stream = KafkaUtils.createDirectStream(self.ssc, [topic], kafkaParams)
+        stream = kafka08.KafkaUtils.createDirectStream(self.ssc, [topic], kafkaParams)
 
         offsetRanges = []
 
@@ -1207,19 +1207,19 @@ class KafkaStreamTests(PySparkStreamingTestCase):
         self.ssc.start()
         self.wait_for(offsetRanges, 1)
 
-        self.assertEqual(offsetRanges, [OffsetRange(topic, 0, long(0), long(6))])
+        self.assertEqual(offsetRanges, [kafka08.OffsetRange(topic, 0, long(0), long(6))])
 
-    def test_topic_and_partition_equality(self):
-        topic_and_partition_a = TopicAndPartition("foo", 0)
-        topic_and_partition_b = TopicAndPartition("foo", 0)
-        topic_and_partition_c = TopicAndPartition("bar", 0)
-        topic_and_partition_d = TopicAndPartition("foo", 1)
+    def test_kafka08_topic_and_partition_equality(self):
+        topic_and_partition_a = kafka08.TopicAndPartition("foo", 0)
+        topic_and_partition_b = kafka08.TopicAndPartition("foo", 0)
+        topic_and_partition_c = kafka08.TopicAndPartition("bar", 0)
+        topic_and_partition_d = kafka08.TopicAndPartition("foo", 1)
 
         self.assertEqual(topic_and_partition_a, topic_and_partition_b)
         self.assertNotEqual(topic_and_partition_a, topic_and_partition_c)
         self.assertNotEqual(topic_and_partition_a, topic_and_partition_d)
 
-    def test_kafka_direct_stream_transform_with_checkpoint(self):
+    def test_kafka08_direct_stream_transform_with_checkpoint(self):
         """Test the Python direct Kafka stream transform with checkpoint correctly recovered."""
         topic = self._randomTopic()
         sendData = {"a": 1, "b": 2, "c": 3}
@@ -1243,7 +1243,7 @@ class KafkaStreamTests(PySparkStreamingTestCase):
         def setup():
             ssc = StreamingContext(self.sc, 0.5)
             ssc.checkpoint(tmpdir)
-            stream = KafkaUtils.createDirectStream(ssc, [topic], kafkaParams)
+            stream = kafka08.KafkaUtils.createDirectStream(ssc, [topic], kafkaParams)
             stream.transform(transformWithOffsetRanges).count().pprint()
             return ssc
 
@@ -1251,7 +1251,7 @@ class KafkaStreamTests(PySparkStreamingTestCase):
             ssc1 = StreamingContext.getOrCreate(tmpdir, setup)
             ssc1.start()
             self.wait_for(offsetRanges, 1)
-            self.assertEqual(offsetRanges, [OffsetRange(topic, 0, long(0), long(6))])
+            self.assertEqual(offsetRanges, [kafka08.OffsetRange(topic, 0, long(0), long(6))])
 
             # To make sure some checkpoint is written
             time.sleep(3)
@@ -1267,11 +1267,11 @@ class KafkaStreamTests(PySparkStreamingTestCase):
         finally:
             shutil.rmtree(tmpdir)
 
-    def test_kafka_rdd_message_handler(self):
+    def test_kafka08_rdd_message_handler(self):
         """Test Python direct Kafka RDD MessageHandler."""
         topic = self._randomTopic()
         sendData = {"a": 1, "b": 1, "c": 2}
-        offsetRanges = [OffsetRange(topic, 0, long(0), long(sum(sendData.values())))]
+        offsetRanges = [kafka08.OffsetRange(topic, 0, long(0), long(sum(sendData.values())))]
         kafkaParams = {"metadata.broker.list": self._kafkaTestUtils.brokerAddress()}
 
         def getKeyAndDoubleMessage(m):
@@ -1279,11 +1279,11 @@ class KafkaStreamTests(PySparkStreamingTestCase):
 
         self._kafkaTestUtils.createTopic(topic)
         self._kafkaTestUtils.sendMessages(topic, sendData)
-        rdd = KafkaUtils.createRDD(self.sc, kafkaParams, offsetRanges,
+        rdd = kafka08.KafkaUtils.createRDD(self.sc, kafkaParams, offsetRanges,
                                    messageHandler=getKeyAndDoubleMessage)
         self._validateRddResult({"aa": 1, "bb": 1, "cc": 2}, rdd)
 
-    def test_kafka_direct_stream_message_handler(self):
+    def test_kafka08_direct_stream_message_handler(self):
         """Test the Python direct Kafka stream MessageHandler."""
         topic = self._randomTopic()
         sendData = {"a": 1, "b": 2, "c": 3}
@@ -1296,10 +1296,422 @@ class KafkaStreamTests(PySparkStreamingTestCase):
         def getKeyAndDoubleMessage(m):
             return m and (m.key, m.message * 2)
 
-        stream = KafkaUtils.createDirectStream(self.ssc, [topic], kafkaParams,
+        stream = kafka08.KafkaUtils.createDirectStream(self.ssc, [topic], kafkaParams,
                                                messageHandler=getKeyAndDoubleMessage)
         self._validateStreamResult({"aa": 1, "bb": 2, "cc": 3}, stream)
 
+from pyspark.streaming import kafka09
+
+class Kafka09StreamTests(PySparkStreamingTestCase):
+
+    timeout = 20  # seconds
+    duration = 1
+
+    def setUp(self):
+        super(Kafka09StreamTests, self).setUp()
+        self._kafkaTestUtils = self.ssc._jvm.org.apache.spark.streaming.kafka09.KafkaTestUtils()
+        self._kafkaTestUtils.setup()
+
+    def tearDown(self):
+        super(Kafka09StreamTests, self).tearDown()
+
+        if self._kafkaTestUtils is not None:
+            self._kafkaTestUtils.teardown()
+            self._kafkaTestUtils = None
+
+    def _randomTopic(self):
+        return "topic-%d" % random.randint(0, 10000)
+
+    def _validateStreamResult(self, sendData, stream):
+        result = {}
+        for i in chain.from_iterable(self._collect(stream.map(lambda x: x[1]),
+                                                   sum(sendData.values()))):
+            result[i] = result.get(i, 0) + 1
+
+        self.assertEqual(sendData, result)
+
+    def _validateRddResult(self, sendData, rdd):
+        result = {}
+        for i in rdd.map(lambda x: x[1]).collect():
+            result[i] = result.get(i, 0) + 1
+        self.assertEqual(sendData, result)
+
+    def test_kafka09_direct_stream(self):
+        """Test the Python direct Kafka stream API."""
+        topic = self._randomTopic()
+        sendData = {"a": 1, "b": 2, "c": 3}
+
+        kafkaParams = {
+            "bootstrap.servers": self._kafkaTestUtils.brokerAddress(),
+            "group.id": "test_kafka_direct_stream",
+            "key.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+            "value.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+            "auto.offset.reset": "earliest"
+        }
+
+        consumerStrategy = kafka09.ConsumerStrategies.Subscribe(self.sc, [topic], kafkaParams)
+        locationStrategy = kafka09.LocationStrategies.PreferConsistent(self.sc)
+
+        self._kafkaTestUtils.createTopic(topic)
+        self._kafkaTestUtils.sendMessages(topic, sendData)
+
+        stream = kafka09.KafkaUtils.createDirectStream(self.ssc, locationStrategy, consumerStrategy)
+        self._validateStreamResult(sendData, stream)
+
+    def test_kafka09_direct_stream_from_offset(self):
+        """Test the Python direct Kafka stream API with start offset specified."""
+        topic = self._randomTopic()
+        sendData = {"a": 1, "b": 2, "c": 3}
+        fromOffsets = {kafka09.TopicAndPartition(topic, 0): long(0)}
+        kafkaParams = {
+            "bootstrap.servers": self._kafkaTestUtils.brokerAddress(),
+            "group.id": "test_kafka09_direct_stream_from_offset",
+            "key.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+            "value.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+            "auto.offset.reset": "earliest"
+        }
+
+        consumerStrategy = kafka09.ConsumerStrategies.Subscribe(self.sc, [topic], kafkaParams, fromOffsets)
+        locationStrategy = kafka09.LocationStrategies.PreferConsistent(self.sc)
+
+        self._kafkaTestUtils.createTopic(topic)
+        self._kafkaTestUtils.sendMessages(topic, sendData)
+
+        stream = kafka09.KafkaUtils.createDirectStream(self.ssc, locationStrategy, consumerStrategy)
+        self._validateStreamResult(sendData, stream)
+
+    def test_kafka09_rdd(self):
+        """Test the Python direct Kafka RDD API."""
+        topic = self._randomTopic()
+        sendData = {"a": 1, "b": 2}
+        offsetRanges = [kafka09.OffsetRange(topic, 0, long(0), long(sum(sendData.values())))]
+        kafkaParams = {
+            "bootstrap.servers": self._kafkaTestUtils.brokerAddress(),
+            "group.id": "test_kafka09_rdd",
+            "key.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+            "value.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer"
+        }
+
+        locationStrategy = kafka09.LocationStrategies.PreferConsistent(self.sc)
+
+        self._kafkaTestUtils.createTopic(topic)
+        self._kafkaTestUtils.sendMessages(topic, sendData)
+        rdd = kafka09.KafkaUtils.createRDD(self.sc, kafkaParams, offsetRanges, locationStrategy)
+        self._validateRddResult(sendData, rdd)
+
+    def test_kafka09_rdd_with_fixed_location_strategy(self):
+        """Test the Python direct Kafka RDD API with 'PreferFixed' location strategy."""
+        topic = self._randomTopic()
+        sendData = {"a": 1, "b": 2, "c": 3}
+        offsetRanges = [kafka09.OffsetRange(topic, 0, long(0), long(sum(sendData.values())))]
+        address = self._kafkaTestUtils.brokerAddress()
+        host_dict = {kafka09.TopicAndPartition(topic, 0): address}
+
+        kafkaParams = {
+            "bootstrap.servers": self._kafkaTestUtils.brokerAddress(),
+            "group.id": "test_kafka09_rdd_with_fixed_location_strategy",
+            "key.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+            "value.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer"
+        }
+
+        locationStrategy = kafka09.LocationStrategies.PreferFixed(self.sc, host_dict)
+
+        self._kafkaTestUtils.createTopic(topic)
+        self._kafkaTestUtils.sendMessages(topic, sendData)
+        rdd = kafka09.KafkaUtils.createRDD(self.sc, kafkaParams, offsetRanges, locationStrategy)
+        self._validateRddResult(sendData, rdd)
+
+    def test_kafka09_rdd_get_offsetRanges(self):
+        """Test Python direct Kafka RDD get OffsetRanges."""
+        topic = self._randomTopic()
+        sendData = {"a": 3, "b": 4, "c": 5}
+        offsetRanges = [kafka09.OffsetRange(topic, 0, long(0), long(sum(sendData.values())))]
+        kafkaParams = {
+            "bootstrap.servers": self._kafkaTestUtils.brokerAddress(),
+            "group.id": "test_kafka09_rdd_get_offsetRanges",
+            "key.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+            "value.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer"
+        }
+        self._kafkaTestUtils.createTopic(topic)
+        self._kafkaTestUtils.sendMessages(topic, sendData)
+        rdd = kafka09.KafkaUtils.createRDD(self.sc, kafkaParams, offsetRanges)
+        self.assertEqual(offsetRanges, rdd.offsetRanges())
+
+    def test_kafka09_direct_stream_foreach_get_offsetRanges(self):
+        """Test the Python direct Kafka stream foreachRDD get offsetRanges."""
+        topic = self._randomTopic()
+        sendData = {"a": 1, "b": 2, "c": 3}
+        kafkaParams = {"bootstrap.servers": self._kafkaTestUtils.brokerAddress(),
+                       "group.id": "test_kafka09_direct_stream_foreach_get_offsetRanges",
+                       "key.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+                       "value.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+                       "auto.offset.reset": "earliest"}
+
+        self._kafkaTestUtils.createTopic(topic)
+        self._kafkaTestUtils.sendMessages(topic, sendData)
+        consumerStrategy = kafka09.ConsumerStrategies.Subscribe(self.sc, [topic], kafkaParams)
+        locationStrategy = kafka09.LocationStrategies.PreferConsistent(self.sc)
+        stream = kafka09.KafkaUtils.createDirectStream(self.ssc, locationStrategy, consumerStrategy)
+
+        offsetRanges = []
+
+        def getOffsetRanges(_, rdd):
+            for o in rdd.offsetRanges():
+                offsetRanges.append(o)
+
+        stream.foreachRDD(getOffsetRanges)
+        self.ssc.start()
+        self.wait_for(offsetRanges, 1)
+
+        self.assertEqual(offsetRanges, [kafka09.OffsetRange(topic, 0, long(0), long(6))])
+
+    def test_kafka09_direct_stream_transform_get_offsetRanges(self):
+        """Test the Python direct Kafka stream transform get offsetRanges."""
+        topic = self._randomTopic()
+        sendData = {"a": 1, "b": 2, "c": 3}
+        kafkaParams = {"bootstrap.servers": self._kafkaTestUtils.brokerAddress(),
+                       "group.id": "test_kafka09_direct_stream_transform_get_offsetRanges",
+                       "key.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+                       "value.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+                       "auto.offset.reset": "earliest"}
+
+        self._kafkaTestUtils.createTopic(topic)
+        self._kafkaTestUtils.sendMessages(topic, sendData)
+
+        consumerStrategy = kafka09.ConsumerStrategies.Subscribe(self.sc, [topic], kafkaParams)
+        locationStrategy = kafka09.LocationStrategies.PreferConsistent(self.sc)
+        stream = kafka09.KafkaUtils.createDirectStream(self.ssc, locationStrategy, consumerStrategy)
+
+        offsetRanges = []
+
+        def transformWithOffsetRanges(rdd):
+            for o in rdd.offsetRanges():
+                offsetRanges.append(o)
+            return rdd
+
+        # Test whether it is ok mixing KafkaTransformedDStream and TransformedDStream together,
+        # only the TransformedDstreams can be folded together.
+        stream.transform(transformWithOffsetRanges).map(lambda kv: kv[1]).count().pprint()
+        self.ssc.start()
+        self.wait_for(offsetRanges, 1)
+
+        self.assertEqual(offsetRanges, [kafka09.OffsetRange(topic, 0, long(0), long(6))])
+
+    def test_kafka09_topic_and_partition_equality(self):
+        topic_and_partition_a = kafka09.TopicAndPartition("foo", 0)
+        topic_and_partition_b = kafka09.TopicAndPartition("foo", 0)
+        topic_and_partition_c = kafka09.TopicAndPartition("bar", 0)
+        topic_and_partition_d = kafka09.TopicAndPartition("foo", 1)
+
+        self.assertEqual(topic_and_partition_a, topic_and_partition_b)
+        self.assertNotEqual(topic_and_partition_a, topic_and_partition_c)
+        self.assertNotEqual(topic_and_partition_a, topic_and_partition_d)
+
+from pyspark.streaming import kafka010
+
+class Kafka010StreamTests(PySparkStreamingTestCase):
+    timeout = 20  # seconds
+    duration = 1
+
+    def setUp(self):
+        super(Kafka010StreamTests, self).setUp()
+        self._kafkaTestUtils = self.ssc._jvm.org.apache.spark.streaming.kafka010.KafkaTestUtils()
+        self._kafkaTestUtils.setup()
+
+    def tearDown(self):
+        super(Kafka010StreamTests, self).tearDown()
+
+        if self._kafkaTestUtils is not None:
+            self._kafkaTestUtils.teardown()
+            self._kafkaTestUtils = None
+
+    def _randomTopic(self):
+        return "topic-%d" % random.randint(0, 10000)
+
+    def _validateStreamResult(self, sendData, stream):
+        result = {}
+        for i in chain.from_iterable(self._collect(stream.map(lambda x: x[1]),
+                                                   sum(sendData.values()))):
+            result[i] = result.get(i, 0) + 1
+
+        self.assertEqual(sendData, result)
+
+    def _validateRddResult(self, sendData, rdd):
+        result = {}
+        for i in rdd.map(lambda x: x[1]).collect():
+            result[i] = result.get(i, 0) + 1
+        self.assertEqual(sendData, result)
+
+    def test_kafka010_direct_stream(self):
+        """Test the Python direct Kafka stream API."""
+        topic = self._randomTopic()
+        sendData = {"a": 1, "b": 2, "c": 3}
+
+        kafkaParams = {
+            "bootstrap.servers": self._kafkaTestUtils.brokerAddress(),
+            "group.id": "test_kafka010_direct_stream",
+            "key.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+            "value.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+            "auto.offset.reset": "earliest"
+        }
+
+        consumerStrategy = kafka010.ConsumerStrategies.Subscribe(self.sc, [topic], kafkaParams)
+        locationStrategy = kafka010.LocationStrategies.PreferConsistent(self.sc)
+
+        self._kafkaTestUtils.createTopic(topic)
+        self._kafkaTestUtils.sendMessages(topic, sendData)
+
+        stream = kafka010.KafkaUtils.createDirectStream(self.ssc, locationStrategy, consumerStrategy)
+        self._validateStreamResult(sendData, stream)
+
+    def test_kafka010_direct_stream_from_offset(self):
+        """Test the Python direct Kafka stream API with start offset specified."""
+        topic = self._randomTopic()
+        sendData = {"a": 1, "b": 2, "c": 3}
+        fromOffsets = {kafka010.TopicAndPartition(topic, 0): long(0)}
+        kafkaParams = {
+            "bootstrap.servers": self._kafkaTestUtils.brokerAddress(),
+            "group.id": "test_kafka010_direct_stream_from_offset",
+            "key.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+            "value.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+            "auto.offset.reset": "earliest"
+        }
+
+        consumerStrategy = kafka010.ConsumerStrategies.Subscribe(self.sc, [topic], kafkaParams, fromOffsets)
+        locationStrategy = kafka010.LocationStrategies.PreferConsistent(self.sc)
+
+        self._kafkaTestUtils.createTopic(topic)
+        self._kafkaTestUtils.sendMessages(topic, sendData)
+
+        stream = kafka010.KafkaUtils.createDirectStream(self.ssc, locationStrategy, consumerStrategy)
+        self._validateStreamResult(sendData, stream)
+
+    def test_kafka010_rdd(self):
+        """Test the Python direct Kafka RDD API."""
+        topic = self._randomTopic()
+        sendData = {"a": 1, "b": 2}
+        offsetRanges = [kafka010.OffsetRange(topic, 0, long(0), long(sum(sendData.values())))]
+        kafkaParams = {
+            "bootstrap.servers": self._kafkaTestUtils.brokerAddress(),
+            "group.id": "test_kafka010_rdd",
+            "key.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+            "value.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer"
+        }
+
+        locationStrategy = kafka010.LocationStrategies.PreferConsistent(self.sc)
+
+        self._kafkaTestUtils.createTopic(topic)
+        self._kafkaTestUtils.sendMessages(topic, sendData)
+        rdd = kafka010.KafkaUtils.createRDD(self.sc, kafkaParams, offsetRanges, locationStrategy)
+        self._validateRddResult(sendData, rdd)
+
+    def test_kafka010_rdd_with_fixed_location_strategy(self):
+        """Test the Python direct Kafka RDD API with 'PreferFixed' location strategy."""
+        topic = self._randomTopic()
+        sendData = {"a": 1, "b": 2, "c": 3}
+        offsetRanges = [kafka010.OffsetRange(topic, 0, long(0), long(sum(sendData.values())))]
+        address = self._kafkaTestUtils.brokerAddress()
+        host_dict = {kafka010.TopicAndPartition(topic, 0): address}
+
+        kafkaParams = {
+            "bootstrap.servers": self._kafkaTestUtils.brokerAddress(),
+            "group.id": "test_kafka010_rdd_with_fixed_location_strategy",
+            "key.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+            "value.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer"
+        }
+
+        locationStrategy = kafka010.LocationStrategies.PreferFixed(self.sc, host_dict)
+
+        self._kafkaTestUtils.createTopic(topic)
+        self._kafkaTestUtils.sendMessages(topic, sendData)
+        rdd = kafka010.KafkaUtils.createRDD(self.sc, kafkaParams, offsetRanges, locationStrategy)
+        self._validateRddResult(sendData, rdd)
+
+    def test_kafka010_rdd_get_offsetRanges(self):
+        """Test Python direct Kafka RDD get OffsetRanges."""
+        topic = self._randomTopic()
+        sendData = {"a": 3, "b": 4, "c": 5}
+        offsetRanges = [kafka010.OffsetRange(topic, 0, long(0), long(sum(sendData.values())))]
+        kafkaParams = {
+            "bootstrap.servers": self._kafkaTestUtils.brokerAddress(),
+            "group.id": "test_kafka010_rdd_get_offsetRanges",
+            "key.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+            "value.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer"
+        }
+        self._kafkaTestUtils.createTopic(topic)
+        self._kafkaTestUtils.sendMessages(topic, sendData)
+        rdd = kafka010.KafkaUtils.createRDD(self.sc, kafkaParams, offsetRanges)
+        self.assertEqual(offsetRanges, rdd.offsetRanges())
+
+    def test_kafka010_direct_stream_foreach_get_offsetRanges(self):
+        """Test the Python direct Kafka stream foreachRDD get offsetRanges."""
+        topic = self._randomTopic()
+        sendData = {"a": 1, "b": 2, "c": 3}
+        kafkaParams = {"bootstrap.servers": self._kafkaTestUtils.brokerAddress(),
+                       "group.id": "test_kafka010_direct_stream_foreach_get_offsetRanges",
+                       "key.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+                       "value.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+                       "auto.offset.reset": "earliest"}
+
+        self._kafkaTestUtils.createTopic(topic)
+        self._kafkaTestUtils.sendMessages(topic, sendData)
+        consumerStrategy = kafka010.ConsumerStrategies.Subscribe(self.sc, [topic], kafkaParams)
+        locationStrategy = kafka010.LocationStrategies.PreferConsistent(self.sc)
+        stream = kafka010.KafkaUtils.createDirectStream(self.ssc, locationStrategy, consumerStrategy)
+
+        offsetRanges = []
+
+        def getOffsetRanges(_, rdd):
+            for o in rdd.offsetRanges():
+                offsetRanges.append(o)
+
+        stream.foreachRDD(getOffsetRanges)
+        self.ssc.start()
+        self.wait_for(offsetRanges, 1)
+
+        self.assertEqual(offsetRanges, [kafka010.OffsetRange(topic, 0, long(0), long(6))])
+
+    def test_kafka010_direct_stream_transform_get_offsetRanges(self):
+        """Test the Python direct Kafka stream transform get offsetRanges."""
+        topic = self._randomTopic()
+        sendData = {"a": 1, "b": 2, "c": 3}
+        kafkaParams = {"bootstrap.servers": self._kafkaTestUtils.brokerAddress(),
+                       "group.id": "test_kafka010_direct_stream_transform_get_offsetRanges",
+                       "key.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+                       "value.deserializer": "org.apache.kafka.common.serialization.ByteArrayDeserializer",
+                       "auto.offset.reset": "earliest"}
+
+        self._kafkaTestUtils.createTopic(topic)
+        self._kafkaTestUtils.sendMessages(topic, sendData)
+
+        consumerStrategy = kafka010.ConsumerStrategies.Subscribe(self.sc, [topic], kafkaParams)
+        locationStrategy = kafka010.LocationStrategies.PreferConsistent(self.sc)
+        stream = kafka010.KafkaUtils.createDirectStream(self.ssc, locationStrategy, consumerStrategy)
+
+        offsetRanges = []
+
+        def transformWithOffsetRanges(rdd):
+            for o in rdd.offsetRanges():
+                offsetRanges.append(o)
+            return rdd
+
+        # Test whether it is ok mixing KafkaTransformedDStream and TransformedDStream together,
+        # only the TransformedDstreams can be folded together.
+        stream.transform(transformWithOffsetRanges).map(lambda kv: kv[1]).count().pprint()
+        self.ssc.start()
+        self.wait_for(offsetRanges, 1)
+
+        self.assertEqual(offsetRanges, [kafka010.OffsetRange(topic, 0, long(0), long(6))])
+
+    def test_kafka010_topic_and_partition_equality(self):
+        topic_and_partition_a = kafka010.TopicAndPartition("foo", 0)
+        topic_and_partition_b = kafka010.TopicAndPartition("foo", 0)
+        topic_and_partition_c = kafka010.TopicAndPartition("bar", 0)
+        topic_and_partition_d = kafka010.TopicAndPartition("foo", 1)
+
+        self.assertEqual(topic_and_partition_a, topic_and_partition_b)
+        self.assertNotEqual(topic_and_partition_a, topic_and_partition_c)
+        self.assertNotEqual(topic_and_partition_a, topic_and_partition_d)
 
 class FlumeStreamTests(PySparkStreamingTestCase):
     timeout = 20  # seconds
@@ -1514,18 +1926,45 @@ def search_jar(dir, name_prefix):
     return [jar for jar in jars if not jar.endswith(ignored_jar_suffixes)]
 
 
-def search_kafka_assembly_jar():
+def search_kafka_assembly_jar(kafka_version):
     SPARK_HOME = os.environ["SPARK_HOME"]
-    kafka_assembly_dir = os.path.join(SPARK_HOME, "external/kafka-0-8-assembly")
-    jars = search_jar(kafka_assembly_dir, "spark-streaming-kafka-0-8-assembly")
-    if not jars:
-        return None
-    elif len(jars) > 1:
-        raise Exception(("Found multiple Spark Streaming Kafka assembly JARs: %s; please "
-                         "remove all but one") % (", ".join(jars)))
-    else:
-        return jars[0]
+    kafka_assembly_dir = os.path.join(SPARK_HOME, "external/kafka-0-%s-assembly" % kafka_version)
+    kafka_jars = search_jar(kafka_assembly_dir, "spark-streaming-kafka-0-%s-assembly" % kafka_version)
 
+    if not kafka_jars:
+        raise Exception(
+            ("Failed to find Spark Streaming kafka assembly jar in %s. " % kafka_assembly_dir) +
+            "You need to build Spark with "
+            "'build/sbt -Pkafka-0-%s assembly/package streaming-kafka-0-%s-assembly/assembly' or "
+            "'build/mvn -DskipTests -Pkafka-0-%s package' before running this test." % (kafka_version, kafka_version, kafka_version))
+    elif len(kafka_jars) > 1:
+        raise Exception(("Found multiple Spark Streaming Kafka assembly JARs: %s; please "
+                         "remove all but one") % (", ".join(kafka_jars)))
+    else:
+        return kafka_jars[0]
+
+def search_mapr_jars():
+    try:
+        file =  open('/opt/mapr/kafka/kafkaversion', 'r')
+        mapr_kafka_version = file.read().replace('\n', '')
+    except IOError:
+        raise Exception(("'/opt/mapr/kafka/kafkaversion' not found. Test supposed to be run on MapR Cluster node with 'mapr-kafka' package installed."))
+
+    mapr_classpath_entries=subprocess.Popen("mapr classpath", shell=True, stdout=subprocess.PIPE).stdout.read().split(":")
+    mapr_classpath=""
+    for classpath_entry in mapr_classpath_entries:
+        mapr_jars=subprocess.Popen("ls %s | grep jar" % classpath_entry, shell=True, stdout=subprocess.PIPE).stdout.read().split("\n")
+        for mapr_jar in mapr_jars:
+            if mapr_jar.endswith(".jar"):
+                mapr_classpath="%s,%s" % (mapr_classpath, mapr_jar)
+
+    mapr_kafka_jars=subprocess.Popen("ls /opt/mapr/kafka/kafka-*/libs", shell=True, stdout=subprocess.PIPE).stdout.read().split("\n")
+    mapr_kafka_jars_path="/opt/mapr/kafka/kafka-%s/libs" % mapr_kafka_version
+    for mapr_kafka_jar in mapr_kafka_jars:
+        if mapr_kafka_jar.endswith(".jar"):
+            mapr_classpath="%s,%s/%s" % (mapr_classpath, mapr_kafka_jars_path, mapr_kafka_jar)
+
+    return mapr_classpath
 
 def search_flume_assembly_jar():
     SPARK_HOME = os.environ["SPARK_HOME"]
@@ -1559,27 +1998,45 @@ def search_kinesis_asl_assembly_jar():
     else:
         return jars[0]
 
-
 # Must be same as the variable and condition defined in modules.py
 flume_test_environ_var = "ENABLE_FLUME_TESTS"
 are_flume_tests_enabled = os.environ.get(flume_test_environ_var) == '1'
 # Must be same as the variable and condition defined in modules.py
 kafka_test_environ_var = "ENABLE_KAFKA_0_8_TESTS"
 are_kafka_tests_enabled = os.environ.get(kafka_test_environ_var) == '1'
+
+kafka09_test_environ_var = "ENABLE_KAFKA_0_9_TESTS"
+are_kafka09_tests_enabled = os.environ.get(kafka09_test_environ_var) == '1'
+
+kafka010_test_environ_var = "ENABLE_KAFKA_0_10_TESTS"
+are_kafka010_tests_enabled = os.environ.get(kafka010_test_environ_var) == '1'
 # Must be same as the variable and condition defined in KinesisTestUtils.scala and modules.py
 kinesis_test_environ_var = "ENABLE_KINESIS_TESTS"
 are_kinesis_tests_enabled = os.environ.get(kinesis_test_environ_var) == '1'
 
 if __name__ == "__main__":
     from pyspark.streaming.tests import *
-    kafka_assembly_jar = search_kafka_assembly_jar()
+
+    mapr_jars = ""
+    if are_kafka_tests_enabled or are_kafka09_tests_enabled or are_kafka010_tests_enabled:
+        mapr_jars = search_mapr_jars()
+
+    if are_kafka_tests_enabled:
+        mapr_jars = "%s,%s" % (mapr_jars, search_kafka_assembly_jar("8"))
+    if are_kafka09_tests_enabled:
+        mapr_jars = "%s,%s" % (mapr_jars, search_kafka_assembly_jar("9"))
+    if are_kafka010_tests_enabled:
+        mapr_jars = "%s,%s" % (mapr_jars, search_kafka_assembly_jar("10"))
+
     flume_assembly_jar = search_flume_assembly_jar()
     kinesis_asl_assembly_jar = search_kinesis_asl_assembly_jar()
-    jars_list = [j for j in (kafka_assembly_jar, flume_assembly_jar, kinesis_asl_assembly_jar) if j]
-    jars = ",".join(jars_list)
 
-    kinesis_jar_present = kinesis_asl_assembly_jar in jars_list
-    kafka08_jar_present = kafka_assembly_jar in jars_list
+    if kinesis_asl_assembly_jar is None:
+        kinesis_jar_present = False
+        jars = "%s,%s" % (mapr_jars, flume_assembly_jar)
+    else:
+        kinesis_jar_present = True
+        jars = "%s,%s,%s" % (mapr_jars, flume_assembly_jar, kinesis_asl_assembly_jar)
 
     existing_args = os.environ.get("PYSPARK_SUBMIT_ARGS", "pyspark-shell")
     jars_args = "--jars %s" % jars
@@ -1595,16 +2052,26 @@ if __name__ == "__main__":
             "Skipped test_flume_stream (enable by setting environment variable %s=1"
             % flume_test_environ_var)
 
-    if kafka08_jar_present:
-        testcases.append(KafkaStreamTests)
+    if are_kafka_tests_enabled:
+        testcases.append(Kafka08StreamTests)
     else:
-        sys.stderr.write("Skipping kafka-0-8 tests as the optional kafka-0-8 profile was "
-                         "not compiled into a JAR. To run these tests, "
-                         "you need to build Spark with 'build/sbt -Pkafka-0-8 assembly/package "
-                         "streaming-kafka-0-8-assembly/assembly' or "
-                         "'build/mvn -DskipTests -Pkafka-0-8 package' before running this test. "
-                         "Note that kafka-0-8 is not compatible with Scala version 2.12 and "
-                         "higher.")
+        sys.stderr.write(
+            "Skipped test_kafka_stream (enable by setting environment variable %s=1"
+            % kafka_test_environ_var)
+
+    if are_kafka09_tests_enabled:
+        testcases.append(Kafka09StreamTests)
+    else:
+        sys.stderr.write(
+            "Skipped test_kafka09_stream (enable by setting environment variable %s=1"
+            % kafka09_test_environ_var)
+
+    if are_kafka010_tests_enabled:
+        testcases.append(Kafka010StreamTests)
+    else:
+        sys.stderr.write(
+            "Skipped test_kafka010_stream (enable by setting environment variable %s=1"
+            % kafka010_test_environ_var)
 
     if kinesis_jar_present is True:
         testcases.append(KinesisStreamTests)
