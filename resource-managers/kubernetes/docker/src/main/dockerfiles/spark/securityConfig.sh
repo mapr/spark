@@ -24,7 +24,10 @@ function createUserGroups() {
 function createUser() {
   if ! id ${MAPR_SPARK_USER} >/dev/null 2>&1; then
     adduser -u $MAPR_SPARK_UID ${MAPR_SPARK_USER} -m -d /home/${MAPR_SPARK_USER}
+
+    set +x
     echo "$MAPR_SPARK_USER:$MAPR_SPARK_PASSWORD" | chpasswd
+    set -x
 
     if [ -d /home/${MAPR_SPARK_USER} ]; then
       cd /home/${MAPR_SPARK_USER}
@@ -76,10 +79,18 @@ EOM
         configureSecureK8SProperties
     fi
 
+
+    # copy k8s metric properties
+    sparkMetricsProperties=$SPARK_CONF_DIR/metrics.properties
+    if [ -f ${sparkMetricsProperties} ]; then
+        cp ${sparkMetricsProperties}.template ${sparkMetricsProperties}
+        cat ${sparkMetricsProperties} >> ${SPARK_CONF_PATH}
+    fi
+
     # copy k8s submit properties to spark-defaults
     defaultK8SConfMount=/opt/spark/conf/spark.properties
     if [ -f ${defaultK8SConfMount} ]; then
-        cat ${defaultK8SConfMount} >> $SPARK_CONF_PATH
+        cat ${defaultK8SConfMount} >> ${SPARK_CONF_PATH}
     fi
 }
 
