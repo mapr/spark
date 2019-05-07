@@ -79,12 +79,11 @@ EOM
         configureSecureK8SProperties
     fi
 
-
     # copy k8s metric properties
     sparkMetricsProperties=$SPARK_CONF_DIR/metrics.properties
-    if [ -f ${sparkMetricsProperties} ]; then
-        cp ${sparkMetricsProperties}.template ${sparkMetricsProperties}
-        cat ${sparkMetricsProperties} >> ${SPARK_CONF_PATH}
+    sparkMetricsPropertiesTemplate=${sparkMetricsProperties}.template
+    if [ -f ${sparkMetricsPropertiesTemplate} ]; then
+        cp ${sparkMetricsPropertiesTemplate} ${sparkMetricsProperties}
     fi
 
     # copy k8s submit properties to spark-defaults
