@@ -11,6 +11,12 @@ import org.apache.spark.sql.types.StructType
 
 class MapRDBJavaSession(spark: SparkSession) {
 
+  private var bufferWrites = true
+
+  def setBufferWrites(bufferWrites: Boolean): Unit = {
+    this.bufferWrites = bufferWrites
+  }
+
   def loadFromMapRDB(tableName: String): DataFrame = {
     loadFromMapRDB(tableName, null, GenerateSchema.SAMPLE_SIZE)
   }
@@ -27,6 +33,7 @@ class MapRDBJavaSession(spark: SparkSession) {
       .schema(schema)
       .option("tablePath", tableName)
       .option("sampleSize", sampleSize)
+      .option("bufferWrites", bufferWrites)
       .load()
   }
 
@@ -62,6 +69,7 @@ class MapRDBJavaSession(spark: SparkSession) {
       .schema(schema)
       .option("tablePath", tableName)
       .option("sampleSize", sampleSize)
+      .option("bufferWrites", bufferWrites)
       .load()
       .as(encoder)
   }
@@ -71,7 +79,7 @@ class MapRDBJavaSession(spark: SparkSession) {
                       idFieldPath: String,
                       createTable: Boolean,
                       bulkInsert: Boolean): Unit =
-    MapRSpark.save(ds, tableName, idFieldPath, createTable, bulkInsert)
+    MapRSpark.save(ds, tableName, idFieldPath, createTable, bulkInsert, bufferWrites)
 
   def saveToMapRDB(df: DataFrame, tableName: String): Unit =
     saveToMapRDB(df, tableName, DocumentConstants.ID_KEY, false, false)
@@ -84,7 +92,7 @@ class MapRDBJavaSession(spark: SparkSession) {
                         idFieldPath: String,
                         createTable: Boolean,
                         bulkInsert: Boolean): Unit =
-    MapRSpark.insert(ds, tableName, idFieldPath, createTable, bulkInsert)
+    MapRSpark.insert(ds, tableName, idFieldPath, createTable, bulkInsert, bufferWrites)
 
   def insertToMapRDB[T](ds: Dataset[T], tableName: String): Unit =
     insertToMapRDB(ds, tableName, DocumentConstants.ID_KEY, false, false)

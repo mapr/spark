@@ -66,7 +66,8 @@ private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T])(
   def saveToMapRDB(tableName: String,
                    createTable: Boolean = false,
                    bulkInsert: Boolean = false,
-                   idFieldPath: String = DocumentConstants.ID_KEY): Unit = {
+                   idFieldPath: String = DocumentConstants.ID_KEY,
+                   bufferWrites: Boolean = true): Unit = {
     logDebug(
       s"saveToMapRDB in OJAIDocumentRDDFunctions is called for table: $tableName " +
         s"with bulkinsert flag set: $bulkInsert and createTable: $createTable")
@@ -86,7 +87,7 @@ private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T])(
         (iter: Iterator[T]) => {
           if (iter.nonEmpty) {
             val writer =
-              Writer.initialize(tableName, cnf.value, isNewAndBulkLoad, true)
+              Writer.initialize(tableName, cnf.value, isNewAndBulkLoad, true, bufferWrites)
             while (iter.hasNext) {
               val element = iter.next
               f.write(f.getValue(element), getID, writer)
@@ -100,7 +101,8 @@ private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T])(
   def insertToMapRDB(tablename: String,
                      createTable: Boolean = false,
                      bulkInsert: Boolean = false,
-                     idFieldPath: String = DocumentConstants.ID_KEY): Unit = {
+                     idFieldPath: String = DocumentConstants.ID_KEY,
+                     bufferWrites: Boolean = true): Unit = {
     logDebug(
       s"insertToMapRDB in OJAIDocumentRDDFunctions is called for table: $tablename" +
         s" with bulkinsert flag set: $bulkInsert and createTable: $createTable")
@@ -120,7 +122,7 @@ private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T])(
         (iter: Iterator[T]) => {
           if (iter.nonEmpty) {
             val writer =
-              Writer.initialize(tablename, cnf.value, isNewAndBulkLoad, false)
+              Writer.initialize(tablename, cnf.value, isNewAndBulkLoad, false, bufferWrites)
             while (iter.hasNext) {
               val element = iter.next
               f.write(f.getValue(element), getID, writer)
@@ -140,7 +142,8 @@ private[spark] case class PairedDocumentRDDFunctions[K, V](rdd: RDD[(K, V)])(
   @transient val sparkContext = rdd.sparkContext
   def saveToMapRDB(tableName: String,
                    createTable: Boolean = false,
-                   bulkInsert: Boolean = false): Unit = {
+                   bulkInsert: Boolean = false,
+                   bufferWrites: Boolean = true): Unit = {
     logDebug(
       "saveToMapRDB in PairedDocumentRDDFunctions is called for table: " +
         tableName + " with bulkinsert flag set: " + bulkInsert + " and createTable:" + createTable)
@@ -154,7 +157,7 @@ private[spark] case class PairedDocumentRDDFunctions[K, V](rdd: RDD[(K, V)])(
         (iter: Iterator[(K, V)]) =>
           if (iter.nonEmpty) {
             val writer =
-              Writer.initialize(tableName, cnf.value, isnewAndBulkLoad, true)
+              Writer.initialize(tableName, cnf.value, isnewAndBulkLoad, true, bufferWrites)
             while (iter.hasNext) {
               val element = iter.next
               checkElementForNull(element)
@@ -167,7 +170,8 @@ private[spark] case class PairedDocumentRDDFunctions[K, V](rdd: RDD[(K, V)])(
 
   def insertToMapRDB(tablename: String,
                      createTable: Boolean = false,
-                     bulkInsert: Boolean = false): Unit = {
+                     bulkInsert: Boolean = false,
+                     bufferWrites: Boolean = true): Unit = {
 
     logDebug("insertToMapRDB in PairedDocumentRDDFunctions is called for table: " +
         tablename + " with bulkinsert flag set: " + bulkInsert + " and createTable:" + createTable)
@@ -181,7 +185,7 @@ private[spark] case class PairedDocumentRDDFunctions[K, V](rdd: RDD[(K, V)])(
         (iter: Iterator[(K, V)]) =>
           if (iter.nonEmpty) {
             val writer =
-              Writer.initialize(tablename, cnf.value, isnewAndBulkLoad, false)
+              Writer.initialize(tablename, cnf.value, isnewAndBulkLoad, false, bufferWrites)
             while (iter.hasNext) {
               val element = iter.next
               checkElementForNull(element)

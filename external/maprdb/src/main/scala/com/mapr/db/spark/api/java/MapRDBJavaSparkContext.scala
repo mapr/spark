@@ -16,6 +16,12 @@ import org.apache.spark.sql.Row
 
 class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
 
+  private var bufferWrites = true
+
+  def setBufferWrites(bufferWrites: Boolean): Unit = {
+    this.bufferWrites = bufferWrites
+  }
+
   def this(javaSparkContext: JavaSparkContext) =
     this(JavaSparkContext.toSparkContext(javaSparkContext))
 
@@ -25,6 +31,7 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
       .sparkContext(sparkContext)
       .configuration(new Configuration)
       .setTable(tableName)
+      .setBufferWrites(bufferWrites)
       .build()
       .toJavaRDD(classOf[OJAIDocument])
 
@@ -42,6 +49,7 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
       .sparkContext(sparkContext)
       .configuration(new Configuration)
       .setTable(tableName)
+      .setBufferWrites(bufferWrites)
       .build()
       .toJavaRDD(clazz)
 
@@ -60,7 +68,7 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
 
     javaRDD.rdd
       .asInstanceOf[RDD[OJAIValue[D]]]
-      .saveToMapRDB(tableName, createTable, bulkInsert, idField)
+      .saveToMapRDB(tableName, createTable, bulkInsert, idField, bufferWrites)
   }
 
   def saveToMapRDB[D](javaRDD: JavaRDD[D],
@@ -101,7 +109,7 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
     require(javaRDD != null, "RDD can not be null")
     javaRDD.rdd
       .asInstanceOf[RDD[Row]]
-      .saveToMapRDB(tableName, createTable, bulkInsert, idField)
+      .saveToMapRDB(tableName, createTable, bulkInsert, idField, bufferWrites)
   }
 
   def saveRowRDDToMapRDB(javaRDD: JavaRDD[Row],
@@ -152,7 +160,7 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
     implicit val f: OJAIKey[K] = MapRDBUtils.getOjaiKey[K]()
 
     PairedDocumentRDDFunctions(javaPairRDD.rdd)
-      .saveToMapRDB(tableName, createTable, bulkInsert)
+      .saveToMapRDB(tableName, createTable, bulkInsert, bufferWrites)
   }
 
   def saveToMapRDB[K, V <: AnyRef](javaPairRDD: JavaPairRDD[K, V],
@@ -201,7 +209,7 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
     implicit val f: OJAIKey[K] = MapRDBUtils.getOjaiKey[K]()
 
     PairedDocumentRDDFunctions(javaPairRDD.rdd)
-      .insertToMapRDB(tableName, createTable, bulkInsert)
+      .insertToMapRDB(tableName, createTable, bulkInsert, bufferWrites)
   }
 
   def insertToMapRDB[K, V <: AnyRef](javaPairRDD: JavaPairRDD[K, V],
@@ -240,7 +248,7 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
     require(javaRDD != null, "RDD can not be null")
     javaRDD.rdd
       .asInstanceOf[RDD[Row]]
-      .insertToMapRDB(tableName, createTable, bulkInsert, idField)
+      .insertToMapRDB(tableName, createTable, bulkInsert, idField, bufferWrites)
   }
 
   def insertRowRDDToMapRDB(javaRDD: JavaRDD[Row],
@@ -282,7 +290,7 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
 
     javaRDD.rdd
       .asInstanceOf[RDD[OJAIValue[D]]]
-      .insertToMapRDB(tableName, createTable, bulkInsert, idField)
+      .insertToMapRDB(tableName, createTable, bulkInsert, idField, bufferWrites)
   }
 
   def insertToMapRDB[D](javaRDD: JavaRDD[D],

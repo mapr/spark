@@ -14,14 +14,16 @@ case class SparkSessionFunctions(@transient sparkSession: SparkSession)
   def loadFromMapRDB[T <: Product: TypeTag](
       tableName: String,
       schema: StructType = null,
-      sampleSize: Double = GenerateSchema.SAMPLE_SIZE): DataFrame = {
+      sampleSize: Double = GenerateSchema.SAMPLE_SIZE,
+      bufferWrites: Boolean = true): DataFrame = {
 
     MapRSpark
       .builder()
       .sparkSession(sparkSession)
       .configuration()
       .setTable(tableName)
+      .setBufferWrites(bufferWrites)
       .build()
-      .toDF[T](schema, sampleSize)
+      .toDF[T](schema, sampleSize, bufferWrites)
   }
 }

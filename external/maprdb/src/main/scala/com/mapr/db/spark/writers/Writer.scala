@@ -22,12 +22,12 @@ private[spark] trait Writer extends Serializable {
 private[spark] object Writer {
   def initialize(tableName: String,
                  serializableConfiguration: SerializableConfiguration,
-                 bulkInsert: Boolean, insertOrReplace : Boolean): Writer = {
+                 bulkInsert: Boolean, insertOrReplace : Boolean, bufferWrites: Boolean): Writer = {
 
     if (!bulkInsert) {
       if (insertOrReplace) {
-        TableInsertOrReplaceWriter(DBClient().getTable(tableName))
-      } else TableInsertWriter(DBClient().getTable(tableName))
+        TableInsertOrReplaceWriter(DBClient().getTable(tableName, bufferWrites))
+      } else TableInsertWriter(DBClient().getTable(tableName, bufferWrites))
     }
     else BulkTableWriter(
       new BulkLoadRecordWriter(serializableConfiguration.value, new Path(tableName)))

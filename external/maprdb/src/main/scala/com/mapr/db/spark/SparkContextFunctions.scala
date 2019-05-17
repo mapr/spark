@@ -18,13 +18,14 @@ case class SparkContextFunctions(@transient sc: SparkContext)
     * @param tableName name of the table in MapRDB
     * @example val docs = sc.loadMapRDBTable("tablePath")
     */
-  def loadFromMapRDB[T: ClassTag](tableName: String)(
+  def loadFromMapRDB[T: ClassTag](tableName: String, bufferWrites: Boolean = true)(
       implicit e: T DefaultType OJAIDocument,
       f: RDDTYPE[T]): MapRDBTableScanRDD[T] =
     MapRSpark.builder
       .sparkContext(sc)
       .configuration()
       .setTable(tableName)
+      .setBufferWrites(bufferWrites)
       .build()
       .toRDD[T](classTag[T].runtimeClass.asInstanceOf[Class[T]])
 

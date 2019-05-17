@@ -34,6 +34,7 @@ class DefaultSource
       getTablePath(parameters),
       None,
       parameters.get("sampleSize"),
+      parameters.getOrElse("bufferWrites", "true"),
       condition,
       parameters.get("ColumnProjection"),
       parameters.getOrElse("Operation", "InsertOrReplace"),
@@ -53,6 +54,7 @@ class DefaultSource
       getTablePath(parameters),
       Some(schema),
       parameters.get("sampleSize"),
+      parameters.getOrElse("bufferWrites", "true"),
       condition,
       parameters.get("ColumnProjection"),
       parameters.getOrElse("Operation", "InsertOrReplace"),
@@ -65,6 +67,7 @@ class DefaultSource
                               parameters: Map[String, String],
                               data: DataFrame): BaseRelation = {
 
+    val bufferWrites = parameters.getOrElse("bufferWrites", "true").toBoolean
     val tableName = getTablePath(parameters).getOrElse("")
     require(tableName.nonEmpty, "Table name must be defined")
 
@@ -90,14 +93,16 @@ class DefaultSource
                          tableName,
                          idFieldPath,
                          createTable = createTheTable,
-                         bulkInsert = bulkMode)
+                         bulkInsert = bulkMode,
+                         bufferWrites = bufferWrites)
 
       case "InsertOrReplace" =>
         MapRSpark.save(data,
                        tableName,
                        idFieldPath,
                        createTable = createTheTable,
-                       bulkInsert = bulkMode)
+                       bulkInsert = bulkMode,
+                       bufferWrites = bufferWrites)
 
 
       case "ErrorIfExists" =>
@@ -109,7 +114,8 @@ class DefaultSource
             tableName,
             idFieldPath,
             createTable = true,
-            bulkInsert = bulkMode)
+            bulkInsert = bulkMode,
+            bufferWrites = bufferWrites)
         }
       case "Overwrite" =>
         DBClient().deleteTable(tableName)
@@ -117,7 +123,8 @@ class DefaultSource
                        tableName,
                        idFieldPath,
                        createTable = true,
-                       bulkInsert = bulkMode)
+                       bulkInsert = bulkMode,
+                       bufferWrites = bufferWrites)
       case _ =>
         throw new UnsupportedOperationException("Not supported operation")
     }
@@ -127,6 +134,7 @@ class DefaultSource
       Some(tableName),
       Some(data.schema),
       parameters.get("sampleSize"),
+      parameters.getOrElse("bufferWrites", "true"),
       condition,
       parameters.get("ColumnProjection"),
       parameters.getOrElse("Operation", "InsertOrReplace"),
@@ -138,6 +146,7 @@ class DefaultSource
                                    tableName: Option[String],
                                    userSchema: Option[StructType],
                                    sampleSize: Option[String],
+                                   bufferWrites: String,
                                    queryCondition: Option[QueryCondition],
                                    colProjection: Option[String],
                                    Operation: String,
@@ -154,6 +163,7 @@ class DefaultSource
       .sparkSession(sqlContext.sparkSession)
       .configuration()
       .setTable(tableName.get)
+      .setBufferWrites(bufferWrites.toBoolean)
       .setCond(queryCondition)
       .setColumnProjection(columns)
       .build()

@@ -27,16 +27,17 @@ private[spark] class MapRDBTableScanRDD[T: ClassTag](
     cnf: Broadcast[SerializableConfiguration],
     columns: Seq[String],
     val tableName: String,
+    val bufferWrites: Boolean = true,
     val condition: DBQueryCondition,
     val beanClass: Class[T])(implicit e: T DefaultType OJAIDocument,
                              reqType: RDDTYPE[T])
     extends MapRDBBaseRDD[T](sc, tableName, condition, beanClass, columns) {
 
-  @transient private lazy val table = DBClient().getTable(tableName)
+  @transient private lazy val table = DBClient().getTable(tableName, bufferWrites)
   @transient private lazy val tabletinfos =
     if (condition == null || condition.condition.isEmpty) {
-      DBClient().getTabletInfos(tableName)
-    } else DBClient().getTabletInfos(tableName, condition.condition)
+      DBClient().getTabletInfos(tableName, bufferWrites)
+    } else DBClient().getTabletInfos(tableName, condition.condition, bufferWrites)
   @transient private lazy val getSplits: Seq[Value] = {
     val keys = tabletinfos.map(
       tableinfo =>
@@ -149,6 +150,7 @@ private[spark] class MapRDBTableScanRDD[T: ClassTag](
                               cnf,
                               columns,
                               tblName,
+                              bufferWrites,
                               cnd,
                               bclass)
 }
@@ -159,6 +161,7 @@ object MapRDBTableScanRDD {
       sc: SparkContext,
       cnf: Broadcast[SerializableConfiguration],
       tableName: String,
+      bufferWrites: Boolean,
       columns: Seq[String],
       cond: DBQueryCondition,
       beanClass: Class[T])(implicit f: RDDTYPE[T]): MapRDBTableScanRDD[T] = {
@@ -168,6 +171,7 @@ object MapRDBTableScanRDD {
                               cnf,
                               columns,
                               tableName = tableName,
+                              bufferWrites,
                               cond,
                               beanClass)
   }

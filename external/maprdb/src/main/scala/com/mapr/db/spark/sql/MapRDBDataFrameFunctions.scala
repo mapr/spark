@@ -12,12 +12,14 @@ private[spark] case class MapRDBDataFrameFunctions(@transient df: DataFrame)
   def saveToMapRDB(tableName: String,
                    idFieldPath: String = DocumentConstants.ID_KEY,
                    createTable: Boolean = false,
-                   bulkInsert: Boolean = false): Unit =
-    MapRSpark.save(df, tableName, idFieldPath, createTable, bulkInsert)
+                   bulkInsert: Boolean = false,
+                   bufferWrites: Boolean = true): Unit =
+    MapRSpark.save(df, tableName, idFieldPath, createTable, bulkInsert, bufferWrites)
 
   def insertToMapRDB(tableName: String,
                      idFieldPath: String = DocumentConstants.ID_KEY,
                      createTable: Boolean = false,
-                     bulkInsert: Boolean = false): Unit =
-    MapRSpark.insert(df, tableName, idFieldPath, createTable, bulkInsert)
+                     bulkInsert: Boolean = false,
+                     bufferWrites: Boolean = true): Unit =
+    MapRSpark.insert(df, tableName, idFieldPath, createTable, bulkInsert, bufferWrites)
 }
