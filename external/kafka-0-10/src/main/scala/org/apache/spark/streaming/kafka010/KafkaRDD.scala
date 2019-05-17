@@ -228,6 +228,12 @@ private[spark] class KafkaRDD[K, V](
           } else {
             currentRecord.offset() + 1
           }
+
+        // MapR [SPARK-541] first record's offset can be greater than or equals to part.untilOffset if we have
+        // some records expired
+        if (currentRecord.offset() >= part.untilOffset) {
+          currentRecord = null
+        }
       }
     }
 
