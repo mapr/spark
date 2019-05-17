@@ -11,11 +11,16 @@ import org.apache.spark.sql.types.StructType
 case class SparkSessionFunctions(@transient sparkSession: SparkSession)
     extends Serializable {
 
+  private var bufferWrites = true
+
+  def setBufferWrites(bufferWrites: Boolean): Unit = {
+    this.bufferWrites = bufferWrites
+  }
+
   def loadFromMapRDB[T <: Product: TypeTag](
       tableName: String,
       schema: StructType = null,
-      sampleSize: Double = GenerateSchema.SAMPLE_SIZE,
-      bufferWrites: Boolean = true): DataFrame = {
+      sampleSize: Double = GenerateSchema.SAMPLE_SIZE): DataFrame = {
 
     MapRSpark
       .builder()

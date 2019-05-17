@@ -10,9 +10,15 @@ private[spark] case class MapRDBDataFrameWriterFunctions(
     @transient dfw: DataFrameWriter[_])
     extends LoggingTrait {
 
+  private var bufferWrites = true
+
+  def setBufferWrites(bufferWrites: Boolean): Unit = {
+    this.bufferWrites = bufferWrites
+  }
+
   def saveToMapRDB(tableName: String,
                    idFieldPath: String = DocumentConstants.ID_KEY,
                    bulkInsert: Boolean = false): Unit =
-    MapRSpark.save(dfw, tableName, idFieldPath, bulkInsert)
+    MapRSpark.save(dfw, tableName, idFieldPath, bulkInsert, bufferWrites)
 
 }

@@ -58,13 +58,15 @@ object MapRSpark {
       dfw: DataFrameWriter[_],
       tableName: String,
       idFieldPath: String,
-      bulkInsert: Boolean
+      bulkInsert: Boolean,
+      bufferWrites: Boolean
   ): Unit = {
     dfw
       .format(defaultSource)
       .option("tablePath", tableName)
       .option("idFieldPath", idFieldPath)
       .option("bulkMode", bulkInsert)
+      .option("bufferWrites", bufferWrites)
       .save()
   }
 
