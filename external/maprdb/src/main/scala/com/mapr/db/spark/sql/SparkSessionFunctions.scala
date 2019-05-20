@@ -8,14 +8,12 @@ import com.mapr.db.spark.utils.MapRSpark
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.types.StructType
 
-case class SparkSessionFunctions(@transient sparkSession: SparkSession)
+case class SparkSessionFunctions(@transient sparkSession: SparkSession,
+                                 bufferWrites: Boolean = true)
     extends Serializable {
 
-  private var bufferWrites = true
-
-  def setBufferWrites(bufferWrites: Boolean): Unit = {
-    this.bufferWrites = bufferWrites
-  }
+  def setBufferWrites(bufferWrites: Boolean): SparkSessionFunctions =
+    SparkSessionFunctions(sparkSession, bufferWrites)
 
   def loadFromMapRDB[T <: Product: TypeTag](
       tableName: String,

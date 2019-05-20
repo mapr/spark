@@ -6,14 +6,12 @@ import org.ojai.DocumentConstants
 
 import org.apache.spark.sql.DataFrame
 
-private[spark] case class MapRDBDataFrameFunctions(@transient df: DataFrame)
+private[spark] case class MapRDBDataFrameFunctions(@transient df: DataFrame,
+                                                   bufferWrites: Boolean = true)
     extends LoggingTrait {
 
-  private var bufferWrites = true
-
-  def setBufferWrites(bufferWrites: Boolean): Unit = {
-    this.bufferWrites = bufferWrites
-  }
+  def setBufferWrites(bufferWrites: Boolean): MapRDBDataFrameFunctions =
+    MapRDBDataFrameFunctions(df, bufferWrites)
 
   def saveToMapRDB(tableName: String,
                    idFieldPath: String = DocumentConstants.ID_KEY,
