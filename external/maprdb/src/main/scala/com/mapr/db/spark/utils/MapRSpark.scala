@@ -33,11 +33,10 @@ object MapRSpark {
               bulkInsert: Boolean,
               bufferWrites: Boolean): Unit = {
     val documentRdd = dataset.toDF().rdd.map(MapRSqlUtils.rowToDocument)
-    documentRdd.saveToMapRDB(tableName,
+    documentRdd.setBufferWrites(bufferWrites).saveToMapRDB(tableName,
                              createTable = createTable,
                              bulkInsert = bulkInsert,
-                             idFieldPath = idFieldPath,
-                             bufferWrites = bufferWrites)
+                             idFieldPath = idFieldPath)
   }
 
   def insert[D](dataset: Dataset[D],
@@ -47,11 +46,10 @@ object MapRSpark {
                 bulkInsert: Boolean,
                 bufferWrites: Boolean): Unit = {
     val documentRdd = dataset.toDF.rdd.map(MapRSqlUtils.rowToDocument)
-    documentRdd.insertToMapRDB(tableName,
+    documentRdd.setBufferWrites(bufferWrites).insertToMapRDB(tableName,
                                createTable = createTable,
                                bulkInsert = bulkInsert,
-                               idFieldPath = idFieldPath,
-                               bufferWrites = bufferWrites)
+                               idFieldPath = idFieldPath)
   }
 
   def save(

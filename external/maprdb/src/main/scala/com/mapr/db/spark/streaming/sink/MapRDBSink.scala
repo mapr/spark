@@ -51,7 +51,8 @@ private[streaming] class MapRDBSink(parameters: Map[String, String]) extends Sin
         logicalPlan.output,
         data.sparkSession.sessionState.analyzer)
       data.queryExecution.toRdd.map(encoder.fromRow)
-        .saveToMapRDB(tablePath.get, createTable, bulkInsert, idFieldPath, bufferWrites)
+        .setBufferWrites(bufferWrites)
+        .saveToMapRDB(tablePath.get, createTable, bulkInsert, idFieldPath)
 
       latestBatchId = batchId
     }

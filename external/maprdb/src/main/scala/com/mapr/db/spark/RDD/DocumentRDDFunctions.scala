@@ -57,17 +57,19 @@ private[spark] class DocumentRDDFunctions extends LoggingTrait {
   }
 }
 
-private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T])(
+private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T], bufferWrites: Boolean = true)(
     implicit f: OJAIValue[T])
     extends DocumentRDDFunctions {
 
   @transient val sparkContext = rdd.sparkContext
 
+  def setBufferWrites(bufferWrites: Boolean): OJAIDocumentRDDFunctions[T] =
+    OJAIDocumentRDDFunctions(rdd, bufferWrites)
+
   def saveToMapRDB(tableName: String,
                    createTable: Boolean = false,
                    bulkInsert: Boolean = false,
-                   idFieldPath: String = DocumentConstants.ID_KEY,
-                   bufferWrites: Boolean = true): Unit = {
+                   idFieldPath: String = DocumentConstants.ID_KEY): Unit = {
     logDebug(
       s"saveToMapRDB in OJAIDocumentRDDFunctions is called for table: $tableName " +
         s"with bulkinsert flag set: $bulkInsert and createTable: $createTable")
@@ -101,8 +103,7 @@ private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T])(
   def insertToMapRDB(tablename: String,
                      createTable: Boolean = false,
                      bulkInsert: Boolean = false,
-                     idFieldPath: String = DocumentConstants.ID_KEY,
-                     bufferWrites: Boolean = true): Unit = {
+                     idFieldPath: String = DocumentConstants.ID_KEY): Unit = {
     logDebug(
       s"insertToMapRDB in OJAIDocumentRDDFunctions is called for table: $tablename" +
         s" with bulkinsert flag set: $bulkInsert and createTable: $createTable")
@@ -134,16 +135,20 @@ private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T])(
   }
 }
 
-private[spark] case class PairedDocumentRDDFunctions[K, V](rdd: RDD[(K, V)])(
+private[spark] case class PairedDocumentRDDFunctions[K, V](rdd: RDD[(K, V)],
+                                                           bufferWrites: Boolean = true)(
     implicit f: OJAIKey[K],
     v: OJAIValue[V])
     extends DocumentRDDFunctions {
 
   @transient val sparkContext = rdd.sparkContext
+
+  def setBufferWrites(bufferWrites: Boolean): PairedDocumentRDDFunctions[K, V] =
+    PairedDocumentRDDFunctions(rdd, bufferWrites)
+
   def saveToMapRDB(tableName: String,
                    createTable: Boolean = false,
-                   bulkInsert: Boolean = false,
-                   bufferWrites: Boolean = true): Unit = {
+                   bulkInsert: Boolean = false): Unit = {
     logDebug(
       "saveToMapRDB in PairedDocumentRDDFunctions is called for table: " +
         tableName + " with bulkinsert flag set: " + bulkInsert + " and createTable:" + createTable)
@@ -170,8 +175,7 @@ private[spark] case class PairedDocumentRDDFunctions[K, V](rdd: RDD[(K, V)])(
 
   def insertToMapRDB(tablename: String,
                      createTable: Boolean = false,
-                     bulkInsert: Boolean = false,
-                     bufferWrites: Boolean = true): Unit = {
+                     bulkInsert: Boolean = false): Unit = {
 
     logDebug("insertToMapRDB in PairedDocumentRDDFunctions is called for table: " +
         tablename + " with bulkinsert flag set: " + bulkInsert + " and createTable:" + createTable)
