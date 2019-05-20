@@ -10,15 +10,19 @@ import com.mapr.db.spark.utils.MapRSpark
 
 import org.apache.spark.SparkContext
 
-case class SparkContextFunctions(@transient sc: SparkContext)
+case class SparkContextFunctions(@transient sc: SparkContext,
+                                 bufferWrites: Boolean = true)
     extends Serializable {
+
+  def setBufferWrites(bufferWrites: Boolean): SparkContextFunctions =
+    SparkContextFunctions(sc, bufferWrites)
 
   /**
     * Spark MapRDB connector specific functions to load json tables as RDD[OJAIDocument]
     * @param tableName name of the table in MapRDB
     * @example val docs = sc.loadMapRDBTable("tablePath")
     */
-  def loadFromMapRDB[T: ClassTag](tableName: String, bufferWrites: Boolean = true)(
+  def loadFromMapRDB[T: ClassTag](tableName: String)(
       implicit e: T DefaultType OJAIDocument,
       f: RDDTYPE[T]): MapRDBTableScanRDD[T] =
     MapRSpark.builder
