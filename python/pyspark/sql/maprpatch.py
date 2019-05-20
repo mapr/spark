@@ -1,17 +1,21 @@
 from py4j.java_gateway import java_import, JavaObject
 from pyspark.sql.dataframe import DataFrame
 
-def mapr_session_patch(original_session, wrapped, gw, default_sample_size=1000.0, default_id_field ="_id"):
+def mapr_session_patch(original_session, wrapped, gw, default_sample_size=1000.0, default_id_field ="_id", buffer_writes=True):
 
     # Import MapR DB Connector Java classes
     java_import(gw.jvm, "com.mapr.db.spark.sql.api.java.MapRDBJavaSession")
 
     mapr_j_session = gw.jvm.MapRDBJavaSession(original_session._jsparkSession)
 
+    def set_buffer_writes(bw):
+        buffer_writes=bw
+
     def loadFromMapRDB(table_name, schema = None, sample_size=default_sample_size):
         """
         Loads data from MapR-DB Table.
 
+        :param buffer_writes: buffer-writes ojai parameter
         :param table_name: MapR-DB table path.
         :param schema: schema representation.
         :param sample_size: sample size.
@@ -22,7 +26,8 @@ def mapr_session_patch(original_session, wrapped, gw, default_sample_size=1000.0
         df_reader = original_session.read \
             .format("com.mapr.db.spark.sql") \
             .option("tableName", table_name) \
-            .option("sampleSize", sample_size)
+            .option("sampleSize", sample_size) \
+            .option("bufferWrites", buffer_writes)
 
         if schema:
             df_reader.schema(schema)
@@ -66,6 +71,7 @@ def mapr_session_patch(original_session, wrapped, gw, default_sample_size=1000.0
 
         >>> spark.saveToMapRDB(df, "/test-table")
         """
+        mapr_j_session.setBufferWrites(buffer_writes)
         DataFrame(mapr_j_session.saveToMapRDB(dataframe._jdf, table_name, id_field_path, create_table, bulk_insert), wrapped)
 
     original_session.saveToMapRDB = saveToMapRDB
@@ -84,6 +90,7 @@ def mapr_session_patch(original_session, wrapped, gw, default_sample_size=1000.0
 
         >>> spark.insertToMapRDB(df, "/test-table")
         """
+        mapr_j_session.setBufferWrites(buffer_writes)
         DataFrame(mapr_j_session.insertToMapRDB(dataframe._jdf, table_name, id_field_path, create_table, bulk_insert), wrapped)
 
     original_session.insertToMapRDB = insertToMapRDB
