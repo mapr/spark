@@ -26,7 +26,7 @@
   </parent>
   <groupId>org.apache.spark</groupId>
   <artifactId>spark-parent_2.11</artifactId>
-  <version>2.4.0.0-mapr-SNAPSHOT</version>
+  <version>2.4.3.0-mapr-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Spark Project Parent POM</name>
   <url>http://spark.apache.org/</url>
@@ -137,7 +137,7 @@
     <hive.version>1.2.0-mapr-spark-MEP-6.0.0-SNAPSHOT</hive.version>
     <hive.2.version>2.3.3-mapr-1901</hive.2.version>
     <!-- Kafka version -->
-    <kafka.version>1.1.1-mapr-1901</kafka.version>
+    <kafka.version>2.1.1.0-mapr-SNAPSHOT</kafka.version>
     <!-- Version used for internal directory structure -->
     <hive.version.short>1.2.1</hive.version.short>
     <derby.version>10.12.1.1</derby.version>
@@ -934,6 +934,11 @@
           <exclusion>
             <groupId>org.jboss.netty</groupId>
             <artifactId>netty</artifactId>
+          </exclusion>
+          <exclusion>
+            <!-- BeanUtils >= 1.9.0 no longer splits out -core; exclude it -->
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils-core</artifactId>
           </exclusion>
           <exclusion>
             <groupId>commons-logging</groupId>
@@ -1807,6 +1812,10 @@
         <classifier>${orc.classifier}</classifier>
         <scope>${orc.deps.scope}</scope>
         <exclusions>
+          <exclusion>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+          </exclusion>
           <exclusion>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-common</artifactId>

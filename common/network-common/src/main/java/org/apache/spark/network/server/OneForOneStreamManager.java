@@ -50,7 +50,7 @@ public class OneForOneStreamManager extends StreamManager {
     final Iterator<ManagedBuffer> buffers;
 
     // The channel associated to the stream
-    final Channel associatedChannel;
+    Channel associatedChannel = null;
 
     // Used to keep track of the index of the buffer that the user has retrieved, just to ensure
     // that the caller only requests each chunk one at a time, in order.
@@ -71,6 +71,13 @@ public class OneForOneStreamManager extends StreamManager {
     // This does not need to be globally unique, only unique to this class.
     nextStreamId = new AtomicLong((long) new Random().nextInt(Integer.MAX_VALUE) * 1000);
     streams = new ConcurrentHashMap<>();
+  }
+
+  @Override
+  public void registerChannel(Channel channel, long streamId) {
+    if (streams.containsKey(streamId)) {
+      streams.get(streamId).associatedChannel = channel;
+    }
   }
 
   @Override
