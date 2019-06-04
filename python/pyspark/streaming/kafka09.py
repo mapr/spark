@@ -21,7 +21,7 @@ from pyspark.streaming import DStream
 from pyspark.streaming.dstream import TransformedDStream
 from pyspark.streaming.util import TransformFunction
 
-__all__ = ['Broker', 'KafkaMessageAndMetadata', 'KafkaUtils', 'OffsetRange',
+__all__ = ['KafkaMessageAndMetadata', 'KafkaUtils', 'OffsetRange',
            'TopicAndPartition', 'utf8_decoder', 'LocationStrategies', 'ConsumerStrategies']
 
 
@@ -72,9 +72,42 @@ class KafkaUtils(object):
         return KafkaDStream(stream._jdstream, ssc, stream._jrdd_deserializer)
 
     @staticmethod
+    def createRDD(sc, kafkaParams, offsetRanges, locationStrategy=None):
+        """
+        Create an RDD from Kafka using offset ranges for each topic and partition.
+
+        :param sc:  SparkContext object
+        :param kafkaParams: Additional params for Kafka
+        :param offsetRanges:  list of offsetRange to specify topic:partition:[start, end) to consume
+        :param leaders: Kafka brokers for each TopicAndPartition in offsetRanges.  May be an empty
+            map, in which case leaders will be looked up on the driver.
+        :return: An RDD object
+        """
+        if not isinstance(kafkaParams, dict):
+            raise TypeError("kafkaParams should be dict")
+        if not isinstance(offsetRanges, list):
+            raise TypeError("offsetRanges should be list")
+
+        def funcWithoutMessageHandler(k_v):
+            return (utf8_decoder(k_v[0]), utf8_decoder(k_v[1]))
+
+        helper = KafkaUtils._get_helper(sc)
+        joffsetRanges = [o._jOffsetRange(helper) for o in offsetRanges]
+
+        if locationStrategy is None:
+            locationStrategy = LocationStrategies.PreferConsistent(sc)
+
+        jrdd = helper.createRDDWithoutMessageHandler(
+            sc._jsc, kafkaParams, joffsetRanges, locationStrategy)
+        ser = PairDeserializer(NoOpSerializer(), NoOpSerializer())
+        rdd = RDD(jrdd, sc, ser).map(funcWithoutMessageHandler)
+
+        return KafkaRDD(rdd._jrdd, sc, rdd._jrdd_deserializer)
+
+    @staticmethod
     def _get_helper(sc):
         try:
-            return sc._jvm.org.apache.spark.streaming.kafka.KafkaUtilsPythonHelper()
+            return sc._jvm.org.apache.spark.streaming.kafka09.KafkaUtilsPythonHelper
         except TypeError as e:
             if str(e) == "'JavaPackage' object is not callable":
                 KafkaUtils._printErrorMsg(sc)
@@ -90,7 +123,7 @@ ________________________________________________________________________________
   1. Include the Kafka library and its dependencies with in the
      spark-submit command as
 
-     $ bin/spark-submit --packages org.apache.spark:spark-streaming-kafka-0-8:%s ...
+     $ bin/spark-submit --packages org.apache.spark:spark-streaming-kafka-0-9:%s ...
 
   2. Download the JAR of the artifact from Maven Central http://search.maven.org/,
      Group Id = org.apache.spark, Artifact Id = spark-streaming-kafka-0-9-assembly, Version = %s.
@@ -171,24 +204,6 @@ class TopicAndPartition(object):
 
     def __hash__(self):
         return (self._topic, self._partition).__hash__()
-
-
-class Broker(object):
-    """
-    Represent the host and port info for a Kafka broker.
-    """
-
-    def __init__(self, host, port):
-        """
-        Create a Python Broker to map to the Java related object.
-        :param host: Broker's hostname.
-        :param port: Broker's port.
-        """
-        self._host = host
-        self._port = port
-
-    def _jBroker(self, helper):
-        return helper.createBroker(self._host, self._port)
 
 
 class KafkaRDD(RDD):
@@ -352,7 +367,9 @@ class LocationStrategies(object):
         if not host_dict:
             host_dict = {}
         for tp, v in host_dict.items():
-            jm[tp._jTopicAndPartition] = v
+            jtp = sc._jvm.org.apache.spark.streaming.kafka09.KafkaUtilsPythonHelper\
+                .createTopicAndPartition(tp._topic, tp._partition)
+            jm[jtp] = v
 
         return sc._jvm.org.apache.spark.streaming.kafka09.LocationStrategies.PreferFixed(jm)
 
@@ -396,7 +413,9 @@ class ConsumerStrategies(object):
 
         joffsets = sc._jvm.java.util.HashMap()
         for tp, v in offsets.items():
-            joffsets[tp._jTopicAndPartition] = v
+            jtp = sc._jvm.org.apache.spark.streaming.kafka09.KafkaUtilsPythonHelper \
+                                  .createTopicAndPartition(tp._topic, tp._partition)
+            joffsets[jtp] = v
 
         return sc._jvm.org.apache.spark.streaming.kafka09. \
             ConsumerStrategies.Subscribe(topics, kafkaParams, joffsets)
@@ -433,7 +452,9 @@ class ConsumerStrategies(object):
 
         joffsets = sc._jvm.java.util.HashMap()
         for tp, v in offsets.items():
-            joffsets[tp._jTopicAndPartition] = v
+            jtp = sc._jvm.org.apache.spark.streaming.kafka09.KafkaUtilsPythonHelper\
+                .createTopicAndPartition(tp._topic, tp._partition)
+            joffsets[jtp] = v
 
         return sc._jvm.org.apache.spark.streaming.kafka09. \
             ConsumerStrategies.SubscribePattern(jpattern, kafkaParams, joffsets)
@@ -463,7 +484,9 @@ class ConsumerStrategies(object):
 
         jtopicPartitions = sc._jvm.java.util.ArrayList()
         for topicPartition in jtopicPartitions:
-            jtopicPartitions.add(topicPartition._jTopicAndPartition)
+            jtp = sc._jvm.org.apache.spark.streaming.kafka09.KafkaUtilsPythonHelper \
+                .createTopicAndPartition(topicPartition._topic, topicPartition._partition)
+            jtopicPartitions.add(jtp)
 
         if offsets is None:
             return sc._jvm.org.apache.spark.streaming.kafka09. \
@@ -474,7 +497,9 @@ class ConsumerStrategies(object):
 
         joffsets = sc._jvm.java.util.HashMap()
         for tp, v in offsets.items():
-            joffsets[tp._jTopicAndPartition] = v
+            jtp = sc._jvm.org.apache.spark.streaming.kafka09.KafkaUtilsPythonHelper \
+                .createTopicAndPartition(tp._topic, tp._partition)
+            joffsets[jtp] = v
 
         return sc._jvm.org.apache.spark.streaming.kafka09. \
             ConsumerStrategies.Assign(jtopicPartitions, kafkaParams, joffsets)
