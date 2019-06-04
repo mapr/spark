@@ -51,14 +51,9 @@
     </dependency>
     <dependency>
       <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka-clients</artifactId>
-      <version>${kafka.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.kafka</groupId>
       <artifactId>kafka_${scala.binary.version}</artifactId>
       <version>${kafka.version}</version>
-      <scope>test</scope>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <groupId>com.sun.jmx</groupId>
