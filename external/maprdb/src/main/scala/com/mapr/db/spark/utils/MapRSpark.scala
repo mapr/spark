@@ -30,9 +30,10 @@ object MapRSpark {
               tableName: String,
               idFieldPath: String,
               createTable: Boolean,
-              bulkInsert: Boolean): Unit = {
+              bulkInsert: Boolean,
+              bufferWrites: Boolean): Unit = {
     val documentRdd = dataset.toDF().rdd.map(MapRSqlUtils.rowToDocument)
-    documentRdd.saveToMapRDB(tableName,
+    documentRdd.setBufferWrites(bufferWrites).saveToMapRDB(tableName,
                              createTable = createTable,
                              bulkInsert = bulkInsert,
                              idFieldPath = idFieldPath)
@@ -42,9 +43,10 @@ object MapRSpark {
                 tableName: String,
                 idFieldPath: String,
                 createTable: Boolean,
-                bulkInsert: Boolean): Unit = {
+                bulkInsert: Boolean,
+                bufferWrites: Boolean): Unit = {
     val documentRdd = dataset.toDF.rdd.map(MapRSqlUtils.rowToDocument)
-    documentRdd.insertToMapRDB(tableName,
+    documentRdd.setBufferWrites(bufferWrites).insertToMapRDB(tableName,
                                createTable = createTable,
                                bulkInsert = bulkInsert,
                                idFieldPath = idFieldPath)
@@ -54,13 +56,15 @@ object MapRSpark {
       dfw: DataFrameWriter[_],
       tableName: String,
       idFieldPath: String,
-      bulkInsert: Boolean
+      bulkInsert: Boolean,
+      bufferWrites: Boolean
   ): Unit = {
     dfw
       .format(defaultSource)
       .option("tablePath", tableName)
       .option("idFieldPath", idFieldPath)
       .option("bulkMode", bulkInsert)
+      .option("bufferWrites", bufferWrites)
       .save()
   }
 
@@ -74,10 +78,13 @@ object MapRSpark {
     private var condition: Option[QueryCondition] = None
     private var dbcondition: Option[DBQueryCondition] = None
     private var tableName: Option[String] = None
+    private var bufferWrites: Option[Boolean] = None
+    private var hintUsingIndex: Option[String] = None
     private var sampleSize: Option[String] = None
     private var conf: Option[SerializableConfiguration] = None
     private var beanClass: Option[Class[_]] = None
     private var columnProjection: Option[Seq[String]] = None
+    private var queryOptions: Option[Map[String, String]] = None
 
     def build(): MapRSpark = {
       require(sparkctx.isDefined, "The SparkContext must be set.")
@@ -89,12 +96,20 @@ object MapRSpark {
                     conf,
                     dbcondition,
                     tableName,
-                    columnProjection)
+                    bufferWrites,
+                    hintUsingIndex,
+                    columnProjection,
+                    queryOptions)
     }
 
     def configuration(conf: Configuration = new Configuration): Builder = {
       val sercnf = new SerializableConfiguration(conf)
       this.conf = Option(sercnf)
+      this
+    }
+
+    def setQueryOptions(queryOptions: Map[String, String]): Builder = {
+      this.queryOptions = Option(queryOptions)
       this
     }
 
@@ -128,6 +143,16 @@ object MapRSpark {
       this
     }
 
+    def setBufferWrites(bufferWrites: Boolean): Builder = {
+      this.bufferWrites = Option(bufferWrites)
+      this
+    }
+
+    def setHintUsingIndex(indexPath: Option[String]): Builder = {
+      this.hintUsingIndex = indexPath
+      this
+    }
+
     def setBeanClass(beanClass: Class[_]): Builder = {
       this.beanClass = Option(beanClass)
       this
@@ -145,7 +170,10 @@ case class MapRSpark(sparkSession: Option[SparkSession],
                      conf: Option[SerializableConfiguration],
                      cond: Option[DBQueryCondition],
                      tableName: Option[String],
-                     columns: Option[Seq[String]]) {
+                     bufferWrites: Option[Boolean],
+                     hintUsingIndex: Option[String],
+                     columns: Option[Seq[String]],
+                     queryOptions: Option[Map[String, String]]) {
 
   def toRDD[T: ClassTag](beanClass: Class[T] = null)(
       implicit e: T DefaultType OJAIDocument,
@@ -163,15 +191,20 @@ case class MapRSpark(sparkSession: Option[SparkSession],
                               sc.get.broadcast(conf.get),
                               columns.orNull,
                               tableName.get,
+                              bufferWrites.get,
+                              hintUsingIndex.orNull,
                               cond.orNull,
-                              beanClass)
+                              beanClass,
+                              queryOptions.get)
 
-  def toDataFrame(schema: StructType, sampleSize: Double): DataFrame = {
+  def toDataFrame(schema: StructType, sampleSize: Double,
+                  bufferWrites: Boolean): DataFrame = {
     val reader: DataFrameReader = sparkSession.get.read
       .format("com.mapr.db.spark.sql")
       .schema(schema)
       .option("tablePath", this.tableName.get)
       .option("sampleSize", sampleSize)
+      .option("bufferWrites", bufferWrites)
 
       if (cond.isDefined) {
         reader.option("QueryCondition",
@@ -205,21 +238,28 @@ case class MapRSpark(sparkSession: Option[SparkSession],
       .configuration()
       .setDBCond(cond.orNull)
       .setColumnProjection(columns)
+      .setQueryOptions(queryOptions.get)
       .setTable(tableName)
+      .setBufferWrites(bufferWrites.get)
       .build()
       .toRDD[OJAIDocument]()
   }
 
   def toDF[T <: Product: TypeTag](): DataFrame = {
-    toDF(null, GenerateSchema.SAMPLE_SIZE)
+    toDF(null, GenerateSchema.SAMPLE_SIZE, true)
   }
 
   def toDF[T <: Product: TypeTag](Schema: StructType): DataFrame = {
-    toDF(Schema, GenerateSchema.SAMPLE_SIZE)
+    toDF(Schema, GenerateSchema.SAMPLE_SIZE, true)
+  }
+
+  def toDF[T <: Product: TypeTag](Schema: StructType, bufferWrites: Boolean): DataFrame = {
+    toDF(Schema, GenerateSchema.SAMPLE_SIZE, bufferWrites)
   }
 
   def toDF[T <: Product: TypeTag](Schema: StructType,
-                                  sampleSize: Double): DataFrame = {
+                                  sampleSize: Double,
+                                  bufferWrites: Boolean): DataFrame = {
     var derived: StructType = null
     if (Schema != null) derived = Schema
     else {
@@ -229,6 +269,6 @@ case class MapRSpark(sparkSession: Option[SparkSession],
           GenerateSchema(toOJAIDocumentRDD(tableName.get), sampleSize)
       }
     }
-    toDataFrame(derived, sampleSize)
+    toDataFrame(derived, sampleSize, bufferWrites)
   }
 }

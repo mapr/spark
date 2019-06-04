@@ -1,6 +1,8 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.sql.api.java
 
+import scala.collection.JavaConverters._
+
 import com.mapr.db.spark.sql.GenerateSchema
 import com.mapr.db.spark.utils.MapRSpark
 import org.ojai.DocumentConstants
@@ -8,8 +10,33 @@ import org.ojai.DocumentConstants
 import org.apache.spark.sql.{DataFrame, Dataset, Encoders, SparkSession}
 import org.apache.spark.sql.types.StructType
 
-
 class MapRDBJavaSession(spark: SparkSession) {
+
+  private var bufferWrites = true
+  private var hintUsingIndex: Option[String] = None
+  private var queryOptions: Option[Map[String, String]] = None
+
+  def setBufferWrites(bufferWrites: Boolean): Unit = {
+    this.bufferWrites = bufferWrites
+  }
+
+  def setHintUsingIndex(indexPath: String): Unit = {
+    this.hintUsingIndex = Option(indexPath)
+  }
+
+  def setQueryOptions(queryOptions: java.util.Map[String, String]): Unit = {
+    this.queryOptions = Option(queryOptions.asScala.toMap)
+  }
+
+  def setQueryOption(queryOptionKey: String, queryOptionValue: String): Unit = {
+    this.queryOptions.getOrElse(Map[String, String]()) + (queryOptionKey -> queryOptionValue)
+  }
+
+  def resumeDefaultOptions(): Unit = {
+    queryOptions = None
+    hintUsingIndex = None
+    bufferWrites = true
+  }
 
   def loadFromMapRDB(tableName: String): DataFrame = {
     loadFromMapRDB(tableName, null, GenerateSchema.SAMPLE_SIZE)
@@ -22,12 +49,18 @@ class MapRDBJavaSession(spark: SparkSession) {
   def loadFromMapRDB(tableName: String,
                      schema: StructType,
                      sampleSize: Double): DataFrame = {
-    spark.read
+    val reader = spark.read
       .format("com.mapr.db.spark.sql")
       .schema(schema)
       .option("tablePath", tableName)
       .option("sampleSize", sampleSize)
-      .load()
+      .option("bufferWrites", bufferWrites)
+      .option("hintUsingIndex", hintUsingIndex.orNull)
+      .options(queryOptions.orNull)
+
+    resumeDefaultOptions()
+
+    reader.load()
   }
 
   def loadFromMapRDB(tableName: String, sampleSize: Double): DataFrame = {
@@ -57,12 +90,18 @@ class MapRDBJavaSession(spark: SparkSession) {
                                             clazz: Class[T]): Dataset[T] = {
 
     val encoder = Encoders.bean(clazz)
-    spark.read
+    val reader = spark.read
       .format("com.mapr.db.spark.sql")
       .schema(schema)
       .option("tablePath", tableName)
       .option("sampleSize", sampleSize)
-      .load()
+      .option("bufferWrites", bufferWrites)
+      .option("hintUsingIndex", hintUsingIndex.orNull)
+      .options(queryOptions.orNull)
+
+    resumeDefaultOptions()
+
+    reader.load()
       .as(encoder)
   }
 
@@ -70,8 +109,10 @@ class MapRDBJavaSession(spark: SparkSession) {
                       tableName: String,
                       idFieldPath: String,
                       createTable: Boolean,
-                      bulkInsert: Boolean): Unit =
-    MapRSpark.save(ds, tableName, idFieldPath, createTable, bulkInsert)
+                      bulkInsert: Boolean): Unit = {
+    MapRSpark.save(ds, tableName, idFieldPath, createTable, bulkInsert, bufferWrites)
+    resumeDefaultOptions()
+  }
 
   def saveToMapRDB(df: DataFrame, tableName: String): Unit =
     saveToMapRDB(df, tableName, DocumentConstants.ID_KEY, false, false)
@@ -83,8 +124,10 @@ class MapRDBJavaSession(spark: SparkSession) {
                         tableName: String,
                         idFieldPath: String,
                         createTable: Boolean,
-                        bulkInsert: Boolean): Unit =
-    MapRSpark.insert(ds, tableName, idFieldPath, createTable, bulkInsert)
+                        bulkInsert: Boolean): Unit = {
+    MapRSpark.insert(ds, tableName, idFieldPath, createTable, bulkInsert, bufferWrites)
+    resumeDefaultOptions()
+  }
 
   def insertToMapRDB[T](ds: Dataset[T], tableName: String): Unit =
     insertToMapRDB(ds, tableName, DocumentConstants.ID_KEY, false, false)

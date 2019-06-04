@@ -66,8 +66,8 @@ object MapRDBSpark {
     * Factory function to create a new partitioner using existing MapRDBTable.
     * @param table existing tableName in MapRDB
     */
-  def newPartitioner[T: OJAIKEY](table: String): Partitioner = {
-    MapRDBPartitioner(table)
+  def newPartitioner[T: OJAIKEY](table: String, bufferWrites: Boolean = true): Partitioner = {
+    MapRDBPartitioner(table, bufferWrites)
   }
 
   /**

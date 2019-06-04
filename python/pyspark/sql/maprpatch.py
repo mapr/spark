@@ -1,17 +1,40 @@
 from py4j.java_gateway import java_import, JavaObject
 from pyspark.sql.dataframe import DataFrame
 
-def mapr_session_patch(original_session, wrapped, gw, default_sample_size=1000.0, default_id_field ="_id"):
+def mapr_session_patch(original_session, wrapped, gw, default_sample_size=1000.0, default_id_field ="_id", buffer_writes=True):
+
+    vars = {'buffer_writes': buffer_writes, 'indexPath': None, 'options': {}}
 
     # Import MapR DB Connector Java classes
     java_import(gw.jvm, "com.mapr.db.spark.sql.api.java.MapRDBJavaSession")
 
     mapr_j_session = gw.jvm.MapRDBJavaSession(original_session._jsparkSession)
 
+    def setBufferWrites(bw=vars['buffer_writes']):
+        mapr_j_session.setBufferWrites(bw)
+        vars['buffer_writes'] = bw
+    original_session.setBufferWrites = setBufferWrites
+
+    def setHintUsingIndex(indexPath):
+        mapr_j_session.setHintUsingIndex(indexPath)
+        vars['indexPath'] = indexPath
+    original_session.setHintUsingIndex = setHintUsingIndex
+
+    def setQueryOption(key, value):
+        mapr_j_session.setQueryOption(key, value)
+        vars['options'][key] = value
+    original_session.setQueryOption = setQueryOption
+
+    def setQueryOptions(options):
+        mapr_j_session.setQueryOptions(options)
+        vars['options'] = options
+    original_session.setQueryOptions = setQueryOptions
+
     def loadFromMapRDB(table_name, schema = None, sample_size=default_sample_size):
         """
         Loads data from MapR-DB Table.
 
+        :param buffer_writes: buffer-writes ojai parameter
         :param table_name: MapR-DB table path.
         :param schema: schema representation.
         :param sample_size: sample size.
@@ -22,7 +45,10 @@ def mapr_session_patch(original_session, wrapped, gw, default_sample_size=1000.0
         df_reader = original_session.read \
             .format("com.mapr.db.spark.sql") \
             .option("tableName", table_name) \
-            .option("sampleSize", sample_size)
+            .option("sampleSize", sample_size) \
+            .option("bufferWrites", vars['buffer_writes']) \
+            .option("indexName", vars['indexName']) \
+            .options(**vars['options'])
 
         if schema:
             df_reader.schema(schema)

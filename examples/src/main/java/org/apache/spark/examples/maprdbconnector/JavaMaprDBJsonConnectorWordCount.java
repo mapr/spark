@@ -1,5 +1,6 @@
 package org.apache.spark.examples.maprdbconnector;
 
+import com.mapr.db.spark.api.java.MapRDBJavaSparkContext;
 import com.mapr.db.spark.sql.api.java.MapRDBJavaSession;
 
 import org.apache.spark.api.java.function.FlatMapFunction;
