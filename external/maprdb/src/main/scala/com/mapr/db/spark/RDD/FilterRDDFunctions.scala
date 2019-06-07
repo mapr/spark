@@ -19,11 +19,11 @@ case class FilterRDDFunctions[K: OJAIKey: quotes](rdd: RDD[K]) {
 
   val driver = DriverManager.getConnection("ojai:mapr:").getDriver
 
-  def joinWithMapRDB[D: ClassTag](tableName: String)(
+  def joinWithMapRDB[D: ClassTag](tableName: String, bufferWrites: Boolean = true)(
       implicit e: D DefaultType OJAIDocument,
       reqType: RDDTYPE[D]): RDD[D] = {
     rdd.mapPartitions(partition => {
-      val table = DBClient().getTable(tableName)
+      val table = DBClient().getTable(tableName, bufferWrites)
 
       partition.flatMap(item => {
         val condition = field(DocumentConstants.ID_KEY) === item
@@ -35,11 +35,11 @@ case class FilterRDDFunctions[K: OJAIKey: quotes](rdd: RDD[K]) {
     })
   }
 
-  def bulkJoinWithMapRDB[D: ClassTag](tableName: String)(
+  def bulkJoinWithMapRDB[D: ClassTag](tableName: String, bufferWrites: Boolean = true)(
       implicit e: D DefaultType OJAIDocument,
       reqType: RDDTYPE[D]): RDD[D] = {
     rdd.mapPartitions(partition => {
-      val table = DBClient().getTable(tableName)
+      val table = DBClient().getTable(tableName, bufferWrites)
       var gets = Seq[K]()
       var res = List[D]()
 

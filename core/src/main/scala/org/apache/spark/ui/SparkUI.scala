@@ -17,8 +17,10 @@
 
 package org.apache.spark.ui
 
-import java.util.{Date, List => JList}
+import java.util.Date
 
+import org.apache.curator.framework.CuratorFramework
+import org.apache.spark.{SecurityManager, SparkConf, SparkContext}
 import org.apache.spark.internal.Logging
 import org.apache.spark.scheduler._
 import org.apache.spark.status.AppStatusStore
@@ -28,7 +30,6 @@ import org.apache.spark.ui.env.EnvironmentTab
 import org.apache.spark.ui.exec.ExecutorsTab
 import org.apache.spark.ui.jobs.{JobsTab, StagesTab}
 import org.apache.spark.ui.storage.StorageTab
-import org.apache.spark.{SecurityManager, SparkConf, SparkContext}
 
 /**
  * Top level user interface for a Spark application.
@@ -76,6 +77,11 @@ private[spark] class SparkUI private (
 
   initialize()
 
+  /* This zkConnection is used to create ephemeral node in zookeeper that contains spark metrics URL
+     for current spark application. The node is alive as long as spark app is alive
+   */
+  private lazy val zkMetricsInfoConn = SparkMetricsUtils.dumpMetricsURLToZookeeper(appId, webUrl, boundPort, conf)
+
   def getSparkUser: String = {
     try {
       Option(store.applicationInfo().attempts.head.sparkUser)
@@ -92,9 +98,19 @@ private[spark] class SparkUI private (
     appId = id
   }
 
+  override def bind(): Unit = {
+    super.bind()
+
+    /* Triggers initialization of zkMetricsInfoConn. The field
+       should be initialized after 'bind()' method is called.
+    */
+    zkMetricsInfoConn
+  }
+
   /** Stop the server behind this web interface. Only valid after bind(). */
   override def stop() {
     super.stop()
+    zkMetricsInfoConn.map(_.close())
     logInfo(s"Stopped Spark web UI at $webUrl")
   }
 
@@ -149,9 +165,6 @@ private[spark] class SparkUI private (
     streamingJobProgressListener = Option(sparkListener)
   }
 
-  def clearStreamingJobProgressListener(): Unit = {
-    streamingJobProgressListener = None
-  }
 }
 
 private[spark] abstract class SparkUITab(parent: SparkUI, prefix: String)

@@ -57,11 +57,14 @@ private[spark] class DocumentRDDFunctions extends LoggingTrait {
   }
 }
 
-private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T])(
+private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T], bufferWrites: Boolean = true)(
     implicit f: OJAIValue[T])
     extends DocumentRDDFunctions {
 
   @transient val sparkContext = rdd.sparkContext
+
+  def setBufferWrites(bufferWrites: Boolean): OJAIDocumentRDDFunctions[T] =
+    OJAIDocumentRDDFunctions(rdd, bufferWrites)
 
   def saveToMapRDB(tableName: String,
                    createTable: Boolean = false,
@@ -86,7 +89,7 @@ private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T])(
         (iter: Iterator[T]) => {
           if (iter.nonEmpty) {
             val writer =
-              Writer.initialize(tableName, cnf.value, isNewAndBulkLoad, true)
+              Writer.initialize(tableName, cnf.value, isNewAndBulkLoad, true, bufferWrites)
             while (iter.hasNext) {
               val element = iter.next
               f.write(f.getValue(element), getID, writer)
@@ -120,7 +123,7 @@ private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T])(
         (iter: Iterator[T]) => {
           if (iter.nonEmpty) {
             val writer =
-              Writer.initialize(tablename, cnf.value, isNewAndBulkLoad, false)
+              Writer.initialize(tablename, cnf.value, isNewAndBulkLoad, false, bufferWrites)
             while (iter.hasNext) {
               val element = iter.next
               f.write(f.getValue(element), getID, writer)
@@ -132,12 +135,17 @@ private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T])(
   }
 }
 
-private[spark] case class PairedDocumentRDDFunctions[K, V](rdd: RDD[(K, V)])(
+private[spark] case class PairedDocumentRDDFunctions[K, V](rdd: RDD[(K, V)],
+                                                           bufferWrites: Boolean = true)(
     implicit f: OJAIKey[K],
     v: OJAIValue[V])
     extends DocumentRDDFunctions {
 
   @transient val sparkContext = rdd.sparkContext
+
+  def setBufferWrites(bufferWrites: Boolean): PairedDocumentRDDFunctions[K, V] =
+    PairedDocumentRDDFunctions(rdd, bufferWrites)
+
   def saveToMapRDB(tableName: String,
                    createTable: Boolean = false,
                    bulkInsert: Boolean = false): Unit = {
@@ -154,7 +162,7 @@ private[spark] case class PairedDocumentRDDFunctions[K, V](rdd: RDD[(K, V)])(
         (iter: Iterator[(K, V)]) =>
           if (iter.nonEmpty) {
             val writer =
-              Writer.initialize(tableName, cnf.value, isnewAndBulkLoad, true)
+              Writer.initialize(tableName, cnf.value, isnewAndBulkLoad, true, bufferWrites)
             while (iter.hasNext) {
               val element = iter.next
               checkElementForNull(element)
@@ -181,7 +189,7 @@ private[spark] case class PairedDocumentRDDFunctions[K, V](rdd: RDD[(K, V)])(
         (iter: Iterator[(K, V)]) =>
           if (iter.nonEmpty) {
             val writer =
-              Writer.initialize(tablename, cnf.value, isnewAndBulkLoad, false)
+              Writer.initialize(tablename, cnf.value, isnewAndBulkLoad, false, bufferWrites)
             while (iter.hasNext) {
               val element = iter.next
               checkElementForNull(element)

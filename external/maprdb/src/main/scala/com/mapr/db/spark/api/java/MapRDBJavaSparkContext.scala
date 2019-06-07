@@ -1,6 +1,8 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.api.java
 
+import scala.collection.JavaConverters._
+
 import com.mapr.db.spark.RDD.{PairedDocumentRDDFunctions, RDDTYPE}
 import com.mapr.db.spark.RDD.api.java.MapRDBJavaRDD
 import com.mapr.db.spark.impl.OJAIDocument
@@ -14,7 +16,35 @@ import org.apache.spark.api.java.{JavaPairRDD, JavaRDD, JavaSparkContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 
+
 class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
+
+  private var bufferWrites = true
+  private var hintUsingIndex: Option[String] = None
+  private var queryOptions: Option[Map[String, String]] = None
+
+  def resumeDefaultOptions(): Unit = {
+    queryOptions = None
+    hintUsingIndex = None
+    bufferWrites = true
+  }
+
+  def setBufferWrites(bufferWrites: Boolean): Unit = {
+    this.bufferWrites = bufferWrites
+  }
+
+  def setHintUsingIndex(indexPath: String): Unit = {
+    this.hintUsingIndex = Option(indexPath)
+  }
+
+  def setQueryOptions(queryOptions: java.util.Map[String, String]): Unit = {
+    this.queryOptions = Option(queryOptions.asScala.toMap)
+  }
+
+
+  def setQueryOption(queryOptionKey: String, queryOptionValue: String): Unit = {
+    this.queryOptions.getOrElse(Map[String, String]()) + (queryOptionKey -> queryOptionValue)
+  }
 
   def this(javaSparkContext: JavaSparkContext) =
     this(JavaSparkContext.toSparkContext(javaSparkContext))
@@ -25,8 +55,13 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
       .sparkContext(sparkContext)
       .configuration(new Configuration)
       .setTable(tableName)
+      .setBufferWrites(bufferWrites)
+      .setHintUsingIndex(hintUsingIndex)
+      .setQueryOptions(queryOptions.getOrElse(Map[String, String]()))
       .build()
       .toJavaRDD(classOf[OJAIDocument])
+
+    resumeDefaultOptions()
 
     MapRDBJavaRDD(rdd)
   }
@@ -42,8 +77,13 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
       .sparkContext(sparkContext)
       .configuration(new Configuration)
       .setTable(tableName)
+      .setBufferWrites(bufferWrites)
+      .setHintUsingIndex(hintUsingIndex)
+      .setQueryOptions(queryOptions.getOrElse(Map[String, String]()))
       .build()
       .toJavaRDD(clazz)
+
+    resumeDefaultOptions()
 
     MapRDBJavaRDD(rdd)
   }
@@ -60,7 +100,10 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
 
     javaRDD.rdd
       .asInstanceOf[RDD[OJAIValue[D]]]
+      .setBufferWrites(bufferWrites)
       .saveToMapRDB(tableName, createTable, bulkInsert, idField)
+
+    resumeDefaultOptions()
   }
 
   def saveToMapRDB[D](javaRDD: JavaRDD[D],
@@ -101,7 +144,9 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
     require(javaRDD != null, "RDD can not be null")
     javaRDD.rdd
       .asInstanceOf[RDD[Row]]
+      .setBufferWrites(bufferWrites)
       .saveToMapRDB(tableName, createTable, bulkInsert, idField)
+    resumeDefaultOptions()
   }
 
   def saveRowRDDToMapRDB(javaRDD: JavaRDD[Row],
@@ -151,8 +196,10 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
     implicit val ct: ClassTag[K] = ClassTag(keyClazz)
     implicit val f: OJAIKey[K] = MapRDBUtils.getOjaiKey[K]()
 
-    PairedDocumentRDDFunctions(javaPairRDD.rdd)
+    PairedDocumentRDDFunctions(javaPairRDD.rdd).setBufferWrites(bufferWrites)
       .saveToMapRDB(tableName, createTable, bulkInsert)
+
+    resumeDefaultOptions()
   }
 
   def saveToMapRDB[K, V <: AnyRef](javaPairRDD: JavaPairRDD[K, V],
@@ -201,7 +248,10 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
     implicit val f: OJAIKey[K] = MapRDBUtils.getOjaiKey[K]()
 
     PairedDocumentRDDFunctions(javaPairRDD.rdd)
+      .setBufferWrites(bufferWrites)
       .insertToMapRDB(tableName, createTable, bulkInsert)
+
+    resumeDefaultOptions()
   }
 
   def insertToMapRDB[K, V <: AnyRef](javaPairRDD: JavaPairRDD[K, V],
@@ -240,7 +290,10 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
     require(javaRDD != null, "RDD can not be null")
     javaRDD.rdd
       .asInstanceOf[RDD[Row]]
+      .setBufferWrites(bufferWrites)
       .insertToMapRDB(tableName, createTable, bulkInsert, idField)
+
+    resumeDefaultOptions()
   }
 
   def insertRowRDDToMapRDB(javaRDD: JavaRDD[Row],
@@ -282,7 +335,10 @@ class MapRDBJavaSparkContext(val sparkContext: SparkContext) {
 
     javaRDD.rdd
       .asInstanceOf[RDD[OJAIValue[D]]]
+      .setBufferWrites(bufferWrites)
       .insertToMapRDB(tableName, createTable, bulkInsert, idField)
+
+    resumeDefaultOptions()
   }
 
   def insertToMapRDB[D](javaRDD: JavaRDD[D],

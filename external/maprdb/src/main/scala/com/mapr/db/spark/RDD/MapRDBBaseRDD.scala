@@ -17,7 +17,8 @@ private[spark] abstract class MapRDBBaseRDD[T: ClassTag](
     tableName: String,
     condition: DBQueryCondition,
     beanClass: Class[T],
-    fields: Seq[String] = "*" :: Nil)
+    fields: Seq[String] = "*" :: Nil,
+    queryOptions: Map[String, String] = Map())
     extends RDD[T](sc, Seq.empty) {
 
   type Self <: MapRDBBaseRDD[T]
@@ -25,7 +26,8 @@ private[spark] abstract class MapRDBBaseRDD[T: ClassTag](
   protected def copy(tableName: String = tableName,
                      fields: Seq[String] = fields,
                      cond: DBQueryCondition = condition,
-                     beanClass: Class[T] = beanClass): Self
+                     beanClass: Class[T] = beanClass,
+                     queryOptions: Map[String, String] = queryOptions): Self
 
   def where(pred: Predicate): Self = {
     if (condition != null && !condition.condition.isEmpty) {
