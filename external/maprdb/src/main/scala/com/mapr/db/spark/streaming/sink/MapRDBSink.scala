@@ -26,6 +26,8 @@ private[streaming] class MapRDBSink(parameters: Map[String, String]) extends Sin
       require(tablePath.isDefined,
         s"'${MapRDBSourceConfig.TablePathOption}' option must be defined")
 
+      val bufferWrites = parameters.getOrElse(MapRDBSourceConfig.BufferWrites, "true").toBoolean
+
       val idFieldPath = parameters
         .getOrElse(MapRDBSourceConfig.IdFieldPathOption, DocumentConstants.ID_KEY)
       val createTable = parameters
@@ -49,6 +51,7 @@ private[streaming] class MapRDBSink(parameters: Map[String, String]) extends Sin
         logicalPlan.output,
         data.sparkSession.sessionState.analyzer)
       data.queryExecution.toRdd.map(encoder.fromRow)
+        .setBufferWrites(bufferWrites)
         .saveToMapRDB(tablePath.get, createTable, bulkInsert, idFieldPath)
 
       latestBatchId = batchId

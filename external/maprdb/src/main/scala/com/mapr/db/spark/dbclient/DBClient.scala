@@ -19,11 +19,12 @@ trait DBClient {
   def createTable(tableDesc: TableDescriptor, keys: Array[Value]): Unit
   def isBulkLoad(tablePath: String): Boolean
   def alterTable(tableDesc: TableDescriptor): Unit
-  def getTable(tablePath: String): DocumentStore
+  def getTable(tablePath: String, bufferWrites: Boolean): DocumentStore
   def getTableDescriptor(tablePath: String): TableDescriptor
   def newDocumentBuilder(): DocumentBuilder
-  def getTabletInfos(tablePath: String, cond: QueryCondition): Seq[ScanRange]
-  def getTabletInfos(tablePath: String): Seq[ScanRange]
+  def getTabletInfos(tablePath: String, cond: QueryCondition,
+                     bufferWrites: Boolean): Seq[ScanRange]
+  def getTabletInfos(tablePath: String, bufferWrites: Boolean): Seq[ScanRange]
   def getEstimatedSize(scanRange: ScanRange) : Long
 }
 

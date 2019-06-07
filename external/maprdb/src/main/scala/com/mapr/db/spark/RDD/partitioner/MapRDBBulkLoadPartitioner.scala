@@ -15,8 +15,8 @@ import scala.language.implicitConversions
 import org.apache.spark.Partitioner
 
 object MapRDBPartitioner {
-  def apply[T](table: String)(implicit k: OJAIKEY[T]): Partitioner = {
-    var keys : Seq[Value] = DBClient().getTabletInfos(table).map(tableinfo =>
+  def apply[T](table: String, bufferWrites: Boolean = true)(implicit k: OJAIKEY[T]): Partitioner = {
+    var keys : Seq[Value] = DBClient().getTabletInfos(table, bufferWrites).map(tableinfo =>
             IdCodec.decode(tableinfo.getCondition.asInstanceOf[ConditionImpl]
               .getRowkeyRanges.get(0).getStopRow))
     keys = keys.dropRight(1)

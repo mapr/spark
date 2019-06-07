@@ -27,16 +27,20 @@ private[spark] class MapRDBTableScanRDD[T: ClassTag](
     cnf: Broadcast[SerializableConfiguration],
     columns: Seq[String],
     val tableName: String,
+    val bufferWrites: Boolean = true,
+    val hintUsingIndex: String,
     val condition: DBQueryCondition,
-    val beanClass: Class[T])(implicit e: T DefaultType OJAIDocument,
+    val beanClass: Class[T],
+    queryOptions: Map[String, String] = Map[String, String]())
+                                                    (implicit e: T DefaultType OJAIDocument,
                              reqType: RDDTYPE[T])
-    extends MapRDBBaseRDD[T](sc, tableName, condition, beanClass, columns) {
+    extends MapRDBBaseRDD[T](sc, tableName, condition, beanClass, columns, queryOptions) {
 
-  @transient private lazy val table = DBClient().getTable(tableName)
+  @transient private lazy val table = DBClient().getTable(tableName, bufferWrites)
   @transient private lazy val tabletinfos =
     if (condition == null || condition.condition.isEmpty) {
-      DBClient().getTabletInfos(tableName)
-    } else DBClient().getTabletInfos(tableName, condition.condition)
+      DBClient().getTabletInfos(tableName, bufferWrites)
+    } else DBClient().getTabletInfos(tableName, condition.condition, bufferWrites)
   @transient private lazy val getSplits: Seq[Value] = {
     val keys = tabletinfos.map(
       tableinfo =>
@@ -68,7 +72,9 @@ private[spark] class MapRDBTableScanRDD[T: ClassTag](
       .sparkContext(sparkSession.sparkContext)
       .setDBCond(condition)
       .setTable(tableName)
+      .setBufferWrites(bufferWrites)
       .setColumnProjection(Option(columns))
+      .setQueryOptions(queryOptions)
       .build
       .toDF[T]()
   }
@@ -120,18 +126,31 @@ private[spark] class MapRDBTableScanRDD[T: ClassTag](
     logDebug("Condition applied during table.find:" + combinedCond.toString)
 
     val driver = DriverManager.getDriver("ojai:mapr:")
-    var itrs: java.util.Iterator[Document] = null
+    var query = driver.newQuery()
+
     if (columns != null) {
       logDebug("Columns projected from table:" + columns)
-      itrs = table.find(driver
-        .newQuery()
-        .select(columns.toArray: _*)
-        .where(combinedCond.build()).build()).iterator()
-    } else {
-      itrs = table.find(driver
-        .newQuery()
-        .where(combinedCond.build()).build()).iterator()
+      query = query.select(columns.toArray: _*)
     }
+    if (hintUsingIndex != null) {
+      query = query.setOption("ojai.mapr.query.hint-using-index", hintUsingIndex)
+    }
+
+    queryOptions
+      .filterKeys(k => k.startsWith("ojai.mapr.query")).map(identity)
+        .filter(opt => opt._2 != null)
+        .map(opt => {
+          opt._2.toLowerCase match {
+            case "true" => (opt._1, true)
+            case "false" => (opt._1, false)
+            case _ => opt
+          }
+        })
+        .foreach(opt => query = query.setOption(opt._1, opt._2))
+
+    val itrs: java.util.Iterator[Document] =
+      table.find(query.where(combinedCond.build()).build()).iterator()
+
     val ojaiCursor = reqType.getValue(itrs, beanClass)
 
     context.addTaskCompletionListener((ctx: TaskContext) => {
@@ -143,14 +162,18 @@ private[spark] class MapRDBTableScanRDD[T: ClassTag](
   override def copy(tblName: String = tableName,
                     columns: Seq[String] = columns,
                     cnd: DBQueryCondition = condition,
-                    bclass: Class[T] = beanClass): Self =
+                    bclass: Class[T] = beanClass,
+                    queryOptions: Map[String, String] = queryOptions): Self =
     new MapRDBTableScanRDD[T](sparkSession,
                               sc,
                               cnf,
                               columns,
                               tblName,
+                              bufferWrites,
+                              hintUsingIndex,
                               cnd,
-                              bclass)
+                              bclass,
+                              queryOptions)
 }
 
 object MapRDBTableScanRDD {
@@ -159,16 +182,23 @@ object MapRDBTableScanRDD {
       sc: SparkContext,
       cnf: Broadcast[SerializableConfiguration],
       tableName: String,
+      bufferWrites: Boolean,
+      hintUsingIndex: String,
       columns: Seq[String],
       cond: DBQueryCondition,
-      beanClass: Class[T])(implicit f: RDDTYPE[T]): MapRDBTableScanRDD[T] = {
+      beanClass: Class[T],
+      queryOptions: Map[String, String])
+                        (implicit f: RDDTYPE[T]): MapRDBTableScanRDD[T] = {
 
     new MapRDBTableScanRDD[T](sparkSession,
                               sc = sc,
                               cnf,
                               columns,
                               tableName = tableName,
+                              bufferWrites,
+                              hintUsingIndex,
                               cond,
-                              beanClass)
+                              beanClass,
+                              queryOptions)
   }
 }

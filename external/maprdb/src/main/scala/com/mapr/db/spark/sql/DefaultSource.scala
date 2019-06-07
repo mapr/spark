@@ -34,10 +34,13 @@ class DefaultSource
       getTablePath(parameters),
       None,
       parameters.get("sampleSize"),
+      parameters.getOrElse("bufferWrites", "true"),
+      parameters.get("hintUsingIndex"),
       condition,
       parameters.get("ColumnProjection"),
       parameters.getOrElse("Operation", "InsertOrReplace"),
-      parameters.getOrElse("FailOnConflict", "false")
+      parameters.getOrElse("FailOnConflict", "false"),
+      parameters.filterKeys(k => k.startsWith("ojai.mapr.query")).map(identity)
     )
   }
 
@@ -53,10 +56,13 @@ class DefaultSource
       getTablePath(parameters),
       Some(schema),
       parameters.get("sampleSize"),
+      parameters.getOrElse("bufferWrites", "true"),
+      parameters.get("hintUsingIndex"),
       condition,
       parameters.get("ColumnProjection"),
       parameters.getOrElse("Operation", "InsertOrReplace"),
-      parameters.getOrElse("FailOnConflict", "false")
+      parameters.getOrElse("FailOnConflict", "false"),
+      parameters.filterKeys(k => k.startsWith("ojai.mapr.query")).map(identity)
     )
   }
 
@@ -65,6 +71,7 @@ class DefaultSource
                               parameters: Map[String, String],
                               data: DataFrame): BaseRelation = {
 
+    val bufferWrites = parameters.getOrElse("bufferWrites", "true").toBoolean
     val tableName = getTablePath(parameters).getOrElse("")
     require(tableName.nonEmpty, "Table name must be defined")
 
@@ -90,14 +97,16 @@ class DefaultSource
                          tableName,
                          idFieldPath,
                          createTable = createTheTable,
-                         bulkInsert = bulkMode)
+                         bulkInsert = bulkMode,
+                         bufferWrites = bufferWrites)
 
       case "InsertOrReplace" =>
         MapRSpark.save(data,
                        tableName,
                        idFieldPath,
                        createTable = createTheTable,
-                       bulkInsert = bulkMode)
+                       bulkInsert = bulkMode,
+                       bufferWrites = bufferWrites)
 
 
       case "ErrorIfExists" =>
@@ -109,7 +118,8 @@ class DefaultSource
             tableName,
             idFieldPath,
             createTable = true,
-            bulkInsert = bulkMode)
+            bulkInsert = bulkMode,
+            bufferWrites = bufferWrites)
         }
       case "Overwrite" =>
         DBClient().deleteTable(tableName)
@@ -117,7 +127,8 @@ class DefaultSource
                        tableName,
                        idFieldPath,
                        createTable = true,
-                       bulkInsert = bulkMode)
+                       bulkInsert = bulkMode,
+                       bufferWrites = bufferWrites)
       case _ =>
         throw new UnsupportedOperationException("Not supported operation")
     }
@@ -127,10 +138,13 @@ class DefaultSource
       Some(tableName),
       Some(data.schema),
       parameters.get("sampleSize"),
+      parameters.getOrElse("bufferWrites", "true"),
+      parameters.get("hintUsingIndex"),
       condition,
       parameters.get("ColumnProjection"),
       parameters.getOrElse("Operation", "InsertOrReplace"),
-      parameters.getOrElse("FailOnConflict", "false")
+      parameters.getOrElse("FailOnConflict", "false"),
+      parameters.filterKeys(k => k.startsWith("ojai.mapr.query")).map(identity)
     )
   }
 
@@ -138,10 +152,13 @@ class DefaultSource
                                    tableName: Option[String],
                                    userSchema: Option[StructType],
                                    sampleSize: Option[String],
+                                   bufferWrites: String,
+                                   hintUsingIndex: Option[String],
                                    queryCondition: Option[QueryCondition],
                                    colProjection: Option[String],
                                    Operation: String,
-                                   failOnConflict: String): BaseRelation = {
+                                   failOnConflict: String,
+                                   queryOptions: Map[String, String]): BaseRelation = {
 
     require(tableName.isDefined)
     val columns = colProjection.map(colList => colList.split(",")
@@ -154,8 +171,11 @@ class DefaultSource
       .sparkSession(sqlContext.sparkSession)
       .configuration()
       .setTable(tableName.get)
+      .setBufferWrites(bufferWrites.toBoolean)
+      .setHintUsingIndex(hintUsingIndex)
       .setCond(queryCondition)
       .setColumnProjection(columns)
+      .setQueryOptions(queryOptions)
       .build()
       .toRDD(null)
 
