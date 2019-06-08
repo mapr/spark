@@ -134,11 +134,13 @@ public final class Platform {
     }
   }
 
+  // Split java.version on non-digit chars:
+  private static final int majorVersion =
+    Integer.parseInt(System.getProperty("java.version").split("\\D+")[0]);
+
   private static final Method CLEANER_CREATE_METHOD;
   static {
     // The implementation of Cleaner changed from JDK 8 to 9
-    // Split java.version on non-digit chars:
-    int majorVersion = Integer.parseInt(System.getProperty("java.version").split("\\D+")[0]);
     String cleanerClassName;
     if (majorVersion < 9) {
       cleanerClassName = "sun.misc.Cleaner";
