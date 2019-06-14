@@ -21,6 +21,7 @@ import javax.servlet.http.HttpServletRequest
 
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.HashMap
+import scala.util.{Failure, Success, Try}
 import scala.xml.Node
 
 import org.eclipse.jetty.servlet.ServletContextHandler
@@ -78,18 +79,34 @@ private[spark] abstract class WebUI(
   /** Attach a page to this UI. */
   def attachPage(page: WebUIPage) {
     val pagePath = "/" + page.prefix
+
     val renderHandler = createServletHandler(pagePath,
-      (request: HttpServletRequest) => page.render(request), securityManager, conf, basePath)
+      (request: HttpServletRequest) => {
+        val initPage = UIUtils.basicSparkPage(
+          <div>Spark Driver is initializing</div>, "Spark application UI")
+        safeRender(page.render, initPage)(request)
+      },
+      securityManager, conf, basePath)
+
     val renderJsonHandler = createServletHandler(pagePath.stripSuffix("/") + "/json",
-      (request: HttpServletRequest) => page.renderJson(request), securityManager, conf, basePath)
+      (request: HttpServletRequest) => safeRender(page.renderJson, JNothing)(request),
+      securityManager, conf, basePath)
+
     attachHandler(renderHandler)
     attachHandler(renderJsonHandler)
     val handlers = pageToHandlers.getOrElseUpdate(page, ArrayBuffer[ServletContextHandler]())
     handlers += renderHandler
   }
 
+  def safeRender[T](render: HttpServletRequest => T, default: T)(request: HttpServletRequest): T = {
+    Try(render(request)) match {
+      case Success(res) => res
+      case Failure(_) => default
+    }
+  }
+
   /** Attach a handler to this UI. */
-  def attachHandler(handler: ServletContextHandler) {
+  def attachHandler(handler: ServletContextHandler): Unit = {
     handlers += handler
     serverInfo.foreach(_.addHandler(handler))
   }
