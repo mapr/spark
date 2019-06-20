@@ -258,7 +258,7 @@
     <repository>
       <id>mapr-repo</id>
       <name>MapR Repository</name>
-      <url>${env.MAPR_MAVEN_REPO}</url>
+      <url>http://maven.corp.maprtech.com/nexus/content/groups/public/</url>
       <releases>
         <enabled>true</enabled>
       </releases>
