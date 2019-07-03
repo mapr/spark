@@ -43,3 +43,6 @@ log4j.logger.org.apache.hadoop.hive.conf.HiveConf=ERROR
 # SPARK-327: Settings to suppress the unnecessary warning message from MultiMechsAuthenticationHandler
 log4j.logger.org.apache.hadoop.security.authentication.server.MultiMechsAuthenticationHandler=ERROR
 log4j.logger.org.apache.hadoop.security.authentication.server.KerberosAuthHandler=ERROR
+
+#SPARK-575: Settings to suppress the unnecessary warning message from AuthenticationFilter
+log4j.logger.org.apache.hadoop.security.authentication.server.AuthenticationFilter=ERROR
