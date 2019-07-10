@@ -80,7 +80,11 @@ private[spark] class SparkUI private (
   /* This zkConnection is used to create ephemeral node in zookeeper that contains spark metrics URL
      for current spark application. The node is alive as long as spark app is alive
    */
-  private lazy val zkMetricsInfoConn = SparkMetricsUtils.dumpMetricsURLToZookeeper(appId, webUrl, boundPort, conf)
+  private lazy val zkMetricsInfoConn = SparkMetricsUtils.dumpMetricsURLToZookeeper(appId,
+    webUrl,
+    boundPort,
+    this.serverInfo.get.securePort,
+    conf)
 
   def getSparkUser: String = {
     try {
