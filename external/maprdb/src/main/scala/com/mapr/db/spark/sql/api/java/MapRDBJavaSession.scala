@@ -14,7 +14,7 @@ class MapRDBJavaSession(spark: SparkSession) {
 
   private var bufferWrites = true
   private var hintUsingIndex: Option[String] = None
-  private var queryOptions: Option[Map[String, String]] = None
+  private var queryOptions = Map[String, String]()
 
   def setBufferWrites(bufferWrites: Boolean): Unit = {
     this.bufferWrites = bufferWrites
@@ -25,15 +25,15 @@ class MapRDBJavaSession(spark: SparkSession) {
   }
 
   def setQueryOptions(queryOptions: java.util.Map[String, String]): Unit = {
-    this.queryOptions = Option(queryOptions.asScala.toMap)
+    this.queryOptions = queryOptions.asScala.toMap
   }
 
   def setQueryOption(queryOptionKey: String, queryOptionValue: String): Unit = {
-    this.queryOptions.getOrElse(Map[String, String]()) + (queryOptionKey -> queryOptionValue)
+    this.queryOptions + (queryOptionKey -> queryOptionValue)
   }
 
-  def resumeDefaultOptions(): Unit = {
-    queryOptions = None
+  private def resumeDefaultOptions(): Unit = {
+    queryOptions = Map[String, String]()
     hintUsingIndex = None
     bufferWrites = true
   }
@@ -56,7 +56,7 @@ class MapRDBJavaSession(spark: SparkSession) {
       .option("sampleSize", sampleSize)
       .option("bufferWrites", bufferWrites)
       .option("hintUsingIndex", hintUsingIndex.orNull)
-      .options(queryOptions.orNull)
+      .options(queryOptions)
 
     resumeDefaultOptions()
 
@@ -97,7 +97,7 @@ class MapRDBJavaSession(spark: SparkSession) {
       .option("sampleSize", sampleSize)
       .option("bufferWrites", bufferWrites)
       .option("hintUsingIndex", hintUsingIndex.orNull)
-      .options(queryOptions.orNull)
+      .options(queryOptions)
 
     resumeDefaultOptions()
 
