@@ -47,7 +47,7 @@ def mapr_session_patch(original_session, wrapped, gw, default_sample_size=1000.0
             .option("tableName", table_name) \
             .option("sampleSize", sample_size) \
             .option("bufferWrites", vars['buffer_writes']) \
-            .option("indexName", vars['indexName']) \
+            .option("indexPath", vars['indexPath']) \
             .options(**vars['options'])
 
         if schema:
