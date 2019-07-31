@@ -387,7 +387,7 @@ function registerPortThriftServer() {
 			logWarn "Spark-thriftServer port already has been taken by $(whoHasNetworkPort $sparkTSPort)"
 		fi
 
-		if [ "$isSparkTSPortDef" = true ] || [ "$IS_FIRST_RUN" = true ] ; then
+		if [ "$isSparkTSPortDef" = true ] ; then
 			changeWardenConfig "service.port" "service.port=$sparkTSPort" "thriftserver"
 			sed -i "s/hive.server2.thrift.port.*/hive.server2.thrift.port=$sparkTSPort/" $SPARK_HOME/warden/warden.spark-thriftserver.conf
 		fi
