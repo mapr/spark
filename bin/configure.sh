@@ -289,13 +289,13 @@ EOF
 		if [ ! -f $SPARK_HOME/conf/hive-site.xml ] ; then
 			cp $SPARK_HOME/conf/hive-site.xml.security.template $SPARK_HOME/conf/hive-site.xml
 		else
-			if ! grep -q hive.server2.thrift.sasl.qop "$SPARK_HOME/conf/hive-site.xml"; then
+			if ! grep -q \>hive.server2.thrift.sasl.qop\< "$SPARK_HOME/conf/hive-site.xml"; then
 				CONF="</configuration>"
 				PROPERTIES="<property>\n<name>hive.server2.thrift.sasl.qop</name>\n<value>auth-conf</value>\n</property>\n</configuration>"
 				sed -i "s~$CONF~$PROPERTIES~g" $SPARK_HOME/conf/hive-site.xml
 			fi
 
-			if ! grep -q hive.server2.authentication "$SPARK_HOME/conf/hive-site.xml"; then
+			if ! grep -q \>hive.server2.authentication\< "$SPARK_HOME/conf/hive-site.xml"; then
 				CONF="</configuration>"
 				PROPERTIES="<property>\n<name>hive.server2.authentication</name>\n<value>MAPRSASL</value>\n</property>\n</configuration>"
 				sed -i "s~$CONF~$PROPERTIES~g" $SPARK_HOME/conf/hive-site.xml
@@ -568,11 +568,11 @@ while [ ${#} -gt 0 ] ; do
 done
 
 registerServicePorts
-if [ ! "$isSecure" -eq 2 ] ; then
-	configureSecurity
-fi
 if [ "$HIVE_INSTALLED" = true ]; then
 	configureOnHive
+fi
+if [ ! "$isSecure" -eq 2 ] ; then
+	configureSecurity
 fi
 createAppsSparkFolder
 change_permissions
