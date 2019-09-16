@@ -18,6 +18,7 @@
 
 package org.apache.hive.service.server;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 import java.io.IOException;
@@ -107,7 +108,7 @@ public class HiveServer2 extends CompositeService {
 
   private void addServerInstanceToZooKeeper(HiveConf hiveConf) throws Exception {
     String zooKeeperEnsemble = ZooKeeperHiveHelper.getQuorumServers(hiveConf);
-    LOG.error("registe on zookeeper: "+zooKeeperEnsemble);
+    LOG.info("Register on zookeeper: "+zooKeeperEnsemble);
     String rootNamespace = hiveConf.getVar(HiveConf.ConfVars.HIVE_SERVER2_ZOOKEEPER_NAMESPACE);
     String instanceURI = getServerInstanceURI();
     setUpZooKeeperAuth(hiveConf);
@@ -143,16 +144,15 @@ public class HiveServer2 extends CompositeService {
     // Create a znode under the rootNamespace parent for this instance of the server
     // Znode name: serverUri=host:port;version=versionInfo;sequence=sequenceNumber
     try {
-      String pathPrefix =
-              ZooKeeperHiveHelper.ZOOKEEPER_PATH_SEPARATOR + rootNamespace
+      String pathPrefix = ZooKeeperHiveHelper.ZOOKEEPER_PATH_SEPARATOR + rootNamespace
                       + ZooKeeperHiveHelper.ZOOKEEPER_PATH_SEPARATOR + "serverUri=" + instanceURI + ";"
                       + "version=" + ";" + "sequence=";
-      String znodeData;
+
       // Publish configs for this instance as the data on the node
-      znodeData = Joiner.on(';').withKeyValueSeparator("=").join(confsToPublish);
-      byte[] znodeDataUTF8 = znodeData.getBytes(Charset.forName("UTF-8"));
-      znode =
-              new PersistentEphemeralNode(zooKeeperClient,
+      String znodeData = confsToPublish.get(ConfVars.HIVE_SERVER2_THRIFT_BIND_HOST.varname) + ":" +
+              confsToPublish.get(ConfVars.HIVE_SERVER2_THRIFT_PORT.varname);
+      byte[] znodeDataUTF8 = znodeData.getBytes(StandardCharsets.UTF_8);
+      znode = new PersistentEphemeralNode(zooKeeperClient,
                       PersistentEphemeralNode.Mode.EPHEMERAL_SEQUENTIAL, pathPrefix, znodeDataUTF8);
       znode.start();
       // We'll wait for 120s for node creation
@@ -203,16 +203,18 @@ public class HiveServer2 extends CompositeService {
 
   private void setUpZooKeeperAuth(HiveConf hiveConf) throws Exception {
     if (UserGroupInformation.isSecurityEnabled()) {
-      String principal = hiveConf.getVar(ConfVars.HIVE_SERVER2_KERBEROS_PRINCIPAL);
-      if (principal.isEmpty()) {
-        throw new IOException("HiveServer2 Kerberos principal is empty");
+      if(hiveConf.getVar(ConfVars.HIVE_SERVER2_AUTHENTICATION).toLowerCase().equals("kerberos")) {
+        String principal = hiveConf.getVar(ConfVars.HIVE_SERVER2_KERBEROS_PRINCIPAL);
+        if (principal.isEmpty()) {
+          throw new IOException("HiveServer2 Kerberos principal is empty");
+        }
+        String keyTabFile = hiveConf.getVar(ConfVars.HIVE_SERVER2_KERBEROS_KEYTAB);
+        if (keyTabFile.isEmpty()) {
+          throw new IOException("HiveServer2 Kerberos keytab is empty");
+        }
+        // Install the JAAS Configuration for the runtime
+        Utils.setZookeeperClientKerberosJaasConfig(principal, keyTabFile);
       }
-      String keyTabFile = hiveConf.getVar(ConfVars.HIVE_SERVER2_KERBEROS_KEYTAB);
-      if (keyTabFile.isEmpty()) {
-        throw new IOException("HiveServer2 Kerberos keytab is empty");
-      }
-      // Install the JAAS Configuration for the runtime
-      Utils.setZookeeperClientKerberosJaasConfig(principal, keyTabFile);
     }
   }
 
@@ -311,8 +313,8 @@ public class HiveServer2 extends CompositeService {
 
     HiveConf hiveConf = new HiveConf();
     String zooKeeperEnsemble = ZooKeeperHiveHelper.getQuorumServers(hiveConf);
-    LOG.error("hive server: "+zooKeeperEnsemble);
-    LOG.info("hive config: "+hiveConf.getBoolVar(ConfVars.HIVE_SERVER2_SUPPORT_DYNAMIC_SERVICE_DISCOVERY));
+    LOG.info("Zookeeper ensemble: "+zooKeeperEnsemble);
+    LOG.info("Hive config: "+hiveConf.getBoolVar(ConfVars.HIVE_SERVER2_SUPPORT_DYNAMIC_SERVICE_DISCOVERY));
     if (hiveConf.getBoolVar(ConfVars.HIVE_SERVER2_SUPPORT_DYNAMIC_SERVICE_DISCOVERY)) {
       try
       {
