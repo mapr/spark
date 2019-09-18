@@ -111,7 +111,7 @@ public class HiveServer2 extends CompositeService {
     LOG.info("Register on zookeeper: "+zooKeeperEnsemble);
     String rootNamespace = hiveConf.getVar(HiveConf.ConfVars.HIVE_SERVER2_ZOOKEEPER_NAMESPACE);
     String instanceURI = getServerInstanceURI();
-    setUpZooKeeperAuth(hiveConf);
+//    setUpZooKeeperAuth(hiveConf);
     Map<String, String> confsToPublish = new HashMap<>();
     addConfsToPublish(hiveConf, confsToPublish);
     int sessionTimeout =
