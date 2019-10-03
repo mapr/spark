@@ -255,7 +255,7 @@ spark.ssl.keyStore $MAPR_HOME/conf/ssl_keystore
 spark.ssl.protocol TLSv1.2
 
 # - PAM
-spark.ui.filters  org.apache.spark.deploy.yarn.YarnProxyRedirectFilter, org.apache.spark.ui.filters.MultiauthWebUiFilter
+spark.ui.filters  org.apache.spark.deploy.yarn.YarnProxyRedirectFilter, org.apache.spark.ui.filters.MultiauthWebUiFilter, org.apache.spark.ui.filters.CustomHeadersFilter
 
 # - ACLS
 spark.acls.enable       false
