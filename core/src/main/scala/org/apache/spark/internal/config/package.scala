@@ -531,7 +531,13 @@ package object config {
     ConfigBuilder("spark.ui.strictTransportSecurity")
       .doc("Value for HTTP Strict Transport Security Response Header")
       .stringConf
-      .createOptional
+      .createWithDefault("max-age=31536000;includeSubDomains")
+
+  private[spark] val UI_CONTENT_SECURITY_POLICY =
+    ConfigBuilder("spark.ui.contentSecurityPolicy")
+      .doc("Value for HTTP Content-Security-Policy Response Header")
+      .stringConf
+      .createWithDefault("default-src https:")
 
   private[spark] val UI_REQUEST_HEADER_SIZE =
     ConfigBuilder("spark.ui.requestHeaderSize")

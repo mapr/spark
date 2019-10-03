@@ -17,13 +17,15 @@
 
 package org.apache.spark.ui
 
+import java.io.{File, FileInputStream, FileNotFoundException}
 import java.net.{URI, URL}
+import java.util.Properties
+
 import javax.servlet.DispatcherType
 import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
 
 import scala.language.implicitConversions
 import scala.xml.Node
-
 import org.eclipse.jetty.client.HttpClient
 import org.eclipse.jetty.client.api.Response
 import org.eclipse.jetty.client.http.HttpClientTransportOverHTTP
@@ -36,11 +38,12 @@ import org.eclipse.jetty.util.component.LifeCycle
 import org.eclipse.jetty.util.thread.{QueuedThreadPool, ScheduledExecutorScheduler}
 import org.json4s.JValue
 import org.json4s.jackson.JsonMethods.{pretty, render}
-
-import org.apache.spark.{SecurityManager, SparkConf, SSLOptions}
+import org.apache.spark.{SSLOptions, SecurityManager, SparkConf}
 import org.apache.spark.internal.Logging
 import org.apache.spark.internal.config._
 import org.apache.spark.util.Utils
+
+import scala.collection.JavaConverters._
 
 /**
  * Utilities for launching a web server using Jetty's HTTP Server class
@@ -95,9 +98,14 @@ private[spark] object JettyUtils extends Logging {
               response.setHeader("X-Content-Type-Options", "nosniff")
             }
             if (request.getScheme == "https") {
-              conf.get(UI_STRICT_TRANSPORT_SECURITY).foreach(
-                response.setHeader("Strict-Transport-Security", _))
+              response.setHeader(
+                "Strict-Transport-Security", conf.get(UI_STRICT_TRANSPORT_SECURITY)
+              )
             }
+            if (securityMgr.isEncryptionEnabled()) {
+              response.setHeader("Content-Security-Policy", conf.get(UI_CONTENT_SECURITY_POLICY))
+            }
+
             response.getWriter.print(servletParams.extractFn(result))
           } else {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN)
