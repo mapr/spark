@@ -18,14 +18,14 @@
 package org.apache.spark.streaming.kafka
 
 import scala.language.implicitConversions
-
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{DataFrame, SparkSession, Row}
+import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 
 package object producer {
   implicit def toRDDFunctions[T](rdd: RDD[T]): RDDFunctions[T] =
     new RDDFunctions[T](rdd)
 
   implicit def toPairRDDFunctions[K, V](rdd: RDD[(K, V)]):
-      PairRDDFunctions[K, V] = new PairRDDFunctions[K, V](rdd)
-
+  PairRDDFunctions[K, V] = new PairRDDFunctions[K, V](rdd)
 }
