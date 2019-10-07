@@ -22,6 +22,7 @@ import scala.language.implicitConversions
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
 class RDDFunctions[T](rdd: RDD[T]) {
   def sendToKafka(topic: String, conf: ProducerConf): Unit = {
