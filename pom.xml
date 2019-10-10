@@ -260,7 +260,7 @@
     <repository>
       <id>mapr-repo</id>
       <name>MapR Repository</name>
-      <url>http://maven.corp.maprtech.com/nexus/content/groups/public/</url>
+      <url>${env.MAPR_MAVEN_REPO}</url>
       <releases>
         <enabled>true</enabled>
       </releases>
