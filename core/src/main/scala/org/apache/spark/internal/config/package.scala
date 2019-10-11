@@ -515,30 +515,6 @@ package object config {
       .toSequence
       .createWithDefault(Nil)
 
-  private[spark] val UI_X_XSS_PROTECTION =
-    ConfigBuilder("spark.ui.xXssProtection")
-      .doc("Value for HTTP X-XSS-Protection response header")
-      .stringConf
-      .createWithDefaultString("1; mode=block")
-
-  private[spark] val UI_X_CONTENT_TYPE_OPTIONS =
-    ConfigBuilder("spark.ui.xContentTypeOptions.enabled")
-      .doc("Set to 'true' for setting X-Content-Type-Options HTTP response header to 'nosniff'")
-      .booleanConf
-      .createWithDefault(true)
-
-  private[spark] val UI_STRICT_TRANSPORT_SECURITY =
-    ConfigBuilder("spark.ui.strictTransportSecurity")
-      .doc("Value for HTTP Strict Transport Security Response Header")
-      .stringConf
-      .createWithDefault("max-age=31536000;includeSubDomains")
-
-  private[spark] val UI_CONTENT_SECURITY_POLICY =
-    ConfigBuilder("spark.ui.contentSecurityPolicy")
-      .doc("Value for HTTP Content-Security-Policy Response Header")
-      .stringConf
-      .createWithDefault("default-src https:")
-
   private[spark] val UI_REQUEST_HEADER_SIZE =
     ConfigBuilder("spark.ui.requestHeaderSize")
       .doc("Value for HTTP request header size in bytes.")

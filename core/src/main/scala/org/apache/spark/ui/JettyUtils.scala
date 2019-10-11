@@ -17,15 +17,14 @@
 
 package org.apache.spark.ui
 
-import java.io.{File, FileInputStream, FileNotFoundException}
 import java.net.{URI, URL}
-import java.util.Properties
 
 import javax.servlet.DispatcherType
 import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
-
-import scala.language.implicitConversions
-import scala.xml.Node
+import org.apache.spark.internal.Logging
+import org.apache.spark.internal.config._
+import org.apache.spark.util.Utils
+import org.apache.spark.{SSLOptions, SecurityManager, SparkConf}
 import org.eclipse.jetty.client.HttpClient
 import org.eclipse.jetty.client.api.Response
 import org.eclipse.jetty.client.http.HttpClientTransportOverHTTP
@@ -38,12 +37,9 @@ import org.eclipse.jetty.util.component.LifeCycle
 import org.eclipse.jetty.util.thread.{QueuedThreadPool, ScheduledExecutorScheduler}
 import org.json4s.JValue
 import org.json4s.jackson.JsonMethods.{pretty, render}
-import org.apache.spark.{SSLOptions, SecurityManager, SparkConf}
-import org.apache.spark.internal.Logging
-import org.apache.spark.internal.config._
-import org.apache.spark.util.Utils
 
-import scala.collection.JavaConverters._
+import scala.language.implicitConversions
+import scala.xml.Node
 
 /**
  * Utilities for launching a web server using Jetty's HTTP Server class
@@ -52,7 +48,7 @@ private[spark] object JettyUtils extends Logging {
 
   val SPARK_CONNECTOR_NAME = "Spark"
   val REDIRECT_CONNECTOR_NAME = "HttpsRedirect"
-
+  val SPARK_HEADERS_CONF = "spark.ui.headers"
   // Base type for a function that returns something based on an HTTP request. Allows for
   // implicit conversion from many types of functions to jetty Handlers.
   type Responder[T] = HttpServletRequest => T
@@ -93,19 +89,6 @@ private[spark] object JettyUtils extends Logging {
             val result = servletParams.responder(request)
             response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate")
             response.setHeader("X-Frame-Options", xFrameOptionsValue)
-            response.setHeader("X-XSS-Protection", conf.get(UI_X_XSS_PROTECTION))
-            if (conf.get(UI_X_CONTENT_TYPE_OPTIONS)) {
-              response.setHeader("X-Content-Type-Options", "nosniff")
-            }
-            if (request.getScheme == "https") {
-              response.setHeader(
-                "Strict-Transport-Security", conf.get(UI_STRICT_TRANSPORT_SECURITY)
-              )
-            }
-            if (securityMgr.isEncryptionEnabled()) {
-              response.setHeader("Content-Security-Policy", conf.get(UI_CONTENT_SECURITY_POLICY))
-            }
-
             response.getWriter.print(servletParams.extractFn(result))
           } else {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN)
@@ -274,6 +257,9 @@ private[spark] object JettyUtils extends Logging {
           logInfo(s"Adding filter $filter to ${handlers.map(_.getContextPath).mkString(", ")}.")
           val holder : FilterHolder = new FilterHolder()
           holder.setClassName(filter)
+          if (conf.contains(SPARK_HEADERS_CONF)) {
+            holder.setInitParameter(SPARK_HEADERS_CONF, conf.get(SPARK_HEADERS_CONF))
+          }
           // Get any parameters for each filter
           conf.get("spark." + filter + ".params", "").split(',').map(_.trim()).toSet.foreach {
             param: String =>
