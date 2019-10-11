@@ -1,10 +1,15 @@
 package org.apache.spark.ui.filters;
 
-import org.apache.spark.SparkConf;
-import org.apache.spark.util.Utils;
-import scala.collection.JavaConversions;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.servlet.*;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
@@ -12,28 +17,58 @@ import java.io.IOException;
 import java.util.Properties;
 
 public class CustomHeadersFilter implements Filter {
-    private SparkConf sparkConf;
 
-    private final static String UI_SPARK_HEADERS_FILE_PATH_CONFIG = "spark.ui.headers.file";
+    private static final Logger LOG = LoggerFactory.getLogger(CustomHeadersFilter.class);
+
+    private static final String UI_CUSTOM_HEADERS_FILE_PATH = "spark.ui.headers";
+
+    private static final Properties CUSTOM_HEADER_PROPERTIES = new Properties();
+
+    private static final Properties DEFAULT_HEADER_PROPERTIES = new Properties();
+
+    private static File customHeaderFile;
+
+    private static boolean customHeadersEnabled;
 
     @Override
     public void init(FilterConfig filterConfig) {
-        String confFileName = Utils.getDefaultPropertiesFile(JavaConversions.mapAsScalaMap(System.getenv()));
-        sparkConf = new SparkConf();
-        Utils.loadDefaultSparkProperties(sparkConf, confFileName);
+        if (UserGroupInformation.isSecurityEnabled()) {
+            initDefaultHeaderProperties();
+        }
+
+        customHeadersEnabled = filterConfig.getInitParameter(UI_CUSTOM_HEADERS_FILE_PATH) != null;
+        if (customHeadersEnabled) {
+            customHeaderFile = new File(filterConfig.getInitParameter(UI_CUSTOM_HEADERS_FILE_PATH));
+            initCustomHeaderProperties(customHeaderFile);
+        }
+    }
+
+    private void initDefaultHeaderProperties() {
+        DEFAULT_HEADER_PROPERTIES.put("Strict-Transport-Security", "max-age=31536000;includeSubDomains");
+        DEFAULT_HEADER_PROPERTIES.put("Content-Security-Policy", "default-src https:");
+        DEFAULT_HEADER_PROPERTIES.put("X-Content-Type-Options", "nosniff");
+        DEFAULT_HEADER_PROPERTIES.put("X-XSS-Protection", "1; mode=block");
+    }
+
+    private void initCustomHeaderProperties(File headerFile) {
+        try {
+            CUSTOM_HEADER_PROPERTIES.loadFromXML(new FileInputStream(headerFile));
+        } catch (IOException e) {
+            LOG.error(e.toString());
+        }
     }
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        if (sparkConf.contains(UI_SPARK_HEADERS_FILE_PATH_CONFIG)) {
-            HttpServletResponse httpServletResponse = (HttpServletResponse) response;
-            File headerFile = new File(sparkConf.get(UI_SPARK_HEADERS_FILE_PATH_CONFIG));
-            if (headerFile.exists()) {
-                Properties headerProperties = new Properties();
-                headerProperties.loadFromXML(new FileInputStream(headerFile));
-                headerProperties.forEach((k, v) -> httpServletResponse.addHeader((String) k, (String) v));
+        HttpServletResponse httpServletResponse = (HttpServletResponse) response;
+
+        DEFAULT_HEADER_PROPERTIES.forEach((k, v) -> httpServletResponse.addHeader((String) k, (String) v));
+
+        if (customHeadersEnabled) {
+            if (customHeaderFile.exists()) {
+                CUSTOM_HEADER_PROPERTIES.forEach((k, v) -> httpServletResponse.addHeader((String) k, (String) v));
             } else {
-                String message = "Jetty headers configuration " + headerFile.getAbsolutePath() +
+                String message = "Jetty headers configuration " + customHeaderFile.getAbsolutePath() +
                         " configured with spark.ui.headers in spark-defaults.conf" +
                         " was not found";
                 httpServletResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, message);
@@ -45,5 +80,6 @@ public class CustomHeadersFilter implements Filter {
 
     @Override
     public void destroy() {
+        //noting to do
     }
 }
