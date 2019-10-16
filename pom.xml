@@ -361,51 +361,61 @@
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-http</artifactId>
         <version>${jetty.version}</version>
+        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-continuation</artifactId>
         <version>${jetty.version}</version>
+        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-servlet</artifactId>
         <version>${jetty.version}</version>
+        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-servlets</artifactId>
         <version>${jetty.version}</version>
+        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-proxy</artifactId>
         <version>${jetty.version}</version>
+        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-client</artifactId>
         <version>${jetty.version}</version>
+        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-util</artifactId>
         <version>${jetty.version}</version>
+        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-security</artifactId>
         <version>${jetty.version}</version>
+        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-plus</artifactId>
         <version>${jetty.version}</version>
+        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-server</artifactId>
         <version>${jetty.version}</version>
+        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
@@ -893,6 +903,10 @@
         <version>${hadoop.version}</version>
         <scope>${hadoop.deps.scope}</scope>
         <exclusions>
+          <exclusion>
+            <groupId>com.mapr.hadoop</groupId>
+            <artifactId>maprfs</artifactId>
+          </exclusion>
           <exclusion>
             <groupId>asm</groupId>
             <artifactId>asm</artifactId>
