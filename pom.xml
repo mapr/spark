@@ -137,7 +137,7 @@
     <hive.version>1.2.0-mapr-spark-MEP-6.0.0-SNAPSHOT</hive.version>
     <hive.2.version>2.3.6.0-mapr-SNAPSHOT</hive.2.version>
     <!-- Kafka version -->
-    <kafka.version>2.1.1.0-mapr-SNAPSHOT</kafka.version>
+    <kafka.version>1.1.1-mapr-SNAPSHOT</kafka.version>
     <!-- Version used for internal directory structure -->
     <hive.version.short>1.2.1</hive.version.short>
     <derby.version>10.12.1.1</derby.version>
