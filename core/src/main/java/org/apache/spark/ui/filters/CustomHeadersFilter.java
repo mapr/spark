@@ -45,7 +45,8 @@ public class CustomHeadersFilter implements Filter {
 
     private void initDefaultHeaderProperties() {
         DEFAULT_HEADER_PROPERTIES.put("Strict-Transport-Security", "max-age=31536000;includeSubDomains");
-        DEFAULT_HEADER_PROPERTIES.put("Content-Security-Policy", "default-src https:");
+        //    TODO: Move Content-Security-Policy header back after fix for the COMMSECURE-130
+        //    DEFAULT_HEADER_PROPERTIES.put("Content-Security-Policy", "default-src https:");
         DEFAULT_HEADER_PROPERTIES.put("X-Content-Type-Options", "nosniff");
         DEFAULT_HEADER_PROPERTIES.put("X-XSS-Protection", "1; mode=block");
     }
