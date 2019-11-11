@@ -67,7 +67,7 @@ public class CustomHeadersFilter implements Filter {
 
         if (customHeadersEnabled) {
             if (customHeaderFile.exists()) {
-                CUSTOM_HEADER_PROPERTIES.forEach((k, v) -> httpServletResponse.addHeader((String) k, (String) v));
+                CUSTOM_HEADER_PROPERTIES.forEach((k, v) -> httpServletResponse.setHeader((String) k, (String) v));
             } else {
                 String message = "Jetty headers configuration " + customHeaderFile.getAbsolutePath() +
                         " configured with spark.ui.headers in spark-defaults.conf" +
