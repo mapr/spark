@@ -356,11 +356,7 @@ object HistoryServer extends Logging {
       config.set("spark.ui.acls.enable", "false")
     }
 
-    val secManager = new SecurityManager(config)
-    secManager.setAcls(config.getBoolean("spark.history.ui.acls.enable", false))
-    secManager.setAdminAcls(config.get("spark.history.ui.admin.acls", ""))
-    secManager.setAdminAclsGroups(config.get("spark.history.ui.admin.acls.groups", ""))
-    secManager
+    new SecurityManager(config)
   }
 
   def initSecurity() {
