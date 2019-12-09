@@ -305,26 +305,16 @@ private[spark] object Config extends Logging {
       .stringConf
       .createWithDefault("mapr-cluster-cm")
 
-  val MAPR_CLUSTER_USER_SECRETS =
-    ConfigBuilder("spark.mapr.user.secrets")
+  val MAPR_USER_SECRET =
+    ConfigBuilder("spark.mapr.user.secret")
       .doc("Name of the mapr user secrets")
       .stringConf
-      .createWithDefault("mapr-user-secrets")
+      .createWithDefault("mapr-user-secret")
 
   val MAPR_TICKET_SECRET_KEY =
     ConfigBuilder("spark.mapr.ticket.secret.key")
       .stringConf
       .createWithDefault("CONTAINER_TICKET")
-
-  val MAPR_TICKET_SECRET_PREFIX =
-    ConfigBuilder("spark.mapr.ticket.secret.prefix")
-      .stringConf
-      .createWithDefault("mapr-ticket")
-
-  val MAPR_SSL_SECRET_PREFIX =
-    ConfigBuilder("spark.mapr.ssl.secret.prefix")
-      .stringConf
-      .createWithDefault("mapr-cluster-secrets")
 
   val KUBERNETES_AUTH_SUBMISSION_CONF_PREFIX =
     "spark.kubernetes.authenticate.submission"
