@@ -316,6 +316,16 @@ private[spark] object Config extends Logging {
       .stringConf
       .createWithDefault("CONTAINER_TICKET")
 
+  val MAPR_METRICS_SECRET =
+    ConfigBuilder("spark.mapr.metrics.secret")
+      .stringConf
+      .createWithDefault("mapr-server-secrets")
+
+  val MAPR_METRICS_TICKET_SECRET_SUBPATH =
+    ConfigBuilder("spark.mapr.metrics.secret.subpath")
+      .stringConf
+      .createWithDefault("maprmetricsticket")
+
   val KUBERNETES_AUTH_SUBMISSION_CONF_PREFIX =
     "spark.kubernetes.authenticate.submission"
 

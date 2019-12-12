@@ -12,8 +12,86 @@ private[spark] class MaprConfigFeatureStep(
   extends KubernetesFeatureConfigStep {
 
   val sparkConf: SparkConf = conf.sparkConf
+  val secretsMountRootPath = "/tmp/maprticket"
 
   override def configurePod(pod: SparkPod): SparkPod = {
+
+    val podBuilder = new PodBuilder(pod.pod)
+    val containerBuilder = new ContainerBuilder(pod.container)
+
+    applyUserSecret(podBuilder, containerBuilder)
+    applyMetricsTicket(podBuilder, containerBuilder)
+    applyClusterConfigMap(podBuilder, containerBuilder)
+    addClusterEnvs(podBuilder, containerBuilder)
+
+    SparkPod(podBuilder.build(), containerBuilder.build())
+  }
+
+  private def applyUserSecret(podBuilder: PodBuilder, containerBuilder: ContainerBuilder) = {
+    val userSecretName = sparkConf.get(MAPR_USER_SECRET).toString
+    val userSecretVolumeName = s"$userSecretName-volume"
+    val ticketFileLocation = s"$secretsMountRootPath/${sparkConf.get(MAPR_TICKET_SECRET_KEY)}"
+
+    podBuilder.editOrNewSpec()
+      .addNewVolume()
+        .withName(userSecretVolumeName)
+        .withNewSecret()
+          .withSecretName(userSecretName)
+        .endSecret()
+      .endVolume()
+      .endSpec()
+
+    containerBuilder
+      .addNewEnv()
+        .withName(MAPR_TICKETFILE_LOCATION)
+        .withValue(ticketFileLocation)
+      .endEnv()
+      .addNewEnvFrom()
+        .withNewSecretRef()
+          .withName(userSecretName)
+        .endSecretRef()
+      .endEnvFrom()
+      .addNewVolumeMount()
+        .withName(userSecretVolumeName)
+        .withMountPath(secretsMountRootPath)
+      .endVolumeMount()
+  }
+
+  private def applyMetricsTicket(podBuilder: PodBuilder, containerBuilder: ContainerBuilder) = {
+    val metricsTicketSecret = sparkConf.get(MAPR_METRICS_SECRET)
+    val metricsTicketVolume = s"$metricsTicketSecret-volume"
+    val metricsTicketSubPath = sparkConf.get(MAPR_METRICS_TICKET_SECRET_SUBPATH)
+    val metricsTicketMountPath = s"$secretsMountRootPath/METRICS_TICKET"
+
+    podBuilder.editOrNewSpec()
+      .addNewVolume()
+        .withName(metricsTicketVolume)
+        .withNewSecret()
+          .withSecretName(metricsTicketSecret)
+        .endSecret()
+      .endVolume()
+      .endSpec()
+
+    containerBuilder
+      .addNewVolumeMount()
+        .withName(metricsTicketVolume)
+        .withMountPath(metricsTicketMountPath)
+        .withSubPath(metricsTicketSubPath)
+      .endVolumeMount()
+  }
+
+  private def applyClusterConfigMap(podBuilder: PodBuilder, containerBuilder: ContainerBuilder) = {
+    val clusterConfMap = sparkConf.get(MAPR_CLUSTER_CONFIGMAP).toString
+
+    containerBuilder
+      .addNewEnvFrom()
+        .withNewConfigMapRef()
+          .withName(clusterConfMap)
+        .endConfigMapRef()
+      .endEnvFrom()
+  }
+
+  private def addClusterEnvs(podBuilder: PodBuilder, containerBuilder: ContainerBuilder) = {
     val clusterEnvs = sparkConf.getAllWithPrefix(KUBERNETES_CLUSTER_ENV_KEY).toSeq
       .map { case (name, value) =>
         new EnvVarBuilder()
@@ -22,47 +100,9 @@ private[spark] class MaprConfigFeatureStep(
           .build()
       }
 
-    val clusterConfMap = sparkConf.get(MAPR_CLUSTER_CONFIGMAP).toString
-    val userSecret = sparkConf.get(MAPR_USER_SECRET).toString
-    val userSecretVolumeName = s"$userSecret-volume"
-    val userSecretMountPath = "/tmp/maprticket"
-    val ticketFileLocation = s"$userSecretMountPath/${sparkConf.get(MAPR_TICKET_SECRET_KEY)}"
-
-    val maprPod = new PodBuilder(pod.pod)
-      .editOrNewSpec()
-      .addToVolumes(
-        new VolumeBuilder()
-          .withName(userSecretVolumeName)
-          .withNewSecret()
-            .withSecretName(userSecret)
-          .endSecret()
-          .build())
-      .endSpec()
-      .build()
-
-    val maprContainer = new ContainerBuilder(pod.container)
+    containerBuilder
       .addAllToEnv(clusterEnvs.asJava)
-      .addNewEnv()
-        .withName(MAPR_TICKETFILE_LOCATION)
-        .withValue(ticketFileLocation)
-      .endEnv()
-      .addNewVolumeMount()
-        .withName(userSecretVolumeName)
-        .withMountPath(userSecretMountPath)
-      .endVolumeMount()
-      .addNewEnvFrom()
-        .withNewConfigMapRef()
-          .withName(clusterConfMap)
-          .endConfigMapRef()
-        .endEnvFrom()
-      .addNewEnvFrom()
-        .withNewSecretRef()
-          .withName(userSecret)
-          .endSecretRef()
-        .endEnvFrom()
       .build()
-
-    SparkPod(maprPod, maprContainer)
   }
 
   override def getAdditionalPodSystemProperties(): Map[String, String] = Map.empty
