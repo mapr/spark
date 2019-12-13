@@ -1,7 +1,7 @@
 package org.apache.spark.deploy.k8s.features
 
 import scala.collection.JavaConverters._
-import io.fabric8.kubernetes.api.model.{ContainerBuilder, EnvVarBuilder, HasMetadata, PodBuilder, VolumeBuilder}
+import io.fabric8.kubernetes.api.model.{ContainerBuilder, EnvVarBuilder, HasMetadata, PodBuilder}
 import org.apache.spark.SparkConf
 import org.apache.spark.deploy.k8s.{KubernetesConf, KubernetesRoleSpecificConf, SparkPod}
 import org.apache.spark.deploy.k8s.Config._
@@ -12,7 +12,6 @@ private[spark] class MaprConfigFeatureStep(
   extends KubernetesFeatureConfigStep {
 
   val sparkConf: SparkConf = conf.sparkConf
-  val secretsMountRootPath = "/tmp/maprticket"
 
   override def configurePod(pod: SparkPod): SparkPod = {
 
@@ -30,7 +29,6 @@ private[spark] class MaprConfigFeatureStep(
   private def applyUserSecret(podBuilder: PodBuilder, containerBuilder: ContainerBuilder) = {
     val userSecretName = sparkConf.get(MAPR_USER_SECRET).toString
     val userSecretVolumeName = s"$userSecretName-volume"
-    val ticketFileLocation = s"$secretsMountRootPath/${sparkConf.get(MAPR_TICKET_SECRET_KEY)}"
 
     podBuilder.editOrNewSpec()
       .addNewVolume()
@@ -43,8 +41,8 @@ private[spark] class MaprConfigFeatureStep(
 
     containerBuilder
       .addNewEnv()
-        .withName(MAPR_TICKETFILE_LOCATION)
-        .withValue(ticketFileLocation)
+        .withName(ENV_MAPR_TICKETFILE_LOCATION)
+        .withValue(MAPR_USER_TICKET_MOUNT_PATH)
       .endEnv()
       .addNewEnvFrom()
         .withNewSecretRef()
@@ -53,30 +51,33 @@ private[spark] class MaprConfigFeatureStep(
       .endEnvFrom()
       .addNewVolumeMount()
         .withName(userSecretVolumeName)
-        .withMountPath(secretsMountRootPath)
+        .withMountPath(MAPR_USER_TICKET_MOUNT_PATH)
+        .withSubPath(MAPR_USER_TICKET_SUBPATH)
       .endVolumeMount()
   }
 
   private def applyMetricsTicket(podBuilder: PodBuilder, containerBuilder: ContainerBuilder) = {
-    val metricsTicketSecret = sparkConf.get(MAPR_METRICS_SECRET)
-    val metricsTicketVolume = s"$metricsTicketSecret-volume"
-    val metricsTicketSubPath = sparkConf.get(MAPR_METRICS_TICKET_SECRET_SUBPATH)
-    val metricsTicketMountPath = s"$secretsMountRootPath/METRICS_TICKET"
+    val serverSecretName = MAPR_SERVER_SECRET
+    val serverSecretVolume = s"$serverSecretName-volume"
 
     podBuilder.editOrNewSpec()
       .addNewVolume()
-        .withName(metricsTicketVolume)
+        .withName(serverSecretVolume)
         .withNewSecret()
-          .withSecretName(metricsTicketSecret)
+          .withSecretName(serverSecretName)
         .endSecret()
       .endVolume()
       .endSpec()
 
     containerBuilder
+      .addNewEnv()
+        .withName(ENV_MAPR_METRICSFILE_LOCATION)
+        .withValue(MAPR_METRICS_TICKET_MOUNT_PATH)
+      .endEnv()
       .addNewVolumeMount()
-        .withName(metricsTicketVolume)
-        .withMountPath(metricsTicketMountPath)
-        .withSubPath(metricsTicketSubPath)
+        .withName(serverSecretVolume)
+        .withMountPath(MAPR_METRICS_TICKET_MOUNT_PATH)
+        .withSubPath(MAPR_METRICS_TICKET_SUBPATH)
       .endVolumeMount()
   }
 
