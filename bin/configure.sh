@@ -43,6 +43,15 @@ if [ "$HIVE_INSTALLED" = true ]; then
 	HIVE_HOME="$MAPR_HOME"/hive/hive-"$HIVE_VERSION"
 fi
 
+HBASE_INSTALLED=false
+if [ -f $MAPR_HOME/hbase/hbaseversion ]; then
+	HBASE_INSTALLED=true
+fi
+if [ "$HBASE_INSTALLED" = true ]; then
+	HBASE_VERSION=`cat $MAPR_HOME/hbase/hbaseversion`
+	HBASE_HOME="$MAPR_HOME"/hbase/hbase-"$HBASE_VERSION"
+fi
+
 SPARK_HOME="$MAPR_HOME"/spark/spark-"$SPARK_VERSION"
 SPARK_CONF="$SPARK_HOME"/conf
 SPARK_BIN="$SPARK_HOME"/bin
@@ -340,6 +349,16 @@ function configureOnHive() {
 }
 
 #
+# Configure on Hbase
+#
+
+function configureOnHbase() {
+    if [ -f $HBASE_HOME/conf/hbase-site.xml ]; then
+        cp $HBASE_HOME/conf/hbase-site.xml $SPARK_HOME/conf/hbase-site.xml
+    fi
+}
+
+#
 # Reserve ports
 #
 
@@ -578,6 +597,9 @@ done
 registerServicePorts
 if [ "$HIVE_INSTALLED" = true ]; then
 	configureOnHive
+fi
+if [ "$HBASE_INSTALLED" = true ]; then
+	configureOnHbase
 fi
 if [ ! "$isSecure" -eq 2 ] ; then
 	configureSecurity
