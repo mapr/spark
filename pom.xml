@@ -26,7 +26,7 @@
   </parent>
   <groupId>org.apache.spark</groupId>
   <artifactId>spark-parent_2.12</artifactId>
-  <version>3.3.2</version>
+  <version>3.3.1</version>
   <packaging>pom</packaging>
   <name>Spark Project Parent POM</name>
   <url>https://spark.apache.org/</url>
@@ -82,6 +82,7 @@
     <module>common/network-shuffle</module>
     <module>common/unsafe</module>
     <module>common/tags</module>
+    <module>common/classpath-filter</module>
     <module>core</module>
     <module>graphx</module>
     <module>mllib</module>
@@ -92,6 +93,7 @@
     <module>sql/core</module>
     <module>sql/hive</module>
     <module>assembly</module>
+    <module>external/maprdb</module>
     <module>examples</module>
     <module>repl</module>
     <module>launcher</module>
@@ -114,13 +116,12 @@
     <sbt.project.name>spark</sbt.project.name>
     <slf4j.version>1.7.32</slf4j.version>
     <log4j.version>2.17.2</log4j.version>
-    <!-- make sure to update IsolatedClientLoader whenever this version is changed -->
-    <hadoop.version>3.3.2</hadoop.version>
-    <!-- SPARK-42188: When updating `protobuf.version`, also need to update `protoVersion` in `SparkBuild.scala` -->
+    <hadoop.version>2.7.4.0-mapr-1908-SNAPSHOT</hadoop.version>
+    <maprfs.version>6.2.0-mapr-SNAPSHOT</maprfs.version>
     <protobuf.version>2.5.0</protobuf.version>
     <yarn.version>${hadoop.version}</yarn.version>
-    <zookeeper.version>3.6.2</zookeeper.version>
     <curator.version>2.13.0</curator.version>
+    <zookeeper.version>3.4.11-mapr-SNAPSHOT</zookeeper.version>
     <hive.group>org.apache.hive</hive.group>
     <hive.classifier>core</hive.classifier>
     <!-- Version used in Maven Hive dependency -->
@@ -133,11 +134,11 @@
     <!-- After 10.15.1.3, the minimum required version is JDK9 -->
     <derby.version>10.14.2.0</derby.version>
     <parquet.version>1.12.2</parquet.version>
-    <orc.version>1.7.8</orc.version>
+    <orc.version>1.7.6</orc.version>
     <jetty.version>9.4.48.v20220622</jetty.version>
     <jakartaservlet.version>4.0.3</jakartaservlet.version>
     <chill.version>0.10.0</chill.version>
-    <ivy.version>2.5.1</ivy.version>
+    <ivy.version>2.5.0</ivy.version>
     <oro.version>2.0.8</oro.version>
     <!--
     If you changes codahale.metrics.version, you also need to change
@@ -173,7 +174,7 @@
     <scalafmt.skip>true</scalafmt.skip>
     <codehaus.jackson.version>1.9.13</codehaus.jackson.version>
     <fasterxml.jackson.version>2.13.4</fasterxml.jackson.version>
-    <fasterxml.jackson.databind.version>2.13.4.2</fasterxml.jackson.databind.version>
+    <fasterxml.jackson.databind.version>2.13.4.1</fasterxml.jackson.databind.version>
     <snappy.version>1.1.8.4</snappy.version>
     <netlib.java.version>1.1.2</netlib.java.version>
     <netlib.ludovic.dev.version>2.2.1</netlib.ludovic.dev.version>
@@ -334,6 +335,24 @@
       <releases>
         <enabled>true</enabled>
       </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>mapr-repo</id>
+      <name>MapR Repository</name>
+      <url>${env.MAPR_MAVEN_REPO}</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>repository.jboss.org</id>
+      <url>http://repository.jboss.org/nexus/content/groups/public-jboss/</url>
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
@@ -596,7 +615,7 @@
       <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-text</artifactId>
-        <version>1.10.0</version>
+        <version>1.9</version>
       </dependency>
       <dependency>
         <groupId>commons-lang</groupId>
@@ -729,6 +748,12 @@
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
+        <version>${slf4j.version}</version>
+        <scope>${hadoop.deps.scope}</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-log4j12</artifactId>
         <version>${slf4j.version}</version>
         <scope>${hadoop.deps.scope}</scope>
       </dependency>
@@ -1441,14 +1466,10 @@
           </exclusion>
         </exclusions>
       </dependency>
-      <!--
-        SPARK-41031: `xz` is marked as optional in the dependency tree of `avro`,
-        we need to manually check `xz` version when upgrading `avro`.
-      -->
       <dependency>
         <groupId>org.tukaani</groupId>
         <artifactId>xz</artifactId>
-        <version>1.9</version>
+        <version>1.8</version>
       </dependency>
       <!-- See SPARK-23654 for info on this dependency;
       It is used to keep javax.activation at v1.1.1 after dropping
