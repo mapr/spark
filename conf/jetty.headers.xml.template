@@ -4,5 +4,6 @@
     <comment>application.properties</comment>
     <entry key="X-XSS-Protection">1; mode=block</entry>
     <entry key="Strict-Transport-Security">max-age=31536000;includeSubDomains</entry>
+    <entry key="Content-Security-Policy">default-src https:</entry>
     <entry key="X-Content-Type-Options">nosniff</entry>
 </properties>

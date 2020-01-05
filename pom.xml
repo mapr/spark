@@ -88,6 +88,7 @@
     <module>common/network-shuffle</module>
     <module>common/unsafe</module>
     <module>common/tags</module>
+    <module>common/classpath-filter</module>
     <module>core</module>
     <module>graphx</module>
     <module>mllib</module>
@@ -98,6 +99,7 @@
     <module>sql/core</module>
     <module>sql/hive</module>
     <module>assembly</module>
+    <module>external/maprdb</module>
     <module>examples</module>
     <module>repl</module>
     <module>launcher</module>
@@ -120,11 +122,12 @@
     <sbt.project.name>spark</sbt.project.name>
     <slf4j.version>1.7.30</slf4j.version>
     <log4j.version>1.2.17</log4j.version>
-    <hadoop.version>3.3.1</hadoop.version>
+    <hadoop.version>2.7.4.0-mapr-1908-SNAPSHOT</hadoop.version>
+    <maprfs.version>6.2.0-mapr-SNAPSHOT</maprfs.version>
     <protobuf.version>2.5.0</protobuf.version>
     <yarn.version>${hadoop.version}</yarn.version>
-    <zookeeper.version>3.6.2</zookeeper.version>
     <curator.version>2.13.0</curator.version>
+    <zookeeper.version>3.4.11-mapr-SNAPSHOT</zookeeper.version>
     <hive.group>org.apache.hive</hive.group>
     <hive.classifier>core</hive.classifier>
     <!-- Version used in Maven Hive dependency -->
@@ -280,7 +283,7 @@
     <spark.test.docker.keepContainer>false</spark.test.docker.keepContainer>
     <spark.test.docker.removePulledImage>true</spark.test.docker.removePulledImage>
 
-    <CodeCacheSize>128m</CodeCacheSize>
+    <CodeCacheSize>1g</CodeCacheSize>
     <!-- Needed for consistent times -->
     <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
   </properties>
@@ -310,6 +313,24 @@
       <releases>
         <enabled>true</enabled>
       </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>mapr-repo</id>
+      <name>MapR Repository</name>
+      <url>${env.MAPR_MAVEN_REPO}</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>repository.jboss.org</id>
+      <url>http://repository.jboss.org/nexus/content/groups/public-jboss/</url>
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
@@ -3366,9 +3387,9 @@
     <profile>
       <id>scala-2.12</id>
       <properties>
-        <!-- 
+        <!--
          SPARK-34774 Add this property to ensure change-scala-version.sh can replace the public `scala.version`
-         property correctly. 
+         property correctly.
         -->
         <scala.version>2.12.15</scala.version>
       </properties>
