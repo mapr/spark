@@ -18,10 +18,20 @@
 # Default system properties included when running spark-submit.
 # This is useful for setting default environmental settings.
 
-# Example:
-# spark.master                     spark://master:7077
-# spark.eventLog.enabled           true
-# spark.eventLog.dir               hdfs://namenode:8021/directory
-# spark.serializer                 org.apache.spark.serializer.KryoSerializer
-# spark.driver.memory              5g
-# spark.executor.extraJavaOptions  -XX:+PrintGCDetails -Dkey=value -Dnumbers="one two three"
+# Log effective Spark configuration at startup on INFO level
+spark.logConf                      true
+
+# Enable event logs for HistoryServer
+spark.eventLog.enabled             true
+spark.eventLog.dir                 maprfs:///apps/spark
+spark.history.fs.logDirectory      maprfs:///apps/spark
+
+# Default location for Warehouse, if not using Hive
+spark.sql.warehouse.dir            maprfs:///user/${system:user.name}/spark-warehouse
+
+# Fix for SPARK-7819
+spark.sql.hive.metastore.sharedPrefixes  com.mysql.jdbc,org.postgresql,com.microsoft.sqlserver,oracle.jdbc,com.mapr.fs.shim.LibraryLoader,com.mapr.security.JNISecurity,com.mapr.fs.jni,com.mapr.fs.ShimLoader
+
+spark.executor.memory              2g
+
+spark.ui.reverseProxy true
