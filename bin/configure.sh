@@ -256,7 +256,6 @@ fi
 sed -i '/# SECURITY BLOCK/,/# END OF THE SECURITY CONFIGURATION BLOCK/d' "$SPARK_HOME"/conf/spark-defaults.conf
 
 if [ "$isSecure" == 1 ] ; then
-sed -i '/^spark.ui.filters/ d' "$SPARK_HOME"/conf/spark-defaults.conf
 	source $MAPR_HOME/conf/env.sh
     cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOF
 # SECURITY BLOCK
@@ -270,7 +269,7 @@ spark.ssl.keyStore $MAPR_HOME/conf/ssl_keystore
 spark.ssl.protocol TLSv1.2
 
 # - PAM
-spark.ui.filters  org.apache.spark.deploy.yarn.YarnProxyRedirectFilter, org.apache.spark.ui.filters.MultiauthWebUiFilter, org.apache.spark.ui.filters.CustomHeadersFilter
+spark.ui.filters  org.apache.spark.ui.filters.MultiauthWebUiFilter, org.apache.spark.ui.filters.CustomHeadersFilter
 
 # - ACLS
 spark.acls.enable       false
