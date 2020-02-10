@@ -5,6 +5,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.sources.v2.reader.{InputPartition, InputPartitionReader}
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.catalyst.encoders.RowEncoder
 
 /**
   * Reads data from one particular MapR-DB tablet / region
@@ -80,9 +81,7 @@ class MapRDBDataPartitionReader(table: String,
 
       val row = documentToRow(com.mapr.db.spark.MapRDBSpark.newDocument(document), schema)
 
-      val values = (0 until row.length).foldLeft(List.empty[Any])((acc, idx) => row.get(idx) :: acc).reverse
-
-      InternalRow(values)
+      RowEncoder(schema).toRow(row)
     }
 
     override def close(): Unit = {
