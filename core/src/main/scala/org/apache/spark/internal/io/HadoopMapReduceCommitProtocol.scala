@@ -20,16 +20,16 @@ package org.apache.spark.internal.io
 import java.util.{Date, UUID}
 
 import scala.collection.mutable
-import scala.util.Try
-
+import scala.util.{Failure, Success, Try}
 import org.apache.hadoop.conf.Configurable
-import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
-
 import org.apache.spark.internal.Logging
 import org.apache.spark.mapred.SparkHadoopMapRedUtil
+
+import scala.annotation.tailrec
 
 /**
  * An [[FileCommitProtocol]] implementation backed by an underlying Hadoop OutputCommitter
@@ -228,11 +228,36 @@ class HadoopMapReduceCommitProtocol(
   }
 
   override def abortTask(taskContext: TaskAttemptContext): Unit = {
-    committer.abortTask(taskContext)
+    val conf = taskContext.getConfiguration
+    Try(committer.abortTask(taskContext)) match {
+      case Success(_) => log.debug("Task aborted successfully")
+      case Failure(_) =>
+        log.debug("Task wasn't aborted, trying to delete tmp directory")
+        deleteTempDir(taskContext,
+        conf.getInt("spark.abortTask.numRetries", 0),
+        conf.getInt("spark.abortTask.abortInterval", 0))
+    }
+
     // best effort cleanup of other staged files
     for ((src, _) <- addedAbsPathFiles) {
       val tmp = new Path(src)
       tmp.getFileSystem(taskContext.getConfiguration).delete(tmp, false)
+    }
+  }
+
+  @tailrec
+  private def deleteTempDir(taskContext: TaskAttemptContext, num: Int, interval: Int): Unit = {
+    val tmpPath: Path = committer.asInstanceOf[FileOutputCommitter].getTaskAttemptPath(taskContext)
+    val fs: FileSystem = tmpPath.getFileSystem(taskContext.getConfiguration)
+
+    val isFilePresent = Try(fs.getFileStatus(tmpPath)) match {
+      case Success(_) => true
+      case Failure(_) => false
+    }
+
+    if (isFilePresent && !fs.delete(tmpPath, false) && num != 0) {
+      Thread.sleep(interval)
+      deleteTempDir(taskContext, num-1, interval)
     }
   }
 }
