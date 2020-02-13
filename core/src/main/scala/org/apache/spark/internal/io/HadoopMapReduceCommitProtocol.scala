@@ -19,8 +19,6 @@ package org.apache.spark.internal.io
 
 import java.util.{Date, UUID}
 
-import scala.collection.mutable
-import scala.util.{Failure, Success, Try}
 import org.apache.hadoop.conf.Configurable
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.mapreduce._
@@ -30,6 +28,8 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.mapred.SparkHadoopMapRedUtil
 
 import scala.annotation.tailrec
+import scala.collection.mutable
+import scala.util.Try
 
 /**
  * An [[FileCommitProtocol]] implementation backed by an underlying Hadoop OutputCommitter
@@ -228,14 +228,14 @@ class HadoopMapReduceCommitProtocol(
   }
 
   override def abortTask(taskContext: TaskAttemptContext): Unit = {
-    val conf = taskContext.getConfiguration
-    Try(committer.abortTask(taskContext)) match {
-      case Success(_) => log.debug("Task aborted successfully")
-      case Failure(_) =>
-        log.debug("Task wasn't aborted, trying to delete tmp directory")
-        deleteTempDir(taskContext,
-        conf.getInt("spark.abortTask.numRetries", 0),
+    if (committer.isInstanceOf[FileOutputCommitter]) {
+      val conf = taskContext.getConfiguration
+      taskContext.progress()
+      deleteTempDir(taskContext,
+        conf.getInt("spark.abortTask.numRetries", 1),
         conf.getInt("spark.abortTask.abortInterval", 0))
+    } else {
+      committer.abortTask(taskContext)
     }
 
     // best effort cleanup of other staged files
@@ -250,14 +250,12 @@ class HadoopMapReduceCommitProtocol(
     val tmpPath: Path = committer.asInstanceOf[FileOutputCommitter].getTaskAttemptPath(taskContext)
     val fs: FileSystem = tmpPath.getFileSystem(taskContext.getConfiguration)
 
-    val isFilePresent = Try(fs.getFileStatus(tmpPath)) match {
-      case Success(_) => true
-      case Failure(_) => false
-    }
-
-    if (isFilePresent && !fs.delete(tmpPath, false) && num != 0) {
+    if (!fs.delete(tmpPath, false) && num != 0) {
+      log.info(s"Try counter: $num, deleting $tmpPath")
       Thread.sleep(interval)
       deleteTempDir(taskContext, num-1, interval)
+    } else {
+      log.warn(s"Could not delete $tmpPath")
     }
   }
 }
