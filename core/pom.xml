@@ -33,7 +33,7 @@
   <properties>
     <sbt.project.name>core</sbt.project.name>
   </properties>
-  
+
   <dependencies>
     <!-- #if scala-2.13 --><!--
     <dependency>
@@ -195,6 +195,10 @@
     <dependency>
       <groupId>commons-collections</groupId>
       <artifactId>commons-collections</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>commons-beanutils</groupId>
+      <artifactId>commons-beanutils</artifactId>
     </dependency>
     <dependency>
       <groupId>com.google.code.findbugs</groupId>
