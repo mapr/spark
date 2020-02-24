@@ -43,7 +43,7 @@ private[ui] class EnvironmentPage(
     val sparkPropertiesTable = UIUtils.listingTable(propertyHeader, propertyRow,
       Utils.redact(conf, appEnv.sparkProperties.toSeq), fixedWidth = true)
     val systemPropertiesTable = UIUtils.listingTable(
-      propertyHeader, propertyRow, appEnv.systemProperties, fixedWidth = true)
+      propertyHeader, propertyRow, appEnv.systemProperties.sorted, fixedWidth = true)
     val classpathEntriesTable = UIUtils.listingTable(
       classPathHeaders, classPathRow, appEnv.classpathEntries, fixedWidth = true)
     val content =
