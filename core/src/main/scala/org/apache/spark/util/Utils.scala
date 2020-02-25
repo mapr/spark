@@ -18,6 +18,7 @@
 package org.apache.spark.util
 
 import java.io._
+import java.lang.{Byte => JByte}
 import java.lang.management.{LockInfo, ManagementFactory, MonitorInfo, ThreadInfo}
 import java.math.{MathContext, RoundingMode}
 import java.net._
@@ -25,6 +26,7 @@ import java.nio.ByteBuffer
 import java.nio.channels.{Channels, FileChannel}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
+import java.security.SecureRandom
 import java.util.{Locale, Properties, Random, UUID}
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicBoolean
@@ -40,9 +42,9 @@ import scala.reflect.ClassTag
 import scala.util.Try
 import scala.util.control.{ControlThrowable, NonFatal}
 import scala.util.matching.Regex
-
 import _root_.io.netty.channel.unix.Errors.NativeIoException
 import com.google.common.cache.{CacheBuilder, CacheLoader, LoadingCache}
+import com.google.common.hash.HashCodes
 import com.google.common.io.{ByteStreams, Files => GFiles}
 import com.google.common.net.InetAddresses
 import org.apache.commons.lang3.SystemUtils
@@ -53,7 +55,6 @@ import org.apache.log4j.PropertyConfigurator
 import org.eclipse.jetty.util.MultiException
 import org.json4s._
 import org.slf4j.Logger
-
 import org.apache.spark._
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.internal.Logging
@@ -131,6 +132,8 @@ private[spark] object Utils extends Logging {
 
   /** Shorthand for calling truncatedString() without start or end strings. */
   def truncatedString[T](seq: Seq[T], sep: String): String = truncatedString(seq, "", sep, "")
+
+  private val PATTERN_FOR_COMMAND_LINE_ARG = "-D(.+?)=(.+)".r
 
   /** Serialize an object using Java serialization */
   def serialize[T](o: T): Array[Byte] = {
@@ -932,6 +935,13 @@ private[spark] object Utils extends Logging {
     // DEBUG code
     Utils.checkHost(hostname)
     customHostname = Some(hostname)
+  }
+
+  /**
+   * Get the local machine's FQDN.
+   */
+  def localCanonicalHostName(): String = {
+    customHostname.getOrElse(localIpAddress.getCanonicalHostName)
   }
 
   /**
@@ -2656,6 +2666,25 @@ private[spark] object Utils extends Logging {
       SECRET_REDACTION_PATTERN.defaultValueString
     ).r
     redact(redactionPattern, kvs.toArray)
+  }
+
+  def redactCommandLineArgs(conf: SparkConf, commands: Seq[String]): Seq[String] = {
+    val redactionPattern = conf.get(SECRET_REDACTION_PATTERN)
+    commands.map {
+      case PATTERN_FOR_COMMAND_LINE_ARG(key, value) =>
+        val (_, newValue) = redact(redactionPattern, Seq((key, value))).head
+        s"-D$key=$newValue"
+
+      case cmd => cmd
+    }
+  }
+
+  def createSecret(conf: SparkConf): String = {
+    val bits = conf.get(AUTH_SECRET_BIT_LENGTH)
+    val rnd = new SecureRandom()
+    val secretBytes = new Array[Byte](bits / JByte.SIZE)
+    rnd.nextBytes(secretBytes)
+    HashCodes.fromBytes(secretBytes).toString()
   }
 
 }
