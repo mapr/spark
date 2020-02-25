@@ -145,8 +145,9 @@ private[deploy] class ExecutorRunner(
       val builder = CommandUtils.buildProcessBuilder(appDesc.command, new SecurityManager(conf),
         memory, sparkHome.getAbsolutePath, substituteVariables)
       val command = builder.command()
-      val formattedCommand = command.asScala.mkString("\"", "\" \"", "\"")
-      logInfo(s"Launch command: $formattedCommand")
+      val redactedCommand = Utils.redactCommandLineArgs(conf, command.asScala)
+        .mkString("\"", "\" \"", "\"")
+      logInfo(s"Launch command: $redactedCommand")
 
       builder.directory(executorDir)
       builder.environment.put("SPARK_EXECUTOR_DIRS", appLocalDirs.mkString(File.pathSeparator))
@@ -166,7 +167,7 @@ private[deploy] class ExecutorRunner(
 
       process = builder.start()
       val header = "Spark Executor Command: %s\n%s\n\n".format(
-        formattedCommand, "=" * 40)
+        redactedCommand, "=" * 40)
 
       // Redirect its stdout and stderr to files
       val stdout = new File(executorDir, "stdout")

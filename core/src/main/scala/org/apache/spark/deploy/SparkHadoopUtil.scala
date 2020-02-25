@@ -25,7 +25,6 @@ import java.util.{Arrays, Comparator, Date, Locale}
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.control.NonFatal
-
 import com.google.common.primitives.Longs
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, FileSystem, Path, PathFilter}
@@ -34,7 +33,6 @@ import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
 import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier
-
 import org.apache.spark.{SparkConf, SparkException}
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.internal.Logging
@@ -110,6 +108,14 @@ class SparkHadoopUtil extends Logging {
     }
   }
 
+  private def appendHadoopCredProviderConfigurations(
+                                                      conf: SparkConf,
+                                                      hadoopConf: Configuration): Unit = {
+
+    hadoopConf.set("hadoop.security.credential.provider.path",
+      conf.get("spark.hadoop.security.credential.provider.path"))
+  }
+
   /**
    * Return an appropriate (subclass) of Configuration. Creating config can initializes some Hadoop
    * subsystems.
@@ -117,6 +123,7 @@ class SparkHadoopUtil extends Logging {
   def newConfiguration(conf: SparkConf): Configuration = {
     val hadoopConf = new Configuration()
     appendS3AndSparkHadoopConfigurations(conf, hadoopConf)
+    appendHadoopCredProviderConfigurations(conf, hadoopConf)
     hadoopConf
   }
 
