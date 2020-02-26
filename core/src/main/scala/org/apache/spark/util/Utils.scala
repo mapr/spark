@@ -2679,14 +2679,6 @@ private[spark] object Utils extends Logging {
     }
   }
 
-  def createSecret(conf: SparkConf): String = {
-    val bits = conf.get(AUTH_SECRET_BIT_LENGTH)
-    val rnd = new SecureRandom()
-    val secretBytes = new Array[Byte](bits / JByte.SIZE)
-    rnd.nextBytes(secretBytes)
-    HashCodes.fromBytes(secretBytes).toString()
-  }
-
 }
 
 private[util] object CallerContext extends Logging {
