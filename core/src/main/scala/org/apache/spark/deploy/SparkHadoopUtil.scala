@@ -113,7 +113,7 @@ class SparkHadoopUtil extends Logging {
                                                       hadoopConf: Configuration): Unit = {
 
     hadoopConf.set("hadoop.security.credential.provider.path",
-      conf.get("spark.hadoop.security.credential.provider.path"))
+      conf.get("spark.hadoop.security.credential.provider.path", ""))
   }
 
   /**
