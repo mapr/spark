@@ -72,59 +72,12 @@ class SparkHadoopUtil extends Logging {
     }
   }
 
-
-  /**
-   * Appends S3-specific, spark.hadoop.*, and spark.buffer.size configurations to a Hadoop
-   * configuration.
-   */
-  def appendS3AndSparkHadoopConfigurations(conf: SparkConf, hadoopConf: Configuration): Unit = {
-    // Note: this null check is around more than just access to the "conf" object to maintain
-    // the behavior of the old implementation of this code, for backwards compatibility.
-    if (conf != null) {
-      // Explicitly check for S3 environment variables
-      val keyId = System.getenv("AWS_ACCESS_KEY_ID")
-      val accessKey = System.getenv("AWS_SECRET_ACCESS_KEY")
-      if (keyId != null && accessKey != null) {
-        hadoopConf.set("fs.s3.awsAccessKeyId", keyId)
-        hadoopConf.set("fs.s3n.awsAccessKeyId", keyId)
-        hadoopConf.set("fs.s3a.access.key", keyId)
-        hadoopConf.set("fs.s3.awsSecretAccessKey", accessKey)
-        hadoopConf.set("fs.s3n.awsSecretAccessKey", accessKey)
-        hadoopConf.set("fs.s3a.secret.key", accessKey)
-
-        val sessionToken = System.getenv("AWS_SESSION_TOKEN")
-        if (sessionToken != null) {
-          hadoopConf.set("fs.s3a.session.token", sessionToken)
-        }
-      }
-      // Copy any "spark.hadoop.foo=bar" system properties into conf as "foo=bar"
-      conf.getAll.foreach { case (key, value) =>
-        if (key.startsWith("spark.hadoop.")) {
-          hadoopConf.set(key.substring("spark.hadoop.".length), value)
-        }
-      }
-      val bufferSize = conf.get("spark.buffer.size", "65536")
-      hadoopConf.set("io.file.buffer.size", bufferSize)
-    }
-  }
-
-  private def appendHadoopCredProviderConfigurations(
-                                                      conf: SparkConf,
-                                                      hadoopConf: Configuration): Unit = {
-
-    hadoopConf.set("hadoop.security.credential.provider.path",
-      conf.get("spark.hadoop.security.credential.provider.path", ""))
-  }
-
   /**
    * Return an appropriate (subclass) of Configuration. Creating config can initializes some Hadoop
    * subsystems.
    */
   def newConfiguration(conf: SparkConf): Configuration = {
-    val hadoopConf = new Configuration()
-    appendS3AndSparkHadoopConfigurations(conf, hadoopConf)
-    appendHadoopCredProviderConfigurations(conf, hadoopConf)
-    hadoopConf
+    SparkHadoopUtil.newConfiguration(conf)
   }
 
   /**
@@ -431,6 +384,56 @@ object SparkHadoopUtil {
    * Hadoop FileSystem API of interest (only available in 2.5), so we should do this sparingly.
    */
   private[spark] val UPDATE_INPUT_METRICS_INTERVAL_RECORDS = 1000
+
+  def newConfiguration(conf: SparkConf): Configuration = {
+    val hadoopConf = new Configuration()
+    appendS3AndSparkHadoopConfigurations(conf, hadoopConf)
+    appendHadoopCredProviderConfigurations(conf, hadoopConf)
+    hadoopConf
+  }
+
+  /**
+    * Appends S3-specific, spark.hadoop.*, and spark.buffer.size configurations to a Hadoop
+    * configuration.
+    */
+  def appendS3AndSparkHadoopConfigurations(conf: SparkConf, hadoopConf: Configuration): Unit = {
+    // Note: this null check is around more than just access to the "conf" object to maintain
+    // the behavior of the old implementation of this code, for backwards compatibility.
+    if (conf != null) {
+      // Explicitly check for S3 environment variables
+      val keyId = System.getenv("AWS_ACCESS_KEY_ID")
+      val accessKey = System.getenv("AWS_SECRET_ACCESS_KEY")
+      if (keyId != null && accessKey != null) {
+        hadoopConf.set("fs.s3.awsAccessKeyId", keyId)
+        hadoopConf.set("fs.s3n.awsAccessKeyId", keyId)
+        hadoopConf.set("fs.s3a.access.key", keyId)
+        hadoopConf.set("fs.s3.awsSecretAccessKey", accessKey)
+        hadoopConf.set("fs.s3n.awsSecretAccessKey", accessKey)
+        hadoopConf.set("fs.s3a.secret.key", accessKey)
+
+        val sessionToken = System.getenv("AWS_SESSION_TOKEN")
+        if (sessionToken != null) {
+          hadoopConf.set("fs.s3a.session.token", sessionToken)
+        }
+      }
+      // Copy any "spark.hadoop.foo=bar" system properties into conf as "foo=bar"
+      conf.getAll.foreach { case (key, value) =>
+        if (key.startsWith("spark.hadoop.")) {
+          hadoopConf.set(key.substring("spark.hadoop.".length), value)
+        }
+      }
+      val bufferSize = conf.get("spark.buffer.size", "65536")
+      hadoopConf.set("io.file.buffer.size", bufferSize)
+    }
+  }
+
+  private def appendHadoopCredProviderConfigurations(
+                                                      conf: SparkConf,
+                                                      hadoopConf: Configuration): Unit = {
+
+    hadoopConf.set("hadoop.security.credential.provider.path",
+      conf.get("spark.hadoop.security.credential.provider.path", ""))
+  }
 
   def get: SparkHadoopUtil = {
     // Check each time to support changing to/from YARN
