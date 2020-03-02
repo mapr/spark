@@ -327,6 +327,7 @@ object HistoryServer extends Logging {
     new HistoryServerArguments(conf, argStrings)
     initSecurity()
     val securityManager = createSecurityManager(conf)
+    logInfo(s"Using SSL protocol: ${securityManager.getSSLOptions("protocol").protocol.get}")
 
     val providerName = conf.get(History.PROVIDER)
       .getOrElse(classOf[FsHistoryProvider].getName())
