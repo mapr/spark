@@ -307,6 +307,8 @@ object HistoryServer extends Logging {
     new HistoryServerArguments(conf, argStrings)
     initSecurity()
     val securityManager = createSecurityManager(conf)
+    logInfo(s"Using SSL protocol: " +
+      s"${securityManager.getSSLOptions("protocol").protocol.getOrElse("None")}")
 
     val providerName = conf.get(History.PROVIDER)
     val provider = Utils.classForName[ApplicationHistoryProvider](providerName)
