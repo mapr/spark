@@ -317,7 +317,8 @@ object HistoryServer extends Logging {
     new HistoryServerArguments(conf, argStrings)
     initSecurity()
     val securityManager = createSecurityManager(conf)
-    logInfo(s"Using SSL protocol: ${securityManager.getSSLOptions("protocol").protocol.get}")
+    logInfo(s"Using SSL protocol: " +
+      s"${securityManager.getSSLOptions("protocol").protocol.getOrElse("None")}")
 
     val providerName = conf.getOption("spark.history.provider")
       .getOrElse(classOf[FsHistoryProvider].getName())
