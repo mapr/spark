@@ -250,7 +250,7 @@ class HadoopMapReduceCommitProtocol(
     val tmpPath: Path = committer.asInstanceOf[FileOutputCommitter].getTaskAttemptPath(taskContext)
     val fs: FileSystem = tmpPath.getFileSystem(taskContext.getConfiguration)
 
-    if (!fs.delete(tmpPath, false) && num != 0) {
+    if (!fs.delete(tmpPath, true) && num != 0) {
       log.info(s"Try counter: $num, deleting $tmpPath")
       Thread.sleep(interval)
       deleteTempDir(taskContext, num-1, interval)
