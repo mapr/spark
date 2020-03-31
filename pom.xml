@@ -276,21 +276,6 @@
   </repositories>
   <pluginRepositories>
     <pluginRepository>
-      <id>gcs-maven-central-mirror</id>
-      <!--
-        Google Mirror of Maven Central, placed first so that it's used instead of flaky Maven Central.
-        See https://storage-download.googleapis.com/maven-central/index.html
-      -->
-      <name>GCS Maven Central mirror</name>
-      <url>https://maven-central.storage-download.googleapis.com/repos/central/data/</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </pluginRepository>
-    <pluginRepository>
       <id>central</id>
       <url>https://repo.maven.apache.org/maven2</url>
       <releases>
@@ -2634,7 +2619,7 @@
           <failOnViolation>false</failOnViolation>
           <includeTestSourceDirectory>true</includeTestSourceDirectory>
           <sourceDirectories>${basedir}/src/main/java,${basedir}/src/main/scala</sourceDirectories>
-          <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
+          <testSourceDirectories>${basedir}/src/test/java</testSourceDirectories>
           <configLocation>dev/checkstyle.xml</configLocation>
           <outputFile>${basedir}/target/checkstyle-output.xml</outputFile>
           <inputEncoding>${project.build.sourceEncoding}</inputEncoding>
