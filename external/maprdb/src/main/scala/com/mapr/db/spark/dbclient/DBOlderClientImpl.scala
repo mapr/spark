@@ -1,12 +1,14 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.dbclient
 
-import com.mapr.db.impl.{AdminImpl, MetaTableImpl}
-import com.mapr.db.scan.ScanRange
 import com.mapr.db.{MapRDB, TableDescriptor}
+import com.mapr.db.impl.AdminImpl
+import com.mapr.db.scan.ScanRange
 import com.mapr.ojai.store.impl.OjaiDocumentStore
-import org.ojai.store.{DocumentStore, DriverManager, QueryCondition}
+
 import org.ojai.{Document, DocumentBuilder, Value}
+import org.ojai.store.{DocumentStore, DriverManager, QueryCondition}
+
 
 import scala.collection.JavaConverters._
 
@@ -22,20 +24,19 @@ object DBOlderClientImpl extends DBClient {
 
   override def getTabletInfos(tablePath: String, cond: QueryCondition,
                               bufferWrites: Boolean): Seq[ScanRange] = {
-    new MetaTableImpl(
-      connection.getStore(tablePath, connection.newDocument()
-        .set(bufferWritesOption, bufferWrites))
-        .asInstanceOf[OjaiDocumentStore].getTable
-    ).getScanRanges(cond).asScala
+
+    connection.getStore(tablePath, connection.newDocument()
+      .set(bufferWritesOption, bufferWrites))
+      .asInstanceOf[OjaiDocumentStore].getTable.getMetaTable
+      .getScanRanges(cond).asScala
   }
 
   override def getTabletInfos(tablePath: String, bufferWrites: Boolean): Seq[ScanRange] = {
 
-    new MetaTableImpl(
       connection.getStore(tablePath, connection.newDocument()
         .set(bufferWritesOption, bufferWrites))
-        .asInstanceOf[OjaiDocumentStore].getTable
-    ).getScanRanges().asScala
+        .asInstanceOf[OjaiDocumentStore].getTable.getMetaTable
+        .getScanRanges().asScala
   }
 
   override def newDocument(jsonString: String): Document =
