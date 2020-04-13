@@ -25,19 +25,19 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>spark-streaming-kinesis-asl-assembly_2.12</artifactId>
+  <artifactId>spark-streaming-kafka-0-10-assembly_2.12</artifactId>
   <packaging>jar</packaging>
-  <name>Spark Project Kinesis Assembly</name>
+  <name>Spark Integration for Kafka 0.10 Assembly</name>
   <url>https://spark.apache.org/</url>
 
   <properties>
-    <sbt.project.name>streaming-kinesis-asl-assembly</sbt.project.name>
+    <sbt.project.name>streaming-kafka-0-10-assembly</sbt.project.name>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>org.apache.spark</groupId>
-      <artifactId>spark-streaming-kinesis-asl_${scala.binary.version}</artifactId>
+      <artifactId>spark-streaming-kafka-0-10_${scala.binary.version}</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -50,8 +50,8 @@
       Demote already included in the Spark assembly.
     -->
     <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -62,41 +62,11 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>2.6.1</version>
-      <!-- 
-         We are being explicit about version here and overriding the 
-         spark default of 2.5.0 because KCL appears to have introduced 
-         a dependency on protobuf 2.6.1 somewhere between KCL 1.4.0 and 1.6.1.
-       -->
-    </dependency>
-    <dependency>
-      <groupId>org.glassfish.jersey.core</groupId>
-      <artifactId>jersey-client</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.glassfish.jersey.core</groupId>
-      <artifactId>jersey-common</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.glassfish.jersey.core</groupId>
-      <artifactId>jersey-server</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-api</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-1.2-api</artifactId>
+      <groupId>org.lz4</groupId>
+      <artifactId>lz4-java</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -124,22 +94,35 @@
       <groupId>org.apache.zookeeper</groupId>
       <artifactId>zookeeper</artifactId>
       <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j-impl</artifactId>
-      <version>${log4j.version}</version>
+      <artifactId>log4j-core</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-1.2-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -153,21 +136,6 @@
   <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
   <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
   <plugins>
-    <!-- SPARK-17418: prevent the kinesis-asl-assembly from being published to Maven -->
-    <plugin>
-      <groupId>org.apache.maven.plugins</groupId>
-      <artifactId>maven-deploy-plugin</artifactId>
-      <configuration>
-        <skip>true</skip>
-      </configuration>
-    </plugin>
-    <plugin>
-      <groupId>org.apache.maven.plugins</groupId>
-      <artifactId>maven-install-plugin</artifactId>
-      <configuration>
-        <skip>true</skip>
-      </configuration>
-    </plugin>
     <plugin>
       <groupId>org.apache.maven.plugins</groupId>
       <artifactId>maven-shade-plugin</artifactId>
@@ -178,15 +146,6 @@
             <include>*:*</include>
           </includes>
         </artifactSet>
-        <relocations>
-          <relocation>
-            <pattern>com.google.protobuf</pattern>
-            <shadedPattern>kinesis.protobuf</shadedPattern>
-            <includes>
-              <include>com.google.protobuf.**</include>
-            </includes>
-          </relocation>
-        </relocations>
         <filters>
           <filter>
             <artifact>*:*</artifact>
