@@ -20,6 +20,7 @@ package org.apache.spark.streaming
 import org.apache.kafka.clients.consumer.OffsetCommitCallback
 import org.apache.spark.streaming.kafka010.{CanCommitOffsets, HasOffsetRanges}
 import org.apache.spark.streaming.dstream.InputDStream
+import org.apache.kafka.clients.consumer.ConsumerRecord
 
 /**
  * Spark Integration for Kafka 0.9
@@ -36,7 +37,7 @@ package object kafka010 {
     * @tparam K
     * @tparam V
     */
-  implicit class CanCommitStreamOffsets[K, V](inputDStream: InputDStream[K, V]) {
+  implicit class CanCommitStreamOffsets[K, V](inputDStream: InputDStream[ConsumerRecord[K, V]]) {
     def commitOffsetsAsync(): Unit = commitOffsetsAsync(null)
 
     def commitOffsetsAsync(callback: OffsetCommitCallback): Unit = {
