@@ -264,8 +264,6 @@ if [ "$isSecure" == 1 ] ; then
 # ssl
 spark.ssl.enabled true
 spark.ssl.fs.enabled true
-spark.ssl.trustStore $MAPR_HOME/conf/ssl_truststore
-spark.ssl.keyStore $MAPR_HOME/conf/ssl_keystore
 spark.ssl.protocol TLSv1.2
 
 # - PAM
