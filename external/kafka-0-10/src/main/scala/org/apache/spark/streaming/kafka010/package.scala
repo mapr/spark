@@ -18,7 +18,9 @@
 package org.apache.spark.streaming
 
 import org.apache.kafka.clients.consumer.OffsetCommitCallback
-import org.apache.spark.streaming.kafka010.{CanCommitOffsets, DirectKafkaInputDStream, HasOffsetRanges}
+import org.apache.spark.streaming.kafka010.{CanCommitOffsets, HasOffsetRanges}
+import org.apache.spark.streaming.dstream.InputDStream
+import org.apache.kafka.clients.consumer.ConsumerRecord
 
 /**
  * Spark Integration for Kafka 0.9
@@ -31,18 +33,18 @@ package object kafka010 {
   /**
     * This extension provides easy access to commit offsets back to MapR-ES or Kafka
     *
-    * @param directKafkaInputDStream We can only call this function on the original stream and not the transformations
+    * @param inputDStream We can only call this function on the original stream and not the transformations
     * @tparam K
     * @tparam V
     */
-  implicit class CanCommitStreamOffsets[K, V](directKafkaInputDStream: DirectKafkaInputDStream[K, V]) {
+  implicit class CanCommitStreamOffsets[K, V](inputDStream: InputDStream[ConsumerRecord[K, V]]) {
     def commitOffsetsAsync(): Unit = commitOffsetsAsync(null)
 
     def commitOffsetsAsync(callback: OffsetCommitCallback): Unit = {
-      directKafkaInputDStream.foreachRDD { rdd =>
+      inputDStream.foreachRDD { rdd =>
         val offsets = rdd.asInstanceOf[HasOffsetRanges].offsetRanges
 
-        directKafkaInputDStream.asInstanceOf[CanCommitOffsets].commitAsync(offsets)
+        inputDStream.asInstanceOf[CanCommitOffsets].commitAsync(offsets)
       }
     }
   }
