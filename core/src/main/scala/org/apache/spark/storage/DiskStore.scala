@@ -26,14 +26,12 @@ import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.mutable.ListBuffer
 
-import com.google.common.io.{ByteStreams, Closeables, Files}
-import io.netty.channel.FileRegion
-import io.netty.util.AbstractReferenceCounted
+import com.google.common.io.Closeables
 
 import org.apache.spark.{SecurityManager, SparkConf}
 import org.apache.spark.internal.Logging
 import org.apache.spark.network.buffer.ManagedBuffer
-import org.apache.spark.network.util.JavaUtils
+import org.apache.spark.network.util.{AbstractFileRegion, JavaUtils}
 import org.apache.spark.security.CryptoStreamUtils
 import org.apache.spark.util.{ByteBufferInputStream, Utils}
 import org.apache.spark.util.io.ChunkedByteBuffer
@@ -229,7 +227,7 @@ private class EncryptedBlockData(
 }
 
 private class ReadableChannelFileRegion(source: ReadableByteChannel, blockSize: Long)
-  extends AbstractReferenceCounted with FileRegion {
+  extends AbstractFileRegion {
 
   private var _transferred = 0L
 
@@ -240,7 +238,7 @@ private class ReadableChannelFileRegion(source: ReadableByteChannel, blockSize: 
 
   override def position(): Long = 0
 
-  override def transfered(): Long = _transferred
+  override def transferred(): Long = _transferred
 
   override def transferTo(target: WritableByteChannel, pos: Long): Long = {
     assert(pos == transfered(), "Invalid position.")
