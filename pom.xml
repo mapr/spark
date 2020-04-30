@@ -135,7 +135,7 @@
     <hive.group>org.apache.hive</hive.group>
     <!-- Version used in Maven Hive dependency -->
     <hive.version>1.2.0-mapr-spark-MEP-7.x-SNAPSHOT</hive.version>
-    <hive.2.version>2.3.6.0-mapr-SNAPSHOT</hive.2.version>
+    <hive.2.version>2.3.7-mapr-SNAPSHOT</hive.2.version>
     <!-- Kafka version -->
     <kafka.version>2.1.1.0-mapr-SNAPSHOT</kafka.version>
     <!-- Version used for internal directory structure -->
