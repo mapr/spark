@@ -1265,6 +1265,10 @@
         <scope>${hadoop.deps.scope}</scope>
         <exclusions>
           <exclusion>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+          </exclusion>
+          <exclusion>
             <groupId>org.jboss.netty</groupId>
             <artifactId>netty</artifactId>
           </exclusion>
@@ -1431,6 +1435,10 @@
             <artifactId>slf4j-log4j12</artifactId>
           </exclusion>
           <exclusion>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+          </exclusion>
+          <exclusion>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-1.2-api</artifactId>
           </exclusion>
@@ -1538,6 +1546,10 @@
             <artifactId>log4j-1.2-api</artifactId>
           </exclusion>
           <exclusion>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+          </exclusion>
+          <exclusion>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
           </exclusion>
@@ -1553,6 +1565,10 @@
           <exclusion>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>log4j</groupId>
+            <artifactId>apache-log4j-extras</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
