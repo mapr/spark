@@ -57,6 +57,7 @@ SPARK_CONF="$SPARK_HOME"/conf
 SPARK_BIN="$SPARK_HOME"/bin
 SPARK_LOGS="$SPARK_HOME"/logs
 DAEMON_CONF=${MAPR_HOME}/conf/daemon.conf
+DEFAULT_SSL_KEYSTORE="$MAPR_HOME"/conf/ssl_keystore
 
 MAPR_USER=${MAPR_USER:-$( awk -F = '$1 == "mapr.daemon.user" { print $2 }' $DAEMON_CONF)}
 MAPR_GROUP=${MAPR_GROUP:-$( awk -F = '$1 == "mapr.daemon.group" { print $2 }' $DAEMON_CONF)}
@@ -291,10 +292,12 @@ EOF
 	if [ -f $SPARK_HOME/warden/warden.spark-master.conf ] ; then
 		changeWardenConfig "service.ui.port" "service.ui.port=$sparkMasterSecureUIPort" "master"
 		sed -i "/\# ssl/a spark.ssl.standalone.port $sparkMasterSecureUIPort" $SPARK_HOME/conf/spark-defaults.conf
+		sed -i "/\# ssl/a spark.ssl.standalone.keyStore $DEFAULT_SSL_KEYSTORE" $SPARK_HOME/conf/spark-defaults.conf
 	fi
 	if [ -f $SPARK_HOME/warden/warden.spark-historyserver.conf ] ; then
 		changeWardenConfig "service.ui.port" "service.ui.port=$sparkHSSecureUIPort" "historyserver"
 		sed -i "/\# ssl/a spark.ssl.historyServer.port $sparkHSSecureUIPort" $SPARK_HOME/conf/spark-defaults.conf
+		sed -i "/\# ssl/a spark.ssl.historyServer.keyStore $DEFAULT_SSL_KEYSTORE" $SPARK_HOME/conf/spark-defaults.conf
 		changeSparkDefaults "spark.yarn.historyServer.address" "spark.yarn.historyServer.address $(hostname --fqdn):$sparkHSSecureUIPort"
 	fi
 
