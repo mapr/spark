@@ -123,7 +123,7 @@ private[spark] class SecurityManager(
     */
 
   def copyManageSslKeysScriptToMapRFsIfNeeded(): Unit = {
-    if (isSSLCertGenerationNeededForWebUI) {
+    if (isSSLCertGenerationNeededForWebUI(getSSLOptions("ui"))) {
       val certGeneratorName = "manageSSLKeys.sh"
       val username = UserGroupInformation.getCurrentUser.getShortUserName
       val fs = FileSystem.get(SparkHadoopUtil.get.newConfiguration(sparkConf))
@@ -165,7 +165,7 @@ private[spark] class SecurityManager(
   }
 
   def genSslCertsForWebUIifNeeded(sslOptions: SSLOptions): SSLOptions = {
-    if (isSSLCertGenerationNeededForWebUI) {
+    if (isSSLCertGenerationNeededForWebUI(sslOptions)) {
       val currentUserHomeDir = System.getProperty("user.home")
       val localBaseDir = s"$currentUserHomeDir/__spark-internal__/security_keys"
       val sslKeyStore = s"$localBaseDir/ssl_keystore"
@@ -181,8 +181,7 @@ private[spark] class SecurityManager(
     }
   }
 
-  def isSSLCertGenerationNeededForWebUI: Boolean = {
-    val sslOptions = getSSLOptions("ui")
+  def isSSLCertGenerationNeededForWebUI(sslOptions: SSLOptions): Boolean = {
     sslOptions.enabled && sslOptions.keyStore.isEmpty
   }
 
