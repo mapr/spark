@@ -117,7 +117,7 @@ private[spark] class DirectKafkaInputDStream[K, V](
   }
 
   // Keep this consistent with how other streams are named (e.g. "Flume polling stream [2]")
-  private[streaming] override def name: String = s"Kafka 0.9 direct stream [$id]"
+  private[streaming] override def name: String = s"Kafka 0.10 direct stream [$id]"
 
   protected[streaming] override val checkpointData =
     new DirectKafkaInputDStreamCheckpointData
