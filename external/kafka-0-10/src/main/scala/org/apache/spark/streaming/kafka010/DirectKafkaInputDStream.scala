@@ -170,7 +170,7 @@ private[spark] class DirectKafkaInputDStream[K, V](
    * which would throw off consumer position.  Fix position if this happens.
    */
   private def paranoidPoll(c: Consumer[K, V]): Unit = {
-    val msgs = c.poll(1000)
+    val msgs = c.poll(0)
 
     val newAssignment = c.assignment()
     val parts = if (currentOffsets.size < newAssignment.size()) {
