@@ -105,14 +105,14 @@ private[spark] case class MapRDBRelation(
       case d: Double => getPredicate(d)
       case str: String => getPredicate(str)
       case decimal: BigDecimal => getPredicate(decimal)
-      case _: java.sql.Date => getPredicate(convertToODate)
+      case date: java.sql.Date => getPredicate(convertToODate(date))
       case timestamp: java.sql.Timestamp => getPredicate(convertToOTimeStamp(timestamp))
       case _ => throw new RuntimeException(s"Cannot convert $value to a MapRDB predicate")
     }
   }
 
-  private def convertToODate: ODate = {
-    new ODate(Calendar.DAY_OF_WEEK)
+  private def convertToODate(date: java.sql.Date): ODate = {
+    new ODate(date)
   }
 
   private def convertToOTimeStamp(timeStamp: java.sql.Timestamp): OTimestamp = {
