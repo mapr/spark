@@ -172,8 +172,7 @@ public class AuthEngineSuite {
             firstTime = false;
             return 0L;
           } else {
-            WritableByteChannel channel =
-              invocationOnMock.getArgumentAt(0, WritableByteChannel.class);
+            WritableByteChannel channel = invocationOnMock.getArgument(0);
             channel.write(ByteBuffer.wrap(new byte[testDataLength]));
             return (long) testDataLength;
           }
