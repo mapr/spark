@@ -109,6 +109,12 @@
       <artifactId>scopt_${scala.binary.version}</artifactId>
       <version>3.7.1</version>
     </dependency>
+    <dependency>
+      <groupId>com.mapr.db</groupId>
+      <artifactId>maprdb-spark_${scala.binary.version}</artifactId>
+      <scope>provided</scope>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 
   <build>
