@@ -49,7 +49,9 @@ private[spark] final class EmbeddedKafka(
       "log.dir" -> logDir.toString)
 
     val props = kafkaProps.getOrElse(new Properties())
-    props.putAll(conf.asJava)
+    // props.putAll(conf.asJava)
+    // known issue https://github.com/scala/bug/issues/10418 (for Scala-2.12+ and JDK 9+)
+    conf.asJava.forEach((k, v) => props.put(k, v))
     new KafkaConfig(props)
   }
   private val logDir = Files.createTempDirectory("kafka-log")
