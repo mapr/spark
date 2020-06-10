@@ -153,9 +153,7 @@ private[spark] class MapRDBTableScanRDD[T: ClassTag](
 
     val ojaiCursor = reqType.getValue(itrs, beanClass)
 
-    context.addTaskCompletionListener((ctx: TaskContext) => {
-      logDebug("Task completed")
-    })
+    context.addTaskCompletionListener[Unit](_ => logDebug("Task completed"))
     ojaiCursor
   }
 
