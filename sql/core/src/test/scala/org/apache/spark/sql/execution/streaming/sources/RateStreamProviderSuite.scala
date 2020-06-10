@@ -55,12 +55,11 @@ class RateSourceSuite extends StreamTest {
 
   test("microbatch in registry") {
     withTempDir { temp =>
-      DataSource.lookupDataSource("rate", spark.sqlContext.conf).
-        getConstructor().newInstance() match {
-        case ds: MicroBatchReadSupportProvider =>
-          val readSupport = ds.createMicroBatchReadSupport(
-            temp.getCanonicalPath, DataSourceOptions.empty())
-          assert(readSupport.isInstanceOf[RateStreamMicroBatchReadSupport])
+      DataSource.lookupDataSource("rate", spark.sqlContext.conf).getConstructor().newInstance() match {
+        case ds: MicroBatchReadSupport =>
+          val reader = ds.createMicroBatchReader(
+            Optional.empty(), temp.getCanonicalPath, DataSourceOptions.empty())
+          assert(reader.isInstanceOf[RateStreamMicroBatchReader])
         case _ =>
           throw new IllegalStateException("Could not find read support for rate")
       }
@@ -70,7 +69,7 @@ class RateSourceSuite extends StreamTest {
   test("compatible with old path in registry") {
     DataSource.lookupDataSource("org.apache.spark.sql.execution.streaming.RateSourceProvider",
       spark.sqlContext.conf).getConstructor().newInstance() match {
-      case ds: MicroBatchReadSupportProvider =>
+      case ds: MicroBatchReadSupport =>
         assert(ds.isInstanceOf[RateStreamProvider])
       case _ =>
         throw new IllegalStateException("Could not find read support for rate")
@@ -333,10 +332,9 @@ class RateSourceSuite extends StreamTest {
 
   test("continuous in registry") {
     DataSource.lookupDataSource("rate", spark.sqlContext.conf).getConstructor().newInstance() match {
-      case ds: ContinuousReadSupportProvider =>
-        val readSupport = ds.createContinuousReadSupport(
-          "", DataSourceOptions.empty())
-        assert(readSupport.isInstanceOf[RateStreamContinuousReadSupport])
+      case ds: ContinuousReadSupport =>
+        val reader = ds.createContinuousReader(Optional.empty(), "", DataSourceOptions.empty())
+        assert(reader.isInstanceOf[RateStreamContinuousReader])
       case _ =>
         throw new IllegalStateException("Could not find read support for continuous rate")
     }
