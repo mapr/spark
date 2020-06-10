@@ -117,7 +117,7 @@
     </dependency>
     <dependency>
       <groupId>com.mapr.db</groupId>
-      <artifactId>maprdb-spark</artifactId>
+      <artifactId>maprdb-spark_${scala.binary.version}</artifactId>
       <scope>provided</scope>
       <version>${project.version}</version>
     </dependency>
