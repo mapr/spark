@@ -7,19 +7,25 @@
 
   <parent>
     <groupId>org.apache.spark</groupId>
-    <artifactId>spark-parent_2.11</artifactId>
+    <artifactId>spark-parent_2.12</artifactId>
     <version>2.4.5.0-mapr-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
   <groupId>com.mapr.db</groupId>
-  <artifactId>maprdb-spark</artifactId>
+  <artifactId>maprdb-spark_2.12</artifactId>
   <packaging>jar</packaging>
 
 
 
   <name>MapR-DB Spark Library</name>
   <url>http://www.mapr.com/</url>
+
+  <properties>
+    <!-- This property is used to avoid replacing the scala version for excluded dependencies
+    when running /dev/change-scala-version.sh script -->
+    <jackson.scala.binary.version>2.11</jackson.scala.binary.version>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -73,55 +79,6 @@
     </dependency>
 
     <dependency>
-      <groupId>org.apache.spark</groupId>
-      <artifactId>spark-core_${scala.binary.version}</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.spark</groupId>
-      <artifactId>spark-core_${scala.binary.version}</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.spark</groupId>
-      <artifactId>spark-streaming_${scala.binary.version}</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.spark</groupId>
-      <artifactId>spark-sql_${scala.binary.version}</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.scala-lang</groupId>
-      <artifactId>scala-library</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.module</groupId>
-      <artifactId>jackson-module-scala_${scala.binary.version}</artifactId>
-      <version>${fasterxml.jackson.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.specs2</groupId>
-      <artifactId>specs2-core_${scala.binary.version}</artifactId>
-      <version>2.4.17</version>
-    </dependency>
-    <dependency>
-      <groupId>org.specs2</groupId>
-      <artifactId>specs2-junit_${scala.binary.version}</artifactId>
-      <version>2.4.17</version>
-    </dependency>
-    <dependency>
-      <groupId>org.scalatest</groupId>
-      <artifactId>scalatest_${scala.binary.version}</artifactId>
-    </dependency>
-    <dependency>
       <groupId>com.mapr.db</groupId>
       <artifactId>maprdb</artifactId>
       <version>6.2.0-mapr-SNAPSHOT</version>
@@ -144,6 +101,12 @@
       <artifactId>ojai-scala</artifactId>
       <version>3.1-SNAPSHOT</version>
       <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.module</groupId>
+          <artifactId>jackson-module-scala_${jackson.scala.binary.version}</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.mapr</groupId>
