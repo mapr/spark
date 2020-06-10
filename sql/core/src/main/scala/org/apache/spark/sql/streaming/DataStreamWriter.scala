@@ -45,6 +45,8 @@ import org.apache.spark.sql.execution.streaming.sources._
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.spark.util.Utils
 
+import scala.collection.JavaConverters._
+
 /**
  * Interface used to write a streaming `Dataset` to external storage systems (e.g. file systems,
  * key-value stores, etc). Use `Dataset.writeStream` to access this.
