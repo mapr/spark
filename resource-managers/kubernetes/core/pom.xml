@@ -19,12 +19,12 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.apache.spark</groupId>
-    <artifactId>spark-parent_2.11</artifactId>
-    <version>2.4.7</version>
+    <artifactId>spark-parent_2.12</artifactId>
+    <version>2.4.5.0-mapr-SNAPSHOT</version>
     <relativePath>../../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>spark-kubernetes_2.11</artifactId>
+  <artifactId>spark-kubernetes_2.12</artifactId>
   <packaging>jar</packaging>
   <name>Spark Project Kubernetes</name>
   <properties>
