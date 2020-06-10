@@ -20,13 +20,13 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.apache.spark</groupId>
-    <artifactId>spark-parent_2.11</artifactId>
+    <artifactId>spark-parent_2.12</artifactId>
     <version>2.4.5.0-mapr-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
   <groupId>org.apache.spark</groupId>
-  <artifactId>spark-sql-kafka-0-10_2.11</artifactId>
+  <artifactId>spark-sql-kafka-0-10_2.12</artifactId>
   <properties>
     <sbt.project.name>sql-kafka-0-10</sbt.project.name>
     <!-- note that this should be compatible with Kafka brokers version 0.10 and up -->
@@ -168,14 +168,5 @@
       </plugin>
     </plugins>
   </build>
-
-  <profiles>
-    <profile>
-      <id>scala-2.12</id>
-      <properties>
-        <kafka.version>0.10.1.1</kafka.version>
-      </properties>
-    </profile>
-  </profiles>
 
 </project>
