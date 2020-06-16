@@ -24,7 +24,7 @@
   <properties>
     <!-- This property is used to avoid replacing the scala version for excluded dependencies
     when running /dev/change-scala-version.sh script -->
-    <jackson.scala.binary.version>2.11</jackson.scala.binary.version>
+    <jackson.scala.binary.version>2.12</jackson.scala.binary.version>
   </properties>
 
   <dependencies>
