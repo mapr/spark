@@ -311,6 +311,7 @@ private[spark] object JettyUtils extends Logging {
       val requestHeaderSize = conf.get(UI_REQUEST_HEADER_SIZE).toInt
       logDebug(s"Using requestHeaderSize: $requestHeaderSize")
       httpConfig.setRequestHeaderSize(requestHeaderSize)
+      httpConfig.setSendServerVersion(false)
 
       // Hide information.
       logDebug("Using setSendServerVersion: false")
