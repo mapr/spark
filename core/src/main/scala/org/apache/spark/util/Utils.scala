@@ -2454,7 +2454,8 @@ private[spark] object Utils extends Logging {
       "org.apache.spark.security.ShellBasedGroupsMappingProvider")
     if (groupProviderClassName != "") {
       try {
-        val groupMappingServiceProvider = classForName(groupProviderClassName).newInstance.
+        val groupMappingServiceProvider = classForName(groupProviderClassName).
+          getConstructor().newInstance().
           asInstanceOf[org.apache.spark.security.GroupMappingServiceProvider]
         val currentUserGroups = groupMappingServiceProvider.getGroups(username)
         return currentUserGroups
@@ -2803,13 +2804,17 @@ private[spark] object Utils extends Logging {
 
   /**
    * Safer than Class obj's getSimpleName which may throw Malformed class name error in scala.
-   * This method mimicks scalatest's getSimpleNameOfAnObjectsClass.
+   * This method mimics scalatest's getSimpleNameOfAnObjectsClass.
    */
   def getSimpleName(cls: Class[_]): String = {
     try {
-      return cls.getSimpleName
+      cls.getSimpleName
     } catch {
-      case err: InternalError => return stripDollars(stripPackages(cls.getName))
+      // TODO: the value returned here isn't even quite right; it returns simple names
+      // like UtilsSuite$MalformedClassObject$MalformedClass instead of MalformedClass
+      // The exact value may not matter much as it's used in log statements
+      case _: InternalError =>
+        stripDollars(stripPackages(cls.getName))
     }
   }
 

@@ -22,12 +22,13 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Locale, TimeZone}
 
 import org.apache.spark.SparkFunSuite
+import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.codegen.GenerateUnsafeProjection
 import org.apache.spark.sql.catalyst.util.DateTimeTestUtils._
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.catalyst.util.DateTimeUtils.TimeZoneGMT
 import org.apache.spark.sql.types._
-import org.apache.spark.unsafe.types.CalendarInterval
+import org.apache.spark.unsafe.types.{CalendarInterval, UTF8String}
 
 class DateExpressionsSuite extends SparkFunSuite with ExpressionEvalHelper {
 
@@ -260,6 +261,15 @@ class DateExpressionsSuite extends SparkFunSuite with ExpressionEvalHelper {
     checkEvaluation(DateFormatClass(Cast(Literal(d), TimestampType, jstId),
       Literal("H"), jstId), "0")
     checkEvaluation(DateFormatClass(Literal(ts), Literal("H"), jstId), "22")
+
+    // SPARK-28072 The codegen path should work
+    checkEvaluation(
+      expression = DateFormatClass(
+        BoundReference(ordinal = 0, dataType = TimestampType, nullable = true),
+        BoundReference(ordinal = 1, dataType = StringType, nullable = true),
+        jstId),
+      expected = "22",
+      inputRow = InternalRow(DateTimeUtils.fromJavaTimestamp(ts), UTF8String.fromString("H")))
   }
 
   test("Hour") {

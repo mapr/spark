@@ -258,7 +258,7 @@ class HadoopMapRedWriteConfigUtil[K, V: ClassTag](conf: SerializableJobConf)
   private def getOutputFormat(): OutputFormat[K, V] = {
     require(outputFormat != null, "Must call initOutputFormat first.")
 
-    outputFormat.newInstance()
+    outputFormat.getConstructor().newInstance()
   }
 
   // --------------------------------------------------------------------------
@@ -381,7 +381,7 @@ class HadoopMapReduceWriteConfigUtil[K, V: ClassTag](conf: SerializableConfigura
   private def getOutputFormat(): NewOutputFormat[K, V] = {
     require(outputFormat != null, "Must call initOutputFormat first.")
 
-    outputFormat.newInstance()
+    outputFormat.getConstructor().newInstance()
   }
 
   // --------------------------------------------------------------------------

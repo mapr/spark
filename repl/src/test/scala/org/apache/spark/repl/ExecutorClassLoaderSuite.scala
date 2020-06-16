@@ -30,7 +30,7 @@ import scala.io.Source
 import scala.language.implicitConversions
 
 import com.google.common.io.Files
-import org.mockito.Matchers.anyString
+import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
@@ -127,7 +127,7 @@ class ExecutorClassLoaderSuite
   test("child first") {
     val parentLoader = new URLClassLoader(urls2, null)
     val classLoader = new ExecutorClassLoader(new SparkConf(), null, url1, parentLoader, true)
-    val fakeClass = classLoader.loadClass("ReplFakeClass2").newInstance()
+    val fakeClass = classLoader.loadClass("ReplFakeClass2").getConstructor().newInstance()
     val fakeClassVersion = fakeClass.toString
     assert(fakeClassVersion === "1")
   }
@@ -135,7 +135,7 @@ class ExecutorClassLoaderSuite
   test("parent first") {
     val parentLoader = new URLClassLoader(urls2, null)
     val classLoader = new ExecutorClassLoader(new SparkConf(), null, url1, parentLoader, false)
-    val fakeClass = classLoader.loadClass("ReplFakeClass1").newInstance()
+    val fakeClass = classLoader.loadClass("ReplFakeClass1").getConstructor().newInstance()
     val fakeClassVersion = fakeClass.toString
     assert(fakeClassVersion === "2")
   }
@@ -143,7 +143,7 @@ class ExecutorClassLoaderSuite
   test("child first can fall back") {
     val parentLoader = new URLClassLoader(urls2, null)
     val classLoader = new ExecutorClassLoader(new SparkConf(), null, url1, parentLoader, true)
-    val fakeClass = classLoader.loadClass("ReplFakeClass3").newInstance()
+    val fakeClass = classLoader.loadClass("ReplFakeClass3").getConstructor().newInstance()
     val fakeClassVersion = fakeClass.toString
     assert(fakeClassVersion === "2")
   }
@@ -152,7 +152,7 @@ class ExecutorClassLoaderSuite
     val parentLoader = new URLClassLoader(urls2, null)
     val classLoader = new ExecutorClassLoader(new SparkConf(), null, url1, parentLoader, true)
     intercept[java.lang.ClassNotFoundException] {
-      classLoader.loadClass("ReplFakeClassDoesNotExist").newInstance()
+      classLoader.loadClass("ReplFakeClassDoesNotExist").getConstructor().newInstance()
     }
   }
 
@@ -203,11 +203,11 @@ class ExecutorClassLoaderSuite
     val classLoader = new ExecutorClassLoader(new SparkConf(), env, "spark://localhost:1234",
       getClass().getClassLoader(), false)
 
-    val fakeClass = classLoader.loadClass("ReplFakeClass2").newInstance()
+    val fakeClass = classLoader.loadClass("ReplFakeClass2").getConstructor().newInstance()
     val fakeClassVersion = fakeClass.toString
     assert(fakeClassVersion === "1")
     intercept[java.lang.ClassNotFoundException] {
-      classLoader.loadClass("ReplFakeClassDoesNotExist").newInstance()
+      classLoader.loadClass("ReplFakeClassDoesNotExist").getConstructor().newInstance()
     }
 
     // classLoader.getResourceAsStream() should also be able to fetch the Class file

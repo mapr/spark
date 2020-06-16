@@ -196,7 +196,7 @@ private[spark] class KafkaRDD[K, V](
 
     val groupId = kafkaParams.get(ConsumerConfig.GROUP_ID_CONFIG).asInstanceOf[String]
 
-    context.addTaskCompletionListener{ context => closeIfNeeded() }
+    context.addTaskCompletionListener[Unit]{ context => closeIfNeeded() }
 
     val consumer = if (useConsumerCache) {
       CachedKafkaConsumer.init(cacheInitialCapacity, cacheMaxCapacity, cacheLoadFactor)

@@ -21,12 +21,12 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.apache.spark</groupId>
-        <artifactId>spark-parent_2.11</artifactId>
+        <artifactId>spark-parent_2.12</artifactId>
         <version>2.4.5.0-mapr-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>classpath-filter_2.11</artifactId>
+    <artifactId>classpath-filter_2.12</artifactId>
     <packaging>jar</packaging>
     <name>Spark Сlasspath Filter</name>
     <url>http://spark.apache.org/</url>
@@ -39,7 +39,7 @@
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
-            <version>2.11.8</version>
+            <version>${scala.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
