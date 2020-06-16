@@ -104,7 +104,7 @@
       <exclusions>
         <exclusion>
           <groupId>com.fasterxml.jackson.module</groupId>
-          <artifactId>jackson-module-scala_${jackson.scala.binary.version}</artifactId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>

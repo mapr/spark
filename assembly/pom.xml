@@ -74,6 +74,11 @@
       <artifactId>spark-repl_${scala.binary.version}</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>classpath-filter_${scala.binary.version}</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <!--
       Because we don't shade dependencies anymore, we need to restore Guava to compile scope so
@@ -206,6 +211,16 @@
         <dependency>
           <groupId>org.apache.spark</groupId>
           <artifactId>spark-hive-thriftserver_${scala.binary.version}</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>include-maprdb</id>
+      <dependencies>
+        <dependency>
+          <groupId>com.mapr.db</groupId>
+          <artifactId>maprdb-spark_${scala.binary.version}</artifactId>
           <version>${project.version}</version>
         </dependency>
       </dependencies>
