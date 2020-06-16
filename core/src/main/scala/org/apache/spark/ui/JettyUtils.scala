@@ -352,6 +352,7 @@ private[spark] object JettyUtils extends Logging {
       val requestHeaderSize = conf.get(UI_REQUEST_HEADER_SIZE).toInt
       logDebug(s"Using requestHeaderSize: $requestHeaderSize")
       httpConfig.setRequestHeaderSize(requestHeaderSize)
+      httpConfig.setSendServerVersion(false)
 
       // If SSL is configured, create the secure connector first.
       val securePort = sslOptions.createJettySslContextFactory().map { factory =>
