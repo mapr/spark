@@ -12,6 +12,7 @@ import com.mapr.db.spark.condition._
 import com.mapr.db.spark.configuration.SerializableConfiguration
 import com.mapr.db.spark.dbclient.DBClient
 import com.mapr.db.spark.impl.OJAIDocument
+import com.mapr.db.spark.sql.SingleFragmentOption
 import com.mapr.db.spark.utils.DefaultClass.DefaultType
 import com.mapr.db.spark.utils.MapRSpark
 import org.ojai.{Document, Value}
@@ -38,7 +39,10 @@ private[spark] class MapRDBTableScanRDD[T: ClassTag](
 
   @transient private lazy val table = DBClient().getTable(tableName, bufferWrites)
   @transient private lazy val tabletinfos =
-    if (condition == null || condition.condition.isEmpty) {
+    if (enforceSingleFragment) {
+      // no need to obtain tablet info for the case of single fragment
+      Seq.empty
+    } else if (condition == null || condition.condition.isEmpty) {
       DBClient().getTabletInfos(tableName, bufferWrites)
     } else DBClient().getTabletInfos(tableName, condition.condition, bufferWrites)
   @transient private lazy val getSplits: Seq[Value] = {
@@ -55,13 +59,16 @@ private[spark] class MapRDBTableScanRDD[T: ClassTag](
 
   private def getPartitioner: Partitioner = {
     if (getSplits.isEmpty) {
-      null
-    } else if (getSplits(0).getType == Value.Type.STRING) {
+      if (enforceSingleFragment) MapRDBPartitioner[String](Seq.empty) else null
+    } else if (getSplits.head.getType == Value.Type.STRING) {
       MapRDBPartitioner(getSplits.map(_.getString))
     } else {
       MapRDBPartitioner(getSplits.map(_.getBinary))
     }
   }
+
+  private def enforceSingleFragment =
+    queryOptions.getOrElse(SingleFragmentOption, "false").toBoolean
 
   def toDF[T <: Product: TypeTag](): DataFrame = maprspark[T]()
 
@@ -84,16 +91,26 @@ private[spark] class MapRDBTableScanRDD[T: ClassTag](
   override type Self = MapRDBTableScanRDD[T]
 
   override def getPartitions: Array[Partition] = {
-    val splits = tabletinfos.zipWithIndex.map(a => {
-      val tabcond = a._1.getCondition
-      MaprDBPartition(a._2,
-                      tableName,
-                      a._1.getLocations,
-                      DBClient().getEstimatedSize(a._1),
-                      DBQueryCondition(tabcond)).asInstanceOf[Partition]
-    })
-    logDebug("Partitions for the table:" + tableName + " are " + splits)
-    splits.toArray
+    if (enforceSingleFragment) {
+      val index = 0
+      val partition = MaprDBPartition(index,
+        tableName,
+        Seq.empty,
+        0,
+        DBQueryCondition(DBClient().newCondition().build()))
+      Array(partition)
+    } else {
+      val splits = tabletinfos.zipWithIndex.map(a => {
+        val tableCond = a._1.getCondition
+        MaprDBPartition(a._2,
+          tableName,
+          a._1.getLocations,
+          DBClient().getEstimatedSize(a._1),
+          DBQueryCondition(tableCond)).asInstanceOf[Partition]
+      })
+      logDebug("Partitions for the table:" + tableName + " are " + splits)
+      splits.toArray
+    }
   }
 
   override def getPreferredLocations(split: Partition): Seq[String] = {
