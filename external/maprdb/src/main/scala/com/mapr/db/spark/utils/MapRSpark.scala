@@ -206,6 +206,8 @@ case class MapRSpark(sparkSession: Option[SparkSession],
       .option("sampleSize", sampleSize)
       .option("bufferWrites", bufferWrites)
 
+    queryOptions.get.foreach(option => reader.option(option._1, option._2))
+
       if (cond.isDefined) {
         reader.option("QueryCondition",
         new String(
