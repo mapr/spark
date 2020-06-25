@@ -7,6 +7,8 @@ import org.apache.spark.sql._
 
 package object sql {
 
+  val SingleFragmentOption = "spark.maprdb.enforce_single_fragment"
+
   implicit def toSparkSessionFunctions(sqlContext: SQLContext): SparkSessionFunctions = {
     toSparkSessionFunctions(sqlContext.sparkSession)
   }
