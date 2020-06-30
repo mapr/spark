@@ -44,7 +44,7 @@ case class SparkSessionFunctions(@transient sparkSession: SparkSession,
       .toDF[T](schema, sampleSize, bufferWrites)
   }
 
-  def loadFromMapRDBWithSingleFragment[T <: Product: TypeTag](
+  def lookupFromMapRDB[T <: Product: TypeTag](
       tableName: String,
       schema: StructType = null,
       sampleSize: Double = GenerateSchema.SAMPLE_SIZE): DataFrame = {
