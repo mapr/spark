@@ -3,7 +3,7 @@ package com.mapr.db.spark.sql.api.java
 
 import scala.collection.JavaConverters._
 
-import com.mapr.db.spark.sql.GenerateSchema
+import com.mapr.db.spark.sql.{GenerateSchema, SingleFragmentOption}
 import com.mapr.db.spark.utils.MapRSpark
 import org.ojai.DocumentConstants
 
@@ -98,6 +98,73 @@ class MapRDBJavaSession(spark: SparkSession) {
       .option("bufferWrites", bufferWrites)
       .option("hintUsingIndex", hintUsingIndex.orNull)
       .options(queryOptions)
+
+    resumeDefaultOptions()
+
+    reader.load()
+      .as(encoder)
+  }
+
+  def lookupFromMapRDB(tableName: String): DataFrame = {
+    lookupFromMapRDB(tableName, null, GenerateSchema.SAMPLE_SIZE)
+  }
+
+  def lookupFromMapRDB(tableName: String, schema: StructType): DataFrame = {
+    lookupFromMapRDB(tableName, schema, GenerateSchema.SAMPLE_SIZE)
+  }
+
+  def lookupFromMapRDB(tableName: String,
+                      schema: StructType,
+                      sampleSize: Double): DataFrame = {
+    val reader = spark.read
+      .format("com.mapr.db.spark.sql")
+      .schema(schema)
+      .option("tablePath", tableName)
+      .option("sampleSize", sampleSize)
+      .option("bufferWrites", bufferWrites)
+      .option("hintUsingIndex", hintUsingIndex.orNull)
+      .options(queryOptions + (SingleFragmentOption -> "true"))
+
+    resumeDefaultOptions()
+
+    reader.load()
+  }
+
+  def lookupFromMapRDB(tableName: String, sampleSize: Double): DataFrame = {
+    lookupFromMapRDB(tableName, null, sampleSize)
+  }
+
+  def lookupFromMapRDB[T <: java.lang.Object](tableName: String,
+                                            clazz: Class[T]): Dataset[T] = {
+    lookupFromMapRDB(tableName, null, GenerateSchema.SAMPLE_SIZE, clazz)
+  }
+
+  def lookupFromMapRDB[T <: java.lang.Object](tableName: String,
+                                            schema: StructType,
+                                            clazz: Class[T]): Dataset[T] = {
+    lookupFromMapRDB(tableName, schema, GenerateSchema.SAMPLE_SIZE, clazz)
+  }
+
+  def lookupFromMapRDB[T <: java.lang.Object](tableName: String,
+                                            sampleSize: Double,
+                                            clazz: Class[T]): Dataset[T] = {
+    lookupFromMapRDB(tableName, null, sampleSize, clazz)
+  }
+
+  def lookupFromMapRDB[T <: java.lang.Object](tableName: String,
+                                              schema: StructType,
+                                              sampleSize: Double,
+                                              clazz: Class[T]): Dataset[T] = {
+
+    val encoder = Encoders.bean(clazz)
+    val reader = spark.read
+      .format("com.mapr.db.spark.sql")
+      .schema(schema)
+      .option("tablePath", tableName)
+      .option("sampleSize", sampleSize)
+      .option("bufferWrites", bufferWrites)
+      .option("hintUsingIndex", hintUsingIndex.orNull)
+      .options(queryOptions + (SingleFragmentOption -> "true"))
 
     resumeDefaultOptions()
 
