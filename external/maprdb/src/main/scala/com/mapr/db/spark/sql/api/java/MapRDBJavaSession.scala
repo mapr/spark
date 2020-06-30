@@ -29,7 +29,7 @@ class MapRDBJavaSession(spark: SparkSession) {
   }
 
   def setQueryOption(queryOptionKey: String, queryOptionValue: String): Unit = {
-    this.queryOptions + (queryOptionKey -> queryOptionValue)
+    this.queryOptions += (queryOptionKey -> queryOptionValue)
   }
 
   private def resumeDefaultOptions(): Unit = {
