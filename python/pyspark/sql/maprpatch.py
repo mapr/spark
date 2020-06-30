@@ -58,6 +58,27 @@ def mapr_session_patch(original_session, wrapped, gw, default_sample_size=1000.0
     original_session.loadFromMapRDB = loadFromMapRDB
 
 
+    def lookupFromMapRDB(table_name, schema=None, sample_size=default_sample_size):
+
+        options = dict(vars['options'])
+        options['spark.maprdb.enforce_single_fragment'] = 'true'
+
+        df_reader = original_session.read \
+            .format("com.mapr.db.spark.sql") \
+            .option("tableName", table_name) \
+            .option("sampleSize", sample_size) \
+            .option("bufferWrites", vars['buffer_writes']) \
+            .option("indexPath", vars['indexPath']) \
+            .options(**options)
+
+        if schema:
+            df_reader.schema(schema)
+
+        return df_reader.load()
+
+    original_session.lookupFromMapRDB = lookupFromMapRDB
+
+
     def saveToMapRDB(dataframe, table_name, id_field_path = default_id_field, create_table = False, bulk_insert = False):
         """
         Saves data to MapR-DB Table.
