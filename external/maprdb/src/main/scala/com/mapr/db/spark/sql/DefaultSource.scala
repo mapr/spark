@@ -40,7 +40,8 @@ class DefaultSource
       parameters.get("ColumnProjection"),
       parameters.getOrElse("Operation", "InsertOrReplace"),
       parameters.getOrElse("FailOnConflict", "false"),
-      parameters.filterKeys(k => k.startsWith("ojai.mapr.query")).map(identity)
+      parameters.filterKeys(k =>
+        k.startsWith("ojai.mapr.query") || k.startsWith("spark.maprdb")).map(identity)
     )
   }
 
@@ -145,7 +146,8 @@ class DefaultSource
       parameters.get("ColumnProjection"),
       parameters.getOrElse("Operation", "InsertOrReplace"),
       parameters.getOrElse("FailOnConflict", "false"),
-      parameters.filterKeys(k => k.startsWith("ojai.mapr.query")).map(identity)
+      parameters.filterKeys(k =>
+        k.startsWith("ojai.mapr.query") || k.startsWith("spark.maprdb")).map(identity)
     )
   }
 
