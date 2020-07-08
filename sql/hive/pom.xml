@@ -35,6 +35,11 @@
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>com.tdunning</groupId>
+      <artifactId>json</artifactId>
+      <version>1.8</version>
+    </dependency>
     <!-- Added for Hive Parquet SerDe -->
     <dependency>
       <groupId>com.twitter</groupId>
