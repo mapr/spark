@@ -668,7 +668,7 @@ private[spark] object Config extends Logging {
     ConfigBuilder("spark.mapr.cluster.configMap")
       .doc("Name of the mapr cluster config map")
       .stringConf
-      .createWithDefault("mapr-cluster-cm")
+      .createWithDefault("cluster-cm")
 
   val MAPR_USER_SECRET =
     ConfigBuilder("spark.mapr.user.secret")
