@@ -128,6 +128,6 @@ private[spark] object Constants {
   val ENV_MAPR_METRICSFILE_LOCATION = "MAPR_METRICSFILE_LOCATION"
   val MAPR_METRICS_TICKET_SUBPATH = "maprmetricsticket"
   val MAPR_METRICS_TICKET_MOUNT_PATH = "/tmp/maprticket/METRICS_TICKET"
-  val MAPR_SERVER_SECRET = "mapr-server-secrets"
+  val MAPR_SERVER_SECRET = "server"
 
 }
