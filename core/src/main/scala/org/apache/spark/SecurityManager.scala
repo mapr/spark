@@ -32,7 +32,7 @@ import org.apache.spark.launcher.SparkLauncher
 import org.apache.spark.network.sasl.SecretKeyHolder
 import org.apache.spark.util.Utils
 
-import sys.process._
+import scala.sys.process._
 import java.io.{File, FileNotFoundException}
 import java.nio.file.{Files, Paths}
 
@@ -173,7 +173,7 @@ private[spark] class SecurityManager(
       val updatedSslOptions = updateSslOptsWithNewKeystore(sslOptions, sslKeyStore, sslKeyStorePass)
 
       if (!Files.exists(Paths.get(sslKeyStore))) {
-        copyFromMfsOrGenSslCertsForWebUI(localBaseDir)
+        copyFromMfsOrGenSslCertsForWebUI(localBaseDir, sslKeyStorePass)
       }
       updatedSslOptions
     } else {
@@ -185,7 +185,7 @@ private[spark] class SecurityManager(
     sslOptions.enabled && sslOptions.keyStore.isEmpty
   }
 
-  def copyFromMfsOrGenSslCertsForWebUI(localBaseDir : String) {
+  def copyFromMfsOrGenSslCertsForWebUI(localBaseDir: String, sslKeyStorePass: String) {
     //////////////////// Zookeeper lock utils /////////////////////
     val mfs = FileSystem.get(new Configuration()).asInstanceOf[MapRFileSystem]
     val zkUrl = mfs.getZkConnectString
@@ -250,7 +250,7 @@ private[spark] class SecurityManager(
     } else {
        val lockPath = aquireLock()
       if (! fs.exists(new Path(mfsKeyStore))) {
-        genSslCertsForWebUI(localBaseDir, mfsBaseDir)
+        genSslCertsForWebUI(localBaseDir, mfsBaseDir, sslKeyStorePass)
       }
       releaseLock(lockPath)
     }
@@ -274,7 +274,9 @@ private[spark] class SecurityManager(
       sslOptions.enabledAlgorithms)
   }
 
-  private def genSslCertsForWebUI(localBaseDir: String, mfsBaseDir : String) {
+  private def genSslCertsForWebUI(localBaseDir: String,
+                                  mfsBaseDir : String,
+                                  sslKeyStorePass: String) {
     val certGeneratorName = "manageSSLKeys.sh"
     val mfsManageSslKeysScript = s"$mfsBaseDir/$certGeneratorName"
     val manageSslKeysScript = s"$localBaseDir/$certGeneratorName"
@@ -290,7 +292,7 @@ private[spark] class SecurityManager(
     val manageSslKeysLocalFile = new File(manageSslKeysScript)
     manageSslKeysLocalFile.setExecutable(true)
 
-    val res = manageSslKeysScript !;
+    val res = s"$manageSslKeysScript $sslKeyStorePass".!
     if (res != 0) {
       throw new Exception(s"Failed to generate SSL certificates for spark WebUI")
     }
@@ -523,7 +525,6 @@ private[spark] class SecurityManager(
    * In other modes, assert that the auth secret is set in the configuration.
    */
   def initializeAuth(): Unit = {
-    import SparkMasterRegex._
 
     if (!sparkConf.get(NETWORK_AUTH_ENABLED)) {
       return
