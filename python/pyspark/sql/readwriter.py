@@ -744,7 +744,7 @@ class DataFrameWriter(OptionUtils):
         self._jwrite.saveAsTable(name)
 
     @since(1.4)
-    def json(self, path, mode=None, compression=None, dateFormat=None, timestampFormat=None):
+    def json(self, path, mode=None, compression=None, dateFormat=None, timestampFormat=None, ignoreNullFields=None):
         """Saves the content of the :class:`DataFrame` in JSON format
         (`JSON Lines text format or newline-delimited JSON <http://jsonlines.org/>`_) at the
         specified path.
@@ -768,12 +768,14 @@ class DataFrameWriter(OptionUtils):
                                 formats follow the formats at ``java.text.SimpleDateFormat``.
                                 This applies to timestamp type. If None is set, it uses the
                                 default value, ``yyyy-MM-dd'T'HH:mm:ss.SSSXXX``.
+        :param ignoreNullFields: Whether to ignore null fields when generating JSON objects.
+                        If None is set, it uses the default value, ``true``.
 
         >>> df.write.json(os.path.join(tempfile.mkdtemp(), 'data'))
         """
         self.mode(mode)
         self._set_opts(
-            compression=compression, dateFormat=dateFormat, timestampFormat=timestampFormat)
+            compression=compression, dateFormat=dateFormat, timestampFormat=timestampFormat, ignoreNullFields=ignoreNullFields)
         self._jwrite.json(path)
 
     @since(1.4)
