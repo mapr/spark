@@ -25,6 +25,7 @@ import org.apache.commons.lang3.time.FastDateFormat
 
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.util._
+import org.apache.spark.sql.internal.SQLConf
 
 /**
  * Options for parsing JSON data into Spark SQL rows.
@@ -78,6 +79,10 @@ private[sql] class JSONOptions(
 
   val timeZone: TimeZone = DateTimeUtils.getTimeZone(
     parameters.getOrElse(DateTimeUtils.TIMEZONE_OPTION, defaultTimeZoneId))
+
+  // Whether to ignore null fields during json generating
+  val ignoreNullFields = parameters.get("ignoreNullFields").map(_.toBoolean)
+    .getOrElse(SQLConf.get.jsonGeneratorIgnoreNullFields)
 
   // Uses `FastDateFormat` which can be direct replacement for `SimpleDateFormat` and thread-safe.
   val dateFormat: FastDateFormat =
