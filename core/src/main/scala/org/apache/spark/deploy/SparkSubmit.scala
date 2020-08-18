@@ -367,7 +367,7 @@ private[spark] class SparkSubmit extends Logging {
 
     lazy val secMgr = new SecurityManager(sparkConf)
 
-    secMgr.copyManageSslKeysScriptToMapRFsIfNeeded()
+    secMgr.genSSLCertsIfNeededAndPushToMapRFS()
 
     // In client mode, download remote files.
     var localPrimaryResource: String = null
