@@ -121,29 +121,9 @@ private[spark] class SecurityManager(
     opts
   }
 
-  /**
-    * Generates ssl ceritificates for Spark Web UI if Ssl is enabled and
-    * certificates are not specified by the user. Otherwise returns
-    * sslOptions without any changes.
-    */
-
-  def copyManageSslKeysScriptToMapRFsIfNeeded(): Unit = {
+  def genSSLCertsIfNeededAndPushToMapRFS(): Unit = {
     if (isSSLCertGenerationNeededForWebUI(getSSLOptions("ui"))) {
       val certGeneratorName = "manageSSLKeys.sh"
-      val username = UserGroupInformation.getCurrentUser.getShortUserName
-      val fs = FileSystem.get(SparkHadoopUtil.get.newConfiguration(sparkConf))
-      val mfsBaseDir = s"/apps/spark/__$username-spark-internal__/security_keys/"
-
-      val mfsManageSslKeysScript = s"$mfsBaseDir/$certGeneratorName"
-
-      if (fs.exists(new Path(mfsManageSslKeysScript))) {
-        return
-      } else {
-        val mfsBaseDirPath = new Path(mfsBaseDir)
-        if (!fs.exists(mfsBaseDirPath)) {
-          fs.mkdirs(mfsBaseDirPath)
-        }
-      }
 
       def getSparkVersion(sparkBase: String) = {
         val sparkVersionFile = scala.io.Source.fromFile(s"$sparkBase/sparkversion")
@@ -165,9 +145,22 @@ private[spark] class SecurityManager(
       val sparkHome = s"$sparkBase/spark-$sparkVersion"
       val manageSslKeysScript = s"$sparkHome/bin/$certGeneratorName"
 
-      fs.copyFromLocalFile(new Path(manageSslKeysScript), new Path(mfsManageSslKeysScript))
+      val manageSslKeysLocalFile = new File(manageSslKeysScript)
+      manageSslKeysLocalFile.setExecutable(true)
+      val sslKeyStorePass = getSSLOptions("ui").keyStorePassword.get
+
+      val res = s"$manageSslKeysScript $sslKeyStorePass".!
+      if (res != 0) {
+        throw new Exception(s"Failed to generate SSL certificates for spark WebUI")
+      }
     }
   }
+
+  /**
+    * Generates ssl ceritificates for Spark Web UI if Ssl is enabled and
+    * certificates are not specified by the user. Otherwise returns
+    * sslOptions without any changes.
+    */
 
   def genSslCertsForWebUIifNeeded(sslOptions: SSLOptions): SSLOptions = {
     if (isSSLCertGenerationNeededForWebUI(sslOptions)) {
@@ -177,9 +170,7 @@ private[spark] class SecurityManager(
       val sslKeyStorePass = "mapr123" // todo remove password from source code
       val updatedSslOptions = updateSslOptsWithNewKeystore(sslOptions, sslKeyStore, sslKeyStorePass)
 
-      if (!Files.exists(Paths.get(sslKeyStore))) {
-        copyFromMfsOrGenSslCertsForWebUI(localBaseDir, sslKeyStorePass)
-      }
+      copyFromMfs(localBaseDir)
       updatedSslOptions
     } else {
       sslOptions
@@ -190,74 +181,19 @@ private[spark] class SecurityManager(
     sslOptions.enabled && sslOptions.keyStore.isEmpty
   }
 
-  def copyFromMfsOrGenSslCertsForWebUI(localBaseDir: String, sslKeyStorePass: String) {
-    //////////////////// Zookeeper lock utils /////////////////////
-    val mfs = FileSystem.get(new Configuration()).asInstanceOf[MapRFileSystem]
-    val zkUrl = mfs.getZkConnectString
-    val sslZkConfProperty = "tmp.spark.ssl.zookeeper.url"
-    val zkPath = "/spark/web-ui-locks"
-    val zkLock = s"$zkPath/lock-"
-
-    sparkConf.set(sslZkConfProperty, zkUrl)
-    val zk: CuratorFramework = SparkCuratorUtil.newClient(sparkConf, sslZkConfProperty)
-    sparkConf.remove(sslZkConfProperty)
-
-    if (zk.checkExists().forPath(zkPath) == null) {
-      zk.create().creatingParentsIfNeeded().forPath(zkPath)
-    }
-
-    def aquireLock(): String = {
-      val lockPath = zk.create().withProtectedEphemeralSequential().forPath(zkLock);
-      val lock = new Object()
-      lock.synchronized {
-        while (true) {
-          val nodes = zk.getChildren().usingWatcher(new CuratorWatcher {
-            override def process(watchedEvent: WatchedEvent): Unit = {
-              lock.synchronized {
-                lock.notifyAll()
-              }
-            }
-          }).forPath(zkPath)
-          val sortedNodes = nodes.asScala.sorted
-          if (lockPath.endsWith(nodes.get(0))) {
-            return lockPath
-          } else {
-            lock.wait()
-          }
-        }
-      }
-      lockPath
-    }
-
-    def releaseLock(lockPath : String): Unit = {
-      zk.delete().forPath(lockPath)
-    }
-    /////////////////////End of Zookeeper lock utils //////////////////////
-
+  def copyFromMfs(localBaseDir: String) {
     val username = UserGroupInformation.getCurrentUser.getShortUserName
     val mfsBaseDir = s"/apps/spark/__$username-spark-internal__/security_keys"
     val mfsKeyStore = s"$mfsBaseDir/ssl_keystore"
     val fs = FileSystem.get(hadoopConf)
 
-    val f = new File(localBaseDir)
-    if (!f.exists()) {
-      f.mkdirs()
-    }
-
-
     if (fs.exists(new Path(mfsKeyStore))) {
       val files = fs.listFiles(new Path(mfsBaseDir), false)
       files.next().getPath
-      while(files.hasNext) {
+      while (files.hasNext) {
         val f = files.next()
         fs.copyToLocalFile(f.getPath, new Path(localBaseDir))
       }
-    } else {
-       val lockPath = aquireLock()
-      if (! fs.exists(new Path(mfsKeyStore))) {
-        genSslCertsForWebUI(localBaseDir, mfsBaseDir, sslKeyStorePass)
-      }
-      releaseLock(lockPath)
     }
   }
 
@@ -277,30 +213,6 @@ private[spark] class SecurityManager(
       sslOptions.trustStoreType,
       sslOptions.protocol,
       sslOptions.enabledAlgorithms)
-  }
-
-  private def genSslCertsForWebUI(localBaseDir: String,
-                                  mfsBaseDir : String,
-                                  sslKeyStorePass: String) {
-    val certGeneratorName = "manageSSLKeys.sh"
-    val mfsManageSslKeysScript = s"$mfsBaseDir/$certGeneratorName"
-    val manageSslKeysScript = s"$localBaseDir/$certGeneratorName"
-
-    val directory = new File(localBaseDir)
-    if (!directory.exists()) {
-      directory.mkdir()
-    }
-
-    val fs = FileSystem.get(hadoopConf)
-    fs.copyToLocalFile(new Path(mfsManageSslKeysScript), new Path(localBaseDir))
-
-    val manageSslKeysLocalFile = new File(manageSslKeysScript)
-    manageSslKeysLocalFile.setExecutable(true)
-
-    val res = s"$manageSslKeysScript $sslKeyStorePass".!
-    if (res != 0) {
-      throw new Exception(s"Failed to generate SSL certificates for spark WebUI")
-    }
   }
 
   /**
