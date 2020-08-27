@@ -88,13 +88,11 @@
       <groupId>com.mapr.db</groupId>
       <artifactId>maprdb-mapreduce</artifactId>
       <version>6.2.0.0-mapr-SNAPSHOT</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.ojai</groupId>
       <artifactId>ojai</artifactId>
       <version>3.1-SNAPSHOT</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.ojai</groupId>
