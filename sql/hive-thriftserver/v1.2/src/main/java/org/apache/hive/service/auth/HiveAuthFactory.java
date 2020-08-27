@@ -128,6 +128,7 @@ public class HiveAuthFactory {
     this.conf = conf;
     transportMode = conf.getVar(HiveConf.ConfVars.HIVE_SERVER2_TRANSPORT_MODE);
     authTypeStr = conf.getVar(HiveConf.ConfVars.HIVE_SERVER2_AUTHENTICATION);
+    boolean isAuthTypeSecured = "KERBEROS".equalsIgnoreCase(authTypeStr) || "MAPRSASL".equalsIgnoreCase(authTypeStr);
 
     // In http mode we use NOSASL as the default auth type
     if ("http".equalsIgnoreCase(transportMode)) {
@@ -138,8 +139,9 @@ public class HiveAuthFactory {
       if (authTypeStr == null) {
         authTypeStr = AuthTypes.NONE.getAuthName();
       }
-      if (authTypeStr.equalsIgnoreCase(AuthTypes.KERBEROS.getAuthName()) ||
-              authTypeStr.equalsIgnoreCase(AuthTypes.MAPRSASL.getAuthName())) {
+      if (isAuthTypeSecured || ("PAM".equalsIgnoreCase(authTypeStr)
+              && ShimLoader.getHadoopShims().isSecurityEnabled())) {
+
         saslServer = ShimLoader.getHadoopThriftAuthBridge()
                 .createServer(conf.getVar(ConfVars.HIVE_SERVER2_KERBEROS_KEYTAB),
                         conf.getVar(ConfVars.HIVE_SERVER2_KERBEROS_PRINCIPAL));
@@ -190,7 +192,16 @@ public class HiveAuthFactory {
     } else if (authTypeStr.equalsIgnoreCase(AuthTypes.LDAP.getAuthName())) {
       transportFactory = PlainSaslHelper.getPlainTransportFactory(authTypeStr);
     } else if (authTypeStr.equalsIgnoreCase(AuthTypes.PAM.getAuthName())) {
-      transportFactory = PlainSaslHelper.getPlainTransportFactory(authTypeStr);
+      if (ShimLoader.getHadoopShims().isSecurityEnabled()) {
+        try {
+          transportFactory = saslServer.createTransportFactory(getSaslProperties());
+        } catch (TTransportException e) {
+          throw new LoginException(e.getMessage());
+        }
+        PlainSaslHelper.addPlainDefinitionToFactory(authTypeStr, transportFactory, saslServer);
+      } else {
+        transportFactory = PlainSaslHelper.getPlainTransportFactory(authTypeStr);
+      }
     } else if (authTypeStr.equalsIgnoreCase(AuthTypes.NOSASL.getAuthName())) {
       transportFactory = new TTransportFactory();
     } else if (authTypeStr.equalsIgnoreCase(AuthTypes.CUSTOM.getAuthName())) {
