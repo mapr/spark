@@ -81,23 +81,41 @@
     <dependency>
       <groupId>com.mapr.db</groupId>
       <artifactId>maprdb</artifactId>
-      <version>6.2.0.0-mapr-SNAPSHOT</version>
+      <version>${maprfs.version}</version>
       <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>maprfs</artifactId>
+          <groupId>com.mapr.hadoop</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.mapr.db</groupId>
       <artifactId>maprdb-mapreduce</artifactId>
-      <version>6.2.0.0-mapr-SNAPSHOT</version>
+      <version>${maprfs.version}</version>
+      <exclusions>
+        <exclusion>
+          <artifactId>maprfs</artifactId>
+          <groupId>com.mapr.hadoop</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.ojai</groupId>
       <artifactId>ojai</artifactId>
-      <version>3.1-SNAPSHOT</version>
+      <version>${ojai.version}</version>
+      <exclusions>
+        <exclusion>
+          <artifactId>maprfs</artifactId>
+          <groupId>com.mapr.hadoop</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.ojai</groupId>
       <artifactId>ojai-scala</artifactId>
-      <version>3.1-SNAPSHOT</version>
+      <version>${ojai.version}</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -109,14 +127,14 @@
     <dependency>
       <groupId>com.mapr</groupId>
       <artifactId>mapr-java-utils</artifactId>
-      <version>6.2.0.0-mapr-SNAPSHOT</version>
+      <version>${maprfs.version}</version>
       <classifier>tests</classifier>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.mapr.ojai</groupId>
       <artifactId>mapr-ojai-driver</artifactId>
-      <version>6.2.0.0-mapr-SNAPSHOT</version>
+      <version>${maprfs.version}</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
