@@ -17,4 +17,4 @@ spark.sql.hive.metastore.sharedPrefixes  com.mysql.jdbc,org.postgresql,com.micro
 
 spark.executor.memory              2g
 
-spark.ui.reverseProxy true
+spark.ui.filters  org.apache.spark.deploy.yarn.YarnProxyRedirectFilter
