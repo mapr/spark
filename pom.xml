@@ -121,7 +121,7 @@
     <protobuf.version>3.11.1</protobuf.version>
     <yarn.version>${hadoop.version}</yarn.version>
     <curator.version>2.13.0</curator.version>
-    <zookeeper.version>3.5.6-mapr-SNAPSHOT</zookeeper.version>
+    <zookeeper.version>3.5.6.0-mapr-2009</zookeeper.version>
     <curator.version>4.2.0</curator.version>
     <hive.group>org.apache.hive</hive.group>
     <hive.classifier>core</hive.classifier>
