@@ -69,7 +69,6 @@ function confirmNotThere() {
       keystore_check_cmd='keytool --list -keystore $sslKeyStore -storepass $storePass'
       checkKeyResult=$(eval $keystore_check_cmd)
       errorSubstr="Keystore was tampered with, or password was incorrect"
-      echo before
       if ! [[ $checkKeyResult =~ $errorSubstr ]]; then
         exit 0
       fi
