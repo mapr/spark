@@ -83,34 +83,18 @@
       <artifactId>maprdb</artifactId>
       <version>${maprfs.version}</version>
       <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <artifactId>maprfs</artifactId>
-          <groupId>com.mapr.hadoop</groupId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.mapr.db</groupId>
       <artifactId>maprdb-mapreduce</artifactId>
       <version>${maprfs.version}</version>
-      <exclusions>
-        <exclusion>
-          <artifactId>maprfs</artifactId>
-          <groupId>com.mapr.hadoop</groupId>
-        </exclusion>
-      </exclusions>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.ojai</groupId>
       <artifactId>ojai</artifactId>
       <version>${ojai.version}</version>
-      <exclusions>
-        <exclusion>
-          <artifactId>maprfs</artifactId>
-          <groupId>com.mapr.hadoop</groupId>
-        </exclusion>
-      </exclusions>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.ojai</groupId>
