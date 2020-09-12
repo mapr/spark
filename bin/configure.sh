@@ -457,11 +457,16 @@ function registerServicePorts() {
 #
 # Add warden files
 #
+is_warden_file_already_copied() {
+  local role=$1
+  [ -f "$MAPR_CONF_DIR/conf.d/warden.spark-${role}.conf" ]
+}
 
 function copyWardenFile() {
-	if [ -f $SPARK_HOME/warden/warden.spark-$1.conf ] ; then
-		cp "${SPARK_HOME}/warden/warden.spark-${1}.conf" "${MAPR_CONF_DIR}/conf.d/" 2>/dev/null || :
-	fi
+        if [ -f $SPARK_HOME/warden/warden.spark-$1.conf ] && ! is_warden_file_already_copied "$1" ; then
+                logInfo "Copying warden.spark-${1}.conf file"
+                cp "${SPARK_HOME}/warden/warden.spark-${1}.conf" "${MAPR_CONF_DIR}/conf.d/" 2>/dev/null || :
+        fi
 }
 
 function copyWardenConfFiles() {
