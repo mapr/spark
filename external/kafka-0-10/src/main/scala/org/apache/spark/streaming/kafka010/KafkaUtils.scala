@@ -23,6 +23,7 @@ import org.apache.kafka.clients.consumer._
 import org.apache.kafka.common.TopicPartition
 
 import org.apache.spark.SparkContext
+import org.apache.spark.{SparkContext, SparkEnv}
 import org.apache.spark.annotation.Experimental
 import org.apache.spark.api.java.{ JavaRDD, JavaSparkContext }
 import org.apache.spark.internal.Logging
@@ -220,4 +221,28 @@ object KafkaUtils extends Logging {
       kafkaParams.put(ConsumerConfig.RECEIVE_BUFFER_CONFIG, 65536: java.lang.Integer)
     }
   }
+
+  def waitForConsumerAssignment[K, V](consumer: KafkaConsumer[K, V],
+                                      partitions: ju.Set[TopicPartition]): Unit = {
+    val waitingForAssigmentTimeout = SparkEnv.get.conf.
+      getLong("spark.mapr.WaitingForAssignmentTimeout", 600000)
+
+    var timeout = 0
+    while ((consumer.assignment().isEmpty || consumer.assignment().size() < partitions.size)
+      && timeout < waitingForAssigmentTimeout) {
+
+      Thread.sleep(500)
+      timeout += 500
+    }
+
+    if (timeout >= waitingForAssigmentTimeout) {
+      logError(
+        s"""Consumer assignment wasn't completed within the timeout $waitingForAssigmentTimeout.
+           |Assigned partitions: ${consumer.assignment()}.""".stripMargin)
+    }
+  }
+
+  // Determine if Apache Kafka is used instead of MapR Streams
+  def isStreams(currentOffsets: Map[TopicPartition, Long]): Boolean =
+    currentOffsets.keys.map(_.topic()).exists(topic => topic.startsWith("/") && topic.contains(":"))
 }
