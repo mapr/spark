@@ -25,7 +25,6 @@ import com.google.common.base.Charsets.UTF_8
 import net.razorvine.pickle.{IObjectPickler, Opcodes, Pickler}
 import org.apache.kafka.clients.consumer._
 import org.apache.kafka.common.TopicPartition
-
 import org.apache.spark.{SparkContext, SparkEnv}
 import org.apache.spark.annotation.Experimental
 import org.apache.spark.api.java.{JavaRDD, JavaSparkContext}
@@ -243,13 +242,17 @@ object KafkaUtils extends Logging {
       Thread.sleep(500)
       timeout += 500
     }
+
+    if (timeout >= waitingForAssigmentTimeout) {
+      logError(
+        s"""Consumer assignment wasn't completed within the timeout $waitingForAssigmentTimeout.
+           |Assigned partitions: ${consumer.assignment()}.""".stripMargin)
+    }
   }
 
   // Determine if Apache Kafka is used instead of MapR Streams
   def isStreams(currentOffsets: Map[TopicPartition, Long]): Boolean =
     currentOffsets.keys.map(_.topic()).exists(topic => topic.startsWith("/") && topic.contains(":"))
-
-
 }
 
 object KafkaUtilsPythonHelper {
