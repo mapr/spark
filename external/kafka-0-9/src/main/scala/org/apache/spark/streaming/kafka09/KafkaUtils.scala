@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.streaming.kafka010
+package org.apache.spark.streaming.kafka09
 
 import java.{util => ju}
 import java.io.OutputStream
@@ -25,9 +25,10 @@ import com.google.common.base.Charsets.UTF_8
 import net.razorvine.pickle.{IObjectPickler, Opcodes, Pickler}
 import org.apache.kafka.clients.consumer._
 import org.apache.kafka.common.TopicPartition
-
-import org.apache.spark.SparkContext
-import org.apache.spark.api.java.{ JavaRDD, JavaSparkContext }
+import org.apache.spark.{SparkContext, SparkEnv}
+import org.apache.spark.annotation.Experimental
+import org.apache.spark.api.java.{JavaRDD, JavaSparkContext}
+import org.apache.spark.api.python.SerDeUtil
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.streaming.StreamingContext
@@ -35,15 +36,19 @@ import org.apache.spark.streaming.api.java.{JavaDStream, JavaInputDStream, JavaS
 import org.apache.spark.streaming.dstream.InputDStream
 
 /**
+ * :: Experimental ::
  * object for constructing Kafka streams and RDDs
  */
+@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.2")
+@Experimental
 object KafkaUtils extends Logging {
   /**
+   * :: Experimental ::
    * Scala constructor for a batch-oriented interface for consuming from Kafka.
    * Starting and ending offsets are specified in advance,
    * so that you can control exactly-once semantics.
    * @param kafkaParams Kafka
-   * <a href="https://kafka.apache.org/documentation.html#consumerconfigs">
+   * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
    * configuration parameters</a>. Requires "bootstrap.servers" to be set
    * with Kafka broker(s) specified in host1:port1,host2:port2 form.
    * @param offsetRanges offset ranges that define the Kafka data belonging to this RDD
@@ -52,6 +57,7 @@ object KafkaUtils extends Logging {
    * @tparam K type of Kafka message key
    * @tparam V type of Kafka message value
    */
+  @Experimental
   def createRDD[K, V](
       sc: SparkContext,
       kafkaParams: ju.Map[String, Object],
@@ -60,7 +66,7 @@ object KafkaUtils extends Logging {
     ): RDD[ConsumerRecord[K, V]] = {
     val preferredHosts = locationStrategy match {
       case PreferBrokers =>
-        throw new IllegalArgumentException(
+        throw new AssertionError(
           "If you want to prefer brokers, you must provide a mapping using PreferFixed " +
           "A single KafkaRDD does not have a driver consumer and cannot look up brokers for you.")
       case PreferConsistent => ju.Collections.emptyMap[TopicPartition, String]()
@@ -74,11 +80,12 @@ object KafkaUtils extends Logging {
   }
 
   /**
+   * :: Experimental ::
    * Java constructor for a batch-oriented interface for consuming from Kafka.
    * Starting and ending offsets are specified in advance,
    * so that you can control exactly-once semantics.
    * @param kafkaParams Kafka
-   * <a href="https://kafka.apache.org/documentation.html#consumerconfigs">
+   * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
    * configuration parameters</a>. Requires "bootstrap.servers" to be set
    * with Kafka broker(s) specified in host1:port1,host2:port2 form.
    * @param offsetRanges offset ranges that define the Kafka data belonging to this RDD
@@ -87,6 +94,7 @@ object KafkaUtils extends Logging {
    * @tparam K type of Kafka message key
    * @tparam V type of Kafka message value
    */
+  @Experimental
   def createRDD[K, V](
       jsc: JavaSparkContext,
       kafkaParams: ju.Map[String, Object],
@@ -98,6 +106,7 @@ object KafkaUtils extends Logging {
   }
 
   /**
+   * :: Experimental ::
    * Scala constructor for a DStream where
    * each given Kafka topic/partition corresponds to an RDD partition.
    * The spark configuration spark.streaming.kafka.maxRatePerPartition gives the maximum number
@@ -110,6 +119,7 @@ object KafkaUtils extends Logging {
    * @tparam K type of Kafka message key
    * @tparam V type of Kafka message value
    */
+  @Experimental
   def createDirectStream[K, V](
       ssc: StreamingContext,
       locationStrategy: LocationStrategy,
@@ -120,6 +130,7 @@ object KafkaUtils extends Logging {
   }
 
   /**
+   * :: Experimental ::
    * Scala constructor for a DStream where
    * each given Kafka topic/partition corresponds to an RDD partition.
    * @param locationStrategy In most cases, pass in [[LocationStrategies.PreferConsistent]],
@@ -131,6 +142,7 @@ object KafkaUtils extends Logging {
    * @tparam K type of Kafka message key
    * @tparam V type of Kafka message value
    */
+  @Experimental
   def createDirectStream[K, V](
       ssc: StreamingContext,
       locationStrategy: LocationStrategy,
@@ -141,6 +153,7 @@ object KafkaUtils extends Logging {
   }
 
   /**
+   * :: Experimental ::
    * Java constructor for a DStream where
    * each given Kafka topic/partition corresponds to an RDD partition.
    * @param locationStrategy In most cases, pass in [[LocationStrategies.PreferConsistent]],
@@ -150,6 +163,7 @@ object KafkaUtils extends Logging {
    * @tparam K type of Kafka message key
    * @tparam V type of Kafka message value
    */
+  @Experimental
   def createDirectStream[K, V](
       jssc: JavaStreamingContext,
       locationStrategy: LocationStrategy,
@@ -161,6 +175,7 @@ object KafkaUtils extends Logging {
   }
 
   /**
+   * :: Experimental ::
    * Java constructor for a DStream where
    * each given Kafka topic/partition corresponds to an RDD partition.
    * @param locationStrategy In most cases, pass in [[LocationStrategies.PreferConsistent]],
@@ -172,6 +187,7 @@ object KafkaUtils extends Logging {
    * @tparam K type of Kafka message key
    * @tparam V type of Kafka message value
    */
+  @Experimental
   def createDirectStream[K, V](
       jssc: JavaStreamingContext,
       locationStrategy: LocationStrategy,
@@ -188,7 +204,7 @@ object KafkaUtils extends Logging {
   /**
    * Tweak kafka params to prevent issues on executors
    */
-  private[kafka010] def fixKafkaParams(kafkaParams: ju.HashMap[String, Object]): Unit = {
+  private[kafka09] def fixKafkaParams(kafkaParams: ju.HashMap[String, Object]): Unit = {
     logWarning(s"overriding ${"streams.negativeoffset.record.on.eof"} to true")
     kafkaParams.put("streams.negativeoffset.record.on.eof", true: java.lang.Boolean)
 
@@ -240,6 +256,7 @@ object KafkaUtils extends Logging {
     currentOffsets.keys.map(_.topic()).exists(topic => topic.startsWith("/") && topic.contains(":"))
 }
 
+@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.2")
 object KafkaUtilsPythonHelper {
   private var initialized = false
 

@@ -26,8 +26,8 @@ import org.apache.kafka.clients.admin.Admin
 import org.apache.kafka.clients.consumer.{Consumer, KafkaConsumer}
 import org.apache.kafka.clients.consumer.internals.NoOpConsumerRebalanceListener
 import org.apache.kafka.common.TopicPartition
-
 import org.apache.spark.internal.Logging
+
 import org.apache.spark.kafka010.{KafkaConfigUpdater, KafkaRedactionUtil}
 
 /**
@@ -106,6 +106,7 @@ private[kafka010] case class SubscribeStrategy(topics: Seq[String])
     val updatedKafkaParams = setAuthenticationConfigIfNeeded(kafkaParams)
     val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](updatedKafkaParams)
     consumer.subscribe(topics.asJava)
+    logDebug(s"The consumer has been subscribed to topics: ${topics.mkString(", ")}")
     consumer
   }
 

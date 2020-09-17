@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.streaming.kafka010
+package org.apache.spark.streaming.kafka09
 
 import java.{lang => jl, util => ju}
 import java.util.Locale
@@ -26,20 +26,23 @@ import org.apache.kafka.clients.consumer._
 import org.apache.kafka.clients.consumer.internals.NoOpConsumerRebalanceListener
 import org.apache.kafka.common.TopicPartition
 
+import org.apache.spark.annotation.Experimental
 import org.apache.spark.internal.Logging
-import org.apache.spark.kafka010.KafkaConfigUpdater
 
 /**
+ * :: Experimental ::
  * Choice of how to create and configure underlying Kafka Consumers on driver and executors.
  * See [[ConsumerStrategies]] to obtain instances.
- * Kafka 0.10 consumers can require additional, sometimes complex, setup after object
+ * Kafka 0.9 consumers can require additional, sometimes complex, setup after object
  *  instantiation. This interface encapsulates that process, and allows it to be checkpointed.
  * @tparam K type of Kafka message key
  * @tparam V type of Kafka message value
  */
+@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.2")
+@Experimental
 abstract class ConsumerStrategy[K, V] {
   /**
-   * Kafka <a href="https://kafka.apache.org/documentation.html#consumerconfigs">
+   * Kafka <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
    * configuration parameters</a> to be used on executors. Requires "bootstrap.servers" to be set
    * with Kafka broker(s) specified in host1:port1,host2:port2 form.
    */
@@ -47,7 +50,7 @@ abstract class ConsumerStrategy[K, V] {
 
   /**
    * Must return a fully configured Kafka Consumer, including subscribed or assigned topics.
-   * See <a href="https://kafka.apache.org/documentation.html#consumerapi">Kafka docs</a>.
+   * See <a href="http://kafka.apache.org/documentation.html#newconsumerapi">Kafka docs</a>.
    * This consumer will be used on the driver to query for offsets only, not messages.
    * The consumer must be returned in a state that it is safe to call poll(0) on.
    * @param currentOffsets A map from TopicPartition to offset, indicating how far the driver
@@ -56,21 +59,20 @@ abstract class ConsumerStrategy[K, V] {
    */
   def onStart(currentOffsets: ju.Map[TopicPartition, jl.Long]): Consumer[K, V]
 
-  /**
-   * Updates the parameters with security if needed.
-   * Added a function to hide internals and reduce code duplications because all strategy uses it.
-   */
-  protected def setAuthenticationConfigIfNeeded(kafkaParams: ju.Map[String, Object]) =
-    KafkaConfigUpdater("source", kafkaParams.asScala.toMap)
-      .setAuthenticationConfigIfNeeded()
-      .build()
+  def serviceConsumer: Consumer[K, V] = {
+    val serviceConsumerParams = new ju.HashMap[String, Object](executorKafkaParams)
+    val group = executorKafkaParams.get(ConsumerConfig.GROUP_ID_CONFIG)
+    serviceConsumerParams.put(ConsumerConfig.GROUP_ID_CONFIG, group)
+
+    new KafkaConsumer[K, V](serviceConsumerParams)
+  }
 }
 
 /**
  * Subscribe to a collection of topics.
  * @param topics collection of topics to subscribe
  * @param kafkaParams Kafka
- * <a href="https://kafka.apache.org/documentation.html#consumerconfigs">
+ * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
  * configuration parameters</a> to be used on driver. The same params will be used on executors,
  * with minor automatic modifications applied.
  *  Requires "bootstrap.servers" to be set
@@ -88,8 +90,7 @@ private case class Subscribe[K, V](
   def executorKafkaParams: ju.Map[String, Object] = kafkaParams
 
   def onStart(currentOffsets: ju.Map[TopicPartition, jl.Long]): Consumer[K, V] = {
-    val updatedKafkaParams = setAuthenticationConfigIfNeeded(kafkaParams)
-    val consumer = new KafkaConsumer[K, V](updatedKafkaParams)
+    val consumer = new KafkaConsumer[K, V](kafkaParams)
     consumer.subscribe(topics)
     logDebug(s"The consumer has been subscribed to topics: ${String.join(", ", topics)}")
 
@@ -135,7 +136,7 @@ private case class Subscribe[K, V](
  * The pattern matching will be done periodically against topics existing at the time of check.
  * @param pattern pattern to subscribe to
  * @param kafkaParams Kafka
- * <a href="https://kafka.apache.org/documentation.html#consumerconfigs">
+ * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
  * configuration parameters</a> to be used on driver. The same params will be used on executors,
  * with minor automatic modifications applied.
  *  Requires "bootstrap.servers" to be set
@@ -153,8 +154,7 @@ private case class SubscribePattern[K, V](
   def executorKafkaParams: ju.Map[String, Object] = kafkaParams
 
   def onStart(currentOffsets: ju.Map[TopicPartition, jl.Long]): Consumer[K, V] = {
-    val updatedKafkaParams = setAuthenticationConfigIfNeeded(kafkaParams)
-    val consumer = new KafkaConsumer[K, V](updatedKafkaParams)
+    val consumer = new KafkaConsumer[K, V](kafkaParams)
     consumer.subscribe(pattern, new NoOpConsumerRebalanceListener())
     logDebug(s"The consumer has been subscribed to topics matching a pattern: $pattern")
 
@@ -196,7 +196,7 @@ private case class SubscribePattern[K, V](
  * Assign a fixed collection of TopicPartitions
  * @param topicPartitions collection of TopicPartitions to assign
  * @param kafkaParams Kafka
- * <a href="https://kafka.apache.org/documentation.html#consumerconfigs">
+ * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
  * configuration parameters</a> to be used on driver. The same params will be used on executors,
  * with minor automatic modifications applied.
  *  Requires "bootstrap.servers" to be set
@@ -214,8 +214,7 @@ private case class Assign[K, V](
   def executorKafkaParams: ju.Map[String, Object] = kafkaParams
 
   def onStart(currentOffsets: ju.Map[TopicPartition, jl.Long]): Consumer[K, V] = {
-    val updatedKafkaParams = setAuthenticationConfigIfNeeded(kafkaParams)
-    val consumer = new KafkaConsumer[K, V](updatedKafkaParams)
+    val consumer = new KafkaConsumer[K, V](kafkaParams)
     consumer.assign(topicPartitions)
     val toSeek = if (currentOffsets.isEmpty) {
       offsets
@@ -234,14 +233,18 @@ private case class Assign[K, V](
 }
 
 /**
- * Object for obtaining instances of [[ConsumerStrategy]]
+ * :: Experimental ::
+ * object for obtaining instances of [[ConsumerStrategy]]
  */
+@deprecated("Use kafka10 package instead of kafka09", "MapR Spark-2.3.2")
+@Experimental
 object ConsumerStrategies {
   /**
+   *  :: Experimental ::
    * Subscribe to a collection of topics.
    * @param topics collection of topics to subscribe
    * @param kafkaParams Kafka
-   * <a href="https://kafka.apache.org/documentation.html#consumerconfigs">
+   * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
    * configuration parameters</a> to be used on driver. The same params will be used on executors,
    * with minor automatic modifications applied.
    *  Requires "bootstrap.servers" to be set
@@ -250,6 +253,7 @@ object ConsumerStrategies {
    * TopicPartition, the committed offset (if applicable) or kafka param
    * auto.offset.reset will be used.
    */
+  @Experimental
   def Subscribe[K, V](
       topics: Iterable[jl.String],
       kafkaParams: collection.Map[String, Object],
@@ -257,19 +261,21 @@ object ConsumerStrategies {
     new Subscribe[K, V](
       new ju.ArrayList(topics.asJavaCollection),
       new ju.HashMap[String, Object](kafkaParams.asJava),
-      new ju.HashMap[TopicPartition, jl.Long](offsets.mapValues(jl.Long.valueOf).toMap.asJava))
+      new ju.HashMap[TopicPartition, jl.Long](offsets.mapValues(l => new jl.Long(l)).asJava))
   }
 
   /**
+   *  :: Experimental ::
    * Subscribe to a collection of topics.
    * @param topics collection of topics to subscribe
    * @param kafkaParams Kafka
-   * <a href="https://kafka.apache.org/documentation.html#consumerconfigs">
+   * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
    * configuration parameters</a> to be used on driver. The same params will be used on executors,
    * with minor automatic modifications applied.
    *  Requires "bootstrap.servers" to be set
    * with Kafka broker(s) specified in host1:port1,host2:port2 form.
    */
+  @Experimental
   def Subscribe[K, V](
       topics: Iterable[jl.String],
       kafkaParams: collection.Map[String, Object]): ConsumerStrategy[K, V] = {
@@ -280,10 +286,11 @@ object ConsumerStrategies {
   }
 
   /**
+   *  :: Experimental ::
    * Subscribe to a collection of topics.
    * @param topics collection of topics to subscribe
    * @param kafkaParams Kafka
-   * <a href="https://kafka.apache.org/documentation.html#consumerconfigs">
+   * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
    * configuration parameters</a> to be used on driver. The same params will be used on executors,
    * with minor automatic modifications applied.
    *  Requires "bootstrap.servers" to be set
@@ -292,6 +299,7 @@ object ConsumerStrategies {
    * TopicPartition, the committed offset (if applicable) or kafka param
    * auto.offset.reset will be used.
    */
+  @Experimental
   def Subscribe[K, V](
       topics: ju.Collection[jl.String],
       kafkaParams: ju.Map[String, Object],
@@ -300,27 +308,29 @@ object ConsumerStrategies {
   }
 
   /**
+   *  :: Experimental ::
    * Subscribe to a collection of topics.
    * @param topics collection of topics to subscribe
    * @param kafkaParams Kafka
-   * <a href="https://kafka.apache.org/documentation.html#consumerconfigs">
+   * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
    * configuration parameters</a> to be used on driver. The same params will be used on executors,
    * with minor automatic modifications applied.
    *  Requires "bootstrap.servers" to be set
    * with Kafka broker(s) specified in host1:port1,host2:port2 form.
    */
+  @Experimental
   def Subscribe[K, V](
       topics: ju.Collection[jl.String],
       kafkaParams: ju.Map[String, Object]): ConsumerStrategy[K, V] = {
     new Subscribe[K, V](topics, kafkaParams, ju.Collections.emptyMap[TopicPartition, jl.Long]())
   }
 
-  /**
+  /** :: Experimental ::
    * Subscribe to all topics matching specified pattern to get dynamically assigned partitions.
    * The pattern matching will be done periodically against topics existing at the time of check.
    * @param pattern pattern to subscribe to
    * @param kafkaParams Kafka
-   * <a href="https://kafka.apache.org/documentation.html#consumerconfigs">
+   * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
    * configuration parameters</a> to be used on driver. The same params will be used on executors,
    * with minor automatic modifications applied.
    *  Requires "bootstrap.servers" to be set
@@ -329,6 +339,7 @@ object ConsumerStrategies {
    * TopicPartition, the committed offset (if applicable) or kafka param
    * auto.offset.reset will be used.
    */
+  @Experimental
   def SubscribePattern[K, V](
       pattern: ju.regex.Pattern,
       kafkaParams: collection.Map[String, Object],
@@ -336,20 +347,21 @@ object ConsumerStrategies {
     new SubscribePattern[K, V](
       pattern,
       new ju.HashMap[String, Object](kafkaParams.asJava),
-      new ju.HashMap[TopicPartition, jl.Long](offsets.mapValues(jl.Long.valueOf).toMap.asJava))
+      new ju.HashMap[TopicPartition, jl.Long](offsets.mapValues(l => new jl.Long(l)).asJava))
   }
 
-  /**
+  /** :: Experimental ::
    * Subscribe to all topics matching specified pattern to get dynamically assigned partitions.
    * The pattern matching will be done periodically against topics existing at the time of check.
    * @param pattern pattern to subscribe to
    * @param kafkaParams Kafka
-   * <a href="https://kafka.apache.org/documentation.html#consumerconfigs">
+   * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
    * configuration parameters</a> to be used on driver. The same params will be used on executors,
    * with minor automatic modifications applied.
    *  Requires "bootstrap.servers" to be set
    * with Kafka broker(s) specified in host1:port1,host2:port2 form.
    */
+  @Experimental
   def SubscribePattern[K, V](
       pattern: ju.regex.Pattern,
       kafkaParams: collection.Map[String, Object]): ConsumerStrategy[K, V] = {
@@ -359,12 +371,12 @@ object ConsumerStrategies {
       ju.Collections.emptyMap[TopicPartition, jl.Long]())
   }
 
-  /**
+  /** :: Experimental ::
    * Subscribe to all topics matching specified pattern to get dynamically assigned partitions.
    * The pattern matching will be done periodically against topics existing at the time of check.
    * @param pattern pattern to subscribe to
    * @param kafkaParams Kafka
-   * <a href="https://kafka.apache.org/documentation.html#consumerconfigs">
+   * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
    * configuration parameters</a> to be used on driver. The same params will be used on executors,
    * with minor automatic modifications applied.
    *  Requires "bootstrap.servers" to be set
@@ -373,6 +385,7 @@ object ConsumerStrategies {
    * TopicPartition, the committed offset (if applicable) or kafka param
    * auto.offset.reset will be used.
    */
+  @Experimental
   def SubscribePattern[K, V](
       pattern: ju.regex.Pattern,
       kafkaParams: ju.Map[String, Object],
@@ -380,17 +393,18 @@ object ConsumerStrategies {
     new SubscribePattern[K, V](pattern, kafkaParams, offsets)
   }
 
-  /**
+  /** :: Experimental ::
    * Subscribe to all topics matching specified pattern to get dynamically assigned partitions.
    * The pattern matching will be done periodically against topics existing at the time of check.
    * @param pattern pattern to subscribe to
    * @param kafkaParams Kafka
-   * <a href="https://kafka.apache.org/documentation.html#consumerconfigs">
+   * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
    * configuration parameters</a> to be used on driver. The same params will be used on executors,
    * with minor automatic modifications applied.
    *  Requires "bootstrap.servers" to be set
    * with Kafka broker(s) specified in host1:port1,host2:port2 form.
    */
+  @Experimental
   def SubscribePattern[K, V](
       pattern: ju.regex.Pattern,
       kafkaParams: ju.Map[String, Object]): ConsumerStrategy[K, V] = {
@@ -401,10 +415,11 @@ object ConsumerStrategies {
   }
 
   /**
+   *  :: Experimental ::
    * Assign a fixed collection of TopicPartitions
    * @param topicPartitions collection of TopicPartitions to assign
    * @param kafkaParams Kafka
-   * <a href="https://kafka.apache.org/documentation.html#consumerconfigs">
+   * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
    * configuration parameters</a> to be used on driver. The same params will be used on executors,
    * with minor automatic modifications applied.
    *  Requires "bootstrap.servers" to be set
@@ -413,6 +428,7 @@ object ConsumerStrategies {
    * TopicPartition, the committed offset (if applicable) or kafka param
    * auto.offset.reset will be used.
    */
+  @Experimental
   def Assign[K, V](
       topicPartitions: Iterable[TopicPartition],
       kafkaParams: collection.Map[String, Object],
@@ -420,19 +436,21 @@ object ConsumerStrategies {
     new Assign[K, V](
       new ju.ArrayList(topicPartitions.asJavaCollection),
       new ju.HashMap[String, Object](kafkaParams.asJava),
-      new ju.HashMap[TopicPartition, jl.Long](offsets.mapValues(jl.Long.valueOf).toMap.asJava))
+      new ju.HashMap[TopicPartition, jl.Long](offsets.mapValues(l => new jl.Long(l)).asJava))
   }
 
   /**
+   *  :: Experimental ::
    * Assign a fixed collection of TopicPartitions
    * @param topicPartitions collection of TopicPartitions to assign
    * @param kafkaParams Kafka
-   * <a href="https://kafka.apache.org/documentation.html#consumerconfigs">
+   * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
    * configuration parameters</a> to be used on driver. The same params will be used on executors,
    * with minor automatic modifications applied.
    *  Requires "bootstrap.servers" to be set
    * with Kafka broker(s) specified in host1:port1,host2:port2 form.
    */
+  @Experimental
   def Assign[K, V](
       topicPartitions: Iterable[TopicPartition],
       kafkaParams: collection.Map[String, Object]): ConsumerStrategy[K, V] = {
@@ -443,10 +461,11 @@ object ConsumerStrategies {
   }
 
   /**
+   *  :: Experimental ::
    * Assign a fixed collection of TopicPartitions
    * @param topicPartitions collection of TopicPartitions to assign
    * @param kafkaParams Kafka
-   * <a href="https://kafka.apache.org/documentation.html#consumerconfigs">
+   * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
    * configuration parameters</a> to be used on driver. The same params will be used on executors,
    * with minor automatic modifications applied.
    *  Requires "bootstrap.servers" to be set
@@ -455,6 +474,7 @@ object ConsumerStrategies {
    * TopicPartition, the committed offset (if applicable) or kafka param
    * auto.offset.reset will be used.
    */
+  @Experimental
   def Assign[K, V](
       topicPartitions: ju.Collection[TopicPartition],
       kafkaParams: ju.Map[String, Object],
@@ -463,15 +483,17 @@ object ConsumerStrategies {
   }
 
   /**
+   *  :: Experimental ::
    * Assign a fixed collection of TopicPartitions
    * @param topicPartitions collection of TopicPartitions to assign
    * @param kafkaParams Kafka
-   * <a href="https://kafka.apache.org/documentation.html#consumerconfigs">
+   * <a href="http://kafka.apache.org/documentation.html#newconsumerconfigs">
    * configuration parameters</a> to be used on driver. The same params will be used on executors,
    * with minor automatic modifications applied.
    *  Requires "bootstrap.servers" to be set
    * with Kafka broker(s) specified in host1:port1,host2:port2 form.
    */
+  @Experimental
   def Assign[K, V](
       topicPartitions: ju.Collection[TopicPartition],
       kafkaParams: ju.Map[String, Object]): ConsumerStrategy[K, V] = {
