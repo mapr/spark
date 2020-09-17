@@ -20,10 +20,10 @@ package org.apache.spark.sql.kafka010
 import java.{util => ju}
 
 import scala.collection.JavaConverters._
-
 import org.apache.kafka.clients.consumer.{Consumer, KafkaConsumer}
 import org.apache.kafka.clients.consumer.internals.NoOpConsumerRebalanceListener
 import org.apache.kafka.common.TopicPartition
+import org.apache.spark.internal.Logging
 
 /**
  * Subscribe allows you to subscribe to a fixed collection of topics.
@@ -56,11 +56,12 @@ case class AssignStrategy(partitions: Array[TopicPartition]) extends ConsumerStr
 /**
  * Subscribe to a fixed collection of topics.
  */
-case class SubscribeStrategy(topics: Seq[String]) extends ConsumerStrategy {
+case class SubscribeStrategy(topics: Seq[String]) extends ConsumerStrategy with Logging {
   override def createConsumer(
       kafkaParams: ju.Map[String, Object]): Consumer[Array[Byte], Array[Byte]] = {
     val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](kafkaParams)
     consumer.subscribe(topics.asJava)
+    logDebug(s"The consumer has been subscribed to topics: ${topics.mkString(", ")}")
     consumer
   }
 
@@ -70,13 +71,14 @@ case class SubscribeStrategy(topics: Seq[String]) extends ConsumerStrategy {
 /**
  * Use a regex to specify topics of interest.
  */
-case class SubscribePatternStrategy(topicPattern: String) extends ConsumerStrategy {
+case class SubscribePatternStrategy(topicPattern: String) extends ConsumerStrategy with Logging {
   override def createConsumer(
       kafkaParams: ju.Map[String, Object]): Consumer[Array[Byte], Array[Byte]] = {
     val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](kafkaParams)
     consumer.subscribe(
       ju.regex.Pattern.compile(topicPattern),
       new NoOpConsumerRebalanceListener())
+    logDebug(s"The consumer has been subscribed to topics matching a pattern: $topicPattern")
     consumer
   }
 
