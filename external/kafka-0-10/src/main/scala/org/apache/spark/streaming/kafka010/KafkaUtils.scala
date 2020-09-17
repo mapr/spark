@@ -227,13 +227,17 @@ object KafkaUtils extends Logging {
       Thread.sleep(500)
       timeout += 500
     }
+
+    if (timeout >= waitingForAssigmentTimeout) {
+      logError(
+        s"""Consumer assignment wasn't completed within the timeout $waitingForAssigmentTimeout.
+           |Assigned partitions: ${consumer.assignment()}.""".stripMargin)
+    }
   }
 
   // Determine if Apache Kafka is used instead of MapR Streams
   def isStreams(currentOffsets: Map[TopicPartition, Long]): Boolean =
     currentOffsets.keys.map(_.topic()).exists(topic => topic.startsWith("/") && topic.contains(":"))
-
-
 }
 
 object KafkaUtilsPythonHelper {
