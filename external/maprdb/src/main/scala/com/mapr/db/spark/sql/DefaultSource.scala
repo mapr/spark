@@ -35,10 +35,13 @@ class DefaultSource
       None,
       parameters.get("sampleSize"),
       parameters.getOrElse("bufferWrites", "true"),
+      parameters.get("hintUsingIndex"),
       condition,
       parameters.get("ColumnProjection"),
       parameters.getOrElse("Operation", "InsertOrReplace"),
-      parameters.getOrElse("FailOnConflict", "false")
+      parameters.getOrElse("FailOnConflict", "false"),
+      parameters.filterKeys(k =>
+        k.startsWith("ojai.mapr.query") || k.startsWith("spark.maprdb")).map(identity)
     )
   }
 
@@ -55,10 +58,13 @@ class DefaultSource
       Some(schema),
       parameters.get("sampleSize"),
       parameters.getOrElse("bufferWrites", "true"),
+      parameters.get("hintUsingIndex"),
       condition,
       parameters.get("ColumnProjection"),
       parameters.getOrElse("Operation", "InsertOrReplace"),
-      parameters.getOrElse("FailOnConflict", "false")
+      parameters.getOrElse("FailOnConflict", "false"),
+      parameters.filterKeys(k =>
+        k.startsWith("ojai.mapr.query") || k.startsWith("spark.maprdb")).map(identity)
     )
   }
 
@@ -135,10 +141,13 @@ class DefaultSource
       Some(data.schema),
       parameters.get("sampleSize"),
       parameters.getOrElse("bufferWrites", "true"),
+      parameters.get("hintUsingIndex"),
       condition,
       parameters.get("ColumnProjection"),
       parameters.getOrElse("Operation", "InsertOrReplace"),
-      parameters.getOrElse("FailOnConflict", "false")
+      parameters.getOrElse("FailOnConflict", "false"),
+      parameters.filterKeys(k =>
+        k.startsWith("ojai.mapr.query") || k.startsWith("spark.maprdb")).map(identity)
     )
   }
 
@@ -147,10 +156,12 @@ class DefaultSource
                                    userSchema: Option[StructType],
                                    sampleSize: Option[String],
                                    bufferWrites: String,
+                                   hintUsingIndex: Option[String],
                                    queryCondition: Option[QueryCondition],
                                    colProjection: Option[String],
                                    Operation: String,
-                                   failOnConflict: String): BaseRelation = {
+                                   failOnConflict: String,
+                                   queryOptions: Map[String, String]): BaseRelation = {
 
     require(tableName.isDefined)
     val columns = colProjection.map(colList => colList.split(",")
@@ -164,8 +175,10 @@ class DefaultSource
       .configuration()
       .setTable(tableName.get)
       .setBufferWrites(bufferWrites.toBoolean)
+      .setHintUsingIndex(hintUsingIndex)
       .setCond(queryCondition)
       .setColumnProjection(columns)
+      .setQueryOptions(queryOptions)
       .build()
       .toRDD(null)
 
