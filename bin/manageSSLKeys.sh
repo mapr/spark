@@ -11,7 +11,7 @@ mkdir -p $LOG_BASE_DIR
 exec 2>$LOG_BASE_DIR/spark-ui-mngssl.err
 set -x
 
-INSTALL_DIR=/home/$USER/__spark-internal__/security_keys
+INSTALL_DIR=/home/$CURRENT_USER/__spark-internal__/security_keys
 MAPRFS_DIR=/apps/spark/__$CURRENT_USER-spark-internal__/security_keys
 
 sslKeyStore=${INSTALL_DIR}/ssl_keystore
