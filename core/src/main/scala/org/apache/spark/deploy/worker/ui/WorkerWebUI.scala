@@ -45,6 +45,7 @@ class WorkerWebUI(
 
   /** Initialize all components of the server. */
   def initialize(): Unit = {
+    worker.securityMgr.genSSLCertsIfNeededAndPushToMapRFS()
     val logPage = new LogPage(this)
     attachPage(logPage)
     attachPage(new WorkerPage(this))
