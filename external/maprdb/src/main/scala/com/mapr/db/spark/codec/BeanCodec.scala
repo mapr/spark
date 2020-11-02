@@ -29,7 +29,7 @@ object BeanCodec {
   def encode[T](dr: DocumentReader, beanClass: Class[T]): T = {
     if (dr == null) return null.asInstanceOf[T]
     try {
-      MAPPER.readValue(new DocumentParser(dr), beanClass)
+      MAPPER.readValue(new DocumentParserImpl(dr), beanClass)
     }
     catch {
       case e: IOException =>
