@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.util.VersionUtil
 import com.fasterxml.jackson.databind.{DeserializationContext, JsonDeserializer, JsonSerializer, ObjectMapper, SerializerProvider}
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
 import org.ojai.annotation.API
 import org.ojai.beans.jackson.JacksonHelper
 import org.ojai.types.{ODate, OInterval, OTime, OTimestamp}
@@ -16,7 +17,7 @@ import org.ojai.types.{ODate, OInterval, OTime, OTimestamp}
 @API.Internal
 object JacksonBeanCodecHelper {
 
-  val MAPPER: ObjectMapper = new ObjectMapper
+  val MAPPER: ObjectMapper = new ObjectMapper with ScalaObjectMapper
 
   class ByteSerializer extends JsonSerializer[Byte] {
     @throws[IOException]
