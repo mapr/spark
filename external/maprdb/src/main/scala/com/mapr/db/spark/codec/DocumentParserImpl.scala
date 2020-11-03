@@ -10,4 +10,8 @@ class DocumentParserImpl(dr: DocumentReader) extends DocumentParser(dr) {
   override def getCurrentLocation: JsonLocation = {
     JsonLocation.NA
   }
+
+  override def getTokenLocation: JsonLocation = {
+    JsonLocation.NA
+  }
 }
