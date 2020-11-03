@@ -17,7 +17,7 @@ import org.ojai.types.{ODate, OInterval, OTime, OTimestamp}
 @API.Internal
 object JacksonBeanCodecHelper {
 
-  val MAPPER: ObjectMapper = new ObjectMapper with ScalaObjectMapper
+  val MAPPER: ObjectMapper = new ObjectMapper
 
   class ByteSerializer extends JsonSerializer[Byte] {
     @throws[IOException]
