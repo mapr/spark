@@ -34,8 +34,6 @@ class HistoryServerDiskManagerSuite extends SparkFunSuite with BeforeAndAfter {
 
   private def doReturn(value: Any) = org.mockito.Mockito.doReturn(value, Seq.empty: _*)
 
-  private def doReturn(value: Any) = org.mockito.Mockito.doReturn(value, Seq.empty: _*)
-
   private val MAX_USAGE = 3L
 
   private var testDir: File = _

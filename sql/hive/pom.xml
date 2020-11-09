@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.apache.spark</groupId>
     <artifactId>spark-parent_2.12</artifactId>
-    <version>3.1.2</version>
+    <version>3.0.1.0-mapr-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -92,6 +92,12 @@
       <groupId>${hive.group}</groupId>
       <artifactId>hive-exec</artifactId>
       <classifier>${hive.classifier}</classifier>
+      <exclusions>
+        <exclusion>
+          <groupId>org.codehaus.groovy</groupId>
+          <artifactId>groovy-all</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>${hive.group}</groupId>
@@ -121,16 +127,22 @@
       <groupId>${hive.group}</groupId>
       <artifactId>hive-hbase-handler</artifactId>
       <version>${hive.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.codehaus.groovy</groupId>
+          <artifactId>groovy-all</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>${hive.group}</groupId>
       <artifactId>hive-maprdb-json-handler</artifactId>
-      <version>${hive.2.version}</version>
+      <version>${hive.version}</version>
     </dependency>
     <dependency>
       <groupId>${hive.group}</groupId>
       <artifactId>hive-maprdb-json-common</artifactId>
-      <version>${hive.2.version}</version>
+      <version>${hive.version}</version>
       <exclusions>
         <exclusion>
           <groupId>org.apache.logging.log4j</groupId>
