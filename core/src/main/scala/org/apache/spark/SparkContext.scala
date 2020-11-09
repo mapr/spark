@@ -43,6 +43,7 @@ import org.apache.logging.log4j.Level
 
 import org.apache.spark.annotation.{DeveloperApi, Experimental}
 import org.apache.hadoop.security.UserGroupInformation
+
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.deploy.{LocalSparkCluster, SparkHadoopUtil}
@@ -767,7 +768,9 @@ class SparkContext(config: SparkConf) extends Logging {
     setLocalProperty(SparkContext.SPARK_JOB_DESCRIPTION, value)
   }
 
-  /** MAPR_SPECIFIC: Used to implement impersonation in SparkExecutor **/
+  /**
+   * MAPR_SPECIFIC: Used to implement impersonation in SparkExecutor
+   */
   def setJobDoAsUser(user: String) {
     setLocalProperty(SparkContext.SPARK_JOB_DOASUSER, user)
   }
@@ -776,7 +779,9 @@ class SparkContext(config: SparkConf) extends Logging {
     setLocalProperty(SparkContext.SPARK_JOB_DOASUSER, UserGroupInformation.getCurrentUser.getUserName)
   }
 
-  /** MAPR_SPECIFIC: Used to implement impersonation in SparkExecutor **/
+  /**
+   * MAPR_SPECIFIC: Used to implement impersonation in SparkExecutor
+   */
   def getJobDoAsUser(): String = getLocalProperty(SparkContext.SPARK_JOB_DOASUSER)
 
 
@@ -2802,11 +2807,10 @@ object SparkContext extends Logging {
   }
 
 
-  /******************** MapR spcific property that is used for impersonation
-    *                    in sparkExecutor.
-    */
+  /**
+    * MapR spcific property that is used for impersonation in sparkExecutor.
+   */
   private[spark] val SPARK_JOB_DOASUSER = "spark.job.doAsUser"
-  /******************************************************************/
 
   private[spark] val SPARK_JOB_DESCRIPTION = "spark.job.description"
   private[spark] val SPARK_JOB_GROUP_ID = "spark.jobGroup.id"
@@ -2814,6 +2818,7 @@ object SparkContext extends Logging {
   private[spark] val SPARK_SCHEDULER_POOL = "spark.scheduler.pool"
   private[spark] val RDD_SCOPE_KEY = "spark.rdd.scope"
   private[spark] val RDD_SCOPE_NO_OVERRIDE_KEY = "spark.rdd.scope.noOverride"
+
 
   /**
    * Executor id for the driver.  In earlier versions of Spark, this was `<driver>`, but this was

@@ -116,62 +116,6 @@ public final class Platform {
     }
   }
 
-  // Access fields and constructors once and store them, for performance:
-
-  private static final Constructor<?> DBB_CONSTRUCTOR;
-  private static final Field DBB_CLEANER_FIELD;
-  static {
-    try {
-      Class<?> cls = Class.forName("java.nio.DirectByteBuffer");
-      Constructor<?> constructor = cls.getDeclaredConstructor(Long.TYPE, Integer.TYPE);
-      constructor.setAccessible(true);
-      Field cleanerField = cls.getDeclaredField("cleaner");
-      cleanerField.setAccessible(true);
-      DBB_CONSTRUCTOR = constructor;
-      DBB_CLEANER_FIELD = cleanerField;
-    } catch (ClassNotFoundException | NoSuchMethodException | NoSuchFieldException e) {
-      throw new IllegalStateException(e);
-    }
-  }
-
-  // Split java.version on non-digit chars:
-  private static final int majorVersion =
-    Integer.parseInt(System.getProperty("java.version").split("\\D+")[0]);
-
-  private static final Method CLEANER_CREATE_METHOD;
-  static {
-    // The implementation of Cleaner changed from JDK 8 to 9
-    String cleanerClassName;
-    if (majorVersion < 9) {
-      cleanerClassName = "sun.misc.Cleaner";
-    } else {
-      cleanerClassName = "jdk.internal.ref.Cleaner";
-    }
-    try {
-      Class<?> cleanerClass = Class.forName(cleanerClassName);
-      Method createMethod = cleanerClass.getMethod("create", Object.class, Runnable.class);
-      // Accessing jdk.internal.ref.Cleaner should actually fail by default in JDK 9+,
-      // unfortunately, unless the user has allowed access with something like
-      // --add-opens java.base/java.lang=ALL-UNNAMED  If not, we can't really use the Cleaner
-      // hack below. It doesn't break, just means the user might run into the default JVM limit
-      // on off-heap memory and increase it or set the flag above. This tests whether it's
-      // available:
-      try {
-        createMethod.invoke(null, null, null);
-      } catch (IllegalAccessException e) {
-        // Don't throw an exception, but can't log here?
-        createMethod = null;
-      } catch (InvocationTargetException ite) {
-        // shouldn't happen; report it
-        throw new IllegalStateException(ite);
-      }
-      CLEANER_CREATE_METHOD = createMethod;
-    } catch (ClassNotFoundException | NoSuchMethodException e) {
-      throw new IllegalStateException(e);
-    }
-
-  }
-
   /**
    * @return true when running JVM is having sun's Unsafe package available in it and underlying
    *         system having unaligned-access capability.

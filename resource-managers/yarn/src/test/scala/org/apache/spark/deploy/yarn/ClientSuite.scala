@@ -127,11 +127,11 @@ class ClientSuite extends SparkFunSuite with Matchers {
   }
 
   test("Jar path propagation through SparkConf") {
-    val conf = HadoopUtil.createAndGetHadoopConfiguration()
+    val conf = new Configuration()
     val sparkConf = new SparkConf()
       .set(SPARK_JARS, Seq(SPARK))
       .set("spark.yarn.dist.jars", ADDED)
-    val client = createClient(sparkConf, conf, Array("--jar", USER))
+    val client = createClient(sparkConf, args = Array("--jar", USER))
     doReturn(new Path("/")).when(client).copyFileToRemote(any(classOf[Path]),
       any(classOf[Path]), meq(None), any(classOf[MutableHashMap[URI, Path]]), anyBoolean(), any())
 
