@@ -20,13 +20,12 @@ package org.apache.spark.ui
 import java.net.{URI, URL, URLDecoder}
 import java.util.EnumSet
 import javax.servlet.DispatcherType
-import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse, _}
+import javax.servlet.http._
 
 import scala.language.implicitConversions
 import scala.util.Try
 import scala.xml.Node
 
-import org.apache.spark.{SecurityManager, SparkConf, SSLOptions}
 import org.eclipse.jetty.client.HttpClient
 import org.eclipse.jetty.client.api.Response
 import org.eclipse.jetty.client.http.HttpClientTransportOverHTTP
@@ -40,6 +39,7 @@ import org.eclipse.jetty.util.thread.{QueuedThreadPool, ScheduledExecutorSchedul
 import org.json4s.JValue
 import org.json4s.jackson.JsonMethods.{pretty, render}
 
+import org.apache.spark.{SecurityManager, SparkConf, SSLOptions}
 import org.apache.spark.internal.Logging
 import org.apache.spark.internal.config.UI._
 import org.apache.spark.util.Utils
@@ -51,7 +51,7 @@ private[spark] object JettyUtils extends Logging {
 
   val SPARK_CONNECTOR_NAME = "Spark"
   val REDIRECT_CONNECTOR_NAME = "HttpsRedirect"
-  val SPARK_HEADERS_CONF = "spark.ui.headers"
+
   // Base type for a function that returns something based on an HTTP request. Allows for
   // implicit conversion from many types of functions to jetty Handlers.
   type Responder[T] = HttpServletRequest => T
@@ -76,19 +76,10 @@ private[spark] object JettyUtils extends Logging {
     new HttpServlet {
       override def doGet(request: HttpServletRequest, response: HttpServletResponse): Unit = {
         try {
-          if (securityMgr.checkUIViewPermissions(request.getRemoteUser)) {
-            response.setContentType("%s;charset=utf-8".format(servletParams.contentType))
-            response.setStatus(HttpServletResponse.SC_OK)
-            val result = servletParams.responder(request)
-            response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate")
-            response.setHeader("X-Frame-Options", xFrameOptionsValue)
-            response.getWriter.print(servletParams.extractFn(result))
-          } else {
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN)
-            response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate")
-            response.sendError(HttpServletResponse.SC_FORBIDDEN,
-              "User is not authorized to access this page.")
-          }
+          response.setContentType("%s;charset=utf-8".format(servletParams.contentType))
+          response.setStatus(HttpServletResponse.SC_OK)
+          val result = servletParams.responder(request)
+          response.getWriter.print(servletParams.extractFn(result))
         } catch {
           case e: IllegalArgumentException =>
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage)
@@ -238,39 +229,6 @@ private[spark] object JettyUtils extends Logging {
     contextHandler.setContextPath("/proxy")
     contextHandler.addServlet(holder, "/*")
     contextHandler
-  }
-
-  /** Add filters, if any, to the given list of ServletContextHandlers */
-  def addFilters(handlers: Seq[ServletContextHandler], conf: SparkConf) {
-    val filters: Array[String] = conf.get("spark.ui.filters", "").split(',').map(_.trim())
-    filters.foreach {
-      case filter : String =>
-        if (!filter.isEmpty) {
-          logInfo(s"Adding filter $filter to ${handlers.map(_.getContextPath).mkString(", ")}.")
-          val holder : FilterHolder = new FilterHolder()
-          holder.setClassName(filter)
-          if (conf.contains(SPARK_HEADERS_CONF)) {
-            holder.setInitParameter(SPARK_HEADERS_CONF, conf.get(SPARK_HEADERS_CONF))
-          }
-          // Get any parameters for each filter
-          conf.get("spark." + filter + ".params", "").split(',').map(_.trim()).toSet.foreach {
-            param: String =>
-              if (!param.isEmpty) {
-                val parts = param.split("=")
-                if (parts.length == 2) holder.setInitParameter(parts(0), parts(1))
-             }
-          }
-
-          val prefix = s"spark.$filter.param."
-          conf.getAll
-            .filter { case (k, v) => k.length() > prefix.length() && k.startsWith(prefix) }
-            .foreach { case (k, v) => holder.setInitParameter(k.substring(prefix.length()), v) }
-
-          val enumDispatcher = java.util.EnumSet.of(DispatcherType.ASYNC, DispatcherType.ERROR,
-            DispatcherType.FORWARD, DispatcherType.INCLUDE, DispatcherType.REQUEST)
-          handlers.foreach { case(handler) => handler.addFilter(holder, "/*", enumDispatcher) }
-        }
-    }
   }
 
   /**
