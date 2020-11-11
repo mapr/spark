@@ -25,8 +25,8 @@ import scala.collection.mutable.{Map, Set, Stack}
 import scala.language.existentials
 
 import org.apache.commons.lang3.ClassUtils
-import org.apache.xbean.asm6.{ClassReader, ClassVisitor, Handle, MethodVisitor, Type}
-import org.apache.xbean.asm6.Opcodes._
+import org.apache.xbean.asm7.{ClassReader, ClassVisitor, MethodVisitor, Type}
+import org.apache.xbean.asm7.Opcodes._
 import org.apache.xbean.asm6.tree.{ClassNode, MethodNode}
 
 import org.apache.spark.{SparkEnv, SparkException}
@@ -36,6 +36,8 @@ import org.apache.spark.internal.Logging
  * A cleaner that renders closures serializable if they can be done so safely.
  */
 private[spark] object ClosureCleaner extends Logging {
+
+  private val isScala2_11 = scala.util.Properties.versionString.contains("2.11")
 
   // Get an ASM class reader for a given class from the JAR that loaded it
   private[util] def getClassReader(cls: Class[_]): ClassReader = {
@@ -164,6 +166,42 @@ private[spark] object ClosureCleaner extends Logging {
   }
 
   /**
+   * Try to get a serialized Lambda from the closure.
+   *
+   * @param closure the closure to check.
+   */
+  private def getSerializedLambda(closure: AnyRef): Option[SerializedLambda] = {
+    if (isScala2_11) {
+      return None
+    }
+    val isClosureCandidate =
+      closure.getClass.isSynthetic &&
+        closure
+          .getClass
+          .getInterfaces.exists(_.getName == "scala.Serializable")
+
+    if (isClosureCandidate) {
+      try {
+        Option(inspect(closure))
+      } catch {
+        case e: Exception =>
+          // no need to check if debug is enabled here the Spark
+          // logging api covers this.
+          logDebug("Closure is not a serialized lambda.", e)
+          None
+      }
+    } else {
+      None
+    }
+  }
+
+  private def inspect(closure: AnyRef): SerializedLambda = {
+    val writeReplace = closure.getClass.getDeclaredMethod("writeReplace")
+    writeReplace.setAccessible(true)
+    writeReplace.invoke(closure).asInstanceOf[java.lang.invoke.SerializedLambda]
+  }
+
+  /**
    * Helper method to clean the given closure in place.
    *
    * The mechanism is to traverse the hierarchy of enclosing closures and null out any
@@ -210,12 +248,12 @@ private[spark] object ClosureCleaner extends Logging {
       cleanTransitively: Boolean,
       accessedFields: Map[Class[_], Set[String]]): Unit = {
 
-    // indylambda check. Most likely to be the case with 2.12, 2.13
+    // most likely to be the case with 2.12, 2.13
     // so we check first
     // non LMF-closures should be less frequent from now on
-    val maybeIndylambdaProxy = IndylambdaScalaClosures.getSerializationProxy(func)
+    val lambdaFunc = getSerializedLambda(func)
 
-    if (!isClosure(func.getClass) && maybeIndylambdaProxy.isEmpty) {
+    if (!isClosure(func.getClass) && lambdaFunc.isEmpty) {
       logDebug(s"Expected a closure; got ${func.getClass.getName}")
       return
     }
@@ -227,7 +265,7 @@ private[spark] object ClosureCleaner extends Logging {
       return
     }
 
-    if (maybeIndylambdaProxy.isEmpty) {
+    if (lambdaFunc.isEmpty) {
       logDebug(s"+++ Cleaning closure $func (${func.getClass.getName}) +++")
 
       // A list of classes that represents closures enclosed in the given one
@@ -753,7 +791,7 @@ private[spark] class ReturnStatementInClosureException
   extends SparkException("Return statements aren't allowed in Spark closures")
 
 private class ReturnStatementFinder(targetMethodName: Option[String] = None)
-  extends ClassVisitor(ASM6) {
+  extends ClassVisitor(ASM7) {
   override def visitMethod(access: Int, name: String, desc: String,
       sig: String, exceptions: Array[String]): MethodVisitor = {
 
@@ -767,7 +805,7 @@ private class ReturnStatementFinder(targetMethodName: Option[String] = None)
       val isTargetMethod = targetMethodName.isEmpty ||
         name == targetMethodName.get || name == targetMethodName.get.stripSuffix("$adapted")
 
-      new MethodVisitor(ASM6) {
+      new MethodVisitor(ASM7) {
         override def visitTypeInsn(op: Int, tp: String) {
           if (op == NEW && tp.contains("scala/runtime/NonLocalReturnControl") && isTargetMethod) {
             throw new ReturnStatementInClosureException
@@ -775,7 +813,7 @@ private class ReturnStatementFinder(targetMethodName: Option[String] = None)
         }
       }
     } else {
-      new MethodVisitor(ASM6) {}
+      new MethodVisitor(ASM7) {}
     }
   }
 }
@@ -799,7 +837,7 @@ private[util] class FieldAccessFinder(
     findTransitively: Boolean,
     specificMethod: Option[MethodIdentifier[_]] = None,
     visitedMethods: Set[MethodIdentifier[_]] = Set.empty)
-  extends ClassVisitor(ASM6) {
+  extends ClassVisitor(ASM7) {
 
   override def visitMethod(
       access: Int,
@@ -814,7 +852,7 @@ private[util] class FieldAccessFinder(
       return null
     }
 
-    new MethodVisitor(ASM6) {
+    new MethodVisitor(ASM7) {
       override def visitFieldInsn(op: Int, owner: String, name: String, desc: String) {
         if (op == GETFIELD) {
           for (cl <- fields.keys if cl.getName == owner.replace('/', '.')) {
@@ -854,7 +892,7 @@ private[util] class FieldAccessFinder(
   }
 }
 
-private class InnerClosureFinder(output: Set[Class[_]]) extends ClassVisitor(ASM6) {
+private class InnerClosureFinder(output: Set[Class[_]]) extends ClassVisitor(ASM7) {
   var myName: String = null
 
   // TODO: Recursively find inner closures that we indirectly reference, e.g.
@@ -869,7 +907,7 @@ private class InnerClosureFinder(output: Set[Class[_]]) extends ClassVisitor(ASM
 
   override def visitMethod(access: Int, name: String, desc: String,
       sig: String, exceptions: Array[String]): MethodVisitor = {
-    new MethodVisitor(ASM6) {
+    new MethodVisitor(ASM7) {
       override def visitMethodInsn(
           op: Int, owner: String, name: String, desc: String, itf: Boolean) {
         val argTypes = Type.getArgumentTypes(desc)
