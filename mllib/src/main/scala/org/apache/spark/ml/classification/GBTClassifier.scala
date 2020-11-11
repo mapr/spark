@@ -324,7 +324,7 @@ class GBTClassificationModel private[ml](
    *
    * @deprecated  Use [[getNumTrees]] instead. This method will be removed in 3.0.0.
    */
-  @deprecated("Use getNumTrees instead. This method will be removed in 3.0.0.", "2.4.5")
+  @deprecated("Use getNumTrees instead. This method will be removed in 3.0.0.", "2.4.7")
   val numTrees: Int = trees.length
 
   @Since("1.4.0")
