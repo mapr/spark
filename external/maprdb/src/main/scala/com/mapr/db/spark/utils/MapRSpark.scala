@@ -79,10 +79,12 @@ object MapRSpark {
     private var dbcondition: Option[DBQueryCondition] = None
     private var tableName: Option[String] = None
     private var bufferWrites: Option[Boolean] = None
+    private var hintUsingIndex: Option[String] = None
     private var sampleSize: Option[String] = None
     private var conf: Option[SerializableConfiguration] = None
     private var beanClass: Option[Class[_]] = None
     private var columnProjection: Option[Seq[String]] = None
+    private var queryOptions: Option[Map[String, String]] = None
 
     def build(): MapRSpark = {
       require(sparkctx.isDefined, "The SparkContext must be set.")
@@ -95,12 +97,19 @@ object MapRSpark {
                     dbcondition,
                     tableName,
                     bufferWrites,
-                    columnProjection)
+                    hintUsingIndex,
+                    columnProjection,
+                    queryOptions)
     }
 
     def configuration(conf: Configuration = new Configuration): Builder = {
       val sercnf = new SerializableConfiguration(conf)
       this.conf = Option(sercnf)
+      this
+    }
+
+    def setQueryOptions(queryOptions: Map[String, String]): Builder = {
+      this.queryOptions = Option(queryOptions)
       this
     }
 
@@ -139,6 +148,11 @@ object MapRSpark {
       this
     }
 
+    def setHintUsingIndex(indexPath: Option[String]): Builder = {
+      this.hintUsingIndex = indexPath
+      this
+    }
+
     def setBeanClass(beanClass: Class[_]): Builder = {
       this.beanClass = Option(beanClass)
       this
@@ -157,7 +171,9 @@ case class MapRSpark(sparkSession: Option[SparkSession],
                      cond: Option[DBQueryCondition],
                      tableName: Option[String],
                      bufferWrites: Option[Boolean],
-                     columns: Option[Seq[String]]) {
+                     hintUsingIndex: Option[String],
+                     columns: Option[Seq[String]],
+                     queryOptions: Option[Map[String, String]]) {
 
   def toRDD[T: ClassTag](beanClass: Class[T] = null)(
       implicit e: T DefaultType OJAIDocument,
@@ -176,10 +192,13 @@ case class MapRSpark(sparkSession: Option[SparkSession],
                               columns.orNull,
                               tableName.get,
                               bufferWrites.get,
+                              hintUsingIndex.orNull,
                               cond.orNull,
-                              beanClass)
+                              beanClass,
+                              queryOptions.get)
 
-  def toDataFrame(schema: StructType, sampleSize: Double, bufferWrites: Boolean): DataFrame = {
+  def toDataFrame(schema: StructType, sampleSize: Double,
+                  bufferWrites: Boolean): DataFrame = {
     val reader: DataFrameReader = sparkSession.get.read
       .format("com.mapr.db.spark.sql")
       .schema(schema)
@@ -221,6 +240,7 @@ case class MapRSpark(sparkSession: Option[SparkSession],
       .configuration()
       .setDBCond(cond.orNull)
       .setColumnProjection(columns)
+      .setQueryOptions(queryOptions.get)
       .setTable(tableName)
       .setBufferWrites(bufferWrites.get)
       .build()
