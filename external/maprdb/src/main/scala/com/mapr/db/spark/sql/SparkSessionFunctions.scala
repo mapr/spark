@@ -24,4 +24,21 @@ case class SparkSessionFunctions(@transient sparkSession: SparkSession)
       .build()
       .toDF[T](schema, sampleSize)
   }
+
+  def lookupFromMapRDB[T <: Product: TypeTag](
+      tableName: String,
+      schema: StructType = null,
+      sampleSize: Double = GenerateSchema.SAMPLE_SIZE): DataFrame = {
+
+    MapRSpark
+      .builder()
+      .sparkSession(sparkSession)
+      .configuration()
+      .setTable(tableName)
+      .setBufferWrites(bufferWrites)
+      .setHintUsingIndex(hintUsingIndex)
+      .setQueryOptions(queryOptions + (SingleFragmentOption -> "true"))
+      .build()
+      .toDF[T](schema, sampleSize, bufferWrites)
+  }
 }

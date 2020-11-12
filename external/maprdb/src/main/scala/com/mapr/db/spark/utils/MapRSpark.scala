@@ -173,6 +173,8 @@ case class MapRSpark(sparkSession: Option[SparkSession],
       .option("tablePath", this.tableName.get)
       .option("sampleSize", sampleSize)
 
+    queryOptions.get.foreach(option => reader.option(option._1, option._2))
+
       if (cond.isDefined) {
         reader.option("QueryCondition",
         new String(
