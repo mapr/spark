@@ -1985,7 +1985,6 @@
               <arg>-deprecation</arg>
               <arg>-feature</arg>
               <arg>-explaintypes</arg>
-              <arg>-Yno-adapted-args</arg>
               <arg>-Xmax-classfile-name</arg>
               <arg>128</arg>
             </args>
