@@ -186,7 +186,7 @@
     <joda.version>2.10.3</joda.version>
     <jodd.version>3.5.2</jodd.version>
     <jsr305.version>1.3.9</jsr305.version>
-    <libthrift.version>0.12.0</libthrift.version>
+    <libthrift.version>0.13.0</libthrift.version>
     <libfb303.version>0.9.3</libfb303.version>
     <antlr4.version>4.7</antlr4.version>
     <jpam.version>1.1</jpam.version>
@@ -2200,8 +2200,7 @@
         <plugin>
           <groupId>net.alchim31.maven</groupId>
           <artifactId>scala-maven-plugin</artifactId>
-          <!-- 3.3.1 won't work with zinc; fails to find javac from java.home -->
-          <version>3.4.4</version>
+          <version>4.3.0</version>
           <executions>
             <execution>
               <id>eclipse-add-source</id>
