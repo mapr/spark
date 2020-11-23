@@ -168,17 +168,10 @@ private[kafka010] class KafkaOffsetReader(
    * Fetch the latest offsets for the topic partitions that are indicated
    * in the [[ConsumerStrategy]].
    */
-  def fetchLatestOffsets(knownOffsets: Option[Map[TopicPartition, Long]]):
-  Map[TopicPartition, Long] = runUninterruptibly {
+  def fetchLatestOffsets(): Map[TopicPartition, Long] = runUninterruptibly {
     withRetriesWithoutInterrupt {
       // Poll to get the latest assigned partitions
       consumer.poll(0)
-
-      if (knownOffsets.isEmpty &&
-        KafkaUtils.isStreams(knownOffsets.get.map(a => (a._1, a._2.toLong)))) {
-        KafkaUtils.waitForConsumerAssignment(consumer, knownOffsets.get.asJava.keySet())
-      }
-
       val partitions = consumer.assignment()
       consumer.pause(partitions)
       logDebug(s"Partitions assigned to consumer: $partitions. Seeking to the end.")
