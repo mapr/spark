@@ -110,6 +110,17 @@
       <version>3.7.1</version>
     </dependency>
     <dependency>
+      <groupId>${hive.parquet.group}</groupId>
+      <artifactId>parquet-hadoop-bundle</artifactId>
+      <scope>provided</scope>
+    </dependency>
+<!--    <dependency>-->
+<!--      <groupId>org.apache.spark</groupId>-->
+<!--      <artifactId>spark-streaming-kafka-producer_${scala.binary.version}</artifactId>-->
+<!--      <scope>provided</scope>-->
+<!--      <version>${project.version}</version>-->
+<!--    </dependency>-->
+    <dependency>
       <groupId>com.mapr.db</groupId>
       <artifactId>maprdb-spark_${scala.binary.version}</artifactId>
       <scope>provided</scope>
