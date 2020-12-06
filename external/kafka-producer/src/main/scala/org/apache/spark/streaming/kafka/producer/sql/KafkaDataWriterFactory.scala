@@ -1,18 +1,16 @@
 package org.apache.spark.streaming.kafka.producer.sql
 
 import java.util.concurrent.Future
-import java.util.concurrent.Future
-
-import org.apache.spark.streaming.kafka.producer.sql.CommittedIds
-import org.apache.spark.internal.Logging
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.sources.v2.writer.{DataSourceWriter, DataWriter, DataWriterFactory, WriterCommitMessage}
-import org.apache.spark.sql.types.{DataType, StringType, StructType}
-import org.apache.spark.streaming.kafka.producer.ProducerConf
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}
 
 import scala.util.parsing.json.{JSONArray, JSONObject}
+
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}
+
+import org.apache.spark.internal.Logging
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.connector.write.{DataWriter, DataWriterFactory, WriterCommitMessage}
+import org.apache.spark.sql.types.StructType
+import org.apache.spark.streaming.kafka.producer.ProducerConf
 
 private class KafkaDataWriterFactory(topic: String, schema: StructType) extends DataWriterFactory[InternalRow] {
 
@@ -21,7 +19,7 @@ private class KafkaDataWriterFactory(topic: String, schema: StructType) extends 
 
   @transient private lazy val producer = new KafkaProducer[String, String](producerConf.asJMap())
 
-  override def createDataWriter(partitionId: Int, taskId: Long, epochId: Long): DataWriter[InternalRow] = new DataWriter[InternalRow] with Logging {
+  def createDataWriter(partitionId: Int, taskId: Long, epochId: Long): DataWriter[InternalRow] = new DataWriter[InternalRow] with Logging {
 
     private val writtenIds = scala.collection.mutable.ListBuffer.empty[Future[RecordMetadata]]
 
@@ -43,16 +41,16 @@ private class KafkaDataWriterFactory(topic: String, schema: StructType) extends 
     }
 
 
-    override def commit(): WriterCommitMessage = {
+    def commit(): WriterCommitMessage = {
       val meta = writtenIds.map(_.get())
 
       writtenIds.clear()
       CommittedIds(partitionId, meta.map(_.offset().toString).toSet)
     }
 
-    override def abort(): Unit = writtenIds.map(_.cancel(true))
+    def abort(): Unit = writtenIds.map(_.cancel(true))
 
-    private def toJson(arr: List[Any]): JSONArray = {
+    def toJson(arr: List[Any]): JSONArray = {
       JSONArray(arr.map {
         case (innerMap: Map[String, Any]) => toJson(innerMap)
         case (innerArray: List[Any]) => toJson(innerArray)
@@ -60,7 +58,7 @@ private class KafkaDataWriterFactory(topic: String, schema: StructType) extends 
       })
     }
 
-    private def toJson(map: Map[String, Any]): JSONObject = {
+    def toJson(map: Map[String, Any]): JSONObject = {
       JSONObject(map.map {
         case (key, innerMap: Map[String, Any]) =>
           (key, toJson(innerMap))

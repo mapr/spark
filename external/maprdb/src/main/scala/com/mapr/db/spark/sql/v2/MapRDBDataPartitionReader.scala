@@ -1,11 +1,11 @@
 package com.mapr.db.spark.sql.v2
 
 import com.mapr.db.spark.utils.LoggingTrait
+
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.connector.read.InputPartition
 import org.apache.spark.sql.sources._
-import org.apache.spark.sql.sources.v2.reader.{InputPartition, InputPartitionReader}
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.catalyst.encoders.RowEncoder
 
 /**
   * Reads data from one particular MapR-DB tablet / region
@@ -22,10 +22,9 @@ class MapRDBDataPartitionReader(table: String,
                                 hintedIndexes: List[String])
   extends InputPartition[InternalRow] with LoggingTrait {
 
-  import com.mapr.db.spark.sql.utils.MapRSqlUtils._
-  import org.ojai.store._
-
   import scala.collection.JavaConverters._
+
+  import org.ojai.store._
 
   logDebug(filters.mkString("FILTERS: [", ", ", "]"))
 
@@ -70,25 +69,25 @@ class MapRDBDataPartitionReader(table: String,
 
   override protected def logName: String = "PARTITION_READER" + s" ===== TABLET: ${tabletInfo.internalId}"
 
-  override def createPartitionReader(): InputPartitionReader[InternalRow] = new InputPartitionReader[InternalRow] {
-    override def next(): Boolean = documents.hasNext
-
-    override def get(): InternalRow = {
-
-      val document = documents.next()
-
-      logDebug(document.asJsonString())
-
-      val row = documentToRow(com.mapr.db.spark.MapRDBSpark.newDocument(document), schema)
-
-      RowEncoder(schema).toRow(row)
-    }
-
-    override def close(): Unit = {
-      store.close()
-      connection.close()
-    }
-  }
+//  override def createPartitionReader(): InputPartitionReader[InternalRow] = new InputPartitionReader[InternalRow] {
+//    override def next(): Boolean = documents.hasNext
+//
+//    override def get(): InternalRow = {
+//
+//      val document = documents.next()
+//
+//      logDebug(document.asJsonString())
+//
+//      val row = documentToRow(com.mapr.db.spark.MapRDBSpark.newDocument(document), schema)
+//
+//      RowEncoder(schema).toRow(row)
+//    }
+//
+//    override def close(): Unit = {
+//      store.close()
+//      connection.close()
+//    }
+//  }
 
   private def queryOptions =
     hintedIndexes
