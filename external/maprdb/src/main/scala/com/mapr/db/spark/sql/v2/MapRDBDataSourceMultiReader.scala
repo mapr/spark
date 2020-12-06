@@ -1,15 +1,14 @@
 package com.mapr.db.spark.sql.v2
 
-import java.util
+import scala.util.Random
 
 import com.mapr.db.spark.sql.v2.QueryConditionExtensions._
-import com.mapr.db.spark.sql.v2.MapRDBTabletInfo
-import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.sources.v2.reader.InputPartition
-import org.apache.spark.sql.types.StructType
+import java.util
 import org.ojai.store.{DocumentStore, DriverManager}
 
-import scala.util.Random
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.connector.read.InputPartition
+import org.apache.spark.sql.types.StructType
 
 /**
   * MapRDBDataSourceMultiReader creates the corresponding reader to read data from different MapR-DB tablets.
