@@ -41,7 +41,6 @@ private[spark] class MaprConfigFeatureStep(
     applyLdapCM(podBuilder, containerBuilder)
     applySSSDSecret(podBuilder, containerBuilder)
     applySSHSecret(podBuilder, containerBuilder)
-    applyServerSecret(podBuilder, containerBuilder)
     applyClientSecret(podBuilder, containerBuilder)
 
     SparkPod(podBuilder.build(), containerBuilder.build())
@@ -128,27 +127,6 @@ private[spark] class MaprConfigFeatureStep(
     containerBuilder.addNewVolumeMount()
       .withName(volumeName)
       .withMountPath("/opt/mapr/kubernetes/client-secrets")
-      .endVolumeMount()
-  }
-
-  private def applyServerSecret(podBuilder: PodBuilder, containerBuilder: ContainerBuilder) = {
-    val secretName = "server"
-    val volumeName = "server-secrets"
-
-    podBuilder.editOrNewSpec()
-      .addNewVolume()
-      .withName(volumeName)
-      .withNewSecret()
-      .withSecretName(secretName)
-      .withDefaultMode(420)
-      .withOptional(true)
-      .endSecret()
-      .endVolume()
-      .endSpec()
-
-    containerBuilder.addNewVolumeMount()
-      .withName(volumeName)
-      .withMountPath("/opt/mapr/kubernetes/server-secrets")
       .endVolumeMount()
   }
 
