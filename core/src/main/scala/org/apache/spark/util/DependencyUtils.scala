@@ -24,7 +24,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 
-import org.apache.spark.{SecurityManager, SparkConf, SparkException}
+import org.apache.spark.{SparkConf, SparkException}
 import org.apache.spark.deploy.SparkSubmitUtils
 import org.apache.spark.internal.Logging
 import org.apache.spark.internal.config._
@@ -187,11 +187,10 @@ private[spark] object DependencyUtils extends Logging {
   }
 
   def resolveAndDownloadJars(
-                              jars: String,
-                              userJar: String,
-                              sparkConf: SparkConf,
-                              hadoopConf: Configuration,
-                              secMgr: SecurityManager): String = {
+      jars: String,
+      userJar: String,
+      sparkConf: SparkConf,
+      hadoopConf: Configuration): String = {
     val targetDir = Utils.createTempDir()
     val userJarName = userJar.split(File.separatorChar).last
     Option(jars)
@@ -202,7 +201,7 @@ private[spark] object DependencyUtils extends Logging {
           .mkString(",")
       }
       .filterNot(_ == "")
-      .map(downloadFileList(_, targetDir, sparkConf, hadoopConf, secMgr))
+      .map(downloadFileList(_, targetDir, sparkConf, hadoopConf))
       .orNull
   }
 
@@ -222,18 +221,16 @@ private[spark] object DependencyUtils extends Logging {
    * @param targetDir A temporary directory for which downloaded files.
    * @param sparkConf Spark configuration.
    * @param hadoopConf Hadoop configuration.
-   * @param secMgr Spark security manager.
    * @return A comma separated local files list.
    */
   def downloadFileList(
-                        fileList: String,
-                        targetDir: File,
-                        sparkConf: SparkConf,
-                        hadoopConf: Configuration,
-                        secMgr: SecurityManager): String = {
+      fileList: String,
+      targetDir: File,
+      sparkConf: SparkConf,
+      hadoopConf: Configuration): String = {
     require(fileList != null, "fileList cannot be null.")
     Utils.stringToSeq(fileList)
-      .map(downloadFile(_, targetDir, sparkConf, hadoopConf, secMgr))
+      .map(downloadFile(_, targetDir, sparkConf, hadoopConf))
       .mkString(",")
   }
 
@@ -245,15 +242,13 @@ private[spark] object DependencyUtils extends Logging {
    * @param targetDir A temporary directory for which downloaded files.
    * @param sparkConf Spark configuration.
    * @param hadoopConf Hadoop configuration.
-   * @param secMgr Spark security manager.
    * @return Path to the local file.
    */
   def downloadFile(
-                    path: String,
-                    targetDir: File,
-                    sparkConf: SparkConf,
-                    hadoopConf: Configuration,
-                    secMgr: SecurityManager): String = {
+      path: String,
+      targetDir: File,
+      sparkConf: SparkConf,
+      hadoopConf: Configuration): String = {
     require(path != null, "path cannot be null.")
     val uri = Utils.resolveURI(path)
 
@@ -266,8 +261,7 @@ private[spark] object DependencyUtils extends Logging {
         new File(targetDir, file.getName).toURI.toString
       case _ =>
         val fname = new Path(uri).getName()
-        val localFile = Utils.doFetchFile(uri.toString(), targetDir, fname, sparkConf, secMgr,
-          hadoopConf)
+        val localFile = Utils.doFetchFile(uri.toString(), targetDir, fname, sparkConf, hadoopConf)
         localFile.toURI().toString()
     }
   }
