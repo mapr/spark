@@ -83,11 +83,11 @@ private case class Subscribe[K, V](
   def onStart(currentOffsets: ju.Map[TopicPartition, jl.Long]): Consumer[K, V] = {
     val consumer = new KafkaConsumer[K, V](kafkaParams)
     consumer.subscribe(topics)
-    val toSeek = if (currentOffsets.isEmpty) {
-      offsets
-    } else {
-      currentOffsets
-    }
+    logDebug(s"The consumer has been subscribed to topics: ${String.join(", ", topics)}")
+
+    val toSeek = if (currentOffsets.isEmpty) offsets else currentOffsets
+    logDebug(s"TopicPartition-Offset map for seeking: $toSeek")
+
     if (!toSeek.isEmpty) {
       // work around KAFKA-3370 when reset is none
       // poll will throw if no position, i.e. auto offset reset none and no explicit position
@@ -98,12 +98,20 @@ private case class Subscribe[K, V](
         aor != null && aor.asInstanceOf[String].toUpperCase(Locale.ROOT) == "NONE"
       try {
         consumer.poll(0)
+        logDebug("Data fetched for the topics.")
+
+        if (KafkaUtils.isStreams(toSeek.asScala.toMap.map(a => (a._1, a._2.toLong)))) {
+          KafkaUtils.waitForConsumerAssignment(consumer, toSeek.keySet())
+        }
       } catch {
         case x: NoOffsetForPartitionException if shouldSuppress =>
           logWarning("Catching NoOffsetForPartitionException since " +
             ConsumerConfig.AUTO_OFFSET_RESET_CONFIG + " is none.  See KAFKA-3370")
       }
-      toSeek.asScala.foreach { case (topicPartition, offset) =>
+
+      toSeek.asScala.foreach {
+        case (topicPartition, offset) =>
+          logDebug(s"Seeking for topicPartition=$topicPartition with offset=$offset")
           consumer.seek(topicPartition, offset)
       }
       // we've called poll, we must pause or next poll may consume messages and set position
@@ -139,24 +147,32 @@ private case class SubscribePattern[K, V](
   def onStart(currentOffsets: ju.Map[TopicPartition, jl.Long]): Consumer[K, V] = {
     val consumer = new KafkaConsumer[K, V](kafkaParams)
     consumer.subscribe(pattern, new NoOpConsumerRebalanceListener())
-    val toSeek = if (currentOffsets.isEmpty) {
-      offsets
-    } else {
-      currentOffsets
-    }
+    logDebug(s"The consumer has been subscribed to topics matching a pattern: $pattern")
+
+    val toSeek = if (currentOffsets.isEmpty) offsets else currentOffsets
+    logDebug(s"TopicPartition-Offset map for seeking: $toSeek")
+
     if (!toSeek.isEmpty) {
       // work around KAFKA-3370 when reset is none, see explanation in Subscribe above
       val aor = kafkaParams.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG)
       val shouldSuppress =
         aor != null && aor.asInstanceOf[String].toUpperCase(Locale.ROOT) == "NONE"
       try {
-        consumer.poll(0)
+        if (KafkaUtils.isStreams(currentOffsets.asScala.toMap.map(a => (a._1, a._2.toLong)))) {
+          KafkaUtils.waitForConsumerAssignment(consumer, toSeek.keySet())
+        } else {
+          consumer.poll(0)
+          logDebug("Data fetched for the topics.")
+        }
       } catch {
         case x: NoOffsetForPartitionException if shouldSuppress =>
           logWarning("Catching NoOffsetForPartitionException since " +
             ConsumerConfig.AUTO_OFFSET_RESET_CONFIG + " is none.  See KAFKA-3370")
       }
-      toSeek.asScala.foreach { case (topicPartition, offset) =>
+
+      toSeek.asScala.foreach {
+        case (topicPartition, offset) =>
+          logDebug(s"Seeking for topicPartition=$topicPartition with offset=$offset")
           consumer.seek(topicPartition, offset)
       }
       // we've called poll, we must pause or next poll may consume messages and set position
