@@ -139,9 +139,11 @@ private[spark] class SecurityManager(
       manageSslKeysLocalFile.setExecutable(true)
       val sslKeyStorePass = getSSLOptions("ui").keyStorePassword.get
 
+      // Process(s"$manageSslKeysScript $sslKeyStorePass").lineStream.foreach(msg => println(msg))
+
       val res = s"$manageSslKeysScript $sslKeyStorePass".!
       if (res != 0) {
-        throw new Exception(s"Failed to generate SSL certificates for spark WebUI")
+        throw new Exception(s"Failed to generate SSL certificates for spark WebUI. Exit code: $res" )
       }
     }
   }
@@ -179,10 +181,11 @@ private[spark] class SecurityManager(
 
     if (fs.exists(new Path(mfsKeyStore))) {
       val files = fs.listFiles(new Path(mfsBaseDir), false)
-      files.next().getPath
       while (files.hasNext) {
         val f = files.next()
-        fs.copyToLocalFile(f.getPath, new Path(localBaseDir))
+        val fStringPath = f.getPath.toString
+        fs.copyToLocalFile(f.getPath,
+          new Path(s"$localBaseDir${fStringPath.substring(fStringPath.lastIndexOf("/"))}"))
       }
     }
   }

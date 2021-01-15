@@ -95,6 +95,8 @@ function createCertificates() {
     -keystore $sslKeyStore -storetype $storeFormat $VERBOSE
   if [ $? -ne 0 ]; then
     echo "Keytool command to generate key store failed"
+  else
+    echo "Keytool command to generate key store succeed"
   fi
 
   #extract self signed certificate into trust store
@@ -104,11 +106,15 @@ function createCertificates() {
     -alias $CLUSTERNAME -storepass $storePass -storetype $storeFormat $VERBOSE
   if [ $? -ne 0 ]; then
     echo "Keytool command to extract certificate from key store failed"
+  else
+    echo "Keytool command to extract certificate from key store succeed"
   fi
   $KEYTOOL -importcert -keystore $sslTrustStore -file $tfile \
     -alias $CLUSTERNAME -storepass $storePass -noprompt $VERBOSE
   if [ $? -ne 0 ]; then
     echo "Keytool command to create trust store failed"
+  else
+    echo "Keytool command to create trust store succeed"
   fi
   # create PEM version
   convertToPem $sslKeyStore $sslKeyStorePEM true true
