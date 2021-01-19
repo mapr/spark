@@ -26,7 +26,7 @@
   </parent>
   <groupId>org.apache.spark</groupId>
   <artifactId>spark-parent_2.12</artifactId>
-  <version>2.4.7.0-mapr-SNAPSHOT</version>
+  <version>2.4.7.0-mapr-701</version>
   <packaging>pom</packaging>
   <name>Spark Project Parent POM</name>
   <url>http://spark.apache.org/</url>
@@ -123,7 +123,7 @@
     <sbt.project.name>spark</sbt.project.name>
     <slf4j.version>1.7.16</slf4j.version>
     <log4j.version>2.13.1</log4j.version>
-    <hadoop.version>2.7.4.0-mapr-1908-SNAPSHOT</hadoop.version>
+    <hadoop.version>2.7.4.100-mapr-701</hadoop.version>
     <maprfs.version>6.2.0.0-mapr</maprfs.version>
     <protobuf.version>3.11.1</protobuf.version>
     <yarn.version>${hadoop.version}</yarn.version>
@@ -132,10 +132,10 @@
     <curator.version>4.2.0</curator.version>
     <hive.group>org.apache.hive</hive.group>
     <!-- Version used in Maven Hive dependency -->
-    <hive.version>1.2.0-mapr-spark-MEP-7.x-SNAPSHOT</hive.version>
-    <hive.2.version>2.3.7-mapr-SNAPSHOT</hive.2.version>
+    <hive.version>1.2.0-mapr-spark-MEP-7.0.1-2101</hive.version>
+    <hive.2.version>2.3.7-mapr-2101</hive.2.version>
     <!-- Kafka version -->
-    <kafka.version>2.1.1.0-mapr-SNAPSHOT</kafka.version>
+    <kafka.version>2.1.1.100-mapr-701</kafka.version>
     <!-- Version used for internal directory structure -->
     <hive.version.short>1.2.1</hive.version.short>
     <derby.version>10.14.2.0</derby.version>
