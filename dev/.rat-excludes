@@ -43,11 +43,11 @@ jquery.dataTables.1.10.25.min.js
 jquery.mustache.js
 jsonFormatter.min.css
 jsonFormatter.min.js
-.*\.avsc
-.*\.txt
-.*\.json
-.*\.data
-.*\.log
+.*avsc
+.*txt
+.*json
+.*data
+.*log
 pyspark-coverage-site/*
 cloudpickle/*
 join.py
