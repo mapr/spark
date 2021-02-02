@@ -158,7 +158,7 @@ chmod  a+rwxt "$SPARK_HOME"/tmp
 #
 # Improved default logging level (WARN instead of INFO)
 #
-sed 's/rootCategory=INFO/rootCategory=WARN/' "$SPARK_HOME/conf/log4j.properties.template" > "$SPARK_HOME/conf/log4j.properties"
+sed 's/rootCategory=INFO/rootCategory=WARN/' "$SPARK_HOME/conf/log4j2.properties.template" > "$SPARK_HOME/conf/log4j2.properties"
 
 #
 # Add MapR customization to spark
