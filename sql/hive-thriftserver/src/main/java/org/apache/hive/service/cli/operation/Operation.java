@@ -38,13 +38,15 @@ import org.apache.hive.service.cli.RowSet;
 import org.apache.hive.service.cli.TableSchema;
 import org.apache.hive.service.cli.session.HiveSession;
 import org.apache.hive.service.cli.thrift.TProtocolVersion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class Operation {
   protected final HiveSession parentSession;
   private OperationState state = OperationState.INITIALIZED;
   private final OperationHandle opHandle;
   private HiveConf configuration;
-  public static final Log LOG = LogFactory.getLog(Operation.class.getName());
+  public static final Logger LOG = LoggerFactory.getLogger(Operation.class.getName());
   public static final FetchOrientation DEFAULT_FETCH_ORIENTATION = FetchOrientation.FETCH_NEXT;
   public static final long DEFAULT_FETCH_MAX_ROWS = 100;
   protected boolean hasResultSet;
