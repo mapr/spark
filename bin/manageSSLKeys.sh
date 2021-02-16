@@ -5,10 +5,7 @@
 #various HTTPS connections. These are self signed.
 
 CURRENT_USER=$(id -u -n)
-LOG_BASE_DIR=/tmp/$CURRENT_USER
-mkdir -p $LOG_BASE_DIR
 
-exec 2>$LOG_BASE_DIR/spark-ui-mngssl.err
 set -x
 
 INSTALL_DIR=/home/$CURRENT_USER/__spark-internal__/security_keys
