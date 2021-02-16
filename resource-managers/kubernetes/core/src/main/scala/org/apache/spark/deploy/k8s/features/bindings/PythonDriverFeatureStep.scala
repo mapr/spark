@@ -60,10 +60,17 @@ private[spark] class PythonDriverFeatureStep(
       maybePythonArgs.toSeq ++
       maybePythonFiles.toSeq
 
+    var proxyUserArgs = Seq[String]()
+    if (kubernetesConf.roleSpecificConf.proxyUser.isDefined) {
+      proxyUserArgs = proxyUserArgs :+ "--proxy-user"
+      proxyUserArgs = proxyUserArgs :+ kubernetesConf.roleSpecificConf.proxyUser.get
+    }
+
     val withPythonPrimaryContainer = new ContainerBuilder(pod.container)
         .addAllToEnv(pythonEnvs.asJava)
         .addToArgs("driver-py")
         .addToArgs("--properties-file", SPARK_CONF_PATH)
+        .addToArgs(proxyUserArgs: _*)
         .addToArgs("--class", roleConf.mainClass)
       .build()
 

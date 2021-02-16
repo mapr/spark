@@ -46,10 +46,17 @@ private[spark] class RDriverFeatureStep(
     val rEnvs = envSeq ++
       maybeRArgs.toSeq
 
+    var proxyUserArgs = Seq[String]()
+    if (kubernetesConf.roleSpecificConf.proxyUser.isDefined) {
+      proxyUserArgs = proxyUserArgs :+ "--proxy-user"
+      proxyUserArgs = proxyUserArgs :+ kubernetesConf.roleSpecificConf.proxyUser.get
+    }
+
     val withRPrimaryContainer = new ContainerBuilder(pod.container)
         .addAllToEnv(rEnvs.asJava)
         .addToArgs("driver-r")
         .addToArgs("--properties-file", SPARK_CONF_PATH)
+        .addToArgs(proxyUserArgs: _*)
         .addToArgs("--class", roleConf.mainClass)
       .build()
 
