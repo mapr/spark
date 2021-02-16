@@ -959,6 +959,7 @@ class SparkContext(config: SparkConf) extends Logging {
       seq: Seq[T],
       numSlices: Int = defaultParallelism): RDD[T] = withScope {
     assertNotStopped()
+    setJobDoAsUser();
     new ParallelCollectionRDD[T](this, seq, numSlices, Map[Int, Seq[String]]())
   }
 
