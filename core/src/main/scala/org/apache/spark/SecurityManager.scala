@@ -111,37 +111,51 @@ private[spark] class SecurityManager(
     opts
   }
 
+  def getSparkVersion(sparkBase: String): String = {
+    val sparkVersionFile = scala.io.Source.fromFile(s"$sparkBase/sparkversion")
+    try {
+      val sparkVersion = sparkVersionFile.mkString.trim
+      sparkVersion
+    } catch {
+      case e: FileNotFoundException =>
+        throw new Exception(s"Failed to generate SSL certificates for spark WebUI: ", e)
+    } finally {
+      sparkVersionFile.close()
+    }
+  }
+
+  def getSparkHome: String = {
+    val maprHomeEnv = System.getenv("MAPR_HOME")
+    val maprHome = if (maprHomeEnv == null || maprHomeEnv.isEmpty) "/opt/mapr" else maprHomeEnv
+    val sparkBase = s"$maprHome/spark"
+    val sparkVersion: String = getSparkVersion(sparkBase)
+    s"$sparkBase/spark-$sparkVersion"
+  }
   def genSSLCertsIfNeededAndPushToMapRFS(): Unit = {
     if (isSSLCertGenerationNeededForWebUI(getSSLOptions("ui"))) {
       val certGeneratorName = "manageSSLKeys.sh"
+      val certGeneratorLog = s"${Utils.getCurrentUserName()}-spark-ui-mngssl.log"
+      val certGeneratorLogLocalLocation = s"$getSparkHome/logs/$certGeneratorLog"
+      val certGeneratorLogMfsLocation = s"/apps/spark/$certGeneratorLog"
 
-      def getSparkVersion(sparkBase: String) = {
-        val sparkVersionFile = scala.io.Source.fromFile(s"$sparkBase/sparkversion")
-        try {
-          val sparkVersion = sparkVersionFile.mkString.trim
-          sparkVersion
-        } catch {
-          case e: FileNotFoundException =>
-            throw new Exception(s"Failed to generate SSL certificates for spark WebUI: ", e)
-        } finally {
-          sparkVersionFile.close()
-        }
-      }
-
-      val maprHomeEnv = System.getenv("MAPR_HOME")
-      val maprHome = if (maprHomeEnv == null || maprHomeEnv.isEmpty) "/opt/mapr" else maprHomeEnv
-      val sparkBase = s"$maprHome/spark"
-      val sparkVersion: String = getSparkVersion(sparkBase)
-      val sparkHome = s"$sparkBase/spark-$sparkVersion"
-      val manageSslKeysScript = s"$sparkHome/bin/$certGeneratorName"
-
+      val manageSslKeysScript = s"$getSparkHome/bin/$certGeneratorName"
       val manageSslKeysLocalFile = new File(manageSslKeysScript)
       manageSslKeysLocalFile.setExecutable(true)
       val sslKeyStorePass = getSSLOptions("ui").keyStorePassword.get
 
-      // Process(s"$manageSslKeysScript $sslKeyStorePass").lineStream.foreach(msg => println(msg))
+      val file = new File(certGeneratorLogLocalLocation)
 
-      val res = s"$manageSslKeysScript $sslKeyStorePass".!
+      val stdStream = new OutputStreamWriter(new FileOutputStream(file), UTF_8)
+      val stdWriter = new PrintWriter(stdStream)
+      val res = s"$manageSslKeysScript $sslKeyStorePass" ! ProcessLogger(stdWriter println, stdWriter println)
+      stdWriter.close()
+
+      val fs = FileSystem.get(hadoopConf)
+      fs.copyFromLocalFile(false, true,
+        new Path(certGeneratorLogLocalLocation),
+        new Path(certGeneratorLogMfsLocation))
+      fs.close()
+
       if (res != 0) {
         throw new Exception(s"Failed to generate SSL certificates for spark WebUI. Exit code: $res" )
       }
@@ -188,6 +202,7 @@ private[spark] class SecurityManager(
           new Path(s"$localBaseDir${fStringPath.substring(fStringPath.lastIndexOf("/"))}"))
       }
     }
+    fs.close()
   }
 
   private def updateSslOptsWithNewKeystore(sslOptions: SSLOptions,
