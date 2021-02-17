@@ -20,6 +20,7 @@ package org.apache.spark.sql.execution.datasources
 import java.io.Closeable
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileUtil, Path}
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.lib.input.{FileSplit, LineRecordReader}
@@ -45,11 +46,12 @@ class HadoopFileLinesReader(
   def this(file: PartitionedFile, conf: Configuration) = this(file, None, conf)
 
   private val _iterator = {
+    val filePathData = FileUtil.checkPathForSymlink(new Path(file.filePath), conf)
     val fileSplit = new FileSplit(
       file.toPath,
       file.start,
-      file.length,
-      // The locality is decided by `getPreferredLocations` in `FileScanRDD`.
+      filePathData.stat.getLen,
+      // TODO: Implement Locality
       Array.empty)
     val attemptId = new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 0), 0)
     val hadoopAttemptContext = new TaskAttemptContextImpl(conf, attemptId)
