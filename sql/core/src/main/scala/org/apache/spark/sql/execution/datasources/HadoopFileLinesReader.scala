@@ -18,10 +18,9 @@
 package org.apache.spark.sql.execution.datasources
 
 import java.io.Closeable
-import java.net.URI
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.{FileUtil, Path}
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.lib.input.{FileSplit, LineRecordReader}
@@ -34,10 +33,11 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 class HadoopFileLinesReader(
     file: PartitionedFile, conf: Configuration) extends Iterator[Text] with Closeable {
   private val iterator = {
+    val filePathData = FileUtil.checkPathForSymlink(new Path(file.filePath), conf)
     val fileSplit = new FileSplit(
-      new Path(new URI(file.filePath)),
+      filePathData.path,
       file.start,
-      file.length,
+      filePathData.stat.getLen,
       // TODO: Implement Locality
       Array.empty)
     val attemptId = new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 0), 0)
