@@ -20,6 +20,7 @@ package org.apache.spark.sql.execution.datasources
 import java.io.Closeable
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileUtil, Path}
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.lib.input.CombineFileSplit
@@ -34,11 +35,12 @@ import org.apache.spark.input.WholeTextFileRecordReader
 class HadoopFileWholeTextReader(file: PartitionedFile, conf: Configuration)
   extends Iterator[Text] with Closeable {
   private val _iterator = {
+    val filePathData = FileUtil.checkPathForSymlink(new Path(file.filePath), conf)
     val fileSplit = new CombineFileSplit(
       Array(file.toPath),
       Array(file.start),
-      Array(file.length),
-      // The locality is decided by `getPreferredLocations` in `FileScanRDD`.
+      Array(filePathData.stat.getLen),
+      // TODO: Implement Locality
       Array.empty[String])
     val attemptId = new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 0), 0)
     val hadoopAttemptContext = new TaskAttemptContextImpl(conf, attemptId)
