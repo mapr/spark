@@ -59,7 +59,7 @@ class DriverServiceFeatureStepSuite extends SparkFunSuite with BeforeAndAfter {
       KubernetesConf(
         sparkConf,
         KubernetesDriverSpecificConf(
-          None, "main", "app", Seq.empty),
+          None, "main", "app", Seq.empty, None),
         SHORT_RESOURCE_NAME_PREFIX,
         "app-id",
         DRIVER_LABELS,
@@ -91,7 +91,7 @@ class DriverServiceFeatureStepSuite extends SparkFunSuite with BeforeAndAfter {
           .set(org.apache.spark.internal.config.DRIVER_BLOCK_MANAGER_PORT, 8080)
           .set(KUBERNETES_NAMESPACE, "my-namespace"),
         KubernetesDriverSpecificConf(
-          None, "main", "app", Seq.empty),
+          None, "main", "app", Seq.empty, None),
         SHORT_RESOURCE_NAME_PREFIX,
         "app-id",
         DRIVER_LABELS,
@@ -113,7 +113,7 @@ class DriverServiceFeatureStepSuite extends SparkFunSuite with BeforeAndAfter {
       KubernetesConf(
         sparkConf,
         KubernetesDriverSpecificConf(
-          None, "main", "app", Seq.empty),
+          None, "main", "app", Seq.empty, None),
         SHORT_RESOURCE_NAME_PREFIX,
         "app-id",
         DRIVER_LABELS,
@@ -144,7 +144,7 @@ class DriverServiceFeatureStepSuite extends SparkFunSuite with BeforeAndAfter {
       KubernetesConf(
         sparkConf.set(KUBERNETES_NAMESPACE, "my-namespace"),
         KubernetesDriverSpecificConf(
-          None, "main", "app", Seq.empty),
+          None, "main", "app", Seq.empty, None),
         LONG_RESOURCE_NAME_PREFIX,
         "app-id",
         DRIVER_LABELS,
@@ -172,7 +172,7 @@ class DriverServiceFeatureStepSuite extends SparkFunSuite with BeforeAndAfter {
         KubernetesConf(
           sparkConf.set(org.apache.spark.internal.config.DRIVER_BIND_ADDRESS, "host"),
           KubernetesDriverSpecificConf(
-            None, "main", "app", Seq.empty),
+            None, "main", "app", Seq.empty, None),
           LONG_RESOURCE_NAME_PREFIX,
           "app-id",
           DRIVER_LABELS,
@@ -198,7 +198,7 @@ class DriverServiceFeatureStepSuite extends SparkFunSuite with BeforeAndAfter {
         KubernetesConf(
           sparkConf,
           KubernetesDriverSpecificConf(
-            None, "main", "app", Seq.empty),
+            None, "main", "app", Seq.empty, None),
           LONG_RESOURCE_NAME_PREFIX,
           "app-id",
           DRIVER_LABELS,

@@ -37,7 +37,8 @@ private[spark] case class KubernetesDriverSpecificConf(
     mainAppResource: Option[MainAppResource],
     mainClass: String,
     appName: String,
-    appArgs: Seq[String]) extends KubernetesRoleSpecificConf
+    appArgs: Seq[String],
+    proxyUser: Option[String]) extends KubernetesRoleSpecificConf
 
 /*
  * Structure containing metadata for Kubernetes logic that builds a Spark executor.
@@ -116,7 +117,8 @@ private[spark] object KubernetesConf {
       mainAppResource: Option[MainAppResource],
       mainClass: String,
       appArgs: Array[String],
-      maybePyFiles: Option[String]): KubernetesConf[KubernetesDriverSpecificConf] = {
+      maybePyFiles: Option[String],
+      proxyUser: Option[String]): KubernetesConf[KubernetesDriverSpecificConf] = {
     val sparkConfWithMainAppJar = sparkConf.clone()
     val additionalFiles = mutable.ArrayBuffer.empty[String]
     mainAppResource.foreach {
@@ -177,7 +179,7 @@ private[spark] object KubernetesConf {
 
     KubernetesConf(
       sparkConfWithMainAppJar,
-      KubernetesDriverSpecificConf(mainAppResource, mainClass, appName, appArgs),
+      KubernetesDriverSpecificConf(mainAppResource, mainClass, appName, appArgs, proxyUser),
       appResourceNamePrefix,
       appId,
       driverLabels,

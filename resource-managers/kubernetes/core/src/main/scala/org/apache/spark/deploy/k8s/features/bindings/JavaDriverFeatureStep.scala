@@ -28,9 +28,15 @@ private[spark] class JavaDriverFeatureStep(
   kubernetesConf: KubernetesConf[KubernetesDriverSpecificConf])
   extends KubernetesFeatureConfigStep {
   override def configurePod(pod: SparkPod): SparkPod = {
+    var proxyUserArgs = Seq[String]()
+    if (kubernetesConf.roleSpecificConf.proxyUser.isDefined) {
+      proxyUserArgs = proxyUserArgs :+ "--proxy-user"
+      proxyUserArgs = proxyUserArgs :+ kubernetesConf.roleSpecificConf.proxyUser.get
+    }
     val withDriverArgs = new ContainerBuilder(pod.container)
       .addToArgs("driver")
       .addToArgs("--properties-file", SPARK_CONF_PATH)
+      .addToArgs(proxyUserArgs: _*)
       .addToArgs("--class", kubernetesConf.roleSpecificConf.mainClass)
       // The user application jar is merged into the spark.jars list and managed through that
       // property, so there is no need to reference it explicitly here.

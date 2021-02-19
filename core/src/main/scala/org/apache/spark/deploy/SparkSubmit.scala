@@ -668,6 +668,9 @@ private[spark] class SparkSubmit extends Logging {
       } else {
         childArgs ++= Array("--main-class", args.mainClass)
       }
+      if (args.proxyUser != null) {
+        childArgs ++= Array("--proxy-user", args.proxyUser)
+      }
       if (args.childArgs != null) {
         args.childArgs.foreach { arg =>
           childArgs += ("--arg", arg)
