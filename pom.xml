@@ -123,7 +123,7 @@
     <sbt.project.name>spark</sbt.project.name>
     <slf4j.version>1.7.25</slf4j.version>
     <log4j.version>2.14.0</log4j.version>
-    <hadoop.version>2.7.4.0-mapr-710-SNAPSHOT</hadoop.version>
+    <hadoop.version>2.7.5.0-mapr-710-SNAPSHOT</hadoop.version>
     <maprfs.version>6.2.0.0-mapr</maprfs.version>
     <protobuf.version>3.11.1</protobuf.version>
     <yarn.version>${hadoop.version}</yarn.version>
@@ -133,7 +133,7 @@
     <hive.group>org.apache.hive</hive.group>
     <!-- Version used in Maven Hive dependency -->
     <hive.version>1.2.0-mapr-spark-MEP-7.x-SNAPSHOT</hive.version>
-    <hive.2.version>2.3.7-mapr-SNAPSHOT</hive.2.version>
+    <hive.2.version>2.3.8-mapr-SNAPSHOT</hive.2.version>
     <!-- Kafka version -->
     <kafka.version>2.1.1.0-mapr-SNAPSHOT</kafka.version>
     <!-- Version used for internal directory structure -->
