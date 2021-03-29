@@ -150,7 +150,7 @@ private[spark] class SecurityManager(
   def genSSLCertsIfNeededAndPushToMapRFS(): Unit = {
     if (isSSLCertGenerationNeededForWebUI(getSSLOptions("ui"))) {
       val certGeneratorName = "manageSSLKeys.sh"
-      val certGeneratorLog = s"${Utils.getCurrentUserName()}-spark-ui-mngssl.log"
+      val certGeneratorLog = s"${Utils.getCurrentUserName()}-spark-ui-mngssl-log"
       val certGeneratorLogLocalLocation = s"$getSparkHome/logs/$certGeneratorLog"
       val certGeneratorLogMfsLocation = s"/apps/spark/$certGeneratorLog"
 
