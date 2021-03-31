@@ -1,0 +1,302 @@
+@Library("jenkins-shared-library")_
+
+env.MAVEN_CENTRAL="${MAVEN_CENTRAL_COMMON}"
+env.MAPR_CENTRAL="${MAPR_CENTRAL_COMMON}"
+env.MAPR_RELEASES_REPO="${MAPR_RELEASES_REPO_COMMON}"
+env.MAPR_SNAPSHOTS_REPO="${MAPR_SNAPSHOTS_REPO_COMMON}"
+env.MAPR_MAVEN_REPO="${MAPR_SNAPSHOTS_REPO_COMMON}"
+
+ARTIFACTORY_SERVER=''
+env.REPOSITORY_NAME=''
+env.GIT_REPO_URL=''
+env.GIT_SHORT_COMMIT_SHA=''
+env.CURRENT_BUILD_TAG=''
+env.BUILD_BY_TAG=false
+
+env.ARTIFACTORY_PATH_RPM=''
+env.ARTIFACTORY_PATH_DEB=''
+env.ID=''
+env.MAKEFILE_ARGS=''
+env.PROJECT=''
+MEP_VER=''
+
+MAKEFILE_ARG_BRANCH_NAME = " SPARK_BRANCH_NAME"
+
+pipeline {
+  agent none
+  triggers {
+    pollSCM 'H/5 * * * *'
+  }
+  options {
+    skipDefaultCheckout()
+    disableConcurrentBuilds()
+    timestamps()
+  }
+  parameters {
+    choice(name: 'BUILD_TYPE', choices: ['Dev','EBF','Release'], description: 'default - Dev. EBF and Release args you can use only in release branches')
+    string(name: 'MAKEFILE_ENV_VARS', defaultValue: '', description: 'Variables you can pass to makefile (command will be: make {THIS VAR} {project-name}). Please DO NOT put component_branch_name')
+    string(name: 'SPARK_HADOOP_PROFILE', defaultValue: '3.3', description: '')
+    booleanParam(name: 'Spark Deploy', defaultValue: true, description: 'Uncheck and Jenkins will skip ./build/mvn deploy')
+  }
+  stages {
+    stage("Setup settings and variables") {
+      agent {label "redhat8"}
+      steps {
+        script {
+          ARTIFACTORY_SERVER = Artifactory.server 'artifactory.devops.lab'
+          //MAKEFILE_ARG_BRANCH_NAME will use for makefile only for release/EBF branches
+          initVariables(params.BUILD_TYPE, MAKEFILE_ARG_BRANCH_NAME)
+        }
+      }
+    }
+
+    stage ("Main CI process") {
+      parallel {
+        stage("Ubuntu build") {
+          agent {label "ubuntu"}
+          stages {
+            stage("Checkout") {
+              steps {
+                script {
+                  checkout scm
+                }
+              }
+            }
+
+            stage("Build") {
+              steps {
+                script {
+                  configFileProvider([configFile(fileId: 'maven_settings', variable: 'mvn_settings')]) {
+                    sh "cat ${env.mvn_settings} > settings.xml"
+                  }
+                  docker.image("dfdkr.mip.storage.hpecorp.net/ubuntu16-java11-gcc7").inside (
+                  "-e MAPR_MIRROR=${MAPR_MIRROR} \
+                  -e MAPR_CENTRAL=${MAPR_CENTRAL} \
+                  -e MAVEN_CENTRAL=${MAVEN_CENTRAL} \
+                  -e MAPR_MAVEN_REPO=${MAPR_MAVEN_REPO} \
+                  -e BUILD_NUMBER=${ID}.${BUILD_NUMBER} \
+                  -e MAPR_RELEASES_REPO=${MAPR_RELEASES_REPO} \
+                  -e MAPR_SNAPSHOTS_REPO=${MAPR_SNAPSHOTS_REPO} \
+                  -v /root/yum-proxy.conf:/etc/yum.conf:ro \
+                  -v /etc/hosts:/etc/hosts:ro \
+                  -v /root/apt-proxy.conf:/etc/apt/apt.conf.d/proxy.conf:ro \
+                  -v /root/.gradle/gradle.properties:/root/.gradle/gradle.properties:ro \
+                  -v /etc/profile.d/proxy.sh:/etc/profile.d/proxy.sh:ro \
+                  -v /etc/localtime:/etc/localtime:ro \
+                  -v /root/.ssh:/root/.ssh:rw \
+                  -v ${WORKSPACE}/settings.xml:/root/.m2/settings.xml:ro") {
+                    sh """
+                      rm -rf ${PROJECT}; git clone git@github.com:mapr/private-pkg.git ${PROJECT}; \
+                      cd ${PROJECT}; \
+                      git checkout MEP-7.0.0 ; \
+                      apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 ; \
+                      add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial-cran35/'
+                      apt update ; \
+                      apt -y install r-base ; \
+                      make ${PROJECT} TIMESTAMP=${ID} ${MAKEFILE_ARGS}
+                    """
+                  }
+                }
+              }
+            }
+
+            stage("Upload to Artifactory") {
+              steps{
+                script {
+                  from = "${WORKSPACE}/${env.PROJECT}/dist/*"
+                  to = "${env.ARTIFACTORY_PATH_DEB}"
+                  props = "deb.distribution=binary;deb.component=trusty;deb.architecture=all;release=${params.BUILD_TYPE}"
+                  artifactory.uploadArtifactsAndBuildInfo(ARTIFACTORY_SERVER, from, to, props)
+                }
+              }
+            }
+          }
+        }
+
+        stage("Redhat build") {
+          agent { label "redhat8" }
+          stages {
+            stage("Checkout") {
+              steps {
+                script {
+                  checkout scm
+                }
+              }
+            }
+
+            stage("Build") {
+              steps {
+                script {
+                  configFileProvider([configFile(fileId: 'maven_settings', variable: 'mvn_settings')]) {
+                    sh "cat ${env.mvn_settings} > settings.xml"
+                  }
+                  docker.image("dfdkr.mip.storage.hpecorp.net/centos8-java11-gcc8").inside (
+                  "-e MAPR_MIRROR=${MAPR_MIRROR} \
+                  -e MAPR_CENTRAL=${MAPR_CENTRAL} \
+                  -e MAVEN_CENTRAL=${MAVEN_CENTRAL} \
+                  -e MAPR_MAVEN_REPO=${MAPR_MAVEN_REPO} \
+                  -e BUILD_NUMBER=${ID}.${BUILD_NUMBER} \
+                  -e MAPR_RELEASES_REPO=${MAPR_RELEASES_REPO} \
+                  -e MAPR_SNAPSHOTS_REPO=${MAPR_SNAPSHOTS_REPO} \
+                  -v /root/yum-proxy.conf:/etc/yum.conf:ro \
+                  -v /etc/hosts:/etc/hosts:ro \
+                  -v /root/apt-proxy.conf:/etc/apt/apt.conf.d/proxy.conf:ro \
+                  -v /root/.gradle/gradle.properties:/root/.gradle/gradle.properties:ro \
+                  -v /etc/profile.d/proxy.sh:/etc/profile.d/proxy.sh:ro \
+                  -v /etc/localtime:/etc/localtime:ro \
+                  -v /root/.ssh:/root/.ssh:rw \
+                  -v ${WORKSPACE}/settings.xml:/root/.m2/settings.xml:ro") {
+                    sh """
+                      rm -rf ${PROJECT}; git clone git@github.com:mapr/private-pkg.git ${PROJECT}; \
+                      cd ${PROJECT}; \
+                      git checkout MEP-7.0.0 ; \
+                      yum install -y R ; \
+                      echo \$JAVA_HOME ; \
+                      make ${PROJECT} TIMESTAMP=${ID} ${MAKEFILE_ARGS} ; \
+                      """
+                    }
+                }
+              }
+            }
+
+            stage("RPM Sign") {
+              steps {
+                configFileProvider([configFile(fileId: 'rpmSignSh', variable: 'rpmSignSh')]) {
+                  sh """
+                  cat ${env.rpmSignSh} > rpm_sign.sh
+                  chmod 765 rpm_sign.sh
+                  ./rpm_sign.sh ${PROJECT}/dist
+                  """
+                }
+              }
+            }
+
+            stage("Upload to Artifactory") {
+              steps{
+                script {
+                  from = "${WORKSPACE}/${env.PROJECT}/dist/*"
+                  to = "${ARTIFACTORY_PATH_RPM}"
+                  props = "release=${params.BUILD_TYPE}"
+                  artifactory.uploadArtifactsAndBuildInfo(ARTIFACTORY_SERVER, from, to, props)
+                }
+              }
+            }
+
+            stage("Spark Deploy") {
+              when {
+                expression { params.'Spark Deploy' == true }
+              }
+              steps {
+                script {
+                  configFileProvider([configFile(fileId: 'maven_settings_spark_deploy', variable: 'mvn_settings')]) {
+                    sh "cat ${env.mvn_settings} > settings-deploy.xml"
+                  }
+                  docker.image("dfdkr.mip.storage.hpecorp.net/centos8-java11-gcc8").inside (
+                  "-e MAPR_MIRROR=${MAPR_MIRROR} \
+                  -e MAPR_CENTRAL=${MAPR_CENTRAL} \
+                  -e MAVEN_CENTRAL=${MAVEN_CENTRAL} \
+                  -e MAPR_MAVEN_REPO=${MAPR_MAVEN_REPO} \
+                  -e BUILD_NUMBER=${ID}.${BUILD_NUMBER} \
+                  -e MAPR_RELEASES_REPO=${MAPR_RELEASES_REPO} \
+                  -e MAPR_SNAPSHOTS_REPO=${MAPR_SNAPSHOTS_REPO} \
+                  -v /root/yum-proxy.conf:/etc/yum.conf:ro \
+                  -v /etc/hosts:/etc/hosts:ro \
+                  -v /root/apt-proxy.conf:/etc/apt/apt.conf.d/proxy.conf:ro \
+                  -v /root/.gradle/gradle.properties:/root/.gradle/gradle.properties:ro \
+                  -v /etc/profile.d/proxy.sh:/etc/profile.d/proxy.sh:ro \
+                  -v /etc/localtime:/etc/localtime:ro \
+                  -v /root/.ssh:/root/.ssh:rw \
+                  -v ${WORKSPACE}/settings-deploy.xml:/root/.m2/settings.xml:ro") {
+                    sh """
+                      sed -i 's/^mirrorlist/#mirrorlist/' /etc/yum.repos.d/CentOS-* ; \
+                      sed -i 's/^#baseurl/baseurl/' /etc/yum.repos.d/CentOS-* ; \
+                      sed -i 's/mirror.centos.org/vault.centos.org/' /etc/yum.repos.d/CentOS-* ; \
+                      yum install -y R ; \
+                      ./build/mvn -B deploy -Phadoop-${params.SPARK_HADOOP_PROFILE},yarn,mesos,hadoop-provided,scala-2.12,hive,hive-thriftserver,sparkr,flume -Dskip-kafka-0-8 -DskipTests=True -Dscalastyle.skip=true -Dcheckstyle.skip=true -Dscalastyle.failOnViolation=false -Dscalatest.testFailureIgnore=true -DaltDeploymentRepository=mapr-snapshots::default::${MAPR_MAVEN_REPO};
+                      """
+                    }
+                }
+              }
+            }
+
+            stage("Whitesource scan") {
+              steps {
+                script {
+                  withCredentials([string(credentialsId: 'wsApiKey', variable: 'wsApiKey'), string(credentialsId: 'wsUserKey', variable: 'wsUserKey')]) {
+                    //Launch container with WS scan. After scan report will upload to WS site
+                    docker.image("docker.artifactory/whitesource:0.0.1").inside (
+                      "-e MAPR_MIRROR=${MAPR_MIRROR} \
+                      -e MAPR_CENTRAL=${MAPR_CENTRAL} \
+                      -e MAVEN_CENTRAL=${MAVEN_CENTRAL} \
+                      -e MAPR_MAVEN_REPO=${MAPR_MAVEN_REPO} \
+                      -e MAPR_RELEASES_REPO=${MAPR_RELEASES_REPO} \
+                      -e MAPR_SNAPSHOTS_REPO=${MAPR_SNAPSHOTS_REPO} \
+                      -v /root/yum-proxy.conf:/etc/yum.conf:ro \
+                      -v /etc/hosts:/etc/hosts:ro \
+                      -v /root/apt-proxy.conf:/etc/apt/apt.conf.d/proxy.conf:ro \
+                      -v /root/.gradle/gradle.properties:/root/.gradle/gradle.properties:ro \
+                      -v /etc/profile.d/proxy.sh:/etc/profile.d/proxy.sh:ro \
+                      -v /root/.ssh:/root/.ssh:rw \
+                      -v ${WORKSPACE}/settings.xml:/root/.m2/settings.xml:ro \
+                      -v /root/.m2/repository:/root/.m2/repository:rw") {
+                        sh """
+                          cd devops/whitesource/ ; \
+                          curl -LJO https://github.com/whitesource/unified-agent-distribution/releases/latest/download/wss-unified-agent.jar ; \
+                          java -jar wss-unified-agent.jar -project ${PROJECT} -product ${PROJECT} -userKey $wsUserKey -apiKey $wsApiKey -c wss-unified-agent.config -d ../../ ; \
+                        """
+                      }
+                   }
+                }
+              }
+            }
+
+            stage("Push Whitesource reports") {
+              steps {
+                script {
+                  withCredentials([string(credentialsId: 'wsApiKey', variable: 'wsApiKey'), string(credentialsId: 'wsUserKey', variable: 'wsUserKey')]) {
+                    catchError {
+                      /*Get token of product. We have to communicate with WS API only using 64-digits project's token.
+                        We are sending request to API and get ALL "project+token" pairs. Then parse this information and find token for current project*/
+                        productToken = ws.getWSProductToken(PROJECT)
+
+                        //Get reports (Excel and json) from WS site and save these reports to files. Once for each format
+                        ws.getWSReports(productToken)
+
+                        //Move latest reports to the "old" folder in Artifactory
+                        ws.moveOldWsReports(ARTIFACTORY_SERVER)
+
+                        //Upload reports (Excel and json) to the Artifactory (to the latest folder)
+                        ws.uploadToArtifactory(ARTIFACTORY_SERVER)
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+        postActions.failure()
+      }
+    }
+    fixed {
+      script {
+        postActions.fixed()
+      }
+    }
+    aborted {
+      script {
+        postActions.aborted()
+      }
+    }
+    always {
+      script {
+        postActions.always()
+      }
+    }
+  }
+}
