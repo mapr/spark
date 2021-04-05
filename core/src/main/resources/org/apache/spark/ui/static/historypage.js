@@ -103,9 +103,9 @@ $(document).ready(function() {
       pageLength: 20
     });
 
-    historySummary = $("#history-summary");
-    searchString = historySummary["context"]["location"]["search"];
-    requestedIncomplete = getParameterByName("showIncomplete", searchString);
+    var historySummary = $("#history-summary");
+    var searchString = window.location.search;
+    var requestedIncomplete = getParameterByName("showIncomplete", searchString);
     requestedIncomplete = (requestedIncomplete == "true" ? true : false);
 
     $.getJSON(uiRoot + "/api/v1/applications?limit=" + appLimit, function(response,status,jqXHR) {
