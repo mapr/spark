@@ -40,6 +40,8 @@ import org.apache.spark.sql.types.StringType
 import org.apache.spark.util.{SerializableConfiguration, Utils}
 import org.apache.spark.util.ArrayImplicits._
 
+import java.io.IOException
+
 /**
  * Abstract class for writing out data in a single Spark task.
  * Exceptions thrown by the implementation of this trait will automatically trigger task aborts.
@@ -309,6 +311,24 @@ abstract class BaseDynamicPartitionDataWriter(
       committer.newTaskTempFileAbsPath(taskAttemptContext, customPath.get, fileNameSpec)
     } else {
       committer.newTaskTempFile(taskAttemptContext, partDir, fileNameSpec)
+    }
+
+    // Creation of intermediate folders with mkdirs() required because
+    // intermediate folders created by create() don't inherit permission bits
+    // https://maprdrill.atlassian.net/browse/SPARK-638
+    def createIntermediateFolder(filePath: String, taskAttemptContext: TaskAttemptContext) {
+      val folderPath = new Path(filePath).getParent
+      val fileSystem = folderPath.getFileSystem(taskAttemptContext.getConfiguration)
+      fileSystem.mkdirs(folderPath)
+    }
+    try {
+      createIntermediateFolder(currentPath, taskAttemptContext)
+    } catch {
+      case e: IOException =>
+      {
+        Thread.sleep(30 * 1000)
+        createIntermediateFolder(currentPath, taskAttemptContext)
+      }
     }
 
     currentWriter = description.outputWriterFactory.newInstance(
