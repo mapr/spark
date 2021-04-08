@@ -17,7 +17,6 @@
 package org.apache.spark.sql.execution.datasources
 
 import scala.collection.mutable
-
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.TaskAttemptContext
 
@@ -34,6 +33,8 @@ import org.apache.spark.sql.execution.metric.{CustomMetrics, SQLMetric}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.StringType
 import org.apache.spark.util.{SerializableConfiguration, Utils}
+
+import java.io.IOException
 
 /**
  * Abstract class for writing out data in a single Spark task.
@@ -290,6 +291,24 @@ abstract class BaseDynamicPartitionDataWriter(
       committer.newTaskTempFileAbsPath(taskAttemptContext, customPath.get, fileNameSpec)
     } else {
       committer.newTaskTempFile(taskAttemptContext, partDir, fileNameSpec)
+    }
+
+    // Creation of intermediate folders with mkdirs() required because
+    // intermediate folders created by create() don't inherit permission bits
+    // https://maprdrill.atlassian.net/browse/SPARK-638
+    def createIntermediateFolder(filePath: String, taskAttemptContext: TaskAttemptContext) {
+      val folderPath = new Path(filePath).getParent
+      val fileSystem = folderPath.getFileSystem(taskAttemptContext.getConfiguration)
+      fileSystem.mkdirs(folderPath)
+    }
+    try {
+      createIntermediateFolder(currentPath, taskAttemptContext)
+    } catch {
+      case e: IOException =>
+      {
+        Thread.sleep(30 * 1000)
+        createIntermediateFolder(currentPath, taskAttemptContext)
+      }
     }
 
     currentWriter = description.outputWriterFactory.newInstance(
