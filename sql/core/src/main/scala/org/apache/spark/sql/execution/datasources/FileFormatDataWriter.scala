@@ -17,10 +17,8 @@
 package org.apache.spark.sql.execution.datasources
 
 import scala.collection.mutable
-
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.TaskAttemptContext
-
 import org.apache.spark.internal.io.FileCommitProtocol
 import org.apache.spark.internal.io.FileCommitProtocol.TaskCommitMessage
 import org.apache.spark.sql.catalyst.InternalRow
@@ -30,6 +28,8 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.connector.write.{DataWriter, WriterCommitMessage}
 import org.apache.spark.sql.types.StringType
 import org.apache.spark.util.SerializableConfiguration
+
+import java.io.IOException
 
 /**
  * Abstract class for writing out data in a single Spark task.
@@ -243,7 +243,15 @@ class DynamicPartitionDataWriter(
       val fileSystem = folderPath.getFileSystem(taskAttemptContext.getConfiguration)
       fileSystem.mkdirs(folderPath)
     }
-    createIntermediateFolder(currentPath, taskAttemptContext)
+    try {
+      createIntermediateFolder(currentPath, taskAttemptContext)
+    } catch {
+      case e: IOException =>
+      {
+        Thread.sleep(30 * 1000)
+        createIntermediateFolder(currentPath, taskAttemptContext)
+      }
+    }
 
     currentWriter = description.outputWriterFactory.newInstance(
       path = currentPath,
