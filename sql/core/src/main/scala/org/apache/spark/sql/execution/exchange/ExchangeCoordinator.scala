@@ -213,6 +213,7 @@ class ExchangeCoordinator(
         if (shuffleDependency.rdd.partitions.length != 0) {
           // submitMapStage does not accept RDD with 0 partition.
           // So, we will not submit this dependency.
+          exchange.sqlContext.sparkContext.setJobDoAsUser()
           submittedStageFutures +=
             exchange.sqlContext.sparkContext.submitMapStage(shuffleDependency)
         }
