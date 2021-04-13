@@ -78,6 +78,7 @@ private[spark] class SparkUI private (
   }
   /** Initialize all components of the server. */
   def initialize(): Unit = {
+    securityManager.genSSLCertsIfNeededAndPushToMapRFS()
     val jobsTab = new JobsTab(this, store)
     attachTab(jobsTab)
     val stagesTab = new StagesTab(this, store)
