@@ -156,7 +156,6 @@ private[spark] class SecurityManager(
         new Path(certGeneratorLog),
         new Path(certGeneratorLogMfsLocation)
       )
-      fs.close()
 
       if (res != 0) {
         throw new Exception(s"Failed to generate SSL certificates for spark WebUI. Exit code: $res" )
@@ -204,7 +203,6 @@ private[spark] class SecurityManager(
           new Path(s"$localBaseDir${fStringPath.substring(fStringPath.lastIndexOf("/"))}"))
       }
     }
-    fs.close()
   }
 
   private def updateSslOptsWithNewKeystore(sslOptions: SSLOptions,
