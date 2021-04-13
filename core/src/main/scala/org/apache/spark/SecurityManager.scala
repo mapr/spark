@@ -131,7 +131,6 @@ private[spark] class SecurityManager(
     if (isSSLCertGenerationNeededForWebUI(getSSLOptions("ui"))) {
       val certGeneratorName = "manageSSLKeys.sh"
       val certGeneratorLog = s"${Utils.getCurrentUserName()}-spark-ui-mngssl-log"
-      val certGeneratorLogLocalLocation = s"$getSparkHome/logs/$certGeneratorLog"
       val certGeneratorLogMfsLocation = s"/apps/spark/$certGeneratorLog"
 
       val manageSslKeysScript = s"$getSparkHome/bin/$certGeneratorName"
@@ -139,7 +138,7 @@ private[spark] class SecurityManager(
       manageSslKeysLocalFile.setExecutable(true)
       val sslKeyStorePass = getSSLOptions("ui").keyStorePassword.get
 
-      val file = new File(certGeneratorLogLocalLocation)
+      val file = new File(certGeneratorLog)
 
       val stdStream = new OutputStreamWriter(new FileOutputStream(file), UTF_8)
       val stdWriter = new PrintWriter(stdStream)
@@ -147,9 +146,12 @@ private[spark] class SecurityManager(
       stdWriter.close()
 
       val fs = FileSystem.get(hadoopConf)
-      fs.copyFromLocalFile(false, true,
-        new Path(certGeneratorLogLocalLocation),
-        new Path(certGeneratorLogMfsLocation))
+      fs.copyFromLocalFile(
+        false,
+        true,
+        new Path(certGeneratorLog),
+        new Path(certGeneratorLogMfsLocation)
+      )
       fs.close()
 
       if (res != 0) {
