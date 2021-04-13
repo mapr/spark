@@ -158,7 +158,7 @@ object SparkHiveExample {
     // | val_86| 86|
     // |val_311|311|
     // ...
-
+    fs.delete(new Path(dataDir), true)
     sql("DROP TABLE IF EXISTS hive_records")
     sql("DROP TABLE IF EXISTS src")
     sql("DROP TABLE IF EXISTS records")
