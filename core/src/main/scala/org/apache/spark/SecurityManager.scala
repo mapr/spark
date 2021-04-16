@@ -142,7 +142,7 @@ private[spark] class SecurityManager(
       manageSslKeysLocalFile.setExecutable(true)
       val sslKeyStorePass = getSSLOptions("ui").keyStorePassword.get
 
-      val file = new File(certGeneratorLog)
+      val file = new File(s"${System.getProperty("user.home")}/$certGeneratorLog")
 
       val stdStream = new OutputStreamWriter(new FileOutputStream(file), UTF_8)
       val stdWriter = new PrintWriter(stdStream)
@@ -153,7 +153,7 @@ private[spark] class SecurityManager(
       fs.copyFromLocalFile(
         false,
         true,
-        new Path(certGeneratorLog),
+        new Path(file.getPath),
         new Path(certGeneratorLogMfsLocation)
       )
 
