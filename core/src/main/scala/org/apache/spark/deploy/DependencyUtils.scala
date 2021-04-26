@@ -186,7 +186,7 @@ private[deploy] object DependencyUtils extends Logging {
 
   private def resolveGlobPath(uri: URI, hadoopConf: Configuration): Array[String] = {
     uri.getScheme match {
-      case "local" | "http" | "https" | "ftp" => Array(uri.toString)
+      case "local" | "http" | "https" | "ftp" | "dtap" => Array(uri.toString)
       case _ =>
         val fs = FileSystem.get(uri, hadoopConf)
         Option(fs.globStatus(new Path(uri))).map { status =>
