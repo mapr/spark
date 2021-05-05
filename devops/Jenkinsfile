@@ -35,6 +35,7 @@ pipeline {
   parameters {
     choice(name: 'BUILD_TYPE', choices: ['Dev','EBF','Release'], description: 'default - Dev. EBF and Release args you can use only in release branches')
     string(name: 'MAKEFILE_ENV_VARS', defaultValue: '', description: 'Variables you can pass to makefile (command will be: make {THIS VAR} {project-name}). Please DO NOT put component_branch_name')
+    booleanParam(name: 'Spark Deploy', defaultValue: true, description: 'Uncheck and Jenkins will skip ./build/mvn deploy')
   }
   stages {
     stage("Setup settings and variables") {
@@ -152,10 +153,7 @@ pipeline {
                       yum install -y R ; \
                       echo \$JAVA_HOME ; \
                       make ${PROJECT} TIMESTAMP=${ID} ${MAKEFILE_ARGS} ; \
-                      cd dl/mapr-spark2 ; \
                       """
-                      //./build/mvn deploy -Pyarn,mesos,hadoop-provided,scala-2.12,hive,hive-thriftserver,sparkr,flume -Dskip-kafka-0-8 -DskipTests=True -Dscalastyle.skip=true -Dcheckstyle.skip=true -Dscalastyle.failOnViolation=false -Dscalatest.testFailureIgnore=true -DaltDeploymentRepository=mapr-snapshots::default::${MAPR_MAVEN_REPO};
-
                     }
                 }
               }
@@ -180,6 +178,40 @@ pipeline {
                   to = "${ARTIFACTORY_PATH_RPM}"
                   props = "release=${params.BUILD_TYPE}"
                   artifactory.uploadArtifactsAndBuildInfo(ARTIFACTORY_SERVER, from, to, props)
+                }
+              }
+            }
+
+            stage("Spark Deploy") {
+              when {
+                expression { params.'Spark Deploy' == true }
+              }
+              steps {
+                script {
+                  configFileProvider([configFile(fileId: 'maven_settings_spark_deploy', variable: 'mvn_settings')]) {
+                    sh "cat ${env.mvn_settings} > settings-deploy.xml"
+                  }
+                  docker.image("maprtech/centos8-java11-gcc8").inside (
+                  "-e MAPR_MIRROR=${MAPR_MIRROR} \
+                  -e MAPR_CENTRAL=${MAPR_CENTRAL} \
+                  -e MAVEN_CENTRAL=${MAVEN_CENTRAL} \
+                  -e MAPR_MAVEN_REPO=${MAPR_MAVEN_REPO} \
+                  -e BUILD_NUMBER=${ID}.${BUILD_NUMBER} \
+                  -e MAPR_RELEASES_REPO=${MAPR_RELEASES_REPO} \
+                  -e MAPR_SNAPSHOTS_REPO=${MAPR_SNAPSHOTS_REPO} \
+                  -v /root/yum-proxy.conf:/etc/yum.conf:ro \
+                  -v /etc/hosts:/etc/hosts:ro \
+                  -v /root/apt-proxy.conf:/etc/apt/apt.conf.d/proxy.conf:ro \
+                  -v /root/.gradle/gradle.properties:/root/.gradle/gradle.properties:ro \
+                  -v /etc/profile.d/proxy.sh:/etc/profile.d/proxy.sh:ro \
+                  -v /etc/localtime:/etc/localtime:ro \
+                  -v /root/.ssh:/root/.ssh:rw \
+                  -v ${WORKSPACE}/settings-deploy.xml:/root/.m2/settings.xml:ro") {
+                    sh """
+                      yum install -y R ; \
+                      ./build/mvn deploy -Pyarn,mesos,hadoop-provided,scala-2.12,hive,hive-thriftserver,sparkr,flume -Dskip-kafka-0-8 -DskipTests=True -Dscalastyle.skip=true -Dcheckstyle.skip=true -Dscalastyle.failOnViolation=false -Dscalatest.testFailureIgnore=true -DaltDeploymentRepository=mapr-snapshots::default::${MAPR_MAVEN_REPO};
+                      """
+                    }
                 }
               }
             }
