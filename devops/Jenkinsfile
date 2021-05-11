@@ -138,6 +138,7 @@ pipeline {
                   -e BUILD_NUMBER=${ID}.${BUILD_NUMBER} \
                   -e MAPR_RELEASES_REPO=${MAPR_RELEASES_REPO} \
                   -e MAPR_SNAPSHOTS_REPO=${MAPR_SNAPSHOTS_REPO} \
+                  -e MAVEN_OPTS=-U \
                   -v /root/yum-proxy.conf:/etc/yum.conf:ro \
                   -v /etc/hosts:/etc/hosts:ro \
                   -v /root/apt-proxy.conf:/etc/apt/apt.conf.d/proxy.conf:ro \
