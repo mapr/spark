@@ -127,7 +127,7 @@ pipeline {
             stage("Build") {
               steps {
                 script {
-                  configFileProvider([configFile(fileId: 'maven_settings', variable: 'mvn_settings')]) {
+                  configFileProvider([configFile(fileId: 'maven_settings_spark_deploy', variable: 'mvn_settings')]) {
                     sh "cat ${env.mvn_settings} > settings.xml"
                   }
                   docker.image("maprtech/centos8-java11-gcc8").inside (
