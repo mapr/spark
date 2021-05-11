@@ -130,8 +130,14 @@ private[spark] class MaprConfigFeatureStep(
       .endVolumeMount()
   }
 
-  private def applyUserSecret(podBuilder: PodBuilder, containerBuilder: ContainerBuilder) = {
-    val userSecretName = sparkConf.get(MAPR_USER_SECRET).toString
+  private def applyUserSecret(podBuilder: PodBuilder, containerBuilder: ContainerBuilder): Unit = {
+    val userSecretNameConfig = sparkConf.get(MAPR_USER_SECRET)
+
+    if (userSecretNameConfig.isEmpty) {
+      return
+    }
+
+    val userSecretName = userSecretNameConfig.get
     val userSecretVolumeName = s"$userSecretName-volume"
 
     podBuilder.editOrNewSpec()
@@ -148,15 +154,13 @@ private[spark] class MaprConfigFeatureStep(
         .withName(ENV_MAPR_TICKETFILE_LOCATION)
         .withValue(MAPR_USER_TICKET_MOUNT_PATH)
       .endEnv()
-      .addNewEnvFrom()
-        .withNewSecretRef()
-          .withName(userSecretName)
-        .endSecretRef()
-      .endEnvFrom()
+      .addNewEnv()
+        .withName(ENV_MAPR_USERSECRET_MOUNT_PATH)
+        .withValue(MAPR_USER_SECRET_MOUNT_PATH)
+      .endEnv()
       .addNewVolumeMount()
         .withName(userSecretVolumeName)
-        .withMountPath(MAPR_USER_TICKET_MOUNT_PATH)
-        .withSubPath(MAPR_USER_TICKET_SUBPATH)
+        .withMountPath(MAPR_USER_SECRET_MOUNT_PATH)
       .endVolumeMount()
   }
 
@@ -169,6 +173,7 @@ private[spark] class MaprConfigFeatureStep(
         .withName(serverSecretVolume)
         .withNewSecret()
           .withSecretName(serverSecretName)
+          .withOptional(true)
         .endSecret()
       .endVolume()
       .endSpec()
@@ -192,6 +197,7 @@ private[spark] class MaprConfigFeatureStep(
       .addNewEnvFrom()
         .withNewConfigMapRef()
           .withName(clusterConfMap)
+          .withOptional(true)
         .endConfigMapRef()
       .endEnvFrom()
   }
