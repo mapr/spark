@@ -88,10 +88,10 @@ package object kafka010 { //scalastyle:ignore
     def commitOffsetsAsync(): Unit = commitOffsetsAsync(null)
 
     def commitOffsetsAsync(callback: OffsetCommitCallback): Unit = {
-      inputDStream.foreachRDD { rdd =>
+      directKafkaInputDStream.foreachRDD { rdd =>
         val offsets = rdd.asInstanceOf[HasOffsetRanges].offsetRanges
 
-        inputDStream.asInstanceOf[CanCommitOffsets].commitAsync(offsets)
+        directKafkaInputDStream.asInstanceOf[CanCommitOffsets].commitAsync(offsets)
       }
     }
   }

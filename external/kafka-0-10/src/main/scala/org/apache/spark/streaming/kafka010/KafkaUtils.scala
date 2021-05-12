@@ -17,17 +17,20 @@
 
 package org.apache.spark.streaming.kafka010
 
-import java.{util => ju}
 import java.io.OutputStream
 
 import scala.collection.JavaConverters._
+
 import com.google.common.base.Charsets.UTF_8
+import java.{util => ju}
 import net.razorvine.pickle.{IObjectPickler, Opcodes, Pickler}
 import org.apache.kafka.clients.consumer._
 import org.apache.kafka.common.TopicPartition
+import org.apache.spark.{SparkContext, SparkEnv}
 
-import org.apache.spark.SparkContext
-import org.apache.spark.api.java.{ JavaRDD, JavaSparkContext }
+import org.apache.spark.annotation.Experimental
+import org.apache.spark.api.java.{JavaRDD, JavaSparkContext}
+import org.apache.spark.api.python.SerDeUtil
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.streaming.StreamingContext
@@ -217,8 +220,8 @@ object KafkaUtils extends Logging {
 
   def waitForConsumerAssignment[K, V](consumer: KafkaConsumer[K, V],
                                       partitions: ju.Set[TopicPartition]): Unit = {
-    val waitingForAssigmentTimeout = SparkEnv.get.conf.
-      getLong("spark.mapr.WaitingForAssignmentTimeout", 600000)
+    val waitingForAssigmentTimeout = SparkEnv.get.conf
+      .getLong("spark.mapr.WaitingForAssignmentTimeout", 600000)
 
     var timeout = 0
     while ((consumer.assignment().isEmpty || consumer.assignment().size() < partitions.size)
