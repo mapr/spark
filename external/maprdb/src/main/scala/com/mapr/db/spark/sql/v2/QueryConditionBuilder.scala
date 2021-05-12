@@ -1,16 +1,16 @@
 package com.mapr.db.spark.sql.v2
 
+import scala.collection.JavaConversions._
+
+import com.mapr.db.spark.sql.v2.QueryConditionExtensions._
+import org.ojai.store.{Connection, QueryCondition}
+
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.sources._
-import org.ojai.store.{Connection, QueryCondition}
 
 object QueryConditionBuilder extends Logging {
 
-  import com.mapr.db.spark.sql.v2.QueryConditionExtensions._
-
-  import collection.JavaConversions._
-
-  def buildQueryConditionFrom(filters: List[Filter])(implicit connection: Connection): String =
+  def buildQueryConditionFrom(filters: Array[Filter])(implicit connection: Connection): String =
     createFilterCondition(filters).asJsonString()
 
   def addTabletInfo(queryJson: String, queryCondition: String): String =
@@ -28,8 +28,8 @@ object QueryConditionBuilder extends Logging {
     * @param connection
     * @return
     */
-  private def createFilterCondition(filters: List[Filter])(implicit connection: Connection): QueryCondition = {
-    log.debug(s"FILTERS TO PUSH DOWN: $filters")
+  private def createFilterCondition(filters: Array[Filter])(implicit connection: Connection): QueryCondition = {
+    log.debug(s"FILTERS TO PUSH DOWN: ${filters.mkString("Array(", ", ", ")")}")
 
     val andCondition = connection.newCondition().and()
 
@@ -79,15 +79,14 @@ object QueryConditionBuilder extends Logging {
   }
 
   private def evalSingleFilter(filter: Filter)(implicit connection: Connection) = {
-
     val simpleCondition = filter match {
-      case IsNull(field)                  => connection.newCondition().notExists(field)
-      case IsNotNull(field)               => connection.newCondition().exists(field)
-      case In(field, values)              => connection.newCondition().in(field, values.toList)
+      case IsNull(field) => connection.newCondition().notExists(field)
+      case IsNotNull(field) => connection.newCondition().exists(field)
+      case In(field, values) => connection.newCondition().in(field, values.toList)
       case StringStartsWith(field, value) => connection.newCondition().matches(field, value)
-      case EqualTo(field, value)          => connection.newCondition().field(field) === value
-      case LessThan(field, value)         => connection.newCondition().field(field) < value
-      case LessThanOrEqual(field, value)  => connection.newCondition().field(field) <= value
+      case EqualTo(field, value) => connection.newCondition().field(field) === value
+      case LessThan(field, value) => connection.newCondition().field(field) < value
+      case LessThanOrEqual(field, value) => connection.newCondition().field(field) <= value
       case GreaterThan(field, value) => connection.newCondition.field(field) > value
       case GreaterThanOrEqual(field, value) => connection.newCondition.field(field) >= value
     }
