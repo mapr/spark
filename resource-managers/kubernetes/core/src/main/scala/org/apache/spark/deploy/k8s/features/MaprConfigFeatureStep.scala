@@ -1,20 +1,20 @@
 package org.apache.spark.deploy.k8s.features
 
 import scala.collection.JavaConverters._
+
 import io.fabric8.kubernetes.api.model.{ContainerBuilder, EnvVarBuilder, HasMetadata, PodBuilder}
+
 import org.apache.spark.SparkConf
-import org.apache.spark.deploy.k8s.{KubernetesConf, KubernetesRoleSpecificConf, SparkPod}
+import org.apache.spark.deploy.k8s.{KubernetesConf, SparkPod}
 import org.apache.spark.deploy.k8s.Config._
 import org.apache.spark.deploy.k8s.Constants._
 
-private[spark] class MaprConfigFeatureStep(
-    conf: KubernetesConf[_ <: KubernetesRoleSpecificConf])
+private[spark] class MaprConfigFeatureStep(conf: KubernetesConf)
   extends KubernetesFeatureConfigStep {
 
   val sparkConf: SparkConf = conf.sparkConf
 
   override def configurePod(pod: SparkPod): SparkPod = {
-
     val podBuilder = new PodBuilder(pod.pod)
     val containerBuilder = new ContainerBuilder(pod.container)
 
