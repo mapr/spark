@@ -80,8 +80,9 @@ public class ThriftBinaryCLIService extends ThriftCLIService {
         }
         String keyStorePassword = ShimLoader.getHadoopShims().getPassword(hiveConf,
             HiveConf.ConfVars.HIVE_SERVER2_SSL_KEYSTORE_PASSWORD.varname);
+        String sslProtocolVersion = hiveConf.getVar(ConfVars.HIVE_SSL_PROTOCOL_VERSION);
         serverSocket = HiveAuthUtils.getServerSSLSocket(hiveHost, portNum, keyStorePath,
-            keyStorePassword, sslVersionBlacklist);
+            keyStorePassword, sslVersionBlacklist, sslProtocolVersion);
       }
 
       // In case HIVE_SERVER2_THRIFT_PORT or hive.server2.thrift.port is configured with 0 which
