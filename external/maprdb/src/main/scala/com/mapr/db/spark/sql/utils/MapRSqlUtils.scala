@@ -51,8 +51,7 @@ object MapRSqlUtils {
     }
   }
 
-  private def convertObject(documentReader: DocumentReader,
-                            schema: StructType): Row = {
+  private def convertObject(documentReader: DocumentReader, schema: StructType): Row = {
     val values = ArrayBuffer.fill[Any](schema.fields.size)(null)
     var event: DocumentReader.EventType = null
     event = documentReader.next
@@ -60,11 +59,7 @@ object MapRSqlUtils {
       val fieldName = documentReader.getFieldName
       if (schema.fieldNames.contains(fieldName)) {
         val index = schema.fieldIndex(fieldName)
-        values.update(index,
-                      convertField(event,
-                                   documentReader,
-                                   schema(index).dataType,
-                                   fieldName))
+        values.update(index, convertField(event, documentReader, schema(index).dataType, fieldName))
       }
       event = documentReader.next
     }

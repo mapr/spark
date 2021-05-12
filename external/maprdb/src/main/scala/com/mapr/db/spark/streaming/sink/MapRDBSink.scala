@@ -47,10 +47,12 @@ private[streaming] class MapRDBSink(parameters: Map[String, String]) extends Sin
         }
       }
 
-      val encoder = RowEncoder(data.schema).resolveAndBind(
-        logicalPlan.output,
-        data.sparkSession.sessionState.analyzer)
-      data.queryExecution.toRdd.map(encoder.fromRow)
+      val encoder = RowEncoder(data.schema)
+        .resolveAndBind(logicalPlan.output, data.sparkSession.sessionState.analyzer)
+        .createDeserializer()
+
+      data.queryExecution.toRdd
+        .map(encoder)
         .setBufferWrites(bufferWrites)
         .saveToMapRDB(tablePath.get, createTable, bulkInsert, idFieldPath)
 
