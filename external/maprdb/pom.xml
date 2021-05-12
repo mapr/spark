@@ -16,8 +16,6 @@
   <artifactId>maprdb-spark_2.12</artifactId>
   <packaging>jar</packaging>
 
-
-
   <name>MapR-DB Spark Library</name>
   <url>http://www.mapr.com/</url>
 

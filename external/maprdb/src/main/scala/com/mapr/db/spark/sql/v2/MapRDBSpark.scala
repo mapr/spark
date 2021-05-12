@@ -2,6 +2,7 @@ package com.mapr.db.spark.sql.v2
 
 import org.apache.hadoop.fs.{Path, PathFilter}
 import org.ojai.store.DriverManager
+
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.types.StructType
 
@@ -9,7 +10,6 @@ import org.apache.spark.sql.types.StructType
 package object MapRDBSpark {
 
   implicit class SessionOps(sparkSession: SparkSession) {
-
     /**
      * Entry point to the DataSource API
      *

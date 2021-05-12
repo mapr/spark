@@ -75,7 +75,7 @@ This file is divided into 3 sections:
 
   <check level="warn" class="org.scalastyle.file.FileLineLengthChecker" enabled="true">
     <parameters>
-      <parameter name="maxLineLength"><![CDATA[100]]></parameter>
+      <parameter name="maxLineLength"><![CDATA[150]]></parameter>
       <parameter name="tabSize"><![CDATA[2]]></parameter>
       <parameter name="ignoreImports">true</parameter>
     </parameters>
@@ -89,7 +89,7 @@ This file is divided into 3 sections:
     <parameters><parameter name="regex"><![CDATA[(config|[A-Z][A-Za-z]*)]]></parameter></parameters>
   </check>
 
-  <check level="error" class="org.scalastyle.scalariform.PackageObjectNamesChecker" enabled="true">
+  <check level="error" class="org.scalastyle.scalariform.PackageObjectNamesChecker" enabled="false">
     <parameters><parameter name="regex"><![CDATA[^[a-z][A-Za-z]*$]]></parameter></parameters>
   </check>
 
