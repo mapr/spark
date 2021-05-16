@@ -17,7 +17,7 @@
 
 package org.apache.spark
 
-import java.io.{File, FileNotFoundException}
+import java.io.{File, FileNotFoundException, FileOutputStream, OutputStreamWriter, PrintWriter}
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files
 import java.util.Base64
@@ -170,7 +170,7 @@ private[spark] class SecurityManager(
       val currentUserHomeDir = System.getProperty("user.home")
       val localBaseDir = s"$currentUserHomeDir/__spark-internal__/security_keys"
       val sslKeyStore = s"$localBaseDir/ssl_keystore"
-      val sslKeyStorePass = "mapr123" // todo remove password from source code
+      val sslKeyStorePass = sslOptions.keyStorePassword.get
       val updatedSslOptions = updateSslOptsWithNewKeystore(sslOptions, sslKeyStore, sslKeyStorePass)
 
       copyFromMfs(localBaseDir)
