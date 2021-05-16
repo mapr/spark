@@ -866,15 +866,6 @@ abstract class StateStoreSuiteBase[ProviderClass <: StateStoreProvider]
     assert(getData(provider, version = 1) === Set("b" -> 2))
   }
 
-  test("removing while iterating") {
-    val provider = newStoreProvider()
-
-    // Verify state before starting a new set of updates
-    assert(getLatestData(provider).isEmpty)
-    val store = provider.getStore(0)
-    put(store, "a", 1)
-    put(store, "b", 2)
-
   testWithAllCodec("numKeys metrics") {
     val provider = newStoreProvider()
 

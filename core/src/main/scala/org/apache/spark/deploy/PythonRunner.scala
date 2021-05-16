@@ -18,7 +18,7 @@
 package org.apache.spark.deploy
 
 import java.io.File
-import java.net.{InetAddress, URI}
+import java.net.URI
 import java.nio.file.Files
 
 import scala.collection.JavaConverters._

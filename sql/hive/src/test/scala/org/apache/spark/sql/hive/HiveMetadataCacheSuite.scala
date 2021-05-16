@@ -18,7 +18,8 @@
 package org.apache.spark.sql.hive
 
 import org.apache.hadoop.fs.Path
-import org.apache.spark.{HadoopUtil, SparkException}
+
+import org.apache.spark.SparkException
 import org.apache.spark.sql.QueryTest
 import org.apache.spark.sql.hive.test.TestHiveSingleton
 import org.apache.spark.sql.internal.SQLConf
@@ -69,7 +70,7 @@ class HiveMetadataCacheSuite extends QueryTest with SQLTestUtils with TestHiveSi
   }
 
   def testCaching(pruningEnabled: Boolean): Unit = {
-    ignore(s"partitioned table is cached when partition pruning is $pruningEnabled") {
+    test(s"partitioned table is cached when partition pruning is $pruningEnabled") {
       withSQLConf(SQLConf.HIVE_MANAGE_FILESOURCE_PARTITIONS.key -> pruningEnabled.toString) {
         withTable("test") {
           withTempDir { dir =>
