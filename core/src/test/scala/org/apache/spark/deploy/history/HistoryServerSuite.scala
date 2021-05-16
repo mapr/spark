@@ -26,8 +26,6 @@ import javax.servlet.http.{HttpServletRequest, HttpServletRequestWrapper, HttpSe
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
-import com.gargoylesoftware.htmlunit.BrowserVersion
-import com.codahale.metrics.Counter
 import com.google.common.io.{ByteStreams, Files}
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
@@ -364,67 +362,6 @@ class HistoryServerSuite extends SparkFunSuite with BeforeAndAfter with Matchers
   test("/version api endpoint") {
     val response = getUrl("version")
     assert(response.contains(SPARK_VERSION))
-  }
-
-  test("ajax rendered relative links are prefixed with uiRoot (spark.ui.proxyBase)") {
-    val uiRoot = "/testwebproxybase"
-    System.setProperty("spark.ui.proxyBase", uiRoot)
-
-    stop()
-    init()
-
-    val port = server.boundPort
-
-    val servlet = new ProxyServlet {
-      override def rewriteTarget(request: HttpServletRequest): String = {
-        // servlet acts like a proxy that redirects calls made on
-        // spark.ui.proxyBase context path to the normal servlet handlers operating off "/"
-        val sb = request.getRequestURL()
-
-        if (request.getQueryString() != null) {
-          sb.append(s"?${request.getQueryString()}")
-        }
-
-        val proxyidx = sb.indexOf(uiRoot)
-        sb.delete(proxyidx, proxyidx + uiRoot.length).toString
-      }
-    }
-
-    val contextHandler = new ServletContextHandler
-    val holder = new ServletHolder(servlet)
-    contextHandler.setContextPath(uiRoot)
-    contextHandler.addServlet(holder, "/")
-    server.attachHandler(contextHandler)
-
-    implicit val webDriver: WebDriver =
-      new HtmlUnitDriver(BrowserVersion.INTERNET_EXPLORER_11, true)
-
-    try {
-      val url = s"http://localhost:$port"
-
-      go to s"$url$uiRoot"
-
-      // expect the ajax call to finish in 5 seconds
-      implicitlyWait(org.scalatest.time.Span(5, org.scalatest.time.Seconds))
-
-      // once this findAll call returns, we know the ajax load of the table completed
-      findAll(ClassNameQuery("odd"))
-
-      val links = findAll(TagNameQuery("a"))
-        .map(_.attribute("href"))
-        .filter(_.isDefined)
-        .map(_.get)
-        .filter(_.startsWith(url)).toList
-
-      // there are at least some URL links that were generated via javascript,
-      // and they all contain the spark.ui.proxyBase (uiRoot)
-      links.length should be > 4
-      all(links) should startWith(url + uiRoot)
-    } finally {
-      contextHandler.stop()
-      quit()
-    }
-
   }
 
   /**
