@@ -7,7 +7,6 @@ import com.mapr.db.spark.RDD.{MapRDBTableScanRDD, RDDTYPE}
 import com.mapr.db.spark.impl.OJAIDocument
 import com.mapr.db.spark.utils.DefaultClass.DefaultType
 import com.mapr.db.spark.utils.MapRSpark
-
 import org.apache.spark.SparkContext
 
 case class SparkContextFunctions(@transient sc: SparkContext,

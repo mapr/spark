@@ -3,18 +3,17 @@ package com.mapr.db.spark.types
 
 import java.io.{Externalizable, ObjectInput, ObjectOutput}
 import java.nio._
-import java.util
 
 import scala.collection.{mutable, SeqLike}
 import scala.collection.JavaConverters._
 import scala.collection.generic.{CanBuildFrom, GenericTraversableTemplate, SeqFactory}
 import scala.collection.mutable.ListBuffer
-import scala.language.implicitConversions
 
 import com.mapr.db.rowcol.RowcolCodec
 import com.mapr.db.spark.dbclient.DBClient
 import com.mapr.db.spark.utils.MapRDBUtils
 import com.mapr.db.util.ByteBufs
+import java.util
 
 private[spark] object DBArrayValue extends SeqFactory[DBArrayValue] {
   implicit def canBuildFrom[T]: CanBuildFrom[Coll, T, DBArrayValue[T]] =

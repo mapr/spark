@@ -1,10 +1,9 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.types
 
-import java.util
-
 import scala.collection.JavaConverters._
-import scala.language.implicitConversions
+
+import java.util
 
 class MapIterator(m: Map[String, AnyRef])
     extends Iterator[(String, AnyRef)] {
