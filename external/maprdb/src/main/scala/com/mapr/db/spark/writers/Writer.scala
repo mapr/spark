@@ -1,10 +1,11 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.writers
 
+import java.nio.ByteBuffer
+
 import com.mapr.db.mapreduce.BulkLoadRecordWriter
 import com.mapr.db.spark.configuration.SerializableConfiguration
 import com.mapr.db.spark.dbclient.DBClient
-import java.nio.ByteBuffer
 import org.apache.hadoop.fs.Path
 import org.ojai.Document
 

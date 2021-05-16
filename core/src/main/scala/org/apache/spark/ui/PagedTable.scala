@@ -304,9 +304,11 @@ private[spark] trait PagedTable[T] {
    */
   def getParameterOtherTable(request: HttpServletRequest, tableTag: String): String = {
     request.getParameterMap.asScala
-      .filterNot(_._1.startsWith(tableTag))
-      .map(parameter => parameter._1 + "=" + parameter._2(0))
-      .mkString("&")
+      .filterNot { case (key: String, _) =>
+        key.startsWith(tableTag)
+      }.map { case (name: String, values: Array[String]) =>
+        name + "=" + values(0)
+      }.mkString("&")
   }
 
   /**

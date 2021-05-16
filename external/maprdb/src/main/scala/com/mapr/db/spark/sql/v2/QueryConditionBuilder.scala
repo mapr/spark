@@ -89,6 +89,7 @@ object QueryConditionBuilder extends Logging {
       case LessThanOrEqual(field, value) => connection.newCondition().field(field) <= value
       case GreaterThan(field, value) => connection.newCondition.field(field) > value
       case GreaterThanOrEqual(field, value) => connection.newCondition.field(field) >= value
+      case _ => throw new RuntimeException()
     }
 
     log.debug("evalSingleFilter: " + filter.toString + " =============== " + simpleCondition.toString)

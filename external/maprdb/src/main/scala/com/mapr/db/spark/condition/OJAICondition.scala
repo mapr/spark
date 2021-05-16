@@ -3,7 +3,6 @@
 package com.mapr.db.spark.condition
 
 import scala.collection.JavaConverters._
-import scala.language.implicitConversions
 
 import com.mapr.db.spark.dbclient.DBClient
 import com.mapr.db.spark.field

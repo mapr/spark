@@ -1,7 +1,7 @@
 package com.mapr.db.spark.sql.concurrent
 
-import scala.concurrent.duration.Duration.Inf
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration.Duration.Inf
 
 /**
   * TaskLevelConcurrentContext is used to control a multithreaded context within a Spark Task.

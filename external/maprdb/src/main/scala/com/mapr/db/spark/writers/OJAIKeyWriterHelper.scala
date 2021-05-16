@@ -2,13 +2,12 @@
 package com.mapr.db.spark.writers
 
 import com.mapr.db.spark.codec.BeanCodec
-import com.mapr.db.spark.condition.DBQueryCondition
 import com.mapr.db.spark.dbclient.DBClient
-import org.ojai.{Document, Value}
 import com.mapr.db.spark.impl.OJAIDocument
 import com.mapr.db.spark.sql.utils.MapRSqlUtils
+import org.ojai.{Document, Value}
+
 import org.apache.spark.sql.Row
-import org.ojai.store.DocumentMutation
 
 private[spark] sealed trait OJAIValue[T] extends Serializable {
   type Self

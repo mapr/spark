@@ -1,9 +1,8 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.sql
 
-import java.util.Calendar
-
 import scala.collection.mutable.ArrayBuffer
+
 import com.mapr.db.spark.RDD.MapRDBBaseRDD
 import com.mapr.db.spark.condition.Predicate
 import com.mapr.db.spark.field
@@ -12,8 +11,9 @@ import com.mapr.db.spark.sql.utils._
 import com.mapr.db.spark.utils.LoggingTrait
 import org.ojai.store.QueryCondition
 import org.ojai.types.{ODate, OTimestamp}
+
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row, SQLContext, SaveMode}
+import org.apache.spark.sql.{DataFrame, Row, SaveMode, SQLContext}
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.{StructField, StructType}
 

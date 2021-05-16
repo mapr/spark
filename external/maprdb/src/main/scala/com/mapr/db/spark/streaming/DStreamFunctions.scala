@@ -5,9 +5,9 @@ import com.mapr.db.spark._
 import com.mapr.db.spark.dbclient.DBClient
 import com.mapr.db.spark.utils.LoggingTrait
 import com.mapr.db.spark.writers.OJAIValue
+import org.apache.spark.SparkContext
 import org.ojai.DocumentConstants
 
-import org.apache.spark.SparkContext
 import org.apache.spark.streaming.dstream.DStream
 
 class DStreamFunctions[T](dStream: DStream[T])(implicit fv: OJAIValue[T])

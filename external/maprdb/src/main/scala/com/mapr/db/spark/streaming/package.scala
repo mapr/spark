@@ -2,7 +2,6 @@
 package com.mapr.db.spark
 
 import com.mapr.db.spark.writers.OJAIValue
-import scala.language.implicitConversions
 
 import org.apache.spark.streaming.dstream.DStream
 

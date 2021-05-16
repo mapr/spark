@@ -1,7 +1,5 @@
 package com.mapr.db.spark.sql.v2
 
-import scala.util.Try
-
 import com.mapr.db.spark.utils.LoggingTrait
 import java.util
 

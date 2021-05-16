@@ -5,6 +5,7 @@ import com.mapr.db.spark.sql.ojai.{JoinType, OJAISparkPartitionReader}
 import com.mapr.db.spark.sql.ojai.OJAISparkPartitionReader.Cell
 import com.mapr.db.spark.utils.{LoggingTrait, MapRSpark}
 import org.ojai.DocumentConstants
+
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.types.StructType
 
@@ -53,8 +54,9 @@ private[spark] case class MapRDBDataFrameFunctions(@transient df: DataFrame,
         }
       }
 
-    import org.apache.spark.sql.functions._
     import session.implicits._
+
+    import org.apache.spark.sql.functions._
 
     val rightDF = session.read.schema(schema).json(documents.toDS())
 
