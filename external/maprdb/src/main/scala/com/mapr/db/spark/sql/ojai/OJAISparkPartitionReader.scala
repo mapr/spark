@@ -2,6 +2,7 @@ package com.mapr.db.spark.sql.ojai
 
 
 import com.mapr.db.spark.sql.ojai.OJAISparkPartitionReader.Cell
+
 import org.apache.spark.sql.types.{DataType, StructType}
 
 trait OJAISparkPartitionReader {

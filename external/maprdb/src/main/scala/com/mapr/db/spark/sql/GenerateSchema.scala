@@ -11,9 +11,9 @@ import com.mapr.db.spark.RDD.MapRDBBaseRDD
 import com.mapr.db.spark.exceptions.SchemaMappingException
 import com.mapr.db.spark.impl.OJAIDocument
 import com.mapr.db.spark.utils.MapRSpark
+import org.apache.spark.SparkContext
 import org.ojai.DocumentReader
 
-import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.{JavaTypeInference, ScalaReflection}
 import org.apache.spark.sql.catalyst.analysis.TypeCoercion

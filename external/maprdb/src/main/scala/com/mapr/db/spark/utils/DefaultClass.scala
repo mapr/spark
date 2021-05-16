@@ -1,9 +1,6 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.utils
 
-import scala.language.implicitConversions
-
-
 object DefaultClass extends Serializable {
 
   sealed class DefaultType[A, B] extends Serializable
