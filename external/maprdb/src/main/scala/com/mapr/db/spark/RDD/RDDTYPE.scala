@@ -1,14 +1,9 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.RDD
 
-import java.util
-
-import com.mapr.db.spark.documentUtils.{
-  BeanIterator,
-  JavaBeanIterator,
-  OJAIDocumentIterator
-}
+import com.mapr.db.spark.documentUtils.{BeanIterator, JavaBeanIterator, OJAIDocumentIterator}
 import com.mapr.db.spark.impl.OJAIDocument
+import java.util
 import org.ojai.Document
 
 sealed trait RDDTYPE[T] extends Serializable {

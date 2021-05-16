@@ -6,7 +6,7 @@ import java.io.IOException
 import com.mapr.db.spark.codec.JacksonBeanCodecHelper._
 import org.ojai.{Document, DocumentBuilder, DocumentReader}
 import org.ojai.annotation.API
-import org.ojai.beans.jackson.{DocumentGenerator, DocumentParser}
+import org.ojai.beans.jackson.DocumentGenerator
 import org.ojai.exceptions.{DecodingException, EncodingException}
 
 @API.Internal

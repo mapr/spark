@@ -19,8 +19,6 @@ package org.apache.spark.streaming.kafka010
 
 import java.{ util => ju }
 
-import scala.collection.mutable.ArrayBuffer
-
 import org.apache.kafka.clients.consumer.{ ConsumerConfig, ConsumerRecord }
 import org.apache.kafka.common.TopicPartition
 

@@ -1,12 +1,10 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.documentUtils
 
-import java.util
-
 import com.mapr.db.spark.codec.BeanCodec
 import com.mapr.db.spark.impl.OJAIDocument
-import org.ojai.Document
-import org.ojai.Value
+import java.util
+import org.ojai.{Document, Value}
 
 /*
  * This class is a bridge between the java Map Iterator and scala Map Iterator.

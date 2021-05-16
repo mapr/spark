@@ -25,7 +25,6 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
 
-import org.apache.hadoop.conf.Configuration
 import org.scalatest.BeforeAndAfter
 import org.scalatest.concurrent.Eventually._
 import org.scalatest.matchers.must.Matchers

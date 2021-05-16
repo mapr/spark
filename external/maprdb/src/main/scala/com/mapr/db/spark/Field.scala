@@ -1,8 +1,6 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark
 
-import scala.language.implicitConversions
-
 import com.mapr.db.spark.condition._
 import com.mapr.db.spark.utils.MapRDBUtils
 import org.ojai.store.QueryCondition

@@ -18,7 +18,6 @@
 package org.apache.spark.rdd
 
 import java.io.{FileNotFoundException, IOException}
-import java.security.PrivilegedExceptionAction
 import java.text.SimpleDateFormat
 import java.util.{Date, Locale}
 

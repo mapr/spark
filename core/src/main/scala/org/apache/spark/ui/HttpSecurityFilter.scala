@@ -103,7 +103,7 @@ private class XssSafeRequest(req: HttpServletRequest, effectiveUser: String)
   private val NEWLINE_AND_SINGLE_QUOTE_REGEX = raw"(?i)(\r\n|\n|\r|%0D%0A|%0A|%0D|'|%27)".r
 
   private val parameterMap: Map[String, Array[String]] = {
-    super.getParameterMap().asScala.map { case (name, values) =>
+    super.getParameterMap().asScala.map { case (name: String, values: Array[String]) =>
       stripXSS(name) -> values.map(stripXSS)
     }.toMap
   }
@@ -130,5 +130,4 @@ private class XssSafeRequest(req: HttpServletRequest, effectiveUser: String)
       null
     }
   }
-
 }

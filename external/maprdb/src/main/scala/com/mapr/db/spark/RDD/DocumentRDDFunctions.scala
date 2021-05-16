@@ -7,9 +7,9 @@ import com.mapr.db.spark.configuration.SerializableConfiguration
 import com.mapr.db.spark.utils.{LoggingTrait, MapRDBUtils}
 import com.mapr.db.spark.writers._
 import org.apache.hadoop.conf.Configuration
+import org.apache.spark.Partitioner
 import org.ojai.{Document, DocumentConstants, Value}
 
-import org.apache.spark.Partitioner
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 

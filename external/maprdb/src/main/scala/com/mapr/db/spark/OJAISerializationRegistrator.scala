@@ -1,8 +1,6 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark
 
-import scala.language.implicitConversions
-
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.serializers._
 import com.mapr.db.spark.configuration.SerializableConfiguration

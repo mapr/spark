@@ -4,6 +4,7 @@ package com.mapr.db.spark.sql.utils
 import com.mapr.db.spark.MapRDBSpark
 import com.mapr.db.spark.dbclient.DBClient
 import org.apache.spark.SparkFunSuite
+
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 
 class MapRSqlUtilsTest extends SparkFunSuite {

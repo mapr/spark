@@ -1,18 +1,15 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.documentTypeUtils
 
-import com.mapr.db.spark.impl.OJAIDocument
 import java.nio.ByteBuffer
+
 import scala.collection.JavaConverters._
-import scala.language.experimental.macros
-import scala.language.{dynamics, implicitConversions}
+
+import com.mapr.db.spark.impl.OJAIDocument
+import com.mapr.db.spark.types.{DBArrayValue, DBBinaryValue, DBMapValue}
+import org.ojai.{Document, Value}
 import org.ojai.exceptions.TypeException
-import org.ojai.Value
 import org.ojai.types._
-import com.mapr.db.spark.types.DBArrayValue
-import com.mapr.db.spark.types.DBBinaryValue
-import com.mapr.db.spark.types.DBMapValue
-import org.ojai.Document
 
 sealed trait OJAIType[T] {
   type Self

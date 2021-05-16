@@ -9,10 +9,8 @@ import com.mapr.db.spark.MapRDBSpark
 import com.mapr.db.spark.dbclient.DBClient
 import com.mapr.db.spark.types.DBBinaryValue
 import com.mapr.db.spark.utils.{LoggingTrait, MapRDBUtils}
-import org.ojai.Value
-import scala.language.implicitConversions
-
 import org.apache.spark.Partitioner
+import org.ojai.Value
 
 object MapRDBPartitioner {
   def apply[T](table: String, bufferWrites: Boolean = true)(implicit k: OJAIKEY[T]): Partitioner = {

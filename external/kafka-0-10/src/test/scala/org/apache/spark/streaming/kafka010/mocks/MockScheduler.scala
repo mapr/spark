@@ -17,7 +17,7 @@
 
 package org.apache.spark.streaming.kafka010.mocks
 
-import java.util.concurrent.{ScheduledFuture, TimeUnit}
+import java.util.concurrent.TimeUnit
 
 import kafka.utils.Scheduler
 import org.apache.kafka.common.utils.Time
@@ -59,7 +59,7 @@ private[kafka010] class MockScheduler(val time: Time) extends Scheduler {
       fun: () => Unit,
       delay: Long = 0,
       period: Long = -1,
-      unit: TimeUnit = TimeUnit.MILLISECONDS): ScheduledFuture[_] = synchronized {
+      unit: TimeUnit = TimeUnit.MILLISECONDS): Unit = synchronized {
     val runnable = new Runnable {
       override def run(): Unit = fun()
     }

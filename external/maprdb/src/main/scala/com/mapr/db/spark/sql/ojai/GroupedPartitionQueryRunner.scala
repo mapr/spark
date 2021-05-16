@@ -1,6 +1,7 @@
 package com.mapr.db.spark.sql.ojai
 
 import com.mapr.db.spark.sql.ojai.OJAISparkPartitionReader.Cell
+
 import org.apache.spark.sql.types.StructType
 
 /**
@@ -10,11 +11,11 @@ import org.apache.spark.sql.types.StructType
   */
 private[ojai] class GroupedPartitionQueryRunner(querySize: Int) extends OJAISparkPartitionReader {
 
+  import scala.collection.JavaConverters._
+
   import com.mapr.db.spark.sql.concurrent.ConcurrentContext.Implicits._
   import com.mapr.db.spark.sql.utils.MapRSqlUtils._
   import org.ojai.store._
-
-  import scala.collection.JavaConverters._
 
   /**
     * Reads MapR-DB records that match with the data in a given partition.

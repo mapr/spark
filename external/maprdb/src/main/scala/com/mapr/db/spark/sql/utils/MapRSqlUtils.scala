@@ -5,7 +5,6 @@ import java.nio.ByteBuffer
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
-import scala.language.implicitConversions
 
 import com.mapr.db.rowcol.DBValueBuilderImpl
 import com.mapr.db.spark.MapRDBSpark

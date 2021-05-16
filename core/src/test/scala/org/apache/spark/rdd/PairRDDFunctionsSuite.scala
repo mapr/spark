@@ -34,7 +34,6 @@ import org.scalatest.Assertions
 
 import org.apache.spark._
 import org.apache.spark.Partitioner
-import org.apache.spark.util.Utils
 
 class PairRDDFunctionsSuite extends SparkFunSuite with SharedSparkContext {
   test("aggregateByKey") {

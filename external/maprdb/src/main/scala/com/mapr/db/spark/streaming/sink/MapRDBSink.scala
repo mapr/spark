@@ -40,7 +40,7 @@ private[streaming] class MapRDBSink(parameters: Map[String, String]) extends Sin
         data.queryExecution.analyzed match {
           case c: Command =>
             LocalRelation(c.output, data.queryExecution.executedPlan.executeCollect())
-          case u@Union(children) if children.forall(_.isInstanceOf[Command]) =>
+          case u@Union(children, _, _) if children.forall(_.isInstanceOf[Command]) =>
             LocalRelation(u.output, data.queryExecution.executedPlan.executeCollect())
           case _ =>
             data.queryExecution.analyzed
