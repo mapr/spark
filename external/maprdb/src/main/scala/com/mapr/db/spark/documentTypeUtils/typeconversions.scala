@@ -6,6 +6,7 @@ import java.nio.ByteBuffer
 import org.ojai.Value
 import org.ojai.types._
 
+// scalastyle:off
 sealed trait convert[A, B] {
   def get(value: A): B
 }
@@ -731,4 +732,4 @@ object typeconversions {
       conversions.array2decimalconversion, conversions.array2dateconversion,conversions.array2Timeconversion,conversions.array2Timestampconversion,conversions
         .array2intervalconversion, conversions.array2binaryconversion, conversions.array2mapconversion,conversions.array2arrayconversion)
   )}
-
+// scalastyle:on

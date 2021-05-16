@@ -1,16 +1,14 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.dbclient
 
+import scala.collection.JavaConverters._
+
 import com.mapr.db.{MapRDB, TableDescriptor}
 import com.mapr.db.impl.AdminImpl
 import com.mapr.db.scan.ScanRange
 import com.mapr.ojai.store.impl.OjaiDocumentStore
-
 import org.ojai.{Document, DocumentBuilder, Value}
 import org.ojai.store.{DocumentStore, DriverManager, QueryCondition}
-
-
-import scala.collection.JavaConverters._
 
 object DBOlderClientImpl extends DBClient {
 

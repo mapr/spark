@@ -2,7 +2,6 @@
 package com.mapr.db.spark.RDD.partition
 
 import com.mapr.db.spark.condition.DBQueryCondition
-
 import org.apache.spark.Partition
 /**
   * An identifier for a partition in a MapRTableScanRDD.

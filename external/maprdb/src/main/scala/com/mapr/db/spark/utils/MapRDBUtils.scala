@@ -4,8 +4,10 @@ package com.mapr.db.spark.utils
 import java.io.ObjectInput
 import java.nio.ByteBuffer
 
-import com.mapr.db.exceptions.TableExistsException
-import com.mapr.db.exceptions.TableNotFoundException
+import scala.collection.JavaConverters._
+import scala.reflect.ClassTag
+
+import com.mapr.db.exceptions.{TableExistsException, TableNotFoundException}
 import com.mapr.db.impl.ConditionNode.RowkeyRange
 import com.mapr.db.spark.MapRDBSpark
 import com.mapr.db.spark.codec.BeanCodec
@@ -15,8 +17,6 @@ import com.mapr.db.spark.writers.OJAIKey
 import com.mapr.fs.jni.MapRConstants
 import com.mapr.org.apache.hadoop.hbase.util.Bytes
 import org.ojai.Document
-import scala.collection.JavaConverters._
-import scala.reflect.ClassTag
 
 private[spark] object MapRDBUtils {
   def checkOrCreateTable(tableName: String,

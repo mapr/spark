@@ -1,7 +1,6 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.RDD
 
-import scala.language.implicitConversions
 import scala.reflect._
 
 import com.mapr.db.spark.condition._

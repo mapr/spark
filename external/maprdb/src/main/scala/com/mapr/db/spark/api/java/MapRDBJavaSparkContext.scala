@@ -9,9 +9,9 @@ import com.mapr.db.spark.impl.OJAIDocument
 import com.mapr.db.spark.utils.{MapRDBUtils, MapRSpark}
 import com.mapr.db.spark.writers.{OJAIKey, OJAIValue}
 import org.apache.hadoop.conf.Configuration
+import org.apache.spark.SparkContext
 import org.ojai.DocumentConstants
 
-import org.apache.spark.SparkContext
 import org.apache.spark.api.java.{JavaPairRDD, JavaRDD, JavaSparkContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
