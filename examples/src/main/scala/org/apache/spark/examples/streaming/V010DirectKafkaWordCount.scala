@@ -22,7 +22,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig
 
 import org.apache.spark.SparkConf
 import org.apache.spark.streaming.{Seconds, StreamingContext}
-import org.apache.spark.streaming.kafka09.{
+import org.apache.spark.streaming.kafka010.{
   ConsumerStrategies,
   KafkaUtils,
   LocationStrategies
@@ -46,7 +46,7 @@ import org.apache.spark.streaming.kafka09.{
  *    topic1,topic2 my-consumer-group latest batch-interval pollTimeout
  */
 
-object V09DirectKafkaWordCount {
+object V010DirectKafkaWordCount {
   def main(args: Array[String]) {
     if (args.length < 4) {
       System.err.println(s"""
