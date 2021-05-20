@@ -28,7 +28,12 @@ object SparkHiveExample {
   case class Record(key: Int, value: String)
   // $example off:spark_hive$
 
-  def main(args: Array[String]): Unit = {
+  val kv1Stream = SparkHiveExample.getClass.getResourceAsStream("/kv1.txt")
+  val kv1File = File.createTempFile("kv1", "txt")
+  kv1File.deleteOnExit()
+  ByteStreams.copy(kv1Stream, Files.newOutputStreamSupplier(kv1File))
+
+  def main(args: Array[String]) {
     // When working with Hive, one must instantiate `SparkSession` with Hive support, including
     // connectivity to a persistent Hive metastore, support for Hive serdes, and Hive user-defined
     // functions. Users who do not have an existing Hive deployment can still enable Hive support.
