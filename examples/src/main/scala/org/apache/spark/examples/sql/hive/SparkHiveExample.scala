@@ -30,7 +30,6 @@ object SparkHiveExample {
   case class Record(key: Int, value: String)
   // $example off:spark_hive$
 
-  def main(args: Array[String]): Unit = {
   val kv1Stream = SparkHiveExample.getClass.getResourceAsStream("/kv1.txt")
   val kv1File = File.createTempFile("kv1", "txt")
   kv1File.deleteOnExit()
