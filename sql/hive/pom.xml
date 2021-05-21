@@ -87,6 +87,12 @@
       <groupId>${hive.group}</groupId>
       <artifactId>hive-common</artifactId>
       <scope>${hive.common.scope}</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.hive</groupId>
+          <artifactId>mapr-log4j-slf4j-impl</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>${hive.group}</groupId>
@@ -96,6 +102,10 @@
         <exclusion>
           <groupId>org.codehaus.groovy</groupId>
           <artifactId>groovy-all</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.hive</groupId>
+          <artifactId>mapr-log4j-slf4j-impl</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -112,6 +122,12 @@
       <groupId>${hive.group}</groupId>
       <artifactId>hive-shims</artifactId>
       <scope>${hive.shims.scope}</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.hive</groupId>
+          <artifactId>mapr-log4j-slf4j-impl</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.hive</groupId>
@@ -135,6 +151,10 @@
         <exclusion>
           <artifactId>log4j-1.2-api</artifactId>
           <groupId>org.apache.logging.log4j</groupId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.hive</groupId>
+          <artifactId>mapr-log4j-slf4j-impl</artifactId>
         </exclusion>
       </exclusions>
     </dependency>

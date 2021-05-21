@@ -285,7 +285,7 @@
     <repository>
       <id>mapr-repo</id>
       <name>MapR Repository</name>
-      <url>http://df-mvn-dev.mip.storage.hpecorp.net/nexus/content/groups/public/</url>
+      <url>${env.MAPR_MAVEN_REPO}</url>
       <releases>
         <enabled>true</enabled>
       </releases>
@@ -747,7 +747,7 @@
       <dependency>
         <groupId>io.netty</groupId>
         <artifactId>netty-all</artifactId>
-        <version>4.1.51.Final</version>
+        <version>4.1.54.Final</version>
       </dependency>
       <dependency>
         <groupId>org.apache.derby</groupId>
@@ -1723,6 +1723,10 @@
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-storage-api</artifactId>
           </exclusion>
+          <exclusion>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>mapr-log4j-slf4j-impl</artifactId>
+          </exclusion>
           <!-- End of Hive 2.3 exclusion -->
         </exclusions>
       </dependency>
@@ -1734,7 +1738,6 @@
         <version>${hive.version}</version>
         <scope>${hive.deps.scope}</scope>
         <exclusions>
-
           <!-- pull this in when needed; the explicit definition culls the surplus-->
           <exclusion>
             <groupId>${hive.group}</groupId>
@@ -1861,6 +1864,10 @@
           <exclusion>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>*</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>mapr-log4j-slf4j-impl</artifactId>
           </exclusion>
           <!-- End of Hive 2.3 exclusion -->
         </exclusions>
@@ -2134,6 +2141,10 @@
           <exclusion>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>mapr-log4j-slf4j-impl</artifactId>
           </exclusion>
           <!-- End of Hive 2.3 exclusion -->
         </exclusions>
