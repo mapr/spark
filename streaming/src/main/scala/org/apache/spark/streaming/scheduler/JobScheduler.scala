@@ -17,7 +17,7 @@
 
 package org.apache.spark.streaming.scheduler
 
-import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
+import java.util.concurrent.{ConcurrentHashMap, Semaphore, TimeUnit}
 
 import scala.collection.JavaConverters._
 import scala.util.Failure
@@ -55,6 +55,12 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
   private val jobGenerator = new JobGenerator(this)
   val clock = jobGenerator.clock
   val listenerBus = new StreamingListenerBus(ssc.sparkContext.listenerBus)
+
+  // MAPRSPARK-874 DStream: Spark processes queued time=t+interval batch even if time=t batch failed
+  // Adding option to execute batches strictly sequentially
+  val completionSemaphore = new Semaphore(1)
+  private val enforceSequential = ssc.conf.getBoolean("spark.streaming.enforceSequential", false)
+  var precedingJobFailure = false
 
   // These two are created only when scheduler starts.
   // eventLoop not being null means the scheduler has been started and not stopped
@@ -206,6 +212,9 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
     job.result match {
       case Failure(e) =>
         reportError("Error running job " + job, e)
+        if (enforceSequential) {
+          precedingJobFailure = true
+        }
       case _ =>
         if (jobSet.hasCompleted) {
           jobSets.remove(jobSet.time)
@@ -215,6 +224,9 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
             jobSet.processingDelay / 1000.0
           ))
         }
+    }
+    if (enforceSequential) {
+      completionSemaphore.release()
     }
   }
 
@@ -249,7 +261,10 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
         // `JobScheduler.stop(false)` may set `eventLoop` to null when this method is running, then
         // it's possible that when `post` is called, `eventLoop` happens to null.
         var _eventLoop = eventLoop
-        if (_eventLoop != null) {
+        if (enforceSequential) {
+          completionSemaphore.acquire()
+        }
+        if (_eventLoop != null && !precedingJobFailure) {
           _eventLoop.post(JobStarted(job, clock.getTimeMillis()))
           // Disable checks for existing output directories in jobs launched by the streaming
           // scheduler, since we may need to write output to an existing directory during checkpoint
@@ -263,6 +278,9 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
           }
         } else {
           // JobScheduler has been stopped.
+          if (enforceSequential) {
+            completionSemaphore.release()
+          }
         }
       } finally {
         ssc.sparkContext.setLocalProperties(oldProps)
