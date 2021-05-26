@@ -174,12 +174,12 @@
     <!-- for now, not running scalafmt as part of default verify pipeline -->
     <scalafmt.skip>true</scalafmt.skip>
     <codehaus.jackson.version>1.9.13</codehaus.jackson.version>
-    <fasterxml.jackson.version>2.10.0</fasterxml.jackson.version>
-    <fasterxml.jackson-module-scala.version>2.10.0</fasterxml.jackson-module-scala.version>
-    <fasterxml.jackson.databind.version>2.10.0</fasterxml.jackson.databind.version>
+    <fasterxml.jackson.version>2.11.1</fasterxml.jackson.version>
+    <fasterxml.jackson-module-scala.version>2.11.1</fasterxml.jackson-module-scala.version>
+    <fasterxml.jackson.databind.version>2.11.1</fasterxml.jackson.databind.version>
     <snappy.version>1.1.8.2</snappy.version>
     <netlib.java.version>1.1.2</netlib.java.version>
-    <commons-codec.version>1.10</commons-codec.version>
+    <commons-codec.version>1.15</commons-codec.version>
     <commons-compress.version>1.20</commons-compress.version>
     <commons-io.version>2.5</commons-io.version>
     <!-- org.apache.commons/commons-lang/-->
@@ -2962,6 +2962,7 @@
               <include>org.eclipse.jetty:jetty-server</include>
               <include>com.google.guava:guava</include>
               <include>org.jpmml:*</include>
+              <include>org.apache.commons:commons-lang3</include>
             </includes>
           </artifactSet>
           <relocations>
