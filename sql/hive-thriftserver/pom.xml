@@ -138,6 +138,12 @@
       <groupId>net.sf.jpam</groupId>
       <artifactId>jpam</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.mapr.hadoop</groupId>
+      <artifactId>maprfs</artifactId>
+      <version>${maprfs.version}</version>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
   <build>
     <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
