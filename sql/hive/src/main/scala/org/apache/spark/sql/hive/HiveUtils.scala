@@ -55,7 +55,7 @@ private[spark] object HiveUtils extends Logging {
   private val PATTERN_FOR_KEY_EQ_VAL = "(.+)=(.+)".r
 
   /** The version of hive used internally by Spark SQL. */
-  val builtinHiveVersion: String = HiveVersionInfo.getVersion
+  val builtinHiveVersion: String = HiveVersionInfo.getShortVersion
 
   val BUILTIN_HIVE_VERSION = buildStaticConf("spark.sql.hive.version")
     .doc("The compiled, a.k.a, builtin Hive version of the Spark distribution bundled with." +
