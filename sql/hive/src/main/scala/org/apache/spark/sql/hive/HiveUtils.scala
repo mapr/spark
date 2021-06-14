@@ -52,7 +52,7 @@ import org.apache.spark.util.{ChildFirstURLClassLoader, Utils}
 private[spark] object HiveUtils extends Logging {
 
   /** The version of hive used internally by Spark SQL. */
-  val builtinHiveVersion: String = HiveVersionInfo.getVersion
+  val builtinHiveVersion: String = HiveVersionInfo.getShortVersion
 
   val BUILTIN_HIVE_VERSION = buildStaticConf("spark.sql.hive.version")
     .doc("The compiled, a.k.a, builtin Hive version of the Spark distribution bundled with." +
