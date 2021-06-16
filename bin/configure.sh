@@ -310,12 +310,6 @@ EOF
 				PROPERTIES="<property>\n<name>hive.server2.thrift.sasl.qop</name>\n<value>auth-conf</value>\n</property>\n</configuration>"
 				sed -i "s~$CONF~$PROPERTIES~g" $SPARK_HOME/conf/hive-site.xml
 			fi
-
-			if ! grep -q \>hive.server2.authentication\< "$SPARK_HOME/conf/hive-site.xml"; then
-				CONF="</configuration>"
-				PROPERTIES="<property>\n<name>hive.server2.authentication</name>\n<value>MAPRSASL</value>\n</property>\n</configuration>"
-				sed -i "s~$CONF~$PROPERTIES~g" $SPARK_HOME/conf/hive-site.xml
-			fi
 		fi
 
 		if [ -f ${SPARK_HOME}/conf/spark-env.sh ] ; then
