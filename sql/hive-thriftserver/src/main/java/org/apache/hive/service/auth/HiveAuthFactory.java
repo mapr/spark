@@ -20,7 +20,12 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.UnknownHostException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,7 +34,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
-import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.*;
 import javax.security.auth.login.LoginException;
 import javax.security.sasl.Sasl;
 
@@ -47,6 +52,7 @@ import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge.Server.ServerMode;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.authorize.ProxyUsers;
+import org.apache.hive.service.auth.PlainSaslHelper;
 import org.apache.hive.service.cli.HiveSQLException;
 import org.apache.hive.service.cli.thrift.ThriftCLIService;
 import org.apache.thrift.TProcessorFactory;
@@ -73,7 +79,8 @@ public class HiveAuthFactory {
     LDAP("LDAP"),
     KERBEROS("KERBEROS"),
     CUSTOM("CUSTOM"),
-    PAM("PAM");
+    PAM("PAM"),
+    MAPRSASL("MAPRSASL");
 
     private final String authType;
 
@@ -123,6 +130,7 @@ public class HiveAuthFactory {
     this.conf = conf;
     transportMode = conf.getVar(HiveConf.ConfVars.HIVE_SERVER2_TRANSPORT_MODE);
     authTypeStr = conf.getVar(HiveConf.ConfVars.HIVE_SERVER2_AUTHENTICATION);
+    boolean isAuthTypeSecured = "KERBEROS".equalsIgnoreCase(authTypeStr) || "MAPRSASL".equalsIgnoreCase(authTypeStr);
 
     // In http mode we use NOSASL as the default auth type
     if ("http".equalsIgnoreCase(transportMode)) {
@@ -133,38 +141,37 @@ public class HiveAuthFactory {
       if (authTypeStr == null) {
         authTypeStr = AuthTypes.NONE.getAuthName();
       }
-      if (authTypeStr.equalsIgnoreCase(AuthTypes.KERBEROS.getAuthName())) {
-        String principal = conf.getVar(ConfVars.HIVE_SERVER2_KERBEROS_PRINCIPAL);
-        String keytab = conf.getVar(ConfVars.HIVE_SERVER2_KERBEROS_KEYTAB);
-        if (needUgiLogin(UserGroupInformation.getCurrentUser(),
-          SecurityUtil.getServerPrincipal(principal, "0.0.0.0"), keytab)) {
-          saslServer = ShimLoader.getHadoopThriftAuthBridge().createServer(principal, keytab);
-        } else {
-          // Using the default constructor to avoid unnecessary UGI login.
-          saslServer = new HadoopThriftAuthBridge.Server();
-        }
+      if (isAuthTypeSecured || ("PAM".equalsIgnoreCase(authTypeStr)
+              && ShimLoader.getHadoopShims().isSecurityEnabled())) {
 
-        // start delegation token manager
-        delegationTokenManager = new HiveDelegationTokenManager();
-        try {
-          // rawStore is only necessary for DBTokenStore
-          Object rawStore = null;
-          String tokenStoreClass = conf.getVar(
-              HiveConf.ConfVars.METASTORE_CLUSTER_DELEGATION_TOKEN_STORE_CLS);
+        saslServer = ShimLoader.getHadoopThriftAuthBridge()
+                .createServer(conf.getVar(ConfVars.HIVE_SERVER2_KERBEROS_KEYTAB),
+                        conf.getVar(ConfVars.HIVE_SERVER2_KERBEROS_PRINCIPAL));
 
-          if (tokenStoreClass.equals(DBTokenStore.class.getName())) {
-            HMSHandler baseHandler = new HiveMetaStore.HMSHandler(
-                "new db based metaserver", conf, true);
-            rawStore = baseHandler.getMS();
+        if (authTypeStr.equalsIgnoreCase(AuthTypes.KERBEROS.getAuthName())) {
+          // start delegation token manager
+          delegationTokenManager = new HiveDelegationTokenManager();
+          try {
+            // rawStore is only necessary for DBTokenStore
+            Object rawStore = null;
+            String tokenStoreClass = conf.getVar(
+                    HiveConf.ConfVars.METASTORE_CLUSTER_DELEGATION_TOKEN_STORE_CLS);
+
+            if (tokenStoreClass.equals(DBTokenStore.class.getName())) {
+              HMSHandler baseHandler = new HiveMetaStore.HMSHandler(
+                      "new db based metaserver", conf, true);
+              rawStore = baseHandler.getMS();
+            }
+
+            delegationTokenManager.startDelegationTokenSecretManager(
+                    conf, rawStore, ServerMode.HIVESERVER2);
+            saslServer.setSecretManager(delegationTokenManager.getSecretManager());
+          } catch (MetaException | IOException e) {
+            throw new TTransportException("Failed to start token manager", e);
           }
-
-          delegationTokenManager.startDelegationTokenSecretManager(
-              conf, rawStore, ServerMode.HIVESERVER2);
-          saslServer.setSecretManager(delegationTokenManager.getSecretManager());
         }
-        catch (MetaException|IOException e) {
-          throw new TTransportException("Failed to start token manager", e);
-        }
+      } else {
+        saslServer = null;
       }
     }
   }
@@ -179,7 +186,8 @@ public class HiveAuthFactory {
 
   public TTransportFactory getAuthTransFactory() throws LoginException {
     TTransportFactory transportFactory;
-    if (authTypeStr.equalsIgnoreCase(AuthTypes.KERBEROS.getAuthName())) {
+    if (authTypeStr.equalsIgnoreCase(AuthTypes.KERBEROS.getAuthName()) ||
+        authTypeStr.equalsIgnoreCase(AuthTypes.MAPRSASL.getAuthName())) {
       try {
         transportFactory = saslServer.createTransportFactory(getSaslProperties());
       } catch (TTransportException e) {
@@ -190,7 +198,16 @@ public class HiveAuthFactory {
     } else if (authTypeStr.equalsIgnoreCase(AuthTypes.LDAP.getAuthName())) {
       transportFactory = PlainSaslHelper.getPlainTransportFactory(authTypeStr);
     } else if (authTypeStr.equalsIgnoreCase(AuthTypes.PAM.getAuthName())) {
-      transportFactory = PlainSaslHelper.getPlainTransportFactory(authTypeStr);
+      if (ShimLoader.getHadoopShims().isSecurityEnabled()) {
+        try {
+          transportFactory = saslServer.createTransportFactory(getSaslProperties());
+        } catch (TTransportException e) {
+          throw new LoginException(e.getMessage());
+        }
+        PlainSaslHelper.addPlainDefinitionToFactory(authTypeStr, transportFactory, saslServer);
+      } else {
+        transportFactory = PlainSaslHelper.getPlainTransportFactory(authTypeStr);
+      }
     } else if (authTypeStr.equalsIgnoreCase(AuthTypes.NOSASL.getAuthName())) {
       transportFactory = new TTransportFactory();
     } else if (authTypeStr.equalsIgnoreCase(AuthTypes.CUSTOM.getAuthName())) {
@@ -210,6 +227,8 @@ public class HiveAuthFactory {
   public TProcessorFactory getAuthProcFactory(ThriftCLIService service) throws LoginException {
     if (authTypeStr.equalsIgnoreCase(AuthTypes.KERBEROS.getAuthName())) {
       return KerberosSaslHelper.getKerberosProcessorFactory(saslServer, service);
+    } else if (authTypeStr.equalsIgnoreCase(AuthTypes.MAPRSASL.getAuthName())) {
+      return MapRSecSaslHelper.getProcessorFactory(saslServer, service);
     } else {
       return PlainSaslHelper.getPlainProcessorFactory(service);
     }
@@ -266,6 +285,47 @@ public class HiveAuthFactory {
     params.setTrustStore(trustStorePath, trustStorePassWord);
     params.requireClientAuth(true);
     return TSSLTransportFactory.getClientSocket(host, port, loginTimeout, params);
+  }
+
+  //Create SSL Socket for MAPRSASL connection. Ignore SSL trusted servers as MAPRSASL perform encryption by itself
+  public static TTransport getTrustAllSSLSocket(String host, int port, int loginTimeout) throws TTransportException {
+    TrustManager[] trustAllCerts = new TrustManager[]{
+            new X509ExtendedTrustManager() {
+              @Override
+              public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+              }
+              @Override
+              public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+              }
+              @Override
+              public X509Certificate[] getAcceptedIssuers() {
+                return null;
+              }
+              @Override
+              public void checkClientTrusted(X509Certificate[] x509Certificates, String s, Socket socket) throws CertificateException {
+              }
+              @Override
+              public void checkServerTrusted(X509Certificate[] x509Certificates, String s, Socket socket) throws CertificateException {
+              }
+              @Override
+              public void checkClientTrusted(X509Certificate[] x509Certificates, String s, SSLEngine sslEngine) throws CertificateException {
+              }
+              @Override
+              public void checkServerTrusted(X509Certificate[] x509Certificates, String s, SSLEngine sslEngine) throws CertificateException {
+              }
+            }
+    };
+    SSLSocket socket;
+    try {
+      SSLContext sslContext = SSLContext.getInstance("SSL");
+      sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+      SSLSocketFactory factory = sslContext.getSocketFactory();
+      socket = (SSLSocket) factory.createSocket(host, port);
+      socket.setSoTimeout(loginTimeout);
+    } catch (NoSuchAlgorithmException | IOException | KeyManagementException e) {
+      throw new TTransportException("Couldn't create Trust All SSL socket", e);
+    }
+    return new TSocket(socket);
   }
 
   public static TServerSocket getServerSocket(String hiveHost, int portNum)
