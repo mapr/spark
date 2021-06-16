@@ -19,6 +19,7 @@ package org.apache.spark.sql.hive.thriftserver
 
 import java.io.IOException
 import java.util.{List => JList}
+
 import javax.security.auth.login.LoginException
 
 import scala.collection.JavaConverters._
@@ -52,7 +53,7 @@ private[hive] class SparkSQLCLIService(hiveServer: HiveServer2, sqlContext: SQLC
     var sparkServiceUGI: UserGroupInformation = null
     var httpUGI: UserGroupInformation = null
 
-    if (UserGroupInformation.isSecurityEnabled) {
+    if (hiveConf.getVar(ConfVars.HIVE_SERVER2_AUTHENTICATION).equalsIgnoreCase(HiveAuthFactory.AuthTypes.KERBEROS.toString)) {
       try {
         val principal = hiveConf.getVar(ConfVars.HIVE_SERVER2_KERBEROS_PRINCIPAL)
         val keyTabFile = hiveConf.getVar(ConfVars.HIVE_SERVER2_KERBEROS_KEYTAB)
