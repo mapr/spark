@@ -19,10 +19,22 @@ package org.apache.hive.service.auth;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
+import javax.net.ssl.*;
 import javax.security.auth.login.LoginException;
 import javax.security.sasl.Sasl;
 
@@ -40,9 +52,14 @@ import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge.Server.ServerMode;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.authorize.ProxyUsers;
+import org.apache.hive.service.auth.PlainSaslHelper;
 import org.apache.hive.service.cli.HiveSQLException;
 import org.apache.hive.service.cli.thrift.ThriftCLIService;
 import org.apache.thrift.TProcessorFactory;
+import org.apache.thrift.transport.TSSLTransportFactory;
+import org.apache.thrift.transport.TServerSocket;
+import org.apache.thrift.transport.TSocket;
+import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.apache.thrift.transport.TTransportFactory;
 import org.slf4j.Logger;
@@ -62,7 +79,8 @@ public class HiveAuthFactory {
     LDAP("LDAP"),
     KERBEROS("KERBEROS"),
     CUSTOM("CUSTOM"),
-    PAM("PAM");
+    PAM("PAM"),
+    MAPRSASL("MAPRSASL");
 
     private final String authType;
 
@@ -112,6 +130,7 @@ public class HiveAuthFactory {
     this.conf = conf;
     transportMode = conf.getVar(HiveConf.ConfVars.HIVE_SERVER2_TRANSPORT_MODE);
     authTypeStr = conf.getVar(HiveConf.ConfVars.HIVE_SERVER2_AUTHENTICATION);
+    boolean isAuthTypeSecured = "KERBEROS".equalsIgnoreCase(authTypeStr) || "MAPRSASL".equalsIgnoreCase(authTypeStr);
 
     // In http mode we use NOSASL as the default auth type
     if ("http".equalsIgnoreCase(transportMode)) {
@@ -122,7 +141,7 @@ public class HiveAuthFactory {
       if (authTypeStr == null) {
         authTypeStr = AuthTypes.NONE.getAuthName();
       }
-      if (authTypeStr.equalsIgnoreCase(AuthTypes.KERBEROS.getAuthName())) {
+      if (isAuthTypeSecured || authTypeStr.equalsIgnoreCase(AuthTypes.KERBEROS.getAuthName())) {
         String principal = conf.getVar(ConfVars.HIVE_SERVER2_KERBEROS_PRINCIPAL);
         String keytab = conf.getVar(ConfVars.HIVE_SERVER2_KERBEROS_KEYTAB);
         if (needUgiLogin(UserGroupInformation.getCurrentUser(),
@@ -168,7 +187,8 @@ public class HiveAuthFactory {
 
   public TTransportFactory getAuthTransFactory() throws LoginException {
     TTransportFactory transportFactory;
-    if (authTypeStr.equalsIgnoreCase(AuthTypes.KERBEROS.getAuthName())) {
+    if (authTypeStr.equalsIgnoreCase(AuthTypes.KERBEROS.getAuthName()) ||
+        authTypeStr.equalsIgnoreCase(AuthTypes.MAPRSASL.getAuthName())) {
       try {
         transportFactory = saslServer.createTransportFactory(getSaslProperties());
       } catch (TTransportException e) {
@@ -179,7 +199,16 @@ public class HiveAuthFactory {
     } else if (authTypeStr.equalsIgnoreCase(AuthTypes.LDAP.getAuthName())) {
       transportFactory = PlainSaslHelper.getPlainTransportFactory(authTypeStr);
     } else if (authTypeStr.equalsIgnoreCase(AuthTypes.PAM.getAuthName())) {
-      transportFactory = PlainSaslHelper.getPlainTransportFactory(authTypeStr);
+      if (ShimLoader.getHadoopShims().isSecurityEnabled()) {
+        try {
+          transportFactory = saslServer.createTransportFactory(getSaslProperties());
+        } catch (TTransportException e) {
+          throw new LoginException(e.getMessage());
+        }
+        PlainSaslHelper.addPlainDefinitionToFactory(authTypeStr, transportFactory, saslServer);
+      } else {
+        transportFactory = PlainSaslHelper.getPlainTransportFactory(authTypeStr);
+      }
     } else if (authTypeStr.equalsIgnoreCase(AuthTypes.NOSASL.getAuthName())) {
       transportFactory = new TTransportFactory();
     } else if (authTypeStr.equalsIgnoreCase(AuthTypes.CUSTOM.getAuthName())) {
@@ -199,6 +228,8 @@ public class HiveAuthFactory {
   public TProcessorFactory getAuthProcFactory(ThriftCLIService service) throws LoginException {
     if (authTypeStr.equalsIgnoreCase(AuthTypes.KERBEROS.getAuthName())) {
       return KerberosSaslHelper.getKerberosProcessorFactory(saslServer, service);
+    } else if (authTypeStr.equalsIgnoreCase(AuthTypes.MAPRSASL.getAuthName())) {
+      return MapRSecSaslHelper.getProcessorFactory(saslServer, service);
     } else {
       return PlainSaslHelper.getPlainProcessorFactory(service);
     }
@@ -237,6 +268,113 @@ public class HiveAuthFactory {
     } else {
       return UserGroupInformation.loginUserFromKeytabAndReturnUGI(SecurityUtil.getServerPrincipal(principal, "0.0.0.0"), keyTabFile);
     }
+  }
+
+  public static TTransport getSocketTransport(String host, int port, int loginTimeout) {
+    return new TSocket(host, port, loginTimeout);
+  }
+
+  public static TTransport getSSLSocket(String host, int port, int loginTimeout)
+    throws TTransportException {
+    return TSSLTransportFactory.getClientSocket(host, port, loginTimeout);
+  }
+
+  public static TTransport getSSLSocket(String host, int port, int loginTimeout,
+    String trustStorePath, String trustStorePassWord) throws TTransportException {
+    TSSLTransportFactory.TSSLTransportParameters params =
+      new TSSLTransportFactory.TSSLTransportParameters();
+    params.setTrustStore(trustStorePath, trustStorePassWord);
+    params.requireClientAuth(true);
+    return TSSLTransportFactory.getClientSocket(host, port, loginTimeout, params);
+  }
+
+  //Create SSL Socket for MAPRSASL connection. Ignore SSL trusted servers as MAPRSASL perform encryption by itself
+  public static TTransport getTrustAllSSLSocket(String host, int port, int loginTimeout) throws TTransportException {
+    TrustManager[] trustAllCerts = new TrustManager[]{
+            new X509ExtendedTrustManager() {
+              @Override
+              public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+              }
+              @Override
+              public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+              }
+              @Override
+              public X509Certificate[] getAcceptedIssuers() {
+                return null;
+              }
+              @Override
+              public void checkClientTrusted(X509Certificate[] x509Certificates, String s, Socket socket) throws CertificateException {
+              }
+              @Override
+              public void checkServerTrusted(X509Certificate[] x509Certificates, String s, Socket socket) throws CertificateException {
+              }
+              @Override
+              public void checkClientTrusted(X509Certificate[] x509Certificates, String s, SSLEngine sslEngine) throws CertificateException {
+              }
+              @Override
+              public void checkServerTrusted(X509Certificate[] x509Certificates, String s, SSLEngine sslEngine) throws CertificateException {
+              }
+            }
+    };
+    SSLSocket socket;
+    try {
+      SSLContext sslContext = SSLContext.getInstance("SSL");
+      sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+      SSLSocketFactory factory = sslContext.getSocketFactory();
+      socket = (SSLSocket) factory.createSocket(host, port);
+      socket.setSoTimeout(loginTimeout);
+    } catch (NoSuchAlgorithmException | IOException | KeyManagementException e) {
+      throw new TTransportException("Couldn't create Trust All SSL socket", e);
+    }
+    return new TSocket(socket);
+  }
+
+  public static TServerSocket getServerSocket(String hiveHost, int portNum)
+    throws TTransportException {
+    InetSocketAddress serverAddress;
+    if (hiveHost == null || hiveHost.isEmpty()) {
+      // Wildcard bind
+      serverAddress = new InetSocketAddress(portNum);
+    } else {
+      serverAddress = new InetSocketAddress(hiveHost, portNum);
+    }
+    return new TServerSocket(serverAddress);
+  }
+
+  public static TServerSocket getServerSSLSocket(String hiveHost, int portNum, String keyStorePath,
+      String keyStorePassWord, List<String> sslVersionBlacklist) throws TTransportException,
+      UnknownHostException {
+    TSSLTransportFactory.TSSLTransportParameters params =
+        new TSSLTransportFactory.TSSLTransportParameters();
+    params.setKeyStore(keyStorePath, keyStorePassWord);
+    InetSocketAddress serverAddress;
+    if (hiveHost == null || hiveHost.isEmpty()) {
+      // Wildcard bind
+      serverAddress = new InetSocketAddress(portNum);
+    } else {
+      serverAddress = new InetSocketAddress(hiveHost, portNum);
+    }
+    TServerSocket thriftServerSocket =
+        TSSLTransportFactory.getServerSocket(portNum, 0, serverAddress.getAddress(), params);
+    if (thriftServerSocket.getServerSocket() instanceof SSLServerSocket) {
+      List<String> sslVersionBlacklistLocal = new ArrayList<String>();
+      for (String sslVersion : sslVersionBlacklist) {
+        sslVersionBlacklistLocal.add(sslVersion.trim().toLowerCase(Locale.ROOT));
+      }
+      SSLServerSocket sslServerSocket = (SSLServerSocket) thriftServerSocket.getServerSocket();
+      List<String> enabledProtocols = new ArrayList<String>();
+      for (String protocol : sslServerSocket.getEnabledProtocols()) {
+        if (sslVersionBlacklistLocal.contains(protocol.toLowerCase(Locale.ROOT))) {
+          LOG.debug("Disabling SSL Protocol: " + protocol);
+        } else {
+          enabledProtocols.add(protocol);
+        }
+      }
+      sslServerSocket.setEnabledProtocols(enabledProtocols.toArray(new String[0]));
+      LOG.info("SSL Server Socket Enabled Protocols: "
+          + Arrays.toString(sslServerSocket.getEnabledProtocols()));
+    }
+    return thriftServerSocket;
   }
 
   // retrieve delegation token for the given user
