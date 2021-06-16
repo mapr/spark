@@ -311,8 +311,8 @@ public abstract class ThriftCLIService extends AbstractService implements TCLISe
    */
   private String getUserName(TOpenSessionReq req) throws HiveSQLException {
     String userName = null;
-    // Kerberos
-    if (isKerberosAuthMode()) {
+    // Kerberos or MapRSasl
+    if (isKerberosAuthMode() || isMapRSaslAuthMethod()) {
       userName = hiveAuthFactory.getRemoteUser();
     }
     // Except kerberos, NOSASL
@@ -378,11 +378,18 @@ public abstract class ThriftCLIService extends AbstractService implements TCLISe
 
   private String getDelegationToken(String userName)
       throws HiveSQLException, LoginException, IOException {
+    if (userName == null ||
+        (!cliService.getHiveConf().getVar(ConfVars.HIVE_SERVER2_AUTHENTICATION)
+        .equalsIgnoreCase(HiveAuthFactory.AuthTypes.KERBEROS.toString()) &&
+        !cliService.getHiveConf().getVar(ConfVars.HIVE_SERVER2_AUTHENTICATION)
+        .equalsIgnoreCase(HiveAuthFactory.AuthTypes.MAPRSASL.toString()))) {
+      return null;
+    }
     try {
       return cliService.getDelegationTokenFromMetaStore(userName);
     } catch (UnsupportedOperationException e) {
       // The delegation token is not applicable in the given deployment mode
-      // such as HMS is not kerberos secured
+      LOG.info("The delegation token is not applicable in the given deployment mode", e);
     }
     return null;
   }
@@ -747,4 +754,9 @@ public abstract class ThriftCLIService extends AbstractService implements TCLISe
     return cliService.getHiveConf().getVar(ConfVars.HIVE_SERVER2_AUTHENTICATION)
         .equalsIgnoreCase(HiveAuthFactory.AuthTypes.KERBEROS.toString());
   }
+
+  private boolean isMapRSaslAuthMethod() {
+    return cliService.getHiveConf().getVar(ConfVars.HIVE_SERVER2_AUTHENTICATION)
+        .equalsIgnoreCase(HiveAuthFactory.AuthTypes.MAPRSASL.toString());
+    }
 }
