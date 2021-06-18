@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-PROFILES="-Pyarn -Phadoop-provided -Pscala-2.11 -Phive -Phive-thriftserver -DskipTests"
+PROFILES="-Pyarn -Phadoop-provided -Pscala-2.12 -Phive -Phive-thriftserver -Dskip-kafka-0-8 -DskipTests"
 
 if [[ -z "$1" ]]; then
     ./build/mvn ${PROFILES} clean install
@@ -12,5 +12,5 @@ fi
 
 if [ $? -ne 0 ]; then exit 1; fi
 
-scp -r assembly/target/scala-2.11/jars mapr@node1:/opt/mapr/spark/spark-2.4.5/jars
+scp -r assembly/target/scala-2.11/jars mapr@node1:/opt/mapr/spark/spark-3.1.1/jars
 if [ $? -ne 0 ]; then exit 1; fi
