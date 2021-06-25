@@ -109,4 +109,6 @@ case class MapRDBScan(
    */
   override def createReaderFactory(): PartitionReaderFactory =
     MapRDBPartitionReaderFactory(schema, tablePath, hintedIndexes, filters)
+
+  override def toBatch: Batch = this
 }
