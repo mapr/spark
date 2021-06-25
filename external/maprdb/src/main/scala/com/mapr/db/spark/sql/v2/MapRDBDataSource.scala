@@ -32,7 +32,8 @@ class MapRDBDataSource
    *                e.g. file path, Kafka topic name, etc.
    */
   override def inferSchema(options: CaseInsensitiveStringMap): StructType = {
-    // TODO STUB. Implement me
+    // getTable(null, Array.empty[Transform], options.asCaseSensitiveMap()).schema()
+    // TODO: Implement me
     null
   }
 
@@ -68,8 +69,6 @@ class MapRDBDataSource
     MapRDBTable(schema, tablePath, hintedIndexes, readersPerTablet)
   }
 
-//  private def getNumberOfReaders(props: CaseInsensitiveStringMap): Int = Try {
-//    val numberOfReaders = props.getOrDefault("readers", "1").toInt
-//    if (numberOfReaders < 1) 1 else numberOfReaders
-//  }.getOrElse(1)
+  override def supportsExternalMetadata(): Boolean = true
+
 }
