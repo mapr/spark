@@ -40,7 +40,7 @@ package object MapRDBSpark {
       } else {
         sparkSession
           .read
-          .format("com.mapr.db.spark.sql.v2.Reader")
+          .format("com.mapr.db.spark.sql.v2.MapRDBDataSource")
           .schema(schema)
           .option("readers", many)
           .load(path)
