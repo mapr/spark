@@ -62,7 +62,7 @@ public class MapRSecSaslHelper {
       HadoopThriftAuthBridge.Client authBridge =
         ShimLoader.getHadoopThriftAuthBridge().createClientWithConf("CUSTOM");
       return authBridge.createClientTransport(
-              null, null, "CUSTOM", null,
+              null, null, "MAPRSASL", null,
               underlyingTransport, saslProps);
     } catch (IOException e) {
       throw new SaslException("Failed to open client transport", e);
