@@ -32,8 +32,8 @@ class MapRDBDataSource
    *                e.g. file path, Kafka topic name, etc.
    */
   override def inferSchema(options: CaseInsensitiveStringMap): StructType = {
-    // getTable(null, Array.empty[Transform], options.asCaseSensitiveMap()).schema()
-    // TODO: Implement me
+    // MaprDb connector for DataSourceV2 doesn't support loadFromMaprDB method without schema specifying,
+    // so schema needs to be specified by user
     null
   }
 
