@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.spark.deploy.k8s.features
 
 import scala.collection.JavaConverters._
@@ -22,8 +38,96 @@ private[spark] class MaprConfigFeatureStep(conf: KubernetesConf)
     applyMetricsTicket(podBuilder, containerBuilder)
     applyClusterConfigMap(podBuilder, containerBuilder)
     addClusterEnvs(podBuilder, containerBuilder)
+    applyLdapCM(podBuilder, containerBuilder)
+    applySSSDSecret(podBuilder, containerBuilder)
+    applySSHSecret(podBuilder, containerBuilder)
+    applyClientSecret(podBuilder, containerBuilder)
 
     SparkPod(podBuilder.build(), containerBuilder.build())
+  }
+
+  private def applyLdapCM(podBuilder: PodBuilder, containerBuilder: ContainerBuilder) = {
+    val cmName = "ldapclient-cm"
+    val cmVolumeName = "ldap-cm"
+
+    podBuilder.editOrNewSpec()
+      .addNewVolume()
+      .withName(cmVolumeName)
+      .withNewConfigMap()
+      .withName(cmName)
+      .withOptional(true)
+      .withDefaultMode(420)
+      .endConfigMap()
+      .endVolume()
+      .endSpec()
+
+    containerBuilder.addNewVolumeMount()
+      .withName(cmVolumeName)
+      .withMountPath("/opt/mapr/kubernetes/ldap-cm")
+      .endVolumeMount()
+  }
+
+  private def applySSSDSecret(podBuilder: PodBuilder, containerBuilder: ContainerBuilder) = {
+    val secretName = "sssd"
+    val volumeName = "sssd-secrets"
+
+    podBuilder.editOrNewSpec()
+      .addNewVolume()
+      .withName(volumeName)
+      .withNewSecret()
+      .withSecretName(secretName)
+      .withDefaultMode(420)
+      .withOptional(true)
+      .endSecret()
+      .endVolume()
+      .endSpec()
+
+    containerBuilder.addNewVolumeMount()
+      .withName(volumeName)
+      .withMountPath("/opt/mapr/kubernetes/sssd-secrets")
+      .endVolumeMount()
+  }
+
+  private def applySSHSecret(podBuilder: PodBuilder, containerBuilder: ContainerBuilder) = {
+    val secretName = "ssh"
+    val volumeName = "ssh-secrets"
+
+    podBuilder.editOrNewSpec()
+      .addNewVolume()
+      .withName(volumeName)
+      .withNewSecret()
+      .withSecretName(secretName)
+      .withDefaultMode(420)
+      .withOptional(true)
+      .endSecret()
+      .endVolume()
+      .endSpec()
+
+    containerBuilder.addNewVolumeMount()
+      .withName(volumeName)
+      .withMountPath("/opt/mapr/kubernetes/ssh-secrets")
+      .endVolumeMount()
+  }
+
+  private def applyClientSecret(podBuilder: PodBuilder, containerBuilder: ContainerBuilder) = {
+    val secretName = "client"
+    val volumeName = "client-secrets"
+
+    podBuilder.editOrNewSpec()
+      .addNewVolume()
+      .withName(volumeName)
+      .withNewSecret()
+      .withSecretName(secretName)
+      .withDefaultMode(420)
+      .withOptional(true)
+      .endSecret()
+      .endVolume()
+      .endSpec()
+
+    containerBuilder.addNewVolumeMount()
+      .withName(volumeName)
+      .withMountPath("/opt/mapr/kubernetes/client-secrets")
+      .endVolumeMount()
   }
 
   private def applyUserSecret(podBuilder: PodBuilder, containerBuilder: ContainerBuilder) = {
@@ -44,15 +148,13 @@ private[spark] class MaprConfigFeatureStep(conf: KubernetesConf)
         .withName(ENV_MAPR_TICKETFILE_LOCATION)
         .withValue(MAPR_USER_TICKET_MOUNT_PATH)
       .endEnv()
-      .addNewEnvFrom()
-        .withNewSecretRef()
-          .withName(userSecretName)
-        .endSecretRef()
-      .endEnvFrom()
+      .addNewEnv()
+        .withName(ENV_MAPR_USERSECRET_MOUNT_PATH)
+        .withValue(MAPR_USER_SECRET_MOUNT_PATH)
+      .endEnv()
       .addNewVolumeMount()
         .withName(userSecretVolumeName)
-        .withMountPath(MAPR_USER_TICKET_MOUNT_PATH)
-        .withSubPath(MAPR_USER_TICKET_SUBPATH)
+        .withMountPath(MAPR_USER_SECRET_MOUNT_PATH)
       .endVolumeMount()
   }
 
