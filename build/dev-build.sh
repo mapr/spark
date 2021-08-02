@@ -12,5 +12,5 @@ fi
 
 if [ $? -ne 0 ]; then exit 1; fi
 
-scp -r assembly/target/scala-2.11/jars mapr@node1:/opt/mapr/spark/spark-3.1.1/jars
+scp -r assembly/target/scala-2.11/jars mapr@node1:/opt/mapr/spark/spark-3.1.2/jars
 if [ $? -ne 0 ]; then exit 1; fi
