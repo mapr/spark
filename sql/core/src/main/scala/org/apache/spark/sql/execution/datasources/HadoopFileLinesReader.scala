@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.datasources
 
 import java.io.Closeable
+import java.net.URI
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileUtil, Path}
@@ -46,13 +47,7 @@ class HadoopFileLinesReader(
   def this(file: PartitionedFile, conf: Configuration) = this(file, None, conf)
 
   private val iterator = {
-    val filePathData = FileUtil.checkPathForSymlink(new Path(file.filePath), conf)
-    val fileSplit = new FileSplit(
-      filePathData.path,
-      file.start,
-      filePathData.stat.getLen,
-      // TODO: Implement Locality
-      Array.empty)
+    val fileSplit: FileSplit = getFileSplit
     val attemptId = new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 0), 0)
     val hadoopAttemptContext = new TaskAttemptContextImpl(conf, attemptId)
 
@@ -64,6 +59,27 @@ class HadoopFileLinesReader(
 
     reader.initialize(fileSplit, hadoopAttemptContext)
     new RecordReaderIterator(reader)
+  }
+
+  private def getFileSplit: FileSplit = {
+    // TODO: Implement Locality
+    if (checkForSymlink) {
+      val filePathData = FileUtil.checkPathForSymlink(new Path(file.filePath), conf)
+      val fileSplit = new FileSplit(
+        filePathData.path,
+        file.start,
+        filePathData.stat.getLen,
+        Array.empty
+      )
+      fileSplit
+    } else {
+      val fileSplit = new FileSplit(
+        new Path(new URI(file.filePath)),
+        file.start,
+        file.length,
+        Array.empty)
+      fileSplit
+    }
   }
 
   override def hasNext: Boolean = iterator.hasNext
