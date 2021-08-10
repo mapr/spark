@@ -55,7 +55,7 @@ is_responding() {
     DAEMON=$1
     PORT=$2
     logInfo "Checking if $DAEMON port $PORT is open"
-    nohup nc localhost "$PORT" </dev/null >/dev/null 2>&1
+    nohup nc localhost "$PORT" -zw3 </dev/null >/dev/null 2>&1
     if [ "$?" == 0 ]; then
         logInfo "$DAEMON port $PORT is open"
         return $EXIT_SUCCESS
