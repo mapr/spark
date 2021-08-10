@@ -55,7 +55,7 @@ is_responding() {
     DAEMON=$1
     PORT=$2
     logInfo "Checking if $DAEMON port $PORT is open"
-    nohup nc localhost "$PORT" </dev/null >/dev/null 2>&1
+    nohup nc localhost "$PORT" -zw3 </dev/null >/dev/null 2>&1
     if [ "$?" == 0 ]; then
         logInfo "$DAEMON port $PORT is open"
         return $EXIT_SUCCESS
@@ -93,73 +93,62 @@ is_running() {
     fi
 }
 
+get_port()
+{
+  case $1 in
+   master)
+     echo $MASTER_CONFIGURED_PORT
+     ;;
+   thriftserver)
+     echo $THRIFT_PORT
+     ;;
+   historyserver)
+     echo $HISTORY_CONFIGURED_PORT
+     ;;
+   esac
+}
 
-logInfo "Starting verifier at $(date)"
+get_pid_file()
+{
+   case $1 in
+   master)
+     echo $MASTER_PID_FILE
+     ;;
+   thriftserver)
+     echo $THRIFT_PID_FILE
+     ;;
+   historyserver)
+     echo $HISTORY_PID_FILE
+     ;;
+   esac
+}
 
-MASTER_STATUS="$EXIT_SUCCESS"
-if [ -f "$ROLES_DIR/spark-master" ]; then
-    logInfo "Spark Master is installed"
-    if is_running master "$MASTER_PID_FILE"; then
-        if is_responding master "$MASTER_PORT"; then
-            MASTER_STATUS="$EXIT_SUCCESS"
-            logInfo "Spark Master is responsive"
-        else
-            MASTER_STATUS="$EXIT_RUNNING_NOT_RESPONDING"
-            logInfo "Spark Master is running but not responsive"
-        fi
-    else
-        MASTER_STATUS="$EXIT_NOT_RUNNING"
-        logInfo "Spark Master is not running"
-    fi
-else
-    logInfo "Spark Master is not installed"
-fi
+verify_service()
+{
+  logInfo "Starting verifier at $(date) for service $SERVICE"
 
-HISTORY_STATUS="$EXIT_SUCCESS"
-if [ -f "$ROLES_DIR/spark-historyserver" ]; then
-    logInfo "Spark history server is installed"
-    if is_running historyserver "$HISTORY_PID_FILE"; then
-        if is_responding historyserver "$HISTORY_PORT"; then
-            HISTORY_STATUS="$EXIT_SUCCESS"
-            logInfo "Spark history server is responsive"
-        else
-            HISTORY_STATUS="$EXIT_RUNNING_NOT_RESPONDING"
-            logInfo "Spark history server is running but not responsive"
-        fi
-    else
-        HISTORY_STATUS="$EXIT_NOT_RUNNING"
-        logInfo "Spark history server is not running"
-    fi
-else
-    logInfo "Spark history server is not installed"
-fi
-
-THRIFT_STATUS="$EXIT_SUCCESS"
-if [ -f "$ROLES_DIR/spark-thriftserver" ]; then
-    logInfo "Thriftserver is installed"
-    if is_running thriftserver "$THRIFT_PID_FILE"; then
-        if is_responding thriftserver $THRIFT_PORT; then
-            THRIFT_STATUS="$EXIT_SUCCESS"
-            logInfo "Thriftserver is responsive"
-        else
-            THRIFT_STATUS="$EXIT_RUNNING_NOT_RESPONDING"
-            logInfo "Thriftserver is running but not responsive"
-        fi
-    else
-        THRIFT_STATUS="$EXIT_NOT_RUNNING"
-        logInfo "Thriftserver is not running"
-    fi
-else
-    logInfo "Thriftserver is not installed"
-fi
-
-
-if [ "$THRIFT_STATUS" = "$EXIT_SUCCESS" ] && [ "$HISTORY_STATUS" = "$EXIT_SUCCESS" ] && [ "$MASTER_STATUS" = "$EXIT_SUCCESS" ]; then
-    exit "$EXIT_SUCCESS"
-fi
-
-if [ "$THRIFT_STATUS" = "$EXIT_RUNNING_NOT_RESPONDING" ] || [ "$HISTORY_STATUS" = "$EXIT_RUNNING_NOT_RESPONDING" ] || [ "$MASTER_STATUS" = "$EXIT_RUNNING_NOT_RESPONDING" ] ; then
-    exit "$EXIT_RUNNING_NOT_RESPONDING"
-fi
-
-exit "$EXIT_NOT_RUNNING"
+  SERVICE=$1
+  SERVICE_STATUS="$EXIT_SUCCESS"
+  if [ -f "$ROLES_DIR/spark-$SERVICE" ]; then
+      logInfo "Spark $SERVICE is installed"
+      SERVICE_PID_FILE=$(get_pid_file $SERVICE)
+      logInfo "PID file is: $SERVICE_PID_FILE"
+      SERVICE_PORT=$(get_port $SERVICE)
+      logInfo "Service port to check is: $SERVICE_PORT"
+      if is_running $SERVICE "$SERVICE_PID_FILE"; then
+          if is_responding $SERVICE "$SERVICE_PORT"; then
+              SERVICE_STATUS="$EXIT_SUCCESS"
+              logInfo "Spark $SERVICE is responsive"
+          else
+              SERVICE_STATUS="$EXIT_RUNNING_NOT_RESPONDING"
+              logInfo "Spark $SERVICE is running but not responsive"
+          fi
+      else
+          SERVICE_STATUS="$EXIT_NOT_RUNNING"
+          logInfo "Spark $SERVICE is not running"
+      fi
+  else
+      logInfo "Spark $SERVICE is not installed"
+  fi
+  return $SERVICE_STATUS
+}
