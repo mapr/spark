@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.datasources
 
 import java.io.Closeable
+import java.net.URI
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileUtil, Path}
@@ -36,17 +37,32 @@ class HadoopFileWholeTextReader(file: PartitionedFile, conf: Configuration)
   extends Iterator[Text] with Closeable {
   private val iterator = {
     val filePathData = FileUtil.checkPathForSymlink(new Path(file.filePath), conf)
-    val fileSplit = new CombineFileSplit(
-      Array(filePathData.path),
-      Array(file.start),
-      Array(filePathData.stat.getLen),
-      // TODO: Implement Locality
-      Array.empty[String])
+    val fileSplit = getFileSplit
     val attemptId = new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 0), 0)
     val hadoopAttemptContext = new TaskAttemptContextImpl(conf, attemptId)
     val reader = new WholeTextFileRecordReader(fileSplit, hadoopAttemptContext, 0)
     reader.initialize(fileSplit, hadoopAttemptContext)
     new RecordReaderIterator(reader)
+  }
+
+  private def getFileSplit : CombineFileSplit = {
+    // TODO: Implement Locality
+    if (checkForSymlink) {
+      val filePathData = FileUtil.checkPathForSymlink(new Path(file.filePath), conf)
+      val fileSplit = new CombineFileSplit(
+        Array(filePathData.path),
+        Array(file.start),
+        Array(filePathData.stat.getLen),
+        Array.empty[String])
+      fileSplit
+    } else {
+      val fileSplit = new CombineFileSplit(
+        Array(new Path(new URI(file.filePath))),
+        Array(file.start),
+        Array(file.length),
+        Array.empty[String])
+      fileSplit
+    }
   }
 
   override def hasNext: Boolean = iterator.hasNext
