@@ -74,24 +74,6 @@ private class HttpSecurityFilter(
       return
     }
 
-    // SPARK-10589 avoid frame-related click-jacking vulnerability, using X-Frame-Options
-    // (see http://tools.ietf.org/html/rfc7034). By default allow framing only from the
-    // same origin, but allow framing for a specific named URI.
-    // Example: spark.ui.allowFramingFrom = https://example.com/
-    val xFrameOptionsValue = conf.getOption("spark.ui.allowFramingFrom")
-      .map { uri => s"ALLOW-FROM $uri" }
-      .getOrElse("SAMEORIGIN")
-
-    hres.setHeader("X-Frame-Options", xFrameOptionsValue)
-    hres.setHeader("X-XSS-Protection", conf.get(UI_X_XSS_PROTECTION))
-    if (conf.get(UI_X_CONTENT_TYPE_OPTIONS)) {
-      hres.setHeader("X-Content-Type-Options", "nosniff")
-    }
-    if (hreq.getScheme() == "https") {
-      conf.get(UI_STRICT_TRANSPORT_SECURITY).foreach(
-        hres.setHeader("Strict-Transport-Security", _))
-    }
-
     chain.doFilter(new XssSafeRequest(hreq, effectiveUser), res)
   }
 
