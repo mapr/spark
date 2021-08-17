@@ -54,6 +54,7 @@ log4j.logger.org.apache.spark.deploy.yarn.Client=ERROR
 log4j.logger.org.apache.spark.sql.hive.HiveUtils=ERROR
 log4j.logger.org.apache.hadoop.hive.metastore.HiveMetastore=ERROR
 log4j.logger.org.apache.hadoop.hive.metastore.ObjectStore=ERROR
+log4j.logger.org.apache.hive.beeline.SQLCompleter=ERROR
 
 # For deploying Spark ThriftServer
 # SPARK-34128：Suppress undesirable TTransportException warnings involved in THRIFT-4805
