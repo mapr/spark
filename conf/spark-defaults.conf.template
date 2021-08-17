@@ -35,3 +35,6 @@ spark.sql.hive.metastore.sharedPrefixes  com.mysql.jdbc,org.postgresql,com.micro
 spark.executor.memory              2g
 
 spark.ui.reverseProxy true
+
+# Muting Java 11 illegal access warnings
+spark.driver.defaultJavaOptions --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED
