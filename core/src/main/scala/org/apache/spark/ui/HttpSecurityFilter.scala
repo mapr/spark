@@ -26,7 +26,6 @@ import scala.collection.JavaConverters._
 import org.apache.commons.text.StringEscapeUtils
 
 import org.apache.spark.{SecurityManager, SparkConf}
-import org.apache.spark.internal.config.UI._
 
 /**
  * A servlet filter that implements HTTP security features. The following actions are taken
