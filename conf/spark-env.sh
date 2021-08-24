@@ -98,8 +98,8 @@ MAPR_HADOOP_JNI_PATH=`hadoop jnipath`
 MAPR_SPARK_CLASSPATH="$MAPR_HADOOP_CLASSPATH"
 
 #FIX for SPARK-906/KAFKA-717. This should be removed when kafka-eventstreams jar will be added to mapr classpath
-if [ -f MAPR_HOME/kafka/kafkaversion ]; then
-        MAPR_SPARK_CLASSPATH=$MAPR_SPARK_CLASSPATH:$(find ${BASEMAPR:-MAPR_HOME}/kafka -name "kafka-eventstreams-*.jar")
+if [ -f "$MAPR_HOME/kafka/kafkaversion" ]; then
+        MAPR_SPARK_CLASSPATH=$MAPR_SPARK_CLASSPATH:$(find ${BASEMAPR:-$MAPR_HOME}/kafka -name "kafka-eventstreams-*.jar")
 fi
 
 SPARK_MAPR_HOME=$MAPR_HOME
