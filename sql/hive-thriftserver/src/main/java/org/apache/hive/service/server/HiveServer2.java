@@ -17,28 +17,45 @@
 
 package org.apache.hive.service.server;
 
-import java.util.Properties;
-
-import scala.runtime.AbstractFunction0;
-import scala.runtime.BoxedUnit;
-
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.*;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.api.ACLProvider;
+import org.apache.curator.framework.recipes.nodes.PersistentEphemeralNode;
+import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.hadoop.hive.common.JvmPauseMonitor;
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
+import org.apache.hadoop.hive.ql.util.ZooKeeperHiveHelper;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hive.common.util.HiveStringUtils;
 import org.apache.hive.service.CompositeService;
 import org.apache.hive.service.cli.CLIService;
 import org.apache.hive.service.cli.thrift.ThriftBinaryCLIService;
 import org.apache.hive.service.cli.thrift.ThriftCLIService;
 import org.apache.hive.service.cli.thrift.ThriftHttpCLIService;
+import org.apache.spark.util.ShutdownHookManager;
+import org.apache.yetus.audience.InterfaceAudience;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.data.ACL;
+import org.apache.zookeeper.data.Id;
+import org.graalvm.compiler.core.common.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.runtime.AbstractFunction0;
+import scala.runtime.BoxedUnit;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+
+import static org.apache.hadoop.hive.conf.HiveConf.setLoadHiveServer2Config;
 import org.apache.spark.util.ShutdownHookManager;
 import org.apache.spark.util.SparkExitCode;
 
@@ -51,10 +68,14 @@ public class HiveServer2 extends CompositeService {
 
   private CLIService cliService;
   private ThriftCLIService thriftCLIService;
+  private CuratorFramework zooKeeperClient;
+  private PersistentEphemeralNode znode;
+  private String znodePath;
+
 
   public HiveServer2() {
     super(HiveServer2.class.getSimpleName());
-    HiveConf.setLoadHiveServer2Config(true);
+    setLoadHiveServer2Config(true);
   }
 
   @Override
@@ -92,17 +113,236 @@ public class HiveServer2 extends CompositeService {
   public static boolean isHTTPTransportMode(HiveConf hiveConf) {
     String transportMode = System.getenv("HIVE_SERVER2_TRANSPORT_MODE");
     if (transportMode == null) {
-      transportMode = hiveConf.getVar(HiveConf.ConfVars.HIVE_SERVER2_TRANSPORT_MODE);
+      transportMode = hiveConf.getVar(ConfVars.HIVE_SERVER2_TRANSPORT_MODE);
     }
-    if (transportMode != null && (transportMode.equalsIgnoreCase("http"))) {
-      return true;
-    }
-    return false;
+    return transportMode != null && (transportMode.equalsIgnoreCase("http"));
   }
 
   @Override
   public synchronized void start() {
     super.start();
+    HiveConf hiveConf = new HiveConf();
+    String zooKeeperEnsemble = ZooKeeperHiveHelper.getQuorumServers(hiveConf);
+    LOG.info("Zookeeper ensemble: "+zooKeeperEnsemble);
+    LOG.info("Hive config: "+hiveConf.getBoolVar(ConfVars.HIVE_SERVER2_SUPPORT_DYNAMIC_SERVICE_DISCOVERY));
+    if (hiveConf.getBoolVar(ConfVars.HIVE_SERVER2_SUPPORT_DYNAMIC_SERVICE_DISCOVERY)) {
+      try
+      {
+        this.addServerInstanceToZooKeeper(hiveConf);
+      } catch (Exception e)
+      {
+        LOG.error(e.getMessage(),e);
+      }
+    }
+  }
+
+  private String getServerInstanceURI() throws Exception {
+    if ((thriftCLIService == null) || (thriftCLIService.getServerIPAddress() == null)) {
+      throw new Exception("Unable to get the server address; it hasn't been initialized yet.");
+    }
+    return thriftCLIService.getServerIPAddress().getHostName() + ":"
+            + thriftCLIService.getPortNumber();
+  }
+
+  private void addConfsToPublish(HiveConf hiveConf, Map<String, String> confsToPublish)
+          throws UnknownHostException {
+    // Hostname
+    confsToPublish.put(ConfVars.HIVE_SERVER2_THRIFT_BIND_HOST.varname,
+            InetAddress.getLocalHost().getCanonicalHostName());
+    // Transport mode
+    confsToPublish.put(ConfVars.HIVE_SERVER2_TRANSPORT_MODE.varname,
+            hiveConf.getVar(ConfVars.HIVE_SERVER2_TRANSPORT_MODE));
+    // Transport specific confs
+    if (isHTTPTransportMode(hiveConf)) {
+      confsToPublish.put(ConfVars.HIVE_SERVER2_THRIFT_HTTP_PORT.varname,
+              hiveConf.getVar(ConfVars.HIVE_SERVER2_THRIFT_HTTP_PORT));
+      confsToPublish.put(ConfVars.HIVE_SERVER2_THRIFT_HTTP_PATH.varname,
+              hiveConf.getVar(ConfVars.HIVE_SERVER2_THRIFT_HTTP_PATH));
+    } else {
+      confsToPublish.put(ConfVars.HIVE_SERVER2_THRIFT_PORT.varname,
+              hiveConf.getVar(ConfVars.HIVE_SERVER2_THRIFT_PORT));
+      confsToPublish.put(ConfVars.HIVE_SERVER2_THRIFT_SASL_QOP.varname,
+              hiveConf.getVar(ConfVars.HIVE_SERVER2_THRIFT_SASL_QOP));
+    }
+    // Auth specific confs
+    confsToPublish.put(ConfVars.HIVE_SERVER2_AUTHENTICATION.varname,
+            hiveConf.getVar(ConfVars.HIVE_SERVER2_AUTHENTICATION));
+    confsToPublish.put(ConfVars.HIVE_SERVER2_USE_SSL.varname,
+            hiveConf.getVar(ConfVars.HIVE_SERVER2_USE_SSL));
+  }
+
+  @InterfaceAudience.Public
+  public static class ZooDefs {
+
+    @InterfaceAudience.Public
+    public interface Perms {
+      int READ = 1 << 0;
+
+      int WRITE = 1 << 1;
+
+      int CREATE = 1 << 2;
+
+      int DELETE = 1 << 3;
+
+      int ADMIN = 1 << 4;
+
+      int ALL = READ | WRITE | CREATE | DELETE | ADMIN;
+    }
+
+    @InterfaceAudience.Public
+    public interface Ids {
+      /**
+       * This Id represents anyone.
+       */
+      Id ANYONE_ID_UNSAFE = new Id("world", "anyone");
+
+      /**
+       * This Id is only usable to set ACLs. It will get substituted with the
+       * Id's the client authenticated with.
+       */
+      Id AUTH_IDS = new Id("auth", "");
+
+      /**
+       * This is a completely open ACL .
+       */
+      @SuppressFBWarnings(value = "MS_MUTABLE_COLLECTION", justification = "Cannot break API")
+      ArrayList<ACL> OPEN_ACL_UNSAFE = new ArrayList<>(
+              Collections.singletonList(new ACL(org.apache.zookeeper.ZooDefs.Perms.ALL, ANYONE_ID_UNSAFE)));
+
+      /**
+       * This ACL gives the world the ability to read.
+       */
+      @SuppressFBWarnings(value = "MS_MUTABLE_COLLECTION", justification = "Cannot break API")
+      ArrayList<ACL> READ_ACL_UNSAFE = new ArrayList<>(
+              Collections
+                      .singletonList(new ACL(org.apache.zookeeper.ZooDefs.Perms.READ, ANYONE_ID_UNSAFE)));
+    }
+
+  }
+
+
+  private final ACLProvider zooKeeperAclProvider = new ACLProvider() {
+    List<ACL> nodeAcls = new ArrayList<>();
+
+    @Override
+    public List<org.apache.zookeeper.data.ACL> getDefaultAcl() {
+      if (UserGroupInformation.isSecurityEnabled()) {
+        // Read all to the world
+        nodeAcls.addAll(ZooDefs.Ids.READ_ACL_UNSAFE);
+        // Create/Delete/Write/Admin to the authenticated user
+        nodeAcls.add(new ACL(ZooDefs.Perms.ALL, ZooDefs.Ids.AUTH_IDS));
+      } else {
+        // ACLs for znodes on a non-kerberized cluster
+        // Create/Read/Delete/Write/Admin to the world
+        nodeAcls.addAll(ZooDefs.Ids.OPEN_ACL_UNSAFE);
+      }
+      return nodeAcls;
+    }
+
+    @Override
+    public List<ACL> getAclForPath(String path) {
+      return getDefaultAcl();
+    }
+  };
+
+  private class DeRegisterWatcher implements Watcher {
+    @Override
+    public void process(WatchedEvent event) {
+      if (event.getType().equals(Watcher.Event.EventType.NodeDeleted)) {
+        if (znode != null) {
+          try {
+            znode.close();
+            LOG.warn("This HiveServer2 instance is now de-registered from ZooKeeper. "
+                    + "The server will be shut down after the last client sesssion completes.");
+          } catch (IOException e) {
+            LOG.error("Failed to close the persistent ephemeral znode", e);
+          } finally {
+            HiveServer2.this.setRegisteredWithZooKeeper();
+            // If there are no more active client sessions, stop the server
+            if (cliService.getSessionManager().getOpenSessionCount() == 0) {
+              LOG.warn("This instance of HiveServer2 has been removed from the list of server "
+                      + "instances available for dynamic service discovery. "
+                      + "The last client session has ended - will shutdown now.");
+              HiveServer2.this.stop();
+            }
+          }
+        }
+      }
+    }
+  }
+
+
+  private void addServerInstanceToZooKeeper(HiveConf hiveConf) throws Exception {
+    String zooKeeperEnsemble = ZooKeeperHiveHelper.getQuorumServers(hiveConf);
+    LOG.info("Register on zookeeper: "+zooKeeperEnsemble);
+    String rootNamespace = hiveConf.getVar(ConfVars.HIVE_SERVER2_ZOOKEEPER_NAMESPACE);
+    String instanceURI = getServerInstanceURI();
+//    setUpZooKeeperAuth(hiveConf);
+    Map<String, String> confsToPublish = new HashMap<>();
+    addConfsToPublish(hiveConf, confsToPublish);
+    int sessionTimeout =
+            (int) hiveConf.getTimeVar(ConfVars.HIVE_ZOOKEEPER_SESSION_TIMEOUT,
+                    TimeUnit.MILLISECONDS);
+    int baseSleepTime =
+            (int) hiveConf.getTimeVar(ConfVars.HIVE_ZOOKEEPER_CONNECTION_BASESLEEPTIME,
+                    TimeUnit.MILLISECONDS);
+    int maxRetries = hiveConf.getIntVar(ConfVars.HIVE_ZOOKEEPER_CONNECTION_MAX_RETRIES);
+    // Create a CuratorFramework instance to be used as the ZooKeeper client
+    // Use the zooKeeperAclProvider to create appropriate ACLs
+    zooKeeperClient =
+            CuratorFrameworkFactory.builder().connectString(zooKeeperEnsemble)
+                    .sessionTimeoutMs(sessionTimeout).aclProvider(zooKeeperAclProvider)
+                    .retryPolicy(new ExponentialBackoffRetry(baseSleepTime, maxRetries)).build();
+    LOG.info("hive server: start thrift server");
+    zooKeeperClient.start();
+    // Create the parent znodes recursively; ignore if the parent already exists.
+    try {
+      zooKeeperClient.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT)
+              .forPath(ZooKeeperHiveHelper.ZOOKEEPER_PATH_SEPARATOR + rootNamespace);
+      LOG.info("Created the root name space: " + rootNamespace + " on ZooKeeper for HiveServer2");
+    } catch (KeeperException e) {
+      if (e.code() != KeeperException.Code.NODEEXISTS) {
+        LOG.error("Unable to create HiveServer2 namespace: " + rootNamespace + " on ZooKeeper", e);
+        throw e;
+      }
+    }
+
+    // Create a znode under the rootNamespace parent for this instance of the server
+    // Znode name: serverUri=host:port;version=versionInfo;sequence=sequenceNumber
+    try {
+      String pathPrefix = ZooKeeperHiveHelper.ZOOKEEPER_PATH_SEPARATOR + rootNamespace
+              + ZooKeeperHiveHelper.ZOOKEEPER_PATH_SEPARATOR + "serverUri=" + instanceURI + ";"
+              + "version=" + ";" + "sequence=";
+
+      // Publish configs for this instance as the data on the node
+      String znodeData = confsToPublish.get(ConfVars.HIVE_SERVER2_THRIFT_BIND_HOST.varname) + ":" +
+              confsToPublish.get(ConfVars.HIVE_SERVER2_THRIFT_PORT.varname);
+      byte[] znodeDataUTF8 = znodeData.getBytes(StandardCharsets.UTF_8);
+      znode = new PersistentEphemeralNode(zooKeeperClient,
+              PersistentEphemeralNode.Mode.EPHEMERAL_SEQUENTIAL, pathPrefix, znodeDataUTF8);
+      znode.start();
+      // We'll wait for 120s for node creation
+      long znodeCreationTimeout = 120;
+      if (!znode.waitForInitialCreate(znodeCreationTimeout, TimeUnit.SECONDS)) {
+        throw new Exception("Max znode creation wait time: " + znodeCreationTimeout + "s exhausted");
+      }
+      setRegisteredWithZooKeeper();
+      znodePath = znode.getActualPath();
+      // Set a watch on the znode
+      if (zooKeeperClient.checkExists().usingWatcher(new DeRegisterWatcher()).forPath(znodePath) == null) {
+        // No node exists, throw exception
+        throw new Exception("Unable to create znode for this HiveServer2 instance on ZooKeeper.");
+      }
+      LOG.info("Created a znode on ZooKeeper for HiveServer2 uri: " + instanceURI);
+    } catch (Exception e) {
+      LOG.error("Unable to create a znode for this server instance", e);
+      if (znode != null) {
+        znode.close();
+      }
+      throw (e);
+    }
+  }
+  private void setRegisteredWithZooKeeper() {
   }
 
   @Override
@@ -111,12 +351,12 @@ public class HiveServer2 extends CompositeService {
     super.stop();
   }
 
-  private static void startHiveServer2() throws Throwable {
+  private static void startHiveServer2() {
     long attempts = 0, maxAttempts = 1;
     while (true) {
       LOG.info("Starting HiveServer2");
       HiveConf hiveConf = new HiveConf();
-      maxAttempts = hiveConf.getLongVar(HiveConf.ConfVars.HIVE_SERVER2_MAX_START_ATTEMPTS);
+      maxAttempts = hiveConf.getLongVar(ConfVars.HIVE_SERVER2_MAX_START_ATTEMPTS);
       HiveServer2 server = null;
       try {
         server = new HiveServer2();
@@ -136,7 +376,6 @@ public class HiveServer2 extends CompositeService {
           } catch (Throwable t) {
             LOG.info("Exception caught when calling stop of HiveServer2 before retrying start", t);
           } finally {
-            server = null;
           }
         }
         if (++attempts >= maxAttempts) {
@@ -155,7 +394,7 @@ public class HiveServer2 extends CompositeService {
   }
 
   public static void main(String[] args) {
-    HiveConf.setLoadHiveServer2Config(true);
+    setLoadHiveServer2Config(true);
     ServerOptionsProcessor oproc = new ServerOptionsProcessor("hiveserver2");
     ServerOptionsProcessorResponse oprocResponse = oproc.parse(args);
 
@@ -218,9 +457,6 @@ public class HiveServer2 extends CompositeService {
       return new ServerOptionsProcessorResponse(new StartOptionExecutor());
     }
 
-    StringBuilder getDebugMessage() {
-      return debugMessage;
-    }
   }
 
   /**
