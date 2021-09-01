@@ -46,7 +46,7 @@ public class TSetIpAddressProcessor<I extends Iface> extends TCLIService.Process
   }
 
   @Override
-  public boolean process(final TProtocol in, final TProtocol out) throws TException {
+  public void process(final TProtocol in, final TProtocol out) throws TException {
     setIpAddress(in);
     setUserName(in);
     try {
