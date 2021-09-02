@@ -76,9 +76,9 @@ pipeline {
                   -e MAPR_RELEASES_REPO=${MAPR_RELEASES_REPO} \
                   -e MAPR_SNAPSHOTS_REPO=${MAPR_SNAPSHOTS_REPO} \
                   -e MAVEN_OPTS='-Xmx2g -XX:ReservedCodeCacheSize=512m -Dorg.slf4j.simpleLogger.defaultLogLevel=WARN' \
-                  -e JAVA_HOME='/root/opensource/temp/jdk1.8.0_121' \
-                  -e M2_BIN='/opt/apache-mavne-3.3.9/bin' \
-                  -e M2_HOME='/opt/apache-maven-3.3.9' \
+                  -e JAVA_HOME=/root/opensource/temp/jdk1.8.0_121 \
+                  -e M2_BIN=/opt/apache-mavne-3.3.9/bin \
+                  -e M2_HOME=/opt/apache-maven-3.3.9 \
                   -v /root/.m2:/root/.m2:rw \
                   -v /root/yum-proxy.conf:/etc/yum.conf:ro \
                   -v /etc/hosts:/etc/hosts:ro \
@@ -95,10 +95,9 @@ pipeline {
 
                       rm -rf ${PROJECT}/temp  ; \
                       mkdir -p ${PROJECT}/temp ; \
-                      JDK_PKG=jdk-8u121-linux-x64.tar.gz ; \
                       source /etc/profile.d/proxy.sh ; \
-                      wget --quiet http://dfaf.mip.storage.hpecorp.net:8081/artifactory/buildmachine-files-copy/cross-linux/${JDK_PKG} -O ${PROJECT}/${JDK_PKG} ; \
-                      tar -xf ${PROJECT}/${JDK_PKG} -C ${PROJECT}/temp ; \
+                      wget --quiet http://dfaf.mip.storage.hpecorp.net:8081/artifactory/buildmachine-files-copy/cross-linux/jdk-8u121-linux-x64.tar.gz -O ${PROJECT}/jdk-8u121-linux-x64.tar.gz ; \
+                      tar -xf ${PROJECT}/jdk-8u121-linux-x64.tar.gz -C ${PROJECT}/temp ; \
 
                       alternatives --install /usr/bin/java java ${PROJECT}/temp/jdk1.8.0_121/bin/java 3 ; \
                       alternatives --install /usr/bin/javac javac ${PROJECT}/temp/jdk1.8.0_121/bin/javac 3; \
@@ -152,9 +151,9 @@ pipeline {
                   -e MAPR_RELEASES_REPO=${MAPR_RELEASES_REPO} \
                   -e MAPR_SNAPSHOTS_REPO=${MAPR_SNAPSHOTS_REPO} \
                   -e MAVEN_OPTS='-Xmx2g -XX:ReservedCodeCacheSize=512m -Dorg.slf4j.simpleLogger.defaultLogLevel=WARN' \
-                  -e JAVA_HOME='/root/opensource/temp/jdk1.8.0_121' \
-                  -e M2_BIN='/opt/apache-mavne-3.3.9/bin' \
-                  -e M2_HOME='/opt/apache-maven-3.3.9' \
+                  -e JAVA_HOME=/root/opensource/temp/jdk1.8.0_121 \
+                  -e M2_BIN=/opt/apache-mavne-3.3.9/bin \
+                  -e M2_HOME=/opt/apache-maven-3.3.9 \
                   -v /root/yum-proxy.conf:/etc/yum.conf:ro \
                   -v /etc/hosts:/etc/hosts:ro \
                   -v /root/apt-proxy.conf:/etc/apt/apt.conf.d/proxy.conf:ro \
@@ -170,10 +169,9 @@ pipeline {
 
                       rm -rf ${PROJECT}/temp ; \
                       mkdir -p ${PROJECT}/temp ; \
-                      JDK_PKG=jdk-8u121-linux-x64.tar.gz ; \
                       source /etc/profile.d/proxy.sh ; \
-                      wget --quiet http://dfaf.mip.storage.hpecorp.net:8081/artifactory/buildmachine-files-copy/cross-linux/${JDK_PKG} -O ${PROJECT}/${JDK_PKG} ; \
-                      tar -xf ${PROJECT}/${JDK_PKG} -C ${PROJECT}/temp ; \
+                      wget --quiet http://dfaf.mip.storage.hpecorp.net:8081/artifactory/buildmachine-files-copy/cross-linux/jdk-8u121-linux-x64.tar.gz -O ${PROJECT}/jdk-8u121-linux-x64.tar.gz ; \
+                      tar -xf ${PROJECT}/jdk-8u121-linux-x64.tar.gz -C ${PROJECT}/temp ; \
                       alternatives --install /usr/bin/java java ${PROJECT}/temp/jdk1.8.0_121/bin/java 3 ; \
                       alternatives --install /usr/bin/javac javac ${PROJECT}/temp/jdk1.8.0_121/bin/javac 3; \
                       update-alternatives --set java ${PROJECT}/temp/jdk1.8.0_121/bin/java; \
