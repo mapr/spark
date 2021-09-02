@@ -93,16 +93,16 @@ pipeline {
                       cd ${PROJECT}; \
                       git checkout MEP-7.0.0 ; \
 
-                      rm -rf ${PROJECT}/temp  ; \
-                      mkdir -p ${PROJECT}/temp ; \
+                      rm -rf ${WORKSPACE}/${PROJECT}/temp  ; \
+                      mkdir -p ${WORKSPACE}/${PROJECT}/temp ; \
                       source /etc/profile.d/proxy.sh ; \
-                      wget --quiet http://dfaf.mip.storage.hpecorp.net:8081/artifactory/buildmachine-files-copy/cross-linux/jdk-8u121-linux-x64.tar.gz -O ${PROJECT}/jdk-8u121-linux-x64.tar.gz ; \
-                      tar -xf ${PROJECT}/jdk-8u121-linux-x64.tar.gz -C ${PROJECT}/temp ; \
+                      wget --quiet http://dfaf.mip.storage.hpecorp.net:8081/artifactory/buildmachine-files-copy/cross-linux/jdk-8u121-linux-x64.tar.gz -O ${WORKSPACE}/${PROJECT}/jdk-8u121-linux-x64.tar.gz ; \
+                      tar -xf ${WORKSPACE}/${PROJECT}/jdk-8u121-linux-x64.tar.gz -C ${WORKSPACE}/${PROJECT}/temp ; \
 
-                      alternatives --install /usr/bin/java java ${PROJECT}/temp/jdk1.8.0_121/bin/java 3 ; \
-                      alternatives --install /usr/bin/javac javac ${PROJECT}/temp/jdk1.8.0_121/bin/javac 3; \
-                      update-alternatives --set java ${PROJECT}/temp/jdk1.8.0_121/bin/java; \
-                      update-alternatives --set javac ${PROJECT}/temp/jdk1.8.0_121/bin/javac; \
+                      alternatives --install /usr/bin/java java ${WORKSPACE}/${PROJECT}/temp/jdk1.8.0_121/bin/java 3 ; \
+                      alternatives --install /usr/bin/javac javac ${WORKSPACE}/${PROJECT}/temp/jdk1.8.0_121/bin/javac 3; \
+                      update-alternatives --set java ${WORKSPACE}/${PROJECT}/temp/jdk1.8.0_121/bin/java; \
+                      update-alternatives --set javac ${WORKSPACE}/${PROJECT}/temp/jdk1.8.0_121/bin/javac; \
                       java -version; javac -version ;\
 
                       make ${PROJECT} TIMESTAMP=${ID} ${MAKEFILE_ARGS}; \
@@ -167,16 +167,17 @@ pipeline {
                       cd ${PROJECT}; \
                       git checkout MEP-7.0.0 ; \
 
-                      rm -rf ${PROJECT}/temp ; \
-                      mkdir -p ${PROJECT}/temp ; \
+                      rm -rf ${WORKSPACE}/${PROJECT}/temp  ; \
+                      mkdir -p ${WORKSPACE}/${PROJECT}/temp ; \
                       source /etc/profile.d/proxy.sh ; \
-                      wget --quiet http://dfaf.mip.storage.hpecorp.net:8081/artifactory/buildmachine-files-copy/cross-linux/jdk-8u121-linux-x64.tar.gz -O ${PROJECT}/jdk-8u121-linux-x64.tar.gz ; \
-                      tar -xf ${PROJECT}/jdk-8u121-linux-x64.tar.gz -C ${PROJECT}/temp ; \
-                      alternatives --install /usr/bin/java java ${PROJECT}/temp/jdk1.8.0_121/bin/java 3 ; \
-                      alternatives --install /usr/bin/javac javac ${PROJECT}/temp/jdk1.8.0_121/bin/javac 3; \
-                      update-alternatives --set java ${PROJECT}/temp/jdk1.8.0_121/bin/java; \
-                      update-alternatives --set javac ${PROJECT}/temp/jdk1.8.0_121/bin/javac; \
+                      wget --quiet http://dfaf.mip.storage.hpecorp.net:8081/artifactory/buildmachine-files-copy/cross-linux/jdk-8u121-linux-x64.tar.gz -O ${WORKSPACE}/${PROJECT}/jdk-8u121-linux-x64.tar.gz ; \
+                      tar -xf ${WORKSPACE}/${PROJECT}/jdk-8u121-linux-x64.tar.gz -C ${WORKSPACE}/${PROJECT}/temp ; \
+                      alternatives --install /usr/bin/java java ${WORKSPACE}/${PROJECT}/temp/jdk1.8.0_121/bin/java 3 ; \
+                      alternatives --install /usr/bin/javac javac ${WORKSPACE}/${PROJECT}/temp/jdk1.8.0_121/bin/javac 3; \
+                      update-alternatives --set java ${WORKSPACE}/${PROJECT}/temp/jdk1.8.0_121/bin/java; \
+                      update-alternatives --set javac ${WORKSPACE}/${PROJECT}/temp/jdk1.8.0_121/bin/javac; \
                       java -version; javac -version ;\
+
                       make ${PROJECT} TIMESTAMP=${ID} ${MAKEFILE_ARGS} ;\
                       cd dl/mapr-spark2 && ./build/mvn deploy -Pyarn,mesos,hadoop-provided,hive,hive-thriftserver,sparkr,flume -DskipTests=True -Dscalastyle.skip=true -Dcheckstyle.skip=true -Dscalastyle.failOnViolation=false -Dscalatest.testFailureIgnore=true -DaltDeploymentRepository=mapr-snapshots::default::${MAPR_MAVEN_REPO};\
                       """
