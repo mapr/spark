@@ -67,7 +67,7 @@ pipeline {
                   configFileProvider([configFile(fileId: 'maven_settings', variable: 'mvn_settings')]) {
                     sh "cat ${env.mvn_settings} > settings.xml"
                   }
-                  docker.image("docker.artifactory/ubuntu16-java8-build").inside (
+                  docker.image("dfdkr.mip.storage.hpecorp.net/maprbuild-ubuntu12/build-java7-rlang:120521").inside (
                   "-e MAPR_MIRROR=${MAPR_MIRROR} \
                   -e MAPR_CENTRAL=${MAPR_CENTRAL} \
                   -e MAVEN_CENTRAL=${MAVEN_CENTRAL} \
@@ -89,11 +89,7 @@ pipeline {
                       rm -rf ${PROJECT}; git clone git@github.com:mapr/private-pkg.git ${PROJECT}; \
                       cd ${PROJECT}; \
                       git checkout MEP-7.0.0 ; \
-                      apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 ; \
-                      add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial-cran35/'
-                      apt update ; \
-                      apt -y install r-base scala wget; \
-                      make ${PROJECT} TIMESTAMP=${ID} ${MAKEFILE_ARGS}
+                      make ${PROJECT} TIMESTAMP=${ID} ${MAKEFILE_ARGS}; \
                     """
                   }
                 }
@@ -130,7 +126,7 @@ pipeline {
                   configFileProvider([configFile(fileId: 'maven_settings', variable: 'mvn_settings')]) {
                     sh "cat ${env.mvn_settings} > settings.xml"
                   }
-                  docker.image("docker.artifactory/centos7-java8-build").inside (
+                  docker.image("dfdkr.mip.storage.hpecorp.net/maprbuild-centos6/build-java7-rlang:160906").inside (
                   "-e MAPR_MIRROR=${MAPR_MIRROR} \
                   -e MAPR_CENTRAL=${MAPR_CENTRAL} \
                   -e MAVEN_CENTRAL=${MAVEN_CENTRAL} \
@@ -148,9 +144,6 @@ pipeline {
                   -v /root/.ssh:/root/.ssh:rw \
                   -v ${WORKSPACE}/settings.xml:/root/.m2/settings.xml:ro") {
                     sh """
-                      wget http://downloads.lightbend.com/scala/2.11.8/scala-2.11.8.rpm ;\
-                      yum install -y scala-2.11.8.rpm ;\
-
                       rm -rf ${PROJECT}; git clone git@github.com:mapr/private-pkg.git ${PROJECT}; \
                       cd ${PROJECT}; \
                       git checkout MEP-7.0.0 ; \
@@ -159,9 +152,8 @@ pipeline {
                       update-alternatives --set java /root/opensource/temp/jdk1.8.0_121/bin/java; \
                       update-alternatives --set javac /root/opensource/temp/jdk1.8.0_121/bin/javac; \
                       java -version; javac -version ;\
-                      yum install -y R scala; \
-                      make ${PROJECT} TIMESTAMP=${ID} ${MAKEFILE_ARGS} ; \
-                      cd dl/mapr-spark2 && ./build/mvn deploy -Pyarn,mesos,hadoop-provided,hive,hive-thriftserver,sparkr,flume -DskipTests=True -Dscalastyle.skip=true -Dcheckstyle.skip=true -Dscalastyle.failOnViolation=false -Dscalatest.testFailureIgnore=true -DaltDeploymentRepository=mapr-snapshots::default::${MAPR_MAVEN_REPO} ;\
+                      make ${PROJECT} TIMESTAMP=${ID} ${MAKEFILE_ARGS} ;\
+                      cd dl/mapr-spark2 && ./build/mvn deploy -Pyarn,mesos,hadoop-provided,hive,hive-thriftserver,sparkr,flume -DskipTests=True -Dscalastyle.skip=true -Dcheckstyle.skip=true -Dscalastyle.failOnViolation=false -Dscalatest.testFailureIgnore=true -DaltDeploymentRepository=mapr-snapshots::default::${MAPR_MAVEN_REPO};\
                       """
                   }
                 }
