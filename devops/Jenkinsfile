@@ -135,6 +135,9 @@ pipeline {
                   -e MAPR_RELEASES_REPO=${MAPR_RELEASES_REPO} \
                   -e MAPR_SNAPSHOTS_REPO=${MAPR_SNAPSHOTS_REPO} \
                   -e MAVEN_OPTS='-Xmx2g -XX:ReservedCodeCacheSize=512m -Dorg.slf4j.simpleLogger.defaultLogLevel=WARN' \
+                  -e JAVA_HOME='/root/opensource/temp/jdk1.8.0_121' \
+                  -e M2_BIN='/opt/apache-mavne-3.3.9/bin' \
+                  -e M2_HOME='/opt/apache-maven-3.3.9' \
                   -v /root/yum-proxy.conf:/etc/yum.conf:ro \
                   -v /etc/hosts:/etc/hosts:ro \
                   -v /root/apt-proxy.conf:/etc/apt/apt.conf.d/proxy.conf:ro \
@@ -195,6 +198,9 @@ pipeline {
                       -e MAPR_MAVEN_REPO=${MAPR_MAVEN_REPO} \
                       -e MAPR_RELEASES_REPO=${MAPR_RELEASES_REPO} \
                       -e MAPR_SNAPSHOTS_REPO=${MAPR_SNAPSHOTS_REPO} \
+                      -e JAVA_HOME='/root/opensource/temp/jdk1.8.0_121' \
+                      -e M2_BIN='/opt/apache-mavne-3.3.9/bin' \
+                      -e M2_HOME='/opt/apache-maven-3.3.9' \
                       -v /root/yum-proxy.conf:/etc/yum.conf:ro \
                       -v /etc/hosts:/etc/hosts:ro \
                       -v /root/apt-proxy.conf:/etc/apt/apt.conf.d/proxy.conf:ro \
