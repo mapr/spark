@@ -95,7 +95,7 @@ pipeline {
 
                       rm -rf ${PROJECT}/temp  ; \
                       mkdir -p ${PROJECT}/temp ; \
-                      JDK_PKG='jdk-8u121-linux-x64.tar.gz' ; \
+                      JDK_PKG=jdk-8u121-linux-x64.tar.gz ; \
                       source /etc/profile.d/proxy.sh ; \
                       wget --quiet http://dfaf.mip.storage.hpecorp.net:8081/artifactory/buildmachine-files-copy/cross-linux/${JDK_PKG} -O ${PROJECT}/${JDK_PKG} ; \
                       tar -xf ${PROJECT}/${JDK_PKG} -C ${PROJECT}/temp ; \
@@ -170,7 +170,7 @@ pipeline {
 
                       rm -rf ${PROJECT}/temp ; \
                       mkdir -p ${PROJECT}/temp ; \
-                      JDK_PKG='jdk-8u121-linux-x64.tar.gz' ; \
+                      JDK_PKG=jdk-8u121-linux-x64.tar.gz ; \
                       source /etc/profile.d/proxy.sh ; \
                       wget --quiet http://dfaf.mip.storage.hpecorp.net:8081/artifactory/buildmachine-files-copy/cross-linux/${JDK_PKG} -O ${PROJECT}/${JDK_PKG} ; \
                       tar -xf ${PROJECT}/${JDK_PKG} -C ${PROJECT}/temp ; \
