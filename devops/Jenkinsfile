@@ -93,16 +93,6 @@ pipeline {
                       cd ${PROJECT}; \
                       git checkout MEP-7.0.0 ; \
 
-                      mkdir -p ${WORKSPACE}/${PROJECT}/temp-java ; \
-                      wget --quiet http://dfaf.mip.storage.hpecorp.net:8081/artifactory/buildmachine-files-copy/cross-linux/jdk-8u121-linux-x64.tar.gz -O ${WORKSPACE}/${PROJECT}/jdk-8u121-linux-x64.tar.gz ; \
-                      tar -xf ${WORKSPACE}/${PROJECT}/jdk-8u121-linux-x64.tar.gz -C ${WORKSPACE}/${PROJECT}/temp-java ; \
-
-                      alternatives --install /usr/bin/java java ${WORKSPACE}/${PROJECT}/temp-java/jdk1.8.0_121/bin/java 3 ; \
-                      alternatives --install /usr/bin/javac javac ${WORKSPACE}/${PROJECT}/temp-java/jdk1.8.0_121/bin/javac 3; \
-                      update-alternatives --set java ${WORKSPACE}/${PROJECT}/temp-java/jdk1.8.0_121/bin/java; \
-                      update-alternatives --set javac ${WORKSPACE}/${PROJECT}/temp-java/jdk1.8.0_121/bin/javac; \
-                      java -version; javac -version ;\
-
                       make ${PROJECT} TIMESTAMP=${ID} ${MAKEFILE_ARGS}; \
                     """
                   }
