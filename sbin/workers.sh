@@ -101,12 +101,17 @@ if [ "$SPARK_SSH_OPTS" = "" ]; then
 fi
 
 for host in `echo "$HOSTLIST"|sed  "s/#.*$//;/^$/d"`; do
-  if [ -n "${SPARK_SSH_FOREGROUND}" ]; then
-    ssh $SPARK_SSH_OPTS "$host" $"${@// /\\ }" \
-      2>&1 | sed "s/^/$host: /"
+  # SSH only if its a remote worker. This is to avoid adding a node's public key to its own authorized set.
+  if [ "$host" == "localhost" ]; then
+      eval $"${@// /\\ }" 2>&1 | sed "s/^/$host: /" &
   else
-    ssh $SPARK_SSH_OPTS "$host" $"${@// /\\ }" \
-      2>&1 | sed "s/^/$host: /" &
+    if [ -n "${SPARK_SSH_FOREGROUND}" ]; then
+      ssh $SPARK_SSH_OPTS "$host" $"${@// /\\ }" \
+        2>&1 | sed "s/^/$host: /"
+    else
+      ssh $SPARK_SSH_OPTS "$host" $"${@// /\\ }" \
+        2>&1 | sed "s/^/$host: /" &
+    fi
   fi
   if [ "$SPARK_WORKER_SLEEP" != "" ]; then
     sleep $SPARK_WORKER_SLEEP
