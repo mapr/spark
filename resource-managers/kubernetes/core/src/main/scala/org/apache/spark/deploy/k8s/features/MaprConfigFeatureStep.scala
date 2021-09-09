@@ -130,15 +130,19 @@ private[spark] class MaprConfigFeatureStep(conf: KubernetesConf)
       .endVolumeMount()
   }
 
-  private def applyUserSecret(podBuilder: PodBuilder, containerBuilder: ContainerBuilder) = {
-    val userSecretName = sparkConf.get(MAPR_USER_SECRET).toString
+  private def applyUserSecret(podBuilder: PodBuilder, containerBuilder: ContainerBuilder): Unit = {
+    val userSecretName = sparkConf.get(MAPR_USER_SECRET)
     val userSecretVolumeName = s"$userSecretName-volume"
+
+    if (userSecretName.isEmpty) {
+      return
+    }
 
     podBuilder.editOrNewSpec()
       .addNewVolume()
         .withName(userSecretVolumeName)
         .withNewSecret()
-          .withSecretName(userSecretName)
+          .withSecretName(userSecretName.get)
         .endSecret()
       .endVolume()
       .endSpec()
@@ -167,6 +171,7 @@ private[spark] class MaprConfigFeatureStep(conf: KubernetesConf)
         .withName(serverSecretVolume)
         .withNewSecret()
           .withSecretName(serverSecretName)
+          .withOptional(true)
         .endSecret()
       .endVolume()
       .endSpec()
@@ -190,6 +195,7 @@ private[spark] class MaprConfigFeatureStep(conf: KubernetesConf)
       .addNewEnvFrom()
         .withNewConfigMapRef()
           .withName(clusterConfMap)
+          .withOptional(true)
         .endConfigMapRef()
       .endEnvFrom()
   }
