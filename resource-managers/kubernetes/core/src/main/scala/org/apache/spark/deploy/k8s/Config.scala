@@ -735,7 +735,7 @@ private[spark] object Config extends Logging {
     ConfigBuilder("spark.mapr.user.secret")
       .doc("Name of the mapr user secrets")
       .stringConf
-      .createWithDefault("mapr-user-secret")
+      .createOptional
 
   val KUBERNETES_AUTH_SUBMISSION_CONF_PREFIX =
     "spark.kubernetes.authenticate.submission"
