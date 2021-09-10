@@ -192,6 +192,20 @@
       <artifactId>hive-exec</artifactId>
       <classifier>${hive.classifier}</classifier>
       <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>com.mapr.db</groupId>
+          <artifactId>maprdb</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.mapr.db</groupId>
+          <artifactId>maprdb-mapreduce</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.mapr.security</groupId>
+          <artifactId>mapr-security-web</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>${hive.group}</groupId>
