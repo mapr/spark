@@ -96,6 +96,10 @@
           <groupId>com.mapr.hadoop</groupId>
           <artifactId>maprfs</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.mapr.security</groupId>
+          <artifactId>mapr-security-web</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -114,6 +118,18 @@
         <exclusion>
           <groupId>com.mapr.hadoop</groupId>
           <artifactId>maprfs</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.mapr.db</groupId>
+          <artifactId>maprdb</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.mapr.db</groupId>
+          <artifactId>maprdb-mapreduce</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.mapr.security</groupId>
+          <artifactId>mapr-security-web</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -168,7 +184,17 @@
           <groupId>${hive.group}</groupId>
           <artifactId>hive-exec</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.mapr.security</groupId>
+          <artifactId>mapr-security-web</artifactId>
+        </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.mapr.db</groupId>
+      <artifactId>maprdb-mapreduce</artifactId>
+      <version>${maprfs.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>${hive.group}</groupId>

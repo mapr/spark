@@ -1724,6 +1724,10 @@
             <groupId>com.mapr.hadoop</groupId>
             <artifactId>maprfs</artifactId>
           </exclusion>
+          <exclusion>
+            <groupId>com.mapr.security</groupId>
+            <artifactId>mapr-security-web</artifactId>
+          </exclusion>
           <!-- End of Hive 2.3 exclusion -->
         </exclusions>
       </dependency>
@@ -1869,6 +1873,18 @@
           <exclusion>
             <groupId>com.mapr.hadoop</groupId>
             <artifactId>maprfs</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.mapr.db</groupId>
+            <artifactId>maprdb</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.mapr.db</groupId>
+            <artifactId>maprdb-mapreduce</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.mapr.security</groupId>
+            <artifactId>mapr-security-web</artifactId>
           </exclusion>
           <!-- End of Hive 2.3 exclusion -->
         </exclusions>

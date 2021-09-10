@@ -84,6 +84,7 @@
       <groupId>com.mapr.security</groupId>
       <artifactId>mapr-security-web</artifactId>
       <version>${maprfs.version}</version>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <groupId>*</groupId>
