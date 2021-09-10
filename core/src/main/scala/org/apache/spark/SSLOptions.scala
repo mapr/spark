@@ -25,9 +25,10 @@ import scala.util.Try
 
 import com.mapr.web.security.SslConfig.SslConfigScope
 import com.mapr.web.security.WebSecurityManager
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 import org.eclipse.jetty.util.ssl.SslContextFactory
 
-import org.apache.hadoop.conf.Configuration
 import org.apache.spark.internal.Logging
 
 /**
@@ -199,6 +200,8 @@ private[spark] object SSLOptions extends Logging {
       hadoopConf: Configuration,
       ns: String,
       defaults: Option[SSLOptions] = None): SSLOptions = {
+    val IsSecurityWebUsing = conf.getBoolean("spark.maprSecurityWeb.usage", defaultValue = true)
+
     val enabled = conf.getBoolean(s"$ns.enabled", defaultValue = defaults.exists(_.enabled))
 
     val port = conf.getWithSubstitution(s"$ns.port").map(_.toInt)
@@ -206,19 +209,32 @@ private[spark] object SSLOptions extends Logging {
       require(p >= 0, "Port number must be a non-negative value.")
     }
 
-    val maybeSslConfig =
+    val webSecuritySslConfig =
       Try(WebSecurityManager.getSslConfig(SslConfigScope.SCOPE_CLIENT_ONLY)).toOption
+
+    val newHaoopConf = new Configuration()
+    val hadoopConfDir = System.getenv("hadoop_conf_dir")
+    newHaoopConf.addResource(new Path(s"$hadoopConfDir/core-site.xml"))
+    newHaoopConf.addResource(new Path(s"$hadoopConfDir/ssl-client.xml"))
 
     val keyStore = conf.getWithSubstitution(s"$ns.keyStore").map(new File(_))
         .orElse(defaults.flatMap(_.keyStore))
 
     val keyStorePassword = conf.getWithSubstitution(s"$ns.keyStorePassword")
-      .orElse(defaults.flatMap(_.keyStorePassword))
-      .orElse(maybeSslConfig.map(_.getClientKeystorePassword.mkString))
+        .orElse(if (IsSecurityWebUsing) {
+          webSecuritySslConfig.map(_.getClientKeystorePassword.mkString)
+        } else {
+          Option(newHaoopConf.getPassword("ssl.client.keystore.password")).map(new String(_))
+        })
+        .orElse(defaults.flatMap(_.keyStorePassword))
 
     val keyPassword = conf.getWithSubstitution(s"$ns.keyPassword")
-      .orElse(defaults.flatMap(_.keyPassword))
-      .orElse(maybeSslConfig.map(_.getClientKeyPassword.mkString))
+        .orElse(if (IsSecurityWebUsing) {
+          webSecuritySslConfig.map(_.getClientKeyPassword.mkString)
+        } else {
+          Option(hadoopConf.getPassword(s"ssl.client.keystore.keypassword")).map(new String(_))
+        })
+        .orElse(defaults.flatMap(_.keyPassword))
 
     val keyStoreType = conf.getWithSubstitution(s"$ns.keyStoreType")
         .orElse(defaults.flatMap(_.keyStoreType))
@@ -230,8 +246,12 @@ private[spark] object SSLOptions extends Logging {
         .orElse(defaults.flatMap(_.trustStore))
 
     val trustStorePassword = conf.getWithSubstitution(s"$ns.trustStorePassword")
-      .orElse(defaults.flatMap(_.trustStorePassword))
-      .orElse(maybeSslConfig.map(_.getClientTruststorePassword.mkString))
+        .orElse(if (IsSecurityWebUsing) {
+          webSecuritySslConfig.map(_.getClientTruststorePassword.mkString)
+        } else {
+          Option(newHaoopConf.getPassword("ssl.client.truststore.password")).map(new String(_))
+        })
+        .orElse(defaults.flatMap(_.trustStorePassword))
 
     val trustStoreType = conf.getWithSubstitution(s"$ns.trustStoreType")
         .orElse(defaults.flatMap(_.trustStoreType))
