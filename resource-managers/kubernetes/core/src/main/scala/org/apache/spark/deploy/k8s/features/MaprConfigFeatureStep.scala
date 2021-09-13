@@ -131,18 +131,20 @@ private[spark] class MaprConfigFeatureStep(conf: KubernetesConf)
   }
 
   private def applyUserSecret(podBuilder: PodBuilder, containerBuilder: ContainerBuilder): Unit = {
-    val userSecretName = sparkConf.get(MAPR_USER_SECRET)
-    val userSecretVolumeName = s"$userSecretName-volume"
+    val userSecretNameConfig = sparkConf.get(MAPR_USER_SECRET)
 
-    if (userSecretName.isEmpty) {
+    if (userSecretNameConfig.isEmpty) {
       return
     }
+
+    val userSecretName = userSecretNameConfig.get
+    val userSecretVolumeName = s"$userSecretName-volume"
 
     podBuilder.editOrNewSpec()
       .addNewVolume()
         .withName(userSecretVolumeName)
         .withNewSecret()
-          .withSecretName(userSecretName.get)
+          .withSecretName(userSecretName)
         .endSecret()
       .endVolume()
       .endSpec()
