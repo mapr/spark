@@ -68,7 +68,7 @@ fi
 # The exit code of the launcher is appended to the output, so the parent shell removes it from the
 # command array and checks the value to see if the launcher succeeded.
 build_command() {
-  "$RUNNER" -Xmx128m $SPARK_LAUNCHER_OPTS --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED -cp "$LAUNCH_CLASSPATH" org.apache.spark.launcher.Main "$@"
+  "$RUNNER" -Xmx128m $SPARK_LAUNCHER_OPTS -cp "$LAUNCH_CLASSPATH" org.apache.spark.launcher.Main --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED "$@"
   printf "%d\0" $?
 }
 
