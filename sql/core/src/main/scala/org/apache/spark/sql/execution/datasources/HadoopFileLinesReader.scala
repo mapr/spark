@@ -27,6 +27,8 @@ import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.lib.input.{FileSplit, LineRecordReader}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 
+import org.apache.spark.internal.Logging
+
 /**
  * An adaptor from a [[PartitionedFile]] to an [[Iterator]] of [[Text]], which are all of the lines
  * in that file.
@@ -42,12 +44,34 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 class HadoopFileLinesReader(
     file: PartitionedFile,
     lineSeparator: Option[Array[Byte]],
-    conf: Configuration) extends Iterator[Text] with Closeable {
+    conf: Configuration) extends Iterator[Text] with Closeable with Logging {
 
   def this(file: PartitionedFile, conf: Configuration) = this(file, None, conf)
 
+  private def getFileSplit(file : PartitionedFile, conf: Configuration): FileSplit = {
+    try {
+      val filePathData = FileUtil.checkPathForSymlink(new Path(file.filePath), conf)
+      new FileSplit(
+        filePathData.path,
+        file.start,
+        filePathData.stat.getLen,
+        Array.empty
+      )
+    } catch {
+      case _: NoSuchMethodError =>
+        log.warn("Symlink check failed. " +
+          "Please install latest mapr-patch to avoid this warning. " +
+          "See MAPR-SPARK-941 for ref")
+        new FileSplit(
+          new Path(new URI(file.filePath)),
+          file.start,
+          file.length,
+          Array.empty)
+    }
+  }
+
   private val iterator = {
-    val fileSplit: FileSplit = getFileSplit
+    val fileSplit = getFileSplit(file, conf)
     val attemptId = new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 0), 0)
     val hadoopAttemptContext = new TaskAttemptContextImpl(conf, attemptId)
 
@@ -59,27 +83,6 @@ class HadoopFileLinesReader(
 
     reader.initialize(fileSplit, hadoopAttemptContext)
     new RecordReaderIterator(reader)
-  }
-
-  private def getFileSplit: FileSplit = {
-    // TODO: Implement Locality
-    if (checkForSymlink) {
-      val filePathData = FileUtil.checkPathForSymlink(new Path(file.filePath), conf)
-      val fileSplit = new FileSplit(
-        filePathData.path,
-        file.start,
-        filePathData.stat.getLen,
-        Array.empty
-      )
-      fileSplit
-    } else {
-      val fileSplit = new FileSplit(
-        new Path(new URI(file.filePath)),
-        file.start,
-        file.length,
-        Array.empty)
-      fileSplit
-    }
   }
 
   override def hasNext: Boolean = iterator.hasNext
