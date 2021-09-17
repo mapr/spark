@@ -212,7 +212,7 @@ pipeline {
                       sed -i 's/^#baseurl/baseurl/' /etc/yum.repos.d/CentOS-* ; \
                       sed -i 's/mirror.centos.org/vault.centos.org/' /etc/yum.repos.d/CentOS-* ; \
                       yum install -y R ; \
-                      ./build/mvn -B deploy -Phadoop-${params.SPARK_HADOOP_PROFILE},yarn,mesos,hadoop-provided,scala-2.12,hive,hive-thriftserver,sparkr,flume -Dskip-kafka-0-8 -DskipTests=True -Dscalastyle.skip=true -Dcheckstyle.skip=true -Dscalastyle.failOnViolation=false -Dscalatest.testFailureIgnore=true -DaltDeploymentRepository=mapr-snapshots::default::${MAPR_MAVEN_REPO};
+                      ./build/mvn -B deploy -Pyarn,mesos,hadoop-provided,scala-2.12,hive,hive-thriftserver,sparkr,flume -Dskip-kafka-0-8 -DskipTests=True -Dscalastyle.skip=true -Dcheckstyle.skip=true -Dscalastyle.failOnViolation=false -Dscalatest.testFailureIgnore=true -DaltDeploymentRepository=mapr-snapshots::default::${MAPR_MAVEN_REPO};
                       """
                     }
                 }
