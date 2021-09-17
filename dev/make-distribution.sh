@@ -166,7 +166,7 @@ export MAVEN_OPTS="${MAVEN_OPTS:--Xmx2g -XX:ReservedCodeCacheSize=1g}"
 # Store the command as an array because $MVN variable might have spaces in it.
 # Normal quoting tricks don't work.
 # See: http://mywiki.wooledge.org/BashFAQ/050
-BUILD_COMMAND=("$MVN" clean package -DskipTests -Dclean.skip=true -Dskip-kafka-0-8 "$MVN_PROFILE_ARG" $@)
+BUILD_COMMAND=("$MVN" -B clean package -DskipTests -Dclean.skip=true -Dskip-kafka-0-8 "$MVN_PROFILE_ARG" $@)
 
 # Actually build the jar
 echo -e "\nBuilding with..."
