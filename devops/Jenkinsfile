@@ -219,30 +219,7 @@ pipeline {
             stage("Whitesource scan") {
               steps {
                 script {
-                  withCredentials([string(credentialsId: 'wsApiKey', variable: 'wsApiKey'), string(credentialsId: 'wsUserKey', variable: 'wsUserKey')]) {
-                    //Launch container with WS scan. After scan report will upload to WS site
-                    docker.image("docker.artifactory/whitesource:0.0.1").inside (
-                      "-e MAPR_MIRROR=${MAPR_MIRROR} \
-                      -e MAPR_CENTRAL=${MAPR_CENTRAL} \
-                      -e MAVEN_CENTRAL=${MAVEN_CENTRAL} \
-                      -e MAPR_MAVEN_REPO=${MAPR_MAVEN_REPO} \
-                      -e MAPR_RELEASES_REPO=${MAPR_RELEASES_REPO} \
-                      -e MAPR_SNAPSHOTS_REPO=${MAPR_SNAPSHOTS_REPO} \
-                      -v /root/yum-proxy.conf:/etc/yum.conf:ro \
-                      -v /etc/hosts:/etc/hosts:ro \
-                      -v /root/apt-proxy.conf:/etc/apt/apt.conf.d/proxy.conf:ro \
-                      -v /root/.gradle/gradle.properties:/root/.gradle/gradle.properties:ro \
-                      -v /etc/profile.d/proxy.sh:/etc/profile.d/proxy.sh:ro \
-                      -v /root/.ssh:/root/.ssh:rw \
-                      -v ${WORKSPACE}/settings.xml:/root/.m2/settings.xml:ro \
-                      -v /root/.m2/repository:/root/.m2/repository:rw") {
-                        sh """
-                          cd devops/whitesource/ ; \
-                          curl -LJO https://github.com/whitesource/unified-agent-distribution/releases/latest/download/wss-unified-agent.jar ; \
-                          java -jar wss-unified-agent.jar -project ${PROJECT} -product ${PROJECT} -userKey $wsUserKey -apiKey $wsApiKey -c wss-unified-agent.config -d ../../ ; \
-                        """
-                      }
-                   }
+                   ws.dockerScan()
                 }
               }
             }
