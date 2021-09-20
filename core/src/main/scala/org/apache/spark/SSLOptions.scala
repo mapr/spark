@@ -22,17 +22,17 @@ import java.security.NoSuchAlgorithmException
 import java.util.HashMap
 import java.util.Map
 import javax.net.ssl.SSLContext
-
 import scala.util.Try
-
 import com.mapr.web.security.SslConfig.SslConfigScope
 import com.mapr.web.security.WebSecurityManager
+
+import javax.net.ssl.SSLContext
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
+import org.apache.spark.SSLOptions.{ENV_RPC_SSL_KEY_PASSWORD, ENV_RPC_SSL_KEY_STORE_PASSWORD}
+import org.apache.spark.internal.Logging
 import org.eclipse.jetty.util.ssl.SslContextFactory
-
 import org.eclipse.jetty.util.ssl.SslContextFactory
-
 import org.apache.spark.internal.Logging
 import org.apache.spark.network.util.ConfigProvider
 import org.apache.spark.network.util.MapConfigProvider
@@ -244,6 +244,7 @@ private[spark] object SSLOptions extends Logging {
       ns: String,
       defaults: Option[SSLOptions] = None): SSLOptions = {
     val IsSecurityWebUsing = conf.getBoolean("spark.maprSecurityWeb.usage", defaultValue = true)
+    val defaultSSLKeyStorePassword = "defaultsslpassword"
 
     // RPC does not inherit the default enabled setting due to backwards compatibility reasons
     val enabledDefault = if (ns == "spark.ssl.rpc") {
@@ -262,22 +263,27 @@ private[spark] object SSLOptions extends Logging {
     }
 
     val webSecuritySslConfig =
-      Try(WebSecurityManager.getSslConfig(SslConfigScope.SCOPE_CLIENT_ONLY)).toOption
+      Try(WebSecurityManager.getSslConfig(SslConfigScope.SCOPE_ALL)).recover {
+        case _: SecurityException => WebSecurityManager.getSslConfig(SslConfigScope.SCOPE_CLIENT_ONLY)
+      }.toOption
 
     val newHaoopConf = new Configuration()
     val hadoopConfDir = System.getenv("hadoop_conf_dir")
     newHaoopConf.addResource(new Path(s"$hadoopConfDir/core-site.xml"))
-    newHaoopConf.addResource(new Path(s"$hadoopConfDir/ssl-client.xml"))
+    newHaoopConf.addResource(new Path(s"$hadoopConfDir/ssl-server.xml"))
 
     val keyStore = conf.getWithSubstitution(s"$ns.keyStore").map(new File(_))
         .orElse(defaults.flatMap(_.keyStore))
 
     val keyStorePassword = conf.getWithSubstitution(s"$ns.keyStorePassword")
-        .orElse(if (IsSecurityWebUsing) {
+        .orElse(Try {if (IsSecurityWebUsing) {
           webSecuritySslConfig.map(_.getClientKeystorePassword.mkString)
         } else {
-          Option(newHaoopConf.getPassword("ssl.client.keystore.password")).map(new String(_))
-        })
+          Option(new String(newHaoopConf.getPassword("ssl.client.keystore.password")))
+        }}.getOrElse({
+          logWarning("SSL keyStore password is not set, using default.")
+          Option(defaultSSLKeyStorePassword)
+        }))
         .orElse(Option(conf.getenv(ENV_RPC_SSL_KEY_STORE_PASSWORD)).filter(_.trim.nonEmpty))
         .orElse(defaults.flatMap(_.keyStorePassword))
 
@@ -289,11 +295,14 @@ private[spark] object SSLOptions extends Logging {
       .orElse(defaults.flatMap(_.privateKeyPassword))
 
     val keyPassword = conf.getWithSubstitution(s"$ns.keyPassword")
-        .orElse(if (IsSecurityWebUsing) {
+        .orElse(Try {if (IsSecurityWebUsing) {
           webSecuritySslConfig.map(_.getClientKeyPassword.mkString)
         } else {
-          Option(hadoopConf.getPassword(s"ssl.client.keystore.keypassword")).map(new String(_))
-        })
+          Option(new String(newHaoopConf.getPassword("ssl.client.keystore.keypassword")))
+        }}.getOrElse({
+          logWarning("SSL key password is not set, using default.")
+          Option(defaultSSLKeyStorePassword)
+        }))
         .orElse(Option(conf.getenv(ENV_RPC_SSL_KEY_PASSWORD)).filter(_.trim.nonEmpty))
         .orElse(defaults.flatMap(_.keyPassword))
 
@@ -310,11 +319,14 @@ private[spark] object SSLOptions extends Logging {
         .orElse(defaults.flatMap(_.trustStore))
 
     val trustStorePassword = conf.getWithSubstitution(s"$ns.trustStorePassword")
-        .orElse(if (IsSecurityWebUsing) {
+        .orElse(Try {if (IsSecurityWebUsing) {
           webSecuritySslConfig.map(_.getClientTruststorePassword.mkString)
         } else {
-          Option(newHaoopConf.getPassword("ssl.client.truststore.password")).map(new String(_))
-        })
+          Option(new String(newHaoopConf.getPassword("ssl.client.truststore.password")))
+        }}.getOrElse({
+          logWarning("SSL trustStore password is not set, using default.")
+          Option(defaultSSLKeyStorePassword)
+        }))
         .orElse(Option(conf.getenv(ENV_RPC_SSL_TRUST_STORE_PASSWORD)).filter(_.trim.nonEmpty))
         .orElse(defaults.flatMap(_.trustStorePassword))
 
