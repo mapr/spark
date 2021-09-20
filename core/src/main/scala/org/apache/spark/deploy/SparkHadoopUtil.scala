@@ -428,7 +428,6 @@ private[spark] object SparkHadoopUtil extends Logging {
   private[spark] def newConfiguration(conf: SparkConf): Configuration = {
     val hadoopConf = new Configuration()
     appendS3AndSparkHadoopHiveConfigurations(conf, hadoopConf)
-    appendHadoopCredProviderConfigurations(conf, hadoopConf)
     hadoopConf
   }
 
@@ -471,14 +470,6 @@ private[spark] object SparkHadoopUtil extends Logging {
     } else {
       Nil
     }
-  }
-
-  private def appendHadoopCredProviderConfigurations(
-        conf: SparkConf,
-        hadoopConf: Configuration): Unit = {
-
-    hadoopConf.set("hadoop.security.credential.provider.path",
-      conf.get("spark.hadoop.security.credential.provider.path", ""))
   }
 
   private def appendHiveConfigs(hadoopConf: Configuration): Unit = {
