@@ -1284,7 +1284,7 @@
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-client</artifactId>
         <version>${hadoop.version}</version>
-        <scope>${hadoop.deps.scope}</scope>
+        <scope>provided</scope>
         <exclusions>
           <exclusion>
             <groupId>org.fusesource.leveldbjni</groupId>
@@ -2779,6 +2779,22 @@
                 <rules>
                   <banDuplicatePomDependencyVersions/>
                 </rules>
+              </configuration>
+            </execution>
+            <execution>
+              <id>enforce-banned-dependencies</id>
+              <goals>
+                <goal>enforce</goal>
+              </goals>
+              <configuration>
+                <rules>
+                  <bannedDependencies>
+                    <excludes>
+                      <exclude>org.apache.hadoop:hadoop*:*:jar:compile</exclude>
+                    </excludes>
+                  </bannedDependencies>
+                </rules>
+                <fail>true</fail>
               </configuration>
             </execution>
           </executions>
