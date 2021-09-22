@@ -135,7 +135,7 @@ export SPARK_DIST_CLASSPATH=$MAPR_SPARK_CLASSPATH
 # Security status
 source $MAPR_HOME/conf/env.sh
 if [ "$MAPR_SECURITY_STATUS" = "true" ]; then
-  SPARK_SUBMIT_OPTS="$SPARK_SUBMIT_OPTS -Dhadoop.login=hybrid -Dmapr_sec_enabled=true -Djavax.security.auth.useSubjectCredsOnly=false"
+  SPARK_SUBMIT_OPTS="$SPARK_SUBMIT_OPTS -Dhadoop.login=hybrid -Dmapr_sec_enabled=true -Djavax.security.auth.useSubjectCredsOnly=false --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED"
 fi
 
 # scala
