@@ -2051,7 +2051,7 @@ object SQLConf {
         "Integration Guide.")
       .version("3.1.0")
       .booleanConf
-      .createWithDefault(false)
+      .createWithDefault(true)
 
   val STATEFUL_OPERATOR_CHECK_CORRECTNESS_ENABLED =
     buildConf("spark.sql.streaming.statefulOperator.checkCorrectness.enabled")
@@ -4577,6 +4577,8 @@ class SQLConf extends Serializable with Logging with SqlApiConf {
   def checkpointLocation: Option[String] = getConf(CHECKPOINT_LOCATION)
 
   def isUnsupportedOperationCheckEnabled: Boolean = getConf(UNSUPPORTED_OPERATION_CHECK_ENABLED)
+
+  def useDeprecatedKafkaOffsetFetching: Boolean = getConf(USE_DEPRECATED_KAFKA_OFFSET_FETCHING)
 
   def statefulOperatorCorrectnessCheckEnabled: Boolean =
     getConf(STATEFUL_OPERATOR_CHECK_CORRECTNESS_ENABLED)
