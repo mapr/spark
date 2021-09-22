@@ -184,7 +184,7 @@
     <commons-lang3.version>3.12.0</commons-lang3.version>
     <!-- org.apache.commons/commons-pool2/-->
     <commons-pool2.version>2.6.2</commons-pool2.version>
-    <datanucleus-core.version>4.1.17</datanucleus-core.version>
+    <datanucleus-core.version>5.2.3</datanucleus-core.version>
     <guava.version>14.0.1</guava.version>
     <janino.version>3.0.16</janino.version>
     <jersey.version>2.34</jersey.version>
@@ -738,7 +738,6 @@
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-1.2-api</artifactId>
         <version>${log4j.version}</version>
-        <scope>${hadoop.deps.scope}</scope>
       </dependency>
       <dependency>
         <groupId>com.ning</groupId>
