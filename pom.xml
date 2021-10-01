@@ -2174,6 +2174,8 @@
           <configuration>
             <source>${java.version}</source>
             <target>${java.version}</target>
+            <meminitial>512m</meminitial>
+            <maxmem>4096m</maxmem>
             <skipMain>true</skipMain> <!-- skip compile -->
             <skip>true</skip> <!-- skip testCompile -->
           </configuration>
