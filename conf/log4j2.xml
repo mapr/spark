@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO">
+
+  <!-- ===================== -->
+  <!--  P R O P E R T I E S  -->
+  <!-- ===================== -->
+  <Properties>
+    <Property name="log.file">hive.log</Property>
+
+    <Property name="file.pattern">${log.file}-%d{.yyyy-MM-dd}</Property>
+
+    <Property name="console.pattern.1">%d{ABSOLUTE} %5p %c{1} %t:%L - %m%n</Property>
+    <Property name="console.pattern.2">%5p [%t] (%F:%L) - %m%n</Property>
+    <Property name="console.pattern">%d{ISO8601} %p %c %M %t: %m%n</Property>
+
+    <Property name="rfa.pattern">%d %-5p %c{1} [%t]: %m%n</Property>
+    <Property name="pattern2">%d %p %c{1.} [%t] %m%n</Property>
+
+    <Property name="debug.pattern">%d{ISO8601} %-5p %c [%t]: %m%n</Property>
+    <Property name="info.pattern">%d{ISO8601} %-5p %c [%t]: %m%n</Property>
+    <Property name="error.pattern">%d{ISO8601} %-5p %c %M [%t]: %m%n</Property>
+    <Property name="fatal.pattern">%d{ISO8601} %-5p %c %M [%t]: %m%n</Property>
+  </Properties>
+
+  <!-- =================== -->
+  <!--  A P P E N D E R S  -->
+  <!-- =================== -->
+  <Appenders>
+    <Console name="Console" target="SYSTEM_OUT" follow="true">
+      <PatternLayout pattern="${console.pattern}"/>
+    </Console>
+
+    <!-- R (Rolling File Appender for CLDB Alone) -->
+    <RollingFile name="R" filename="${log.file}" filePattern="${file.pattern}"
+      bufferedIO="true" bufferSize="8192" immediateFlush="false" append="true">
+      <PatternLayout pattern="${rfa.pattern}"/>
+      <SizeBasedTriggeringPolicy size="100MB"/>
+      <DefaultRolloverStrategy max="9"/>
+    </RollingFile>
+
+    <!-- DRFA (Daily Rolling File Appender) -->
+    <RollingFile name="DRFA" filename="${log.file}" filePattern="${file.pattern}"
+      bufferedIO="true" bufferSize="8192" immediateFlush="true" append="true">
+      <PatternLayout pattern="${rfa.pattern}"/>
+      <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+      <DefaultRolloverStrategy max="30"/>
+    </RollingFile>
+
+    <!-- CCADRFA (CLDB Custom Appender one) -->
+    <RollingFile name="CCADRFA" filename="${log.file}" filePattern="${file.pattern}"
+      bufferedIO="true" bufferSize="8192" immediateFlush="true" append="true">
+      <PatternLayout pattern="${error.pattern}"/>
+      <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+      <DefaultRolloverStrategy max="30"/>
+    </RollingFile>
+
+    <!-- CCBDRFA (CLDB Custom Appender two, prints function name for log levels) -->
+    <RollingFile name="CCBDRFA" filename="${log.file}" filePattern="${file.pattern}"
+      bufferedIO="true" bufferSize="8192" immediateFlush="true" append="true">
+      <PatternLayout pattern="${error.pattern}"/>
+      <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+      <DefaultRolloverStrategy max="30"/>
+    </RollingFile>
+
+    <!-- ESEXP (ES Exception file appender) -->
+    <RollingFile name="ESEXP" filename="${esexp.log.file}" filePattern="${file.pattern}"
+      bufferedIO="true" bufferSize="8192" immediateFlush="true" append="true" createOnDemand="true">
+      <PatternLayout pattern="${info.pattern}"/>
+      <SizeBasedTriggeringPolicy size="256MB"/>
+      <DefaultRolloverStrategy max="20"/>
+    </RollingFile>
+  </Appenders>
+
+
+  <!-- ============== -->
+  <!-- L O G G E R S  -->
+  <!-- ============== -->
+  <Loggers>
+    <!--  R O O T    L O G G E R   -->
+    <AsyncLogger name="root" level="INFO" includeLocation="true">
+      <AppenderRef ref="DRFA"/>
+    </AsyncLogger>
+  </Loggers>
+
+</Configuration>
