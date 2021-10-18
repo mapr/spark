@@ -143,6 +143,12 @@
       <artifactId>guava</artifactId>
       <scope>${hadoop.deps.scope}</scope>
     </dependency>
+    <dependency>
+      <groupId>io.dropwizard.metrics</groupId>
+      <artifactId>metrics-core</artifactId>
+      <version>3.1.0</version>
+      <scope>runtime</scope>
+    </dependency>
   </dependencies>
 
   <build>

@@ -2484,6 +2484,7 @@
                   <bannedDependencies>
                     <excludes>
                       <exclude>org.apache.hadoop:hadoop*:*:jar:compile</exclude>
+                      <exclude>com.mapr.hadoop:maprfs:*:jar:compile</exclude>
                     </excludes>
                   </bannedDependencies>
                 </rules>
