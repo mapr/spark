@@ -300,7 +300,10 @@ EOF
 		sed -i "/\# ssl/a spark.ssl.historyServer.keyStore $DEFAULT_SSL_KEYSTORE" $SPARK_HOME/conf/spark-defaults.conf
 		changeSparkDefaults "spark.yarn.historyServer.address" "spark.yarn.historyServer.address $(hostname --fqdn):$sparkHSSecureUIPort"
 	fi
-
+	if [ -f $MAPR_HOME/conf/ssl_keystore.bcfks ] ; then
+	  sed -i "/\# ssl/a spark.ssl.historyServer.keyStoreType BCFKS" $SPARK_HOME/conf/spark-defaults.conf
+	  sed -i "/\# ssl/a spark.ssl.standalone.keyStoreType BCFKS" $SPARK_HOME/conf/spark-defaults.conf
+	fi
 	if ! (echo "$CLUSTER_INFO" | grep -q "kerberosEnable=true") ; then
 		if [ ! -f $SPARK_HOME/conf/hive-site.xml ] ; then
 			cp $SPARK_HOME/conf/hive-site.xml.security.template $SPARK_HOME/conf/hive-site.xml
