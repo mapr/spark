@@ -1630,6 +1630,17 @@ object SQLConf {
       .booleanConf
       .createWithDefault(true)
 
+  val USE_DEPRECATED_KAFKA_OFFSET_FETCHING =
+    buildConf("spark.sql.streaming.kafka.useDeprecatedOffsetFetching")
+      .internal()
+      .doc("When true, the deprecated Consumer based offset fetching used which could cause " +
+        "infinite wait in Spark queries. Such cases query restart is the only workaround. " +
+        "For further details please see Offset Fetching chapter of Structured Streaming Kafka " +
+        "Integration Guide.")
+      .version("3.1.0")
+      .booleanConf
+      .createWithDefault(true)
+
   val STATEFUL_OPERATOR_CHECK_CORRECTNESS_ENABLED =
     buildConf("spark.sql.streaming.statefulOperator.checkCorrectness.enabled")
       .internal()
@@ -1825,14 +1836,6 @@ object SQLConf {
       .doc("Whether to optimize CSV expressions in SQL optimizer. It includes pruning " +
         "unnecessary columns from from_csv.")
       .version("3.2.0")
-      .booleanConf
-      .createWithDefault(true)
-
-  val JSON_GENERATOR_IGNORE_NULL_FIELDS =
-    buildConf("spark.sql.jsonGenerator.ignoreNullFields")
-      .doc("Whether to ignore null fields when generating JSON objects in JSON data source and " +
-        "JSON functions such as to_json. " +
-        "If false, it generates null for null fields in JSON objects.")
       .booleanConf
       .createWithDefault(true)
 
@@ -3524,6 +3527,8 @@ class SQLConf extends Serializable with Logging {
   def checkpointLocation: Option[String] = getConf(CHECKPOINT_LOCATION)
 
   def isUnsupportedOperationCheckEnabled: Boolean = getConf(UNSUPPORTED_OPERATION_CHECK_ENABLED)
+
+  def useDeprecatedKafkaOffsetFetching: Boolean = getConf(USE_DEPRECATED_KAFKA_OFFSET_FETCHING)
 
   def statefulOperatorCorrectnessCheckEnabled: Boolean =
     getConf(STATEFUL_OPERATOR_CHECK_CORRECTNESS_ENABLED)
