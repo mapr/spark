@@ -1043,6 +1043,11 @@ private[spark] class SparkSubmit extends Logging {
           case e: Throwable => logError(s"Failed to close SparkContext: $e")
         }
       }
+      // TODO: fix MultiauthWebUiFilter and return standart Spark behavior
+      if (!isThriftServer(childMainClass)
+        && !sparkConf.getBoolean("spark.byLauncher.started", false)) {
+        System.exit(0)
+      }
     }
   }
 

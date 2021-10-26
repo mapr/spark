@@ -74,6 +74,7 @@ object DriverWrapper extends Logging {
 
   private def setupDependencies(loader: MutableURLClassLoader, userJar: String): Unit = {
     val sparkConf = new SparkConf()
+    val secMgr = new SecurityManager(sparkConf)
     val hadoopConf = SparkHadoopUtil.newConfiguration(sparkConf)
 
     val ivyProperties = DependencyUtils.getIvyProperties()
@@ -90,7 +91,8 @@ object DriverWrapper extends Logging {
         jarsProp
       }
     }
-    val localJars = DependencyUtils.resolveAndDownloadJars(jars, userJar, sparkConf, hadoopConf)
+    val localJars = DependencyUtils.resolveAndDownloadJars(jars, userJar, sparkConf, hadoopConf,
+      secMgr)
     DependencyUtils.addJarsToClassPath(localJars, loader)
   }
 }
