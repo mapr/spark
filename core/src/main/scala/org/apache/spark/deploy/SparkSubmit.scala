@@ -394,6 +394,9 @@ private[spark] class SparkSubmit extends Logging {
     args.pyFiles = Option(args.pyFiles).map(resolveGlobPaths(_, hadoopConf)).orNull
     args.archives = Option(args.archives).map(resolveGlobPaths(_, hadoopConf)).orNull
 
+    lazy val secMgr = new SecurityManager(sparkConf)
+
+    secMgr.genSSLCertsIfNeededAndPushToMapRFS()
 
     // In client mode, download remote files.
     var localPrimaryResource: String = null
@@ -401,13 +404,13 @@ private[spark] class SparkSubmit extends Logging {
     var localPyFiles: String = null
     if (deployMode == CLIENT) {
       localPrimaryResource = Option(args.primaryResource).map {
-        downloadFile(_, targetDir, sparkConf, hadoopConf)
+        downloadFile(_, targetDir, sparkConf, hadoopConf, secMgr)
       }.orNull
       localJars = Option(args.jars).map {
-        downloadFileList(_, targetDir, sparkConf, hadoopConf)
+        downloadFileList(_, targetDir, sparkConf, hadoopConf, secMgr)
       }.orNull
       localPyFiles = Option(args.pyFiles).map {
-        downloadFileList(_, targetDir, sparkConf, hadoopConf)
+        downloadFileList(_, targetDir, sparkConf, hadoopConf, secMgr)
       }.orNull
 
       if (isKubernetesClusterModeDriver) {
@@ -425,7 +428,7 @@ private[spark] class SparkSubmit extends Logging {
           val localResources = downloadFileList(
             resolvedUris.map(
               UriBuilder.fromUri(_).fragment(null).build().toString).mkString(","),
-            targetDir, sparkConf, hadoopConf)
+            targetDir, sparkConf, hadoopConf, secMgr)
           Utils.stringToSeq(localResources).map(Utils.resolveURI).zip(resolvedUris).map {
             case (localResources, resolvedUri) =>
               val source = new File(localResources.getPath).getCanonicalFile
@@ -488,7 +491,7 @@ private[spark] class SparkSubmit extends Logging {
             if (file.exists()) {
               file.toURI.toString
             } else {
-              downloadFile(resource, targetDir, sparkConf, hadoopConf)
+              downloadFile(resource, targetDir, sparkConf, hadoopConf, secMgr)
             }
           case _ => uri.toString
         }
