@@ -366,6 +366,9 @@ private[spark] class SparkSubmit extends Logging {
     args.pyFiles = Option(args.pyFiles).map(resolveGlobPaths(_, hadoopConf)).orNull
     args.archives = Option(args.archives).map(resolveGlobPaths(_, hadoopConf)).orNull
 
+    lazy val secMgr = new SecurityManager(sparkConf)
+
+    secMgr.genSSLCertsIfNeededAndPushToMapRFS()
 
     // In client mode, download remote files.
     var localPrimaryResource: String = null
@@ -373,13 +376,13 @@ private[spark] class SparkSubmit extends Logging {
     var localPyFiles: String = null
     if (deployMode == CLIENT) {
       localPrimaryResource = Option(args.primaryResource).map {
-        downloadFile(_, targetDir, sparkConf, hadoopConf)
+        downloadFile(_, targetDir, sparkConf, hadoopConf, secMgr)
       }.orNull
       localJars = Option(args.jars).map {
-        downloadFileList(_, targetDir, sparkConf, hadoopConf)
+        downloadFileList(_, targetDir, sparkConf, hadoopConf, secMgr)
       }.orNull
       localPyFiles = Option(args.pyFiles).map {
-        downloadFileList(_, targetDir, sparkConf, hadoopConf)
+        downloadFileList(_, targetDir, sparkConf, hadoopConf, secMgr)
       }.orNull
 
       if (isKubernetesClusterModeDriver) {
@@ -388,14 +391,14 @@ private[spark] class SparkSubmit extends Logging {
         // Explicitly download the related files here
         args.jars = localJars
         val filesLocalFiles = Option(args.files).map {
-          downloadFileList(_, targetDir, sparkConf, hadoopConf)
+          downloadFileList(_, targetDir, sparkConf, hadoopConf, secMgr)
         }.orNull
         val archiveLocalFiles = Option(args.archives).map { uris =>
           val resolvedUris = Utils.stringToSeq(uris).map(Utils.resolveURI)
           val localArchives = downloadFileList(
             resolvedUris.map(
               UriBuilder.fromUri(_).fragment(null).build().toString).mkString(","),
-            targetDir, sparkConf, hadoopConf)
+            targetDir, sparkConf, hadoopConf, secMgr)
 
           // SPARK-33748: this mimics the behaviour of Yarn cluster mode. If the driver is running
           // in cluster mode, the archives should be available in the driver's current working
@@ -446,7 +449,7 @@ private[spark] class SparkSubmit extends Logging {
             if (file.exists()) {
               file.toURI.toString
             } else {
-              downloadFile(resource, targetDir, sparkConf, hadoopConf)
+              downloadFile(resource, targetDir, sparkConf, hadoopConf, secMgr)
             }
           case _ => uri.toString
         }
@@ -513,6 +516,38 @@ private[spark] class SparkSubmit extends Logging {
 
     if (localPyFiles != null) {
       sparkConf.set(SUBMIT_PYTHON_FILES, localPyFiles.split(",").toSeq)
+    }
+
+    // In YARN mode for an R app, add the SparkR package archive and the R package
+    // archive containing all of the built R libraries to archives so that they can
+    // be distributed with the job
+    if (args.isR && clusterManager == YARN) {
+      val sparkRPackagePath = RUtils.localSparkRPackagePath
+      if (sparkRPackagePath.isEmpty) {
+        error("SPARK_HOME does not exist for R application in YARN mode.")
+      }
+      val sparkRPackageFile = new File(sparkRPackagePath.get, SPARKR_PACKAGE_ARCHIVE)
+      if (!sparkRPackageFile.exists()) {
+        error(s"$SPARKR_PACKAGE_ARCHIVE does not exist for R application in YARN mode.")
+      }
+      val sparkRPackageURI = Utils.resolveURI(sparkRPackageFile.getAbsolutePath).toString
+
+      // Distribute the SparkR package.
+      // Assigns a symbol link name "sparkr" to the shipped package.
+      args.archives = mergeFileLists(args.archives, sparkRPackageURI + "#sparkr")
+
+      // Distribute the R package archive containing all the built R packages.
+      if (!RUtils.rPackages.isEmpty) {
+        val rPackageFile =
+          RPackageUtils.zipRLibraries(new File(RUtils.rPackages.get), R_PACKAGE_ARCHIVE)
+        if (!rPackageFile.exists()) {
+          error("Failed to zip all the built R packages.")
+        }
+
+        val rPackageURI = Utils.resolveURI(rPackageFile.getAbsolutePath).toString
+        // Assigns a symbol link name "rpkg" to the shipped package.
+        args.archives = mergeFileLists(args.archives, rPackageURI + "#rpkg")
+      }
     }
 
     // TODO: Support distributing R packages with standalone cluster
