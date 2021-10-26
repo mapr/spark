@@ -725,6 +725,12 @@ private[spark] object Config extends Logging {
       .stringConf
       .createOptional
 
+  val MAPR_SPARK_EXTRACONF_SECRET_NAME =
+    ConfigBuilder("spark.mapr.extraconf.secret")
+      .doc("Name of the secret with Spark extra configurations that will be added to sparkConf")
+      .stringConf
+      .createOptional
+
   val MAPR_CLUSTER_CONFIGMAP =
     ConfigBuilder("spark.mapr.cluster.configMap")
       .doc("Name of the mapr cluster config map")

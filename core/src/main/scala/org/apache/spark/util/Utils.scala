@@ -423,6 +423,7 @@ private[spark] object Utils
       url: String,
       targetDir: File,
       conf: SparkConf,
+      securityMgr: SecurityManager,
       hadoopConf: Configuration,
       timestamp: Long,
       useCache: Boolean,
@@ -451,7 +452,7 @@ private[spark] object Utils
       val cachedFile = new File(localDir, cachedFileName)
       try {
         if (!cachedFile.exists()) {
-          doFetchFile(url, localDir, cachedFileName, conf, hadoopConf)
+          doFetchFile(url, localDir, cachedFileName, conf, securityMgr, hadoopConf)
         }
       } finally {
         lock.release()
@@ -464,7 +465,7 @@ private[spark] object Utils
         conf.getBoolean("spark.files.overwrite", false)
       )
     } else {
-      doFetchFile(url, targetDir, fileName, conf, hadoopConf)
+      doFetchFile(url, targetDir, fileName, conf, securityMgr, hadoopConf)
     }
 
     if (shouldUntar) {
@@ -696,6 +697,7 @@ private[spark] object Utils
       targetDir: File,
       filename: String,
       conf: SparkConf,
+      securityMgr: SecurityManager,
       hadoopConf: Configuration): File = {
     val targetFile = new File(targetDir, filename)
     val uri = new URI(url)

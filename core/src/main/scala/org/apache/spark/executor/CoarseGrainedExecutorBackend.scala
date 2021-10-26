@@ -309,6 +309,7 @@ private[spark] class CoarseGrainedExecutorBackend(
     } else {
       logInfo("Skip exiting executor since it's been already asked to exit before.")
     }
+    self.send(Shutdown)
   }
 
   private def decommissionSelf(): Unit = {
