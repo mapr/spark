@@ -999,17 +999,18 @@ private[spark] class SparkSubmit extends Logging {
         throw findCause(t)
     } finally {
       if (args.master.startsWith("k8s") && !isShell(args.primaryResource) &&
-          !isSqlShell(args.mainClass) && !isThriftServer(args.mainClass)) {
+        !isSqlShell(args.mainClass) && !isThriftServer(args.mainClass)) {
         try {
           SparkContext.getActive.foreach(_.stop())
         } catch {
           case e: Throwable => logError(s"Failed to close SparkContext: $e")
         }
-    }
-    // TODO: fix MultiauthWebUiFilter and return standart Spark behavior
-    if (!isThriftServer(childMainClass)
-      && !sparkConf.getBoolean("spark.byLauncher.started", false)) {
-      System.exit(0)
+      }
+      // TODO: fix MultiauthWebUiFilter and return standart Spark behavior
+      if (!isThriftServer(childMainClass)
+        && !sparkConf.getBoolean("spark.byLauncher.started", false)) {
+        System.exit(0)
+      }
     }
   }
 
