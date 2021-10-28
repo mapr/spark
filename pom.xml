@@ -643,11 +643,6 @@
         <version>${jsr305.version}</version>
       </dependency>
       <dependency>
-        <groupId>commons-httpclient</groupId>
-        <artifactId>commons-httpclient</artifactId>
-        <version>${httpclient.classic.version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.apache.httpcomponents</groupId>
         <artifactId>httpclient</artifactId>
         <version>${commons.httpclient.version}</version>
@@ -2675,11 +2670,16 @@
               <arg>-unchecked</arg>
               <arg>-deprecation</arg>
               <arg>-feature</arg>
+              <arg>-language:existentials</arg>
+              <arg>-language:implicitConversions</arg>
+              <arg>-language:postfixOps</arg>
               <arg>-explaintypes</arg>
               <arg>-target:jvm-1.8</arg>
               <arg>-Xfatal-warnings</arg>
               <arg>-Ywarn-unused:imports</arg>
               <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
+              <arg>-Xmax-classfile-name</arg>
+              <arg>128</arg>
             </args>
             <jvmArgs>
               <jvmArg>-Xss128m</jvmArg>
@@ -2751,6 +2751,7 @@
               <derby.system.durability>test</derby.system.durability>
               <java.awt.headless>true</java.awt.headless>
               <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
+              <java.security.auth.login.config>file:src/test/resources/test.login.conf</java.security.auth.login.config>
               <spark.test.home>${spark.test.home}</spark.test.home>
               <spark.testing>1</spark.testing>
               <spark.master.rest.enabled>false</spark.master.rest.enabled>
@@ -2758,7 +2759,11 @@
               <spark.ui.showConsoleProgress>false</spark.ui.showConsoleProgress>
               <spark.unsafe.exceptionOnMemoryLeak>true</spark.unsafe.exceptionOnMemoryLeak>
               <spark.memory.debugFill>true</spark.memory.debugFill>
-              <spark.hadoop.hadoop.security.key.provider.path>test:///</spark.hadoop.hadoop.security.key.provider.path>
+              <spark.hadoop.fs.defaultFS>file:///</spark.hadoop.fs.defaultFS>
+              <spark.hadoop.fs.default.name>file:///</spark.hadoop.fs.default.name>
+              <zookeeper.sasl.serverconfig>Server_simple</zookeeper.sasl.serverconfig>
+              <zookeeper.sasl.clientconfig>Client_simple</zookeeper.sasl.clientconfig>
+              <zookeeper.saslprovider>com.mapr.security.simplesasl.SimpleSaslProvider</zookeeper.saslprovider>
               <!-- Needed by sql/hive tests. -->
               <test.src.tables>src</test.src.tables>
             </systemProperties>
@@ -2810,7 +2815,13 @@
               <spark.unsafe.exceptionOnMemoryLeak>true</spark.unsafe.exceptionOnMemoryLeak>
               <spark.test.webdriver.chrome.driver>${spark.test.webdriver.chrome.driver}</spark.test.webdriver.chrome.driver>
               <spark.test.docker.keepContainer>${spark.test.docker.keepContainer}</spark.test.docker.keepContainer>
-              <spark.test.docker.removePulledImage>${spark.test.docker.removePulledImage}</spark.test.docker.removePulledImage>
+              <spark.hadoop.fs.defaultFS>file:///</spark.hadoop.fs.defaultFS>
+              <spark.hadoop.fs.default.name>file:///</spark.hadoop.fs.default.name>
+              <java.security.auth.login.config>file:src/test/resources/test.login.conf</java.security.auth.login.config>
+              <hive.exec.scratchdir>${project.build.directory}/tmp/hiveScratch</hive.exec.scratchdir>
+              <zookeeper.sasl.serverconfig>Server_simple</zookeeper.sasl.serverconfig>
+              <zookeeper.sasl.clientconfig>Client_simple</zookeeper.sasl.clientconfig>
+              <zookeeper.saslprovider>com.mapr.security.simplesasl.SimpleSaslProvider</zookeeper.saslprovider>
               <!-- Needed by sql/hive tests. -->
               <test.src.tables>__not_used__</test.src.tables>
             </systemProperties>
@@ -3140,7 +3151,7 @@
         <version>1.0.0</version>
         <configuration>
           <verbose>false</verbose>
-          <failOnViolation>true</failOnViolation>
+          <failOnViolation>false</failOnViolation>
           <includeTestSourceDirectory>false</includeTestSourceDirectory>
           <failOnWarning>false</failOnWarning>
           <sourceDirectory>${basedir}/src/main/scala</sourceDirectory>
@@ -3168,9 +3179,13 @@
           <sourceDirectories>
             <directory>${basedir}/src/main/java</directory>
             <directory>${basedir}/src/main/scala</directory>
+            <directory>${basedir}/v${hive.version.short}/src/main/java</directory>
+            <directory>${basedir}/v${hive.version.short}/src/main/scala</directory>
           </sourceDirectories>
           <testSourceDirectories>
             <directory>${basedir}/src/test/java</directory>
+            <directory>${basedir}/v${hive.version.short}/src/test/java</directory>
+            <directory>${basedir}/v${hive.version.short}/src/test/scala</directory>
           </testSourceDirectories>
           <configLocation>dev/checkstyle.xml</configLocation>
           <outputFile>${basedir}/target/checkstyle-output.xml</outputFile>
@@ -3331,7 +3346,7 @@
     <profile>
       <id>hadoop-2.7</id>
       <properties>
-        <hadoop.version>2.7.4</hadoop.version>
+        <hadoop.version>2.7.6.100-eep-800-SNAPSHOT</hadoop.version>
         <curator.version>2.7.1</curator.version>
         <commons-io.version>2.4</commons-io.version>
         <!--

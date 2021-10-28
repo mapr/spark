@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-PROFILES="-Pyarn -Phadoop-provided -Pscala-2.12 -Phive -Phive-thriftserver -Dskip-kafka-0-8 -DskipTests"
+PROFILES="-Pyarn -Phadoop-provided -Phadoop-2.7 -Pscala-2.12 -Phive -Phive-thriftserver -Dskip-kafka-0-8 -DskipTests"
 
 if [[ -z "$1" ]]; then
     ./build/mvn ${PROFILES} clean install
