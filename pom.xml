@@ -2792,9 +2792,9 @@
               <configuration>
                 <rules>
                   <bannedDependencies>
-                    <excludes>
-                      <exclude>org.apache.hadoop:hadoop*:*:jar:compile</exclude>
-                    </excludes>
+<!--                    <excludes>-->
+<!--                      <exclude>org.apache.hadoop:hadoop*:*:jar:compile</exclude>-->
+<!--                    </excludes>-->
                   </bannedDependencies>
                 </rules>
                 <fail>true</fail>
