@@ -26,7 +26,7 @@
   </parent>
   <groupId>org.apache.spark</groupId>
   <artifactId>spark-parent_2.12</artifactId>
-  <version>3.2.0-eep-SNAPSHOT</version>
+  <version>3.2.0.0-eep-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Spark Project Parent POM</name>
   <url>http://spark.apache.org/</url>
@@ -122,7 +122,7 @@
     <sbt.project.name>spark</sbt.project.name>
     <slf4j.version>1.7.30</slf4j.version>
     <log4j.version>1.2.17</log4j.version>
-    <hadoop.version>2.7.6.100-eep-800-SNAPSHOT</hadoop.version>
+    <hadoop.version>2.7.6.200-eep-810-SNAPSHOT</hadoop.version>
     <protobuf.version>3.11.1</protobuf.version>
     <yarn.version>${hadoop.version}</yarn.version>
     <zookeeper.version>3.5.6.0-mapr-2009</zookeeper.version>
@@ -130,8 +130,8 @@
     <hive.group>org.apache.hive</hive.group>
     <hive.classifier>core</hive.classifier>
     <!-- Version used in Maven Hive dependency -->
-    <hive.version>2.3.9-eep-2110</hive.version>
-    <hive23.version>2.3.9-eep-2110</hive23.version>
+    <hive.version>2.3.9.0-mapr-SNAPSHOT</hive.version>
+    <hive23.version>2.3.9.0-mapr-SNAPSHOT</hive23.version>
     <!-- Version used for internal directory structure -->
     <hive.version.short>2.3</hive.version.short>
     <!-- note that this should be compatible with Kafka brokers version 0.10 and up -->
@@ -327,7 +327,7 @@
         <enabled>true</enabled>
       </releases>
       <snapshots>
-        <enabled>false</enabled>
+        <enabled>true</enabled>
       </snapshots>
     </repository>
     <repository>
@@ -3346,7 +3346,7 @@
     <profile>
       <id>hadoop-2.7</id>
       <properties>
-        <hadoop.version>2.7.6.100-eep-800-SNAPSHOT</hadoop.version>
+        <hadoop.version>2.7.6.200-eep-810-SNAPSHOT</hadoop.version>
         <curator.version>2.7.1</curator.version>
         <commons-io.version>2.4</commons-io.version>
         <!--
