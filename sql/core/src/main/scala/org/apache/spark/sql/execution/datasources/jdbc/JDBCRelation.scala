@@ -23,13 +23,15 @@ import scala.math.BigDecimal.RoundingMode
 import org.apache.spark.Partition
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession, SQLContext}
+import org.apache.spark.sql.{AnalysisException, DataFrame, Row, SQLContext, SaveMode, SparkSession}
 import org.apache.spark.sql.catalyst.analysis._
+import org.apache.spark.sql.catalyst.parser.CatalystSqlParser
 import org.apache.spark.sql.catalyst.util.{DateFormatter, DateTimeUtils, TimestampFormatter}
 import org.apache.spark.sql.catalyst.util.DateTimeUtils.{getZoneId, stringToDate, stringToTimestamp}
 import org.apache.spark.sql.connector.expressions.SortOrder
 import org.apache.spark.sql.connector.expressions.filter.Predicate
 import org.apache.spark.sql.errors.QueryCompilationErrors
+import org.apache.spark.sql.execution.datasources.jdbc.JDBCOptions.{JDBC_CUSTOM_DATAFRAME_COLUMN_TYPES, JDBC_USE_RAW_QUERY}
 import org.apache.spark.sql.execution.datasources.v2.TableSampleInfo
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.jdbc.JdbcDialects
@@ -239,11 +241,23 @@ private[sql] object JDBCRelation extends Logging {
    * @return resolved Catalyst schema of a JDBC table
    */
   def getSchema(resolver: Resolver, jdbcOptions: JDBCOptions): StructType = {
-    val tableSchema = JDBCRDD.resolveTable(jdbcOptions)
-    jdbcOptions.customSchema match {
-      case Some(customSchema) => JdbcUtils.getCustomSchema(
-        tableSchema, customSchema, resolver)
-      case None => tableSchema
+    val runQueryAsIs = jdbcOptions.parameters.getOrElse(JDBC_USE_RAW_QUERY, "false").toBoolean
+    if (runQueryAsIs) {
+      val customSchema = jdbcOptions.parameters.get(JDBC_CUSTOM_DATAFRAME_COLUMN_TYPES)
+      val newSchema = jdbcOptions.customSchema match {
+        case Some(customSchema) => CatalystSqlParser.parseTableSchema(customSchema)
+        case None => throw new IllegalArgumentException(
+          s"Field $JDBC_CUSTOM_DATAFRAME_COLUMN_TYPES is mandatory when using $JDBC_USE_RAW_QUERY")
+      }
+      logInfo(s"Option $JDBC_USE_RAW_QUERY is enabled, parsed $newSchema from the filed $JDBC_CUSTOM_DATAFRAME_COLUMN_TYPES with value $customSchema")
+      newSchema
+    } else {
+      val tableSchema = JDBCRDD.resolveTable(jdbcOptions)
+      jdbcOptions.customSchema match {
+        case Some(customSchema) => JdbcUtils.getCustomSchema(
+          tableSchema, customSchema, resolver)
+        case None => tableSchema
+      }
     }
   }
 
