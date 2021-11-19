@@ -42,6 +42,7 @@ private[spark] class MaprConfigFeatureStep(conf: KubernetesConf)
     applySSSDSecret(podBuilder, containerBuilder)
     applySSHSecret(podBuilder, containerBuilder)
     applyClientSecret(podBuilder, containerBuilder)
+    applySparkExtraConfigs(podBuilder, containerBuilder)
 
     SparkPod(podBuilder.build(), containerBuilder.build())
   }
@@ -129,6 +130,32 @@ private[spark] class MaprConfigFeatureStep(conf: KubernetesConf)
       .withMountPath("/opt/mapr/kubernetes/client-secrets")
       .endVolumeMount()
   }
+
+  private def applySparkExtraConfigs(podBuilder: PodBuilder, containerBuilder: ContainerBuilder): Unit = {
+    val confSecretName = sparkConf.get(MAPR_SPARK_EXTRACONF_SECRET_NAME).get
+
+    if (confSecretName.isEmpty) {
+      return
+    }
+
+    val confSecretVolumeName = "spark-extraconf-secret"
+
+    podBuilder.editOrNewSpec()
+      .addNewVolume()
+      .withName(confSecretVolumeName)
+      .withNewSecret()
+      .withSecretName(confSecretName)
+      .endSecret()
+      .endVolume()
+      .endSpec()
+
+    containerBuilder
+      .addNewVolumeMount()
+      .withName(confSecretVolumeName)
+      .withMountPath(MAPR_SPARK_EXTRA_CONFIG_MOUNT_PATH)
+      .endVolumeMount()
+  }
+
 
   private def applyUserSecret(podBuilder: PodBuilder, containerBuilder: ContainerBuilder): Unit = {
     val userSecretNameConfig = sparkConf.get(MAPR_USER_SECRET)
