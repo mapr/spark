@@ -23,7 +23,6 @@ import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{Path, PathFilter}
-import org.apache.hadoop.hive.maprdb.json.input.HiveMapRDBJsonInputFormat
 import org.apache.hadoop.hive.metastore.api.hive_metastoreConstants._
 import org.apache.hadoop.hive.ql.exec.Utilities
 import org.apache.hadoop.hive.ql.metadata.{Partition => HivePartition, Table => HiveTable}
@@ -322,11 +321,10 @@ class HadoopTableReader(
    */
   private def createHadoopRDD(localTableDesc: TableDesc, inputPathStr: String): RDD[Writable] = {
     val inputFormatClazz = localTableDesc.getInputFileFormatClass
-    if (classOf[newInputClass[_, _]].isAssignableFrom(inputFormatClazz)
-      && !inputFormatClazz.isAssignableFrom(classOf[HiveMapRDBJsonInputFormat])) {
-      createNewHadoopRDD(localTableDesc, inputPathStr)
-    } else {
+    if (classOf[oldInputClass[_, _]].isAssignableFrom(inputFormatClazz)) {
       createOldHadoopRDD(localTableDesc, inputPathStr)
+    } else {
+      createNewHadoopRDD(localTableDesc, inputPathStr)
     }
   }
 

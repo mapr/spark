@@ -89,7 +89,12 @@ class JDBCOptions(
       if (subquery.isEmpty) {
         throw QueryExecutionErrors.emptyOptionError(JDBC_QUERY_STRING)
       } else {
-        s"(${subquery}) SPARK_GEN_SUBQ_${curId.getAndIncrement()}"
+        val runQueryAsIs = parameters.getOrElse(JDBC_USE_RAW_QUERY, "false").toBoolean
+        if (runQueryAsIs) {
+          s"${subquery}"
+        } else {
+          s"(${subquery}) SPARK_GEN_SUBQ_${curId.getAndIncrement()}"
+        }
       }
   }
 
@@ -258,6 +263,7 @@ object JDBCOptions {
   val JDBC_URL = newOption("url")
   val JDBC_TABLE_NAME = newOption("dbtable")
   val JDBC_QUERY_STRING = newOption("query")
+  val JDBC_USE_RAW_QUERY = newOption("useRawQuery")
   val JDBC_DRIVER_CLASS = newOption("driver")
   val JDBC_PARTITION_COLUMN = newOption("partitionColumn")
   val JDBC_LOWER_BOUND = newOption("lowerBound")

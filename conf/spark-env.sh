@@ -170,3 +170,6 @@ export SPARK_WORKER_DIR=$SPARK_HOME/tmp
 
 #UI
 export SPARK_SUBMIT_OPTS="$SPARK_SUBMIT_OPTS -Djava.library.path=$SPARK_MAPR_HOME/lib"
+export SPARK_HISTORY_OPTS="$SPARK_HISTORY_OPTS -Djava.library.path=$SPARK_MAPR_HOME/lib"
+export SPARK_MASTER_HOST=$(hostname --fqdn)
+export SPARK_MASTER_IP=$(hostname --fqdn)
