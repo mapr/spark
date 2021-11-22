@@ -3347,7 +3347,7 @@
       <id>hadoop-2.7</id>
       <properties>
         <hadoop.version>2.7.6.200-eep-810-SNAPSHOT</hadoop.version>
-        <curator.version>2.7.1</curator.version>
+        <curator.version>4.2.0</curator.version>
         <commons-io.version>2.4</commons-io.version>
         <!--
           the declaration site above of these variables explains why we need to re-assign them here
