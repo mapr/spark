@@ -2678,6 +2678,7 @@ class SparkContext(config: SparkConf) extends Logging {
   private[spark] def submitMapStage[K, V, C](dependency: ShuffleDependency[K, V, C])
       : SimpleFutureAction[MapOutputStatistics] = {
     assertNotStopped()
+    setJobDoAsUser()
     val callSite = getCallSite()
     var result: MapOutputStatistics = null
     val waiter = dagScheduler.submitMapStage(
