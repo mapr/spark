@@ -8,22 +8,55 @@ CURRENT_USER=$(id -u -n)
 
 set -x
 
+MAPR_HOME=${MAPR_HOME:=/opt/mapr}
 INSTALL_DIR=/home/$CURRENT_USER/__spark-internal__/security_keys
 MAPRFS_DIR=/apps/spark/__$CURRENT_USER-spark-internal__/security_keys
+BC_JAR="/opt/mapr/lib/bc-fips-1.0.2.1.jar"
 
 sslKeyStore=${INSTALL_DIR}/ssl_keystore
 sslKeyStoreP12=${INSTALL_DIR}/ssl_keystore.p12
 sslKeyStorePEM=${INSTALL_DIR}/ssl_keystore.pem
+sslKeyStoreBC=${INSTALL_DIR}/ssl_keystore.bcfks
+
 sslTrustStore=${INSTALL_DIR}/ssl_truststore
 sslTrustStoreP12=${INSTALL_DIR}/ssl_truststore.p12
 sslTrustStorePEM=${INSTALL_DIR}/ssl_truststore.pem
+sslTrustStoreBC=${INSTALL_DIR}/ssl_truststore.bcfks
+
+if [ -f $MAPR_HOME/conf/ssl_keystore.bcfks ]; then
+  isFips="true"
+else
+  isFips="false"
+fi
+
+if [ "$isFips" == "true" ]; then
+  FIPS_STORE_PARAMS="-provider org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider -providerpath ${BC_JAR} -providername BCFIPS"
+else
+  FIPS_STORE_PARAMS=""
+fi
+
+if [ "$isFips" == "true" ]; then
+  sslKeyStore=${sslKeyStoreBC}
+  sslTrustStore=${sslTrustStoreBC}
+else
+  sslKeyStore=${sslKeyStore}
+  sslTrustStore=${sslTrustStore}
+fi
+
 storePass=$1
-storeFormat=JKS
 storeFormatPKCS12=pkcs12
+
+if [ "$isFips" == "true" ]; then
+  storeFormat=bcfks
+  srcType=bcfks
+else
+  storeFormat=JKS
+  srcType=JKS
+fi
+
 expireInDays="36500"
 convertingKeystore=false
 noPem=0
-srcType=JKS
 dstType=pkcs12
 #VERBOSE="-v"
 clusterConf=${MAPR_HOME:=/opt/mapr}/conf/mapr-clusters.conf
@@ -63,14 +96,14 @@ function confirmNotThere() {
 
 function confirmNotThere() {
   if [ -f ${sslKeyStore} ]; then
-      keystore_check_cmd='keytool --list -keystore $sslKeyStore -storepass $storePass'
-      checkKeyResult=$(eval $keystore_check_cmd)
-      errorSubstr="Keystore was tampered with, or password was incorrect"
-      if ! [[ $checkKeyResult =~ $errorSubstr ]]; then
-        exit 0
-      fi
-      rm -rf /home/$USER/__spark-internal__
-      mkdir -p ${INSTALL_DIR}
+    keystore_check_cmd='keytool --list -keystore $sslKeyStore -storepass $storePass'
+    checkKeyResult=$(eval $keystore_check_cmd)
+    errorSubstr="Keystore was tampered with, or password was incorrect"
+    if ! [[ $checkKeyResult =~ $errorSubstr ]]; then
+      exit 0
+    fi
+    rm -rf /home/$USER/__spark-internal__
+    mkdir -p ${INSTALL_DIR}
   fi
 }
 
@@ -89,7 +122,7 @@ function createCertificates() {
   echo "Creating 100 year self signed certificate with subjectDN='CN=$CERTNAME'"
   $KEYTOOL -genkeypair -sigalg SHA512withRSA -keyalg RSA -alias $CLUSTERNAME -dname CN=$CERTNAME -validity $expireInDays \
     -storepass $storePass -keypass $storePass \
-    -keystore $sslKeyStore -storetype $storeFormat $VERBOSE
+    -keystore $sslKeyStore -storetype $storeFormat $VERBOSE $FIPS_STORE_PARAMS
   if [ $? -ne 0 ]; then
     echo "Keytool command to generate key store failed"
   else
@@ -100,20 +133,20 @@ function createCertificates() {
   tfile=/tmp/tmpfile-mapcert.$$
   /bin/rm -f $tfile
   $KEYTOOL -exportcert -keystore $sslKeyStore -file $tfile \
-    -alias $CLUSTERNAME -storepass $storePass -storetype $storeFormat $VERBOSE
+    -alias $CLUSTERNAME -storepass $storePass -storetype $storeFormat $VERBOSE $FIPS_STORE_PARAMS
   if [ $? -ne 0 ]; then
     echo "Keytool command to extract certificate from key store failed"
   else
     echo "Keytool command to extract certificate from key store succeed"
   fi
   $KEYTOOL -importcert -keystore $sslTrustStore -file $tfile \
-    -alias $CLUSTERNAME -storepass $storePass -noprompt $VERBOSE
+    -alias $CLUSTERNAME -storepass $storePass -storetype $storeFormat -noprompt $VERBOSE $FIPS_STORE_PARAMS
   if [ $? -ne 0 ]; then
     echo "Keytool command to create trust store failed"
   else
     echo "Keytool command to create trust store succeed"
   fi
-  # create PEM version
+  #create PEM version
   convertToPem $sslKeyStore $sslKeyStorePEM true true
   convertToPem $sslTrustStore $sslTrustStorePEM true
   /bin/rm -f $tfile
@@ -130,6 +163,26 @@ function setPermissions() {
   hadoop fs -chown $MAPR_UG ${MAPRFS_DIR}/*
   hadoop fs -chmod 600 ${MAPRFS_DIR}/ssl_keystore*
   hadoop fs -chmod 644 ${MAPRFS_DIR}/ssl_truststore*
+
+    if [ "$isFips" == "true" ]; then
+      if [ ! -e ${INSTALL_DIR}/ssl_keystore ]; then
+        if [ ! -e ${INSTALL_DIR}/ssl_keystore.bcfks ]; then
+          echo "${INSTALL_DIR}/ssl_keystore.bcfks not found, cannot create symlink"
+          exit 1
+        fi
+        ln -sf ${INSTALL_DIR}/ssl_keystore.bcfks ${INSTALL_DIR}/ssl_keystore
+        chown $MAPR_UG ${INSTALL_DIR}/ssl_keystore
+      fi
+
+      if [ ! -e ${INSTALL_DIR}/ssl_truststore ]; then
+        if [ ! -e ${INSTALL_DIR}/ssl_truststore.bcfks ]; then
+          echo "${INSTALL_DIR}/ssl_truststore.bcfks not found, cannot create symlink"
+          exit 1
+        fi
+        ln -sf ${INSTALL_DIR}/ssl_truststore.bcfks ${INSTALL_DIR}/ssl_truststore
+        chown $MAPR_UG ${INSTALL_DIR}/ssl_truststore
+      fi
+    fi
 }
 
 function convertToPem() {
@@ -171,9 +224,25 @@ function convertToPem() {
       exit 1
     fi
   fi
-  $KEYTOOL -importkeystore -srckeystore $from -destkeystore $destSSLStore \
-    -srcstorepass $storePass -deststorepass $storePass -srcalias $CLUSTERNAME \
-    -srcstoretype $srcType -deststoretype $dstType -noprompt $VERBOSE
+
+  if [ "$isFips" == "true" ]; then
+    destStoreType=$dstType
+    if [ "$dstType" = "pkcs12" ]; then
+      destStoreType="bcpkcs12"
+    fi
+    $KEYTOOL -importkeystore -srckeystore $from -destkeystore $destSSLStore \
+      -srcstorepass $storePass -deststorepass $storePass -srcalias $CLUSTERNAME \
+      -srcstoretype $srcType -deststoretype $destStoreType -noprompt \
+      $FIPS_STORE_PARAMS >/dev/null
+
+    openssl $storeFormatPKCS12 -info -in $destSSLStore \
+      -passin pass:$storePass -passout pass:$storePass >/dev/null 2>&1
+  else
+    $KEYTOOL -importkeystore -srckeystore $from -destkeystore $destSSLStore \
+      -srcstorepass $storePass -deststorepass $storePass -srcalias $CLUSTERNAME \
+      -srcstoretype $srcType -deststoretype $dstType -noprompt $VERBOSE
+  fi
+
   if [ $? -ne 0 ]; then
     echo "Keytool command to create $dstType trust/key store failed"
     [ -z "$slient" ] && exit 1
