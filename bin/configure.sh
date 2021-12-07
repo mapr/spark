@@ -58,6 +58,7 @@ SPARK_BIN="$SPARK_HOME"/bin
 SPARK_LOGS="$SPARK_HOME"/logs
 DAEMON_CONF=${MAPR_HOME}/conf/daemon.conf
 DEFAULT_SSL_KEYSTORE="$MAPR_HOME"/conf/ssl_keystore
+FIPS_ENABLED=$(cat /proc/sys/crypto/fips_enabled)
 
 MAPR_USER=${MAPR_USER:-$( awk -F = '$1 == "mapr.daemon.user" { print $2 }' $DAEMON_CONF)}
 MAPR_GROUP=${MAPR_GROUP:-$( awk -F = '$1 == "mapr.daemon.group" { print $2 }' $DAEMON_CONF)}
@@ -300,8 +301,9 @@ EOF
 		sed -i "/\# ssl/a spark.ssl.historyServer.keyStore $DEFAULT_SSL_KEYSTORE" $SPARK_HOME/conf/spark-defaults.conf
 		changeSparkDefaults "spark.yarn.historyServer.address" "spark.yarn.historyServer.address $(hostname --fqdn):$sparkHSSecureUIPort"
 	fi
-	if [ -f $MAPR_HOME/conf/ssl_keystore.bcfks ] ; then
+	if [ "$FIPS_ENABLED" = "1" ] ; then
 	  sed -i "/\# ssl/a spark.ssl.keyStoreType BCFKS" $SPARK_HOME/conf/spark-defaults.conf
+	  sed -i 's/java.util=ALL-UNNAMED/java.util=ALL-UNNAMED -Djava.security.disableSystemPropertiesFile=true/g' ${SPARK_HOME}/conf/spark-defaults.conf
 	fi
 	if ! (echo "$CLUSTER_INFO" | grep -q "kerberosEnable=true") ; then
 		if [ ! -f $SPARK_HOME/conf/hive-site.xml ] ; then
