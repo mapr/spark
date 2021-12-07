@@ -79,6 +79,7 @@
 MAPR_HOME="${MAPR_HOME:-/opt/mapr}"
 SPARK_VERSION=$(cat ${MAPR_HOME}/spark/sparkversion)
 SPARK_HOME=${MAPR_HOME}/spark/spark-${SPARK_VERSION}
+FIPS_ENABLED=$(cat /proc/sys/crypto/fips_enabled)
 
 # Set the spark attributes
 if [ -d "${SPARK_HOME}" ]; then
@@ -135,7 +136,7 @@ export SPARK_DIST_CLASSPATH=$MAPR_SPARK_CLASSPATH
 # Security status
 source $MAPR_HOME/conf/env.sh
 if [ "$MAPR_SECURITY_STATUS" = "true" ]; then
-  SPARK_SUBMIT_OPTS="$SPARK_SUBMIT_OPTS -Dhadoop.login=hybrid -Dmapr_sec_enabled=true -Djavax.security.auth.useSubjectCredsOnly=false --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED"
+  SPARK_SUBMIT_OPTS="$SPARK_SUBMIT_OPTS -Dhadoop.login=hybrid -Dmapr_sec_enabled=true -Djavax.security.auth.useSubjectCredsOnly=false"
 fi
 
 # scala
@@ -150,13 +151,13 @@ export SPARK_IDENT_STRING="mapr"
 #########################################################################################################
 #    :::CAUTION::: DO NOT EDIT ANYTHING ON OR ABOVE THIS LINE
 #########################################################################################################
-
-
 #
 # MASTER HA SETTINGS
 #
 #export SPARK_DAEMON_JAVA_OPTS="-Dspark.deploy.recoveryMode=ZOOKEEPER  -Dspark.deploy.zookeeper.url=<zookeerper1:5181,zookeeper2:5181,..> -Djava.security.auth.login.config=/opt/mapr/conf/mapr.login.conf -Dzookeeper.sasl.client=false"
 
+# Muting Java 11 illegal access warnings
+SPARK_SUBMIT_OPTS="$SPARK_SUBMIT_OPTS --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED"
 
 # MEMORY SETTINGS
 export SPARK_DAEMON_MEMORY=1g
@@ -167,6 +168,13 @@ export SPARK_WORKER_DIR=$SPARK_HOME/tmp
 
 # Environment variable for printing spark command everytime you run spark.Set to "1" to print.
 # export SPARK_PRINT_LAUNCH_COMMAND=1
+
+# FIPS
+if [ "$FIPS_ENABLED" = "1" ]; then
+SPARK_HISTORY_OPTS="$SPARK_HISTORY_OPTS -Djava.security.disableSystemPropertiesFile=true"
+SPARK_MASTER_OPTS="$SPARK_MASTER_OPTS -Djava.security.disableSystemPropertiesFile=true"
+SPARK_SUBMIT_OPTS="$SPARK_SUBMIT_OPTS -Djava.security.disableSystemPropertiesFile=true"
+fi
 
 #UI
 export SPARK_SUBMIT_OPTS="$SPARK_SUBMIT_OPTS -Djava.library.path=$SPARK_MAPR_HOME/lib"

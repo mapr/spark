@@ -12,6 +12,7 @@ MAPR_HOME=${MAPR_HOME:=/opt/mapr}
 INSTALL_DIR=/home/$CURRENT_USER/__spark-internal__/security_keys
 MAPRFS_DIR=/apps/spark/__$CURRENT_USER-spark-internal__/security_keys
 BC_JAR="/opt/mapr/lib/bc-fips-1.0.2.1.jar"
+FIPS_ENABLED=$(cat /proc/sys/crypto/fips_enabled)
 
 sslKeyStore=${INSTALL_DIR}/ssl_keystore
 sslKeyStoreP12=${INSTALL_DIR}/ssl_keystore.p12
@@ -23,15 +24,11 @@ sslTrustStoreP12=${INSTALL_DIR}/ssl_truststore.p12
 sslTrustStorePEM=${INSTALL_DIR}/ssl_truststore.pem
 sslTrustStoreBC=${INSTALL_DIR}/ssl_truststore.bcfks
 
-if [ -f $MAPR_HOME/conf/ssl_keystore.bcfks ]; then
+if [ "$FIPS_ENABLED" = "1" ]; then
   isFips="true"
-else
-  isFips="false"
-fi
-
-if [ "$isFips" == "true" ]; then
   FIPS_STORE_PARAMS="-provider org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider -providerpath ${BC_JAR} -providername BCFIPS"
 else
+  isFips="false"
   FIPS_STORE_PARAMS=""
 fi
 
