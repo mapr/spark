@@ -131,25 +131,42 @@ private[spark] class SecurityManager(
     val sparkVersion: String = getSparkVersion(sparkBase)
     s"$sparkBase/spark-$sparkVersion"
   }
+
   def genSSLCertsIfNeededAndPushToMapRFS(): Unit = {
     if (isSSLCertGenerationNeededForWebUI(getSSLOptions("ui"))) {
-      val certGeneratorName = "manageSSLKeys.sh"
-      val certGeneratorLog = s"${Utils.getCurrentUserName()}-spark-ui-mngssl-log"
-      val certGeneratorLogMfsLocation = s"/apps/spark/$certGeneratorLog"
+      val username = UserGroupInformation.getCurrentUser.getShortUserName
 
-      val manageSslKeysScript = s"$getSparkHome/bin/$certGeneratorName"
-      val manageSslKeysLocalFile = new File(manageSslKeysScript)
+      val certGeneratorName = "manageSSLKeys.sh"
+      val mfsBaseDir = s"/apps/spark/__$username-spark-internal__/security_keys"
+      val mfsManageSslKeysScriptRemote = s"$mfsBaseDir/$certGeneratorName"
+      val fs = FileSystem.get(hadoopConf)
+
+      // If the manageSSLKeys.sh script is not present, copy it from local spark folder
+      if (! fs.exists(new Path(mfsManageSslKeysScriptRemote))) {
+        val mfsBaseDirPath = new Path(mfsBaseDir)
+        if (!fs.exists(mfsBaseDirPath)) {
+          fs.mkdirs(mfsBaseDirPath)
+        }
+        fs.copyFromLocalFile(new Path(getCertGeneratorPath(certGeneratorName)), new Path(mfsManageSslKeysScriptRemote))
+      }
+      val currentUserHomeDir = System.getProperty("user.home")
+      val localBaseDir = s"$currentUserHomeDir/__spark-internal__/security_keys"
+      val manageSslKeysScriptLocal = s"$localBaseDir/$certGeneratorName"
+
+      fs.copyToLocalFile(new Path(mfsManageSslKeysScriptRemote), new Path(manageSslKeysScriptLocal))
+      val manageSslKeysLocalFile = new File(manageSslKeysScriptLocal)
+
       manageSslKeysLocalFile.setExecutable(true)
       val sslKeyStorePass = getSSLOptions("ui").keyStorePassword.get
-
-      val file = new File(s"${System.getProperty("user.home")}/$certGeneratorLog")
+      val certGeneratorLog = s"${Utils.getCurrentUserName()}-spark-ui-mngssl-log"
+      val file = new File(s"$currentUserHomeDir/$certGeneratorLog")
 
       val stdStream = new OutputStreamWriter(new FileOutputStream(file), UTF_8)
       val stdWriter = new PrintWriter(stdStream)
-      val res = s"$manageSslKeysScript $sslKeyStorePass" ! ProcessLogger(stdWriter println, stdWriter println)
+      val res = s"$manageSslKeysScriptLocal $sslKeyStorePass" ! ProcessLogger(stdWriter println, stdWriter println)
       stdWriter.close()
 
-      val fs = FileSystem.get(hadoopConf)
+      val certGeneratorLogMfsLocation = s"/apps/spark/$certGeneratorLog"
       fs.copyFromLocalFile(
         false,
         true,
@@ -158,16 +175,25 @@ private[spark] class SecurityManager(
       )
 
       if (res != 0) {
-        throw new Exception(s"Failed to generate SSL certificates for spark WebUI. Exit code: $res" )
+        throw new Exception(s"Failed to generate SSL certificates for spark WebUI. Exit code: $res")
       }
     }
   }
 
+  private def getCertGeneratorPath(certGeneratorName: String) = {
+    val maprHomeEnv = System.getenv("MAPR_HOME")
+    val maprHome = if (maprHomeEnv == null || maprHomeEnv.isEmpty) "/opt/mapr" else maprHomeEnv
+    val sparkBase = s"$maprHome/spark"
+    val sparkVersion: String = getSparkVersion(sparkBase)
+    val sparkHome = s"$sparkBase/spark-$sparkVersion"
+    s"$sparkHome/bin/$certGeneratorName"
+  }
+
   /**
-    * Generates ssl ceritificates for Spark Web UI if Ssl is enabled and
-    * certificates are not specified by the user. Otherwise returns
-    * sslOptions without any changes.
-    */
+   * Generates ssl certificates for Spark Web UI if Ssl is enabled and
+   * certificates are not specified by the user. Otherwise returns
+   * sslOptions without any changes.
+   */
 
   def genSslCertsForWebUIifNeeded(sslOptions: SSLOptions): SSLOptions = {
     if (isSSLCertGenerationNeededForWebUI(sslOptions)) {
