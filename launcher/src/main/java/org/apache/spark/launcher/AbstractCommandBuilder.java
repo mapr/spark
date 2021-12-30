@@ -187,6 +187,9 @@ abstract class AbstractCommandBuilder {
       addToClassPath(cp, String.format("%s/mllib/target/jars/*", sparkHome));
     }
 
+    // SPARK-984. Add jars to classpath before jars from jarsDir for provide necessary jars
+    // order for the classloader
+    addToClassPath(cp, getenv("SPARK_FIRST_CLASSPATH"));
     // Add Spark jars to the classpath. For the testing case, we rely on the test code to set and
     // propagate the test classpath appropriately. For normal invocation, look for the jars
     // directory under SPARK_HOME.
