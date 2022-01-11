@@ -20,14 +20,13 @@ package org.apache.spark.streaming.kafka010
 import java.io.OutputStream
 
 import scala.collection.JavaConverters._
-
 import com.google.common.base.Charsets.UTF_8
 import java.{util => ju}
+
 import net.razorvine.pickle.{IObjectPickler, Opcodes, Pickler}
 import org.apache.kafka.clients.consumer._
 import org.apache.kafka.common.TopicPartition
 import org.apache.spark.{SparkContext, SparkEnv}
-
 import org.apache.spark.annotation.Experimental
 import org.apache.spark.api.java.{JavaRDD, JavaSparkContext}
 import org.apache.spark.api.python.SerDeUtil
@@ -36,6 +35,8 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.api.java.{JavaDStream, JavaInputDStream, JavaStreamingContext}
 import org.apache.spark.streaming.dstream.InputDStream
+
+import scala.util.{Failure, Success, Try}
 
 /**
  * object for constructing Kafka streams and RDDs
@@ -218,17 +219,23 @@ object KafkaUtils extends Logging {
     }
   }
 
-  def waitForConsumerAssignment[K, V](consumer: KafkaConsumer[K, V],
-                                      partitions: ju.Set[TopicPartition]): Unit = {
-    val waitingForAssigmentTimeout = SparkEnv.get.conf
-      .getLong("spark.mapr.WaitingForAssignmentTimeout", 600000)
+  def waitForConsumerAssignment[K, V](consumer: Consumer[K, V],
+                                      partitions: ju.Set[TopicPartition] = new ju.HashSet()): ju.Set[TopicPartition] = {
+    val waitingForAssigmentTimeout: Long =
+      Try(SparkEnv.get.conf.getLong("spark.mapr.WaitingForAssignmentTimeout", 600000)) match {
+        case Success(value) => value
+        case Failure(_) => return consumer.assignment()
+      }
 
     var timeout = 0
-    while ((consumer.assignment().isEmpty || consumer.assignment().size() < partitions.size)
+    var newPartitions = consumer.assignment()
+    while ((newPartitions.isEmpty || newPartitions.size() < partitions.size)
       && timeout < waitingForAssigmentTimeout) {
 
       Thread.sleep(500)
       timeout += 500
+
+      newPartitions = consumer.assignment()
     }
 
     if (timeout >= waitingForAssigmentTimeout) {
@@ -236,6 +243,8 @@ object KafkaUtils extends Logging {
         s"""Consumer assignment wasn't completed within the timeout $waitingForAssigmentTimeout.
            |Assigned partitions: ${consumer.assignment()}.""".stripMargin)
     }
+
+    newPartitions
   }
 
   // Determine if Apache Kafka is used instead of MapR Streams
