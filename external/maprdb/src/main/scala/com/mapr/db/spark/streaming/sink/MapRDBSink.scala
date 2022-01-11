@@ -3,7 +3,6 @@ package com.mapr.db.spark.streaming.sink
 
 import com.mapr.db.spark._
 import com.mapr.db.spark.streaming.MapRDBSourceConfig
-import com.mapr.db.MapRDB
 import org.ojai.DocumentConstants
 
 import org.apache.spark.internal.Logging
@@ -31,11 +30,8 @@ private[streaming] class MapRDBSink(parameters: Map[String, String]) extends Sin
 
       val idFieldPath = parameters
         .getOrElse(MapRDBSourceConfig.IdFieldPathOption, DocumentConstants.ID_KEY)
-      val createTable = if (latestBatchId != -1L && MapRDB.tableExists(tablePath.get)) {
-        false
-      } else {
-        parameters.getOrElse(MapRDBSourceConfig.CreateTableOption, "false").toBoolean
-      }
+      val createTable = parameters
+        .getOrElse(MapRDBSourceConfig.CreateTableOption, "false").toBoolean
       val bulkInsert = parameters.getOrElse(MapRDBSourceConfig.BulkModeOption, "false").toBoolean
 
       val logicalPlan: LogicalPlan = {
