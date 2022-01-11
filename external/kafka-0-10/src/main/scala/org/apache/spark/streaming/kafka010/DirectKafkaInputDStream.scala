@@ -59,8 +59,6 @@ private[spark] class DirectKafkaInputDStream[K, V](
     ppc: PerPartitionConfig
   ) extends InputDStream[ConsumerRecord[K, V]](_ssc) with Logging with CanCommitOffsets {
 
-  var isFirstCompute = true
-
   val executorKafkaParams = {
     val ekp = new ju.HashMap[String, Object](consumerStrategy.executorKafkaParams)
     KafkaUtils.fixKafkaParams(ekp)
@@ -269,12 +267,7 @@ private[spark] class DirectKafkaInputDStream[K, V](
   override def compute(validTime: Time): Option[KafkaRDD[K, V]] = {
     val untilOffsets = clamp(latestOffsets())
     val offsetRanges = untilOffsets.map { case (tp, uo) =>
-      var fo = currentOffsets(tp)
-      if (isFirstCompute && KafkaUtils.isStreams(untilOffsets) && uo.-(fo) == 1
-        && consumerStrategy.executorKafkaParams.get("auto.offset.reset").toString.equals("latest")) {
-        fo = uo
-        isFirstCompute = false
-      }
+      val fo = currentOffsets(tp)
       OffsetRange(tp.topic, tp.partition, fo, uo)
     }
     val useConsumerCache = context.conf.get(CONSUMER_CACHE_ENABLED)
