@@ -60,8 +60,9 @@ import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
-import org.apache.thrift.transport.TTransportFactory;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.slf4j.Logger;
+import org.apache.thrift.transport.TTransportFactory;
 import org.slf4j.LoggerFactory;
 
 import static org.apache.hadoop.hive.conf.MapRSecurityUtil.getSslProtocolVersion;
@@ -333,7 +334,12 @@ public class HiveAuthFactory {
     };
     SSLSocket socket;
     try {
-      SSLContext sslContext = SSLContext.getInstance(getSslProtocolVersion());
+      SSLContext sslContext = null;
+      if (isFips()) {
+        SSLContext.getInstance(getSslProtocolVersion(), new BouncyCastleJsseProvider());
+      } else {
+        SSLContext.getInstance(getSslProtocolVersion());
+      }
       sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
       SSLSocketFactory factory = sslContext.getSocketFactory();
       socket = (SSLSocket) factory.createSocket(host, port);
