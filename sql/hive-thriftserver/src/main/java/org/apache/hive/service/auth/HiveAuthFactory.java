@@ -21,8 +21,7 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -60,9 +59,13 @@ import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
-import org.apache.thrift.transport.TTransportFactory;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.slf4j.Logger;
+import org.apache.thrift.transport.TTransportFactory;
 import org.slf4j.LoggerFactory;
+
+import static org.apache.hadoop.hive.conf.MapRSecurityUtil.getSslProtocolVersion;
+import static org.apache.hive.FipsUtil.isFips;
 
 /**
  * This class helps in some aspects of authentication. It creates the proper Thrift classes for the
@@ -70,7 +73,6 @@ import org.slf4j.LoggerFactory;
  */
 public class HiveAuthFactory {
   private static final Logger LOG = LoggerFactory.getLogger(HiveAuthFactory.class);
-
 
   public enum AuthTypes {
     NOSASL("NOSASL"),
@@ -101,6 +103,7 @@ public class HiveAuthFactory {
 
   public static final String HS2_PROXY_USER = "hive.server2.proxy.user";
   public static final String HS2_CLIENT_TOKEN = "hiveserver2ClientToken";
+  public static final String BCFKS_KEYSTORE_TYPE = "bcfks";
 
   private static Method getKeytab = null;
   static {
@@ -142,13 +145,17 @@ public class HiveAuthFactory {
           saslServer = new HadoopThriftAuthBridge.Server();
         }
 
-        // start delegation token manager
-        delegationTokenManager = new HiveDelegationTokenManager();
-        try {
-          // rawStore is only necessary for DBTokenStore
-          Object rawStore = null;
-          String tokenStoreClass = conf.getVar(
-              HiveConf.ConfVars.METASTORE_CLUSTER_DELEGATION_TOKEN_STORE_CLS);
+        saslServer = ShimLoader.getHadoopThriftAuthBridge()
+                .createServer(conf.getVar(ConfVars.HIVE_SERVER2_KERBEROS_KEYTAB),
+                        conf.getVar(ConfVars.HIVE_SERVER2_KERBEROS_PRINCIPAL));
+
+          // start delegation token manager
+          delegationTokenManager = new HiveDelegationTokenManager();
+          try {
+            // rawStore is only necessary for DBTokenStore
+            Object rawStore = null;
+            String tokenStoreClass = conf.getVar(
+                    HiveConf.ConfVars.METASTORE_CLUSTER_DELEGATION_TOKEN_STORE_CLS);
 
           if (tokenStoreClass.equals(DBTokenStore.class.getName())) {
             HMSHandler baseHandler = new HiveMetaStore.HMSHandler(
@@ -156,13 +163,15 @@ public class HiveAuthFactory {
             rawStore = baseHandler.getMS();
           }
 
-          delegationTokenManager.startDelegationTokenSecretManager(
-              conf, rawStore, ServerMode.HIVESERVER2);
-          saslServer.setSecretManager(delegationTokenManager.getSecretManager());
-        }
-        catch (MetaException|IOException e) {
-          throw new TTransportException("Failed to start token manager", e);
-        }
+            delegationTokenManager.startDelegationTokenSecretManager(
+                    conf, rawStore, ServerMode.HIVESERVER2);
+            saslServer.setSecretManager(delegationTokenManager.getSecretManager());
+          } catch (MetaException | IOException e) {
+            throw new TTransportException("Failed to start token manager", e);
+          }
+
+      } else {
+        saslServer = null;
       }
     }
   }
@@ -270,10 +279,17 @@ public class HiveAuthFactory {
   }
 
   public static TTransport getSSLSocket(String host, int port, int loginTimeout,
-    String trustStorePath, String trustStorePassWord) throws TTransportException {
+    String trustStorePath, String trustStorePassWord, String sslProtocolVersion) throws TTransportException, KeyStoreException {
     TSSLTransportFactory.TSSLTransportParameters params =
-      new TSSLTransportFactory.TSSLTransportParameters();
-    params.setTrustStore(trustStorePath, trustStorePassWord);
+      new TSSLTransportFactory.TSSLTransportParameters(sslProtocolVersion, null);
+
+    if (isFips()) {
+      String trustManagerType = TrustManagerFactory.getDefaultAlgorithm();
+      String trustStoreType = KeyStore.getInstance(BCFKS_KEYSTORE_TYPE).getType();
+      params.setTrustStore(trustStorePath, trustStorePassWord, trustManagerType, trustStoreType);
+    } else {
+      params.setTrustStore(trustStorePath, trustStorePassWord);
+    }
     params.requireClientAuth(true);
     return TSSLTransportFactory.getClientSocket(host, port, loginTimeout, params);
   }
@@ -308,7 +324,12 @@ public class HiveAuthFactory {
     };
     SSLSocket socket;
     try {
-      SSLContext sslContext = SSLContext.getInstance("SSL");
+      SSLContext sslContext = null;
+      if (isFips()) {
+        SSLContext.getInstance(getSslProtocolVersion(), new BouncyCastleJsseProvider());
+      } else {
+        SSLContext.getInstance(getSslProtocolVersion());
+      }
       sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
       SSLSocketFactory factory = sslContext.getSocketFactory();
       socket = (SSLSocket) factory.createSocket(host, port);
@@ -332,11 +353,19 @@ public class HiveAuthFactory {
   }
 
   public static TServerSocket getServerSSLSocket(String hiveHost, int portNum, String keyStorePath,
-      String keyStorePassWord, List<String> sslVersionBlacklist) throws TTransportException,
-      UnknownHostException {
+      String keyStorePassWord, List<String> sslVersionBlacklist, String sslProtocolVersion) throws TTransportException,
+          UnknownHostException, KeyStoreException {
     TSSLTransportFactory.TSSLTransportParameters params =
-        new TSSLTransportFactory.TSSLTransportParameters();
-    params.setKeyStore(keyStorePath, keyStorePassWord);
+        new TSSLTransportFactory.TSSLTransportParameters(sslProtocolVersion, null);
+
+    if (isFips()) {
+      String keyManagerType = TrustManagerFactory.getDefaultAlgorithm();
+      String keyStoreType = KeyStore.getInstance(BCFKS_KEYSTORE_TYPE).getType();
+      params.setKeyStore(keyStorePath, keyStorePassWord, keyManagerType, keyStoreType);
+    } else {
+      params.setKeyStore(keyStorePath, keyStorePassWord);
+    }
+
     InetSocketAddress serverAddress;
     if (hiveHost == null || hiveHost.isEmpty()) {
       // Wildcard bind
