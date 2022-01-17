@@ -302,7 +302,8 @@ EOF
 		changeSparkDefaults "spark.yarn.historyServer.address" "spark.yarn.historyServer.address $(hostname --fqdn):$sparkHSSecureUIPort"
 	fi
 	if [ "$FIPS_ENABLED" = "1" ] ; then
-	  sed -i "/\# ssl/a spark.ssl.keyStoreType BCFKS" $SPARK_HOME/conf/spark-defaults.conf
+	  sed -i "/\# ssl/a spark.ssl.keyStoreType bcfks" $SPARK_HOME/conf/spark-defaults.conf
+	  sed -i "/\# ssl/a spark.ssl.trustStoreType bcfks" $SPARK_HOME/conf/spark-defaults.conf
 	  sed -i 's/java.util=ALL-UNNAMED/java.util=ALL-UNNAMED -Djava.security.disableSystemPropertiesFile=true/g' ${SPARK_HOME}/conf/spark-defaults.conf
 	fi
 	if ! (echo "$CLUSTER_INFO" | grep -q "kerberosEnable=true") ; then
