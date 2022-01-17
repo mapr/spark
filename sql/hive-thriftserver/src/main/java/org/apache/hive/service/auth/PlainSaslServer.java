@@ -171,6 +171,7 @@ public class PlainSaslServer implements SaslServer {
     public SaslPlainProvider() {
       super("HiveSaslPlain", 1.0, "Hive Plain SASL provider");
       put("SaslServerFactory.PLAIN", SaslPlainServerFactory.class.getName());
+      put("SaslClientFactory.PLAIN", SaslPlainClientFactory.class.getName());
     }
   }
 }
