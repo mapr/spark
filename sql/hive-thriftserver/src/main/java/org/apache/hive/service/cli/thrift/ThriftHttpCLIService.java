@@ -17,6 +17,8 @@
 
 package org.apache.hive.service.cli.thrift;
 
+import java.security.KeyStore;
+import java.security.Security;
 import java.util.Arrays;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -37,6 +39,9 @@ import org.apache.thrift.TProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
 import org.apache.thrift.server.TServlet;
+import org.apache.zookeeper.common.KeyStoreFileType;
+import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.eclipse.jetty.server.AbstractConnectionFactory;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -47,6 +52,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.ExecutorThreadPool;
 import org.eclipse.jetty.util.thread.ScheduledExecutorScheduler;
 
+import static org.apache.hive.FipsUtil.isFips;
 
 public class ThriftHttpCLIService extends ThriftCLIService {
 
@@ -92,6 +98,18 @@ public class ThriftHttpCLIService extends ThriftCLIService {
           Arrays.toString(sslContextFactory.getExcludeProtocols()));
         sslContextFactory.setKeyStorePath(keyStorePath);
         sslContextFactory.setKeyStorePassword(keyStorePassword);
+
+        // if fips mode is enabled, key store type should be configured
+        if (isFips()) {
+          Security.addProvider(new BouncyCastleFipsProvider());
+          Security.addProvider(new BouncyCastleJsseProvider());
+          sslContextFactory.setProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
+          sslContextFactory.setKeyStoreType(HiveAuthFactory.BCFKS_KEYSTORE_TYPE);
+        }
+
+        String sslProtocolVersion = hiveConf.getVar(ConfVars.HIVE_SSL_PROTOCOL_VERSION);
+        sslContextFactory.setProtocol(sslProtocolVersion);
+
         connectionFactories = AbstractConnectionFactory.getFactories(
             sslContextFactory, new HttpConnectionFactory());
       } else {
