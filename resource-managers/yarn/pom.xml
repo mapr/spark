@@ -230,6 +230,10 @@
       <scope>provided</scope>
       <exclusions>
         <exclusion>
+          <groupId>org.apache.hive.shaded.avatica</groupId>
+          <artifactId>mapr-shaded-avatica</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>com.mapr.db</groupId>
           <artifactId>maprdb</artifactId>
         </exclusion>
