@@ -2010,7 +2010,10 @@
         <version>${hive.version}</version>
         <scope>${hive.deps.scope}</scope>
         <exclusions>
-
+          <exclusion>
+            <groupId>org.apache.hive.shaded.avatica</groupId>
+            <artifactId>mapr-shaded-avatica</artifactId>
+          </exclusion>
           <!-- pull this in when needed; the explicit definition culls the surplus-->
           <exclusion>
             <groupId>${hive.group}</groupId>
