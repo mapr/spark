@@ -58,7 +58,12 @@ SPARK_BIN="$SPARK_HOME"/bin
 SPARK_LOGS="$SPARK_HOME"/logs
 DAEMON_CONF=${MAPR_HOME}/conf/daemon.conf
 DEFAULT_SSL_KEYSTORE="$MAPR_HOME"/conf/ssl_keystore
-FIPS_ENABLED=$(cat /proc/sys/crypto/fips_enabled)
+
+if [ -f /proc/sys/crypto/fips_enabled ]; then
+  FIPS_ENABLED=$(cat /proc/sys/crypto/fips_enabled)
+else
+  FIPS_ENABLED="0"
+fi
 
 MAPR_USER=${MAPR_USER:-$( awk -F = '$1 == "mapr.daemon.user" { print $2 }' $DAEMON_CONF)}
 MAPR_GROUP=${MAPR_GROUP:-$( awk -F = '$1 == "mapr.daemon.group" { print $2 }' $DAEMON_CONF)}
