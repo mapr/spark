@@ -79,7 +79,12 @@
 MAPR_HOME="${MAPR_HOME:-/opt/mapr}"
 SPARK_VERSION=$(cat ${MAPR_HOME}/spark/sparkversion)
 SPARK_HOME=${MAPR_HOME}/spark/spark-${SPARK_VERSION}
-FIPS_ENABLED=$(cat /proc/sys/crypto/fips_enabled)
+
+if [ -f /proc/sys/crypto/fips_enabled ]; then
+  FIPS_ENABLED=$(cat /proc/sys/crypto/fips_enabled)
+else
+  FIPS_ENABLED="0"
+fi
 
 # Set the spark attributes
 if [ -d "${SPARK_HOME}" ]; then

@@ -12,7 +12,6 @@ MAPR_HOME=${MAPR_HOME:=/opt/mapr}
 INSTALL_DIR=/home/$CURRENT_USER/__spark-internal__/security_keys
 MAPRFS_DIR=/apps/spark/__$CURRENT_USER-spark-internal__/security_keys
 BC_JAR="/opt/mapr/lib/bc-fips-1.0.2.1.jar"
-FIPS_ENABLED=$(cat /proc/sys/crypto/fips_enabled)
 
 sslKeyStore=${INSTALL_DIR}/ssl_keystore
 sslKeyStoreP12=${INSTALL_DIR}/ssl_keystore.p12
@@ -23,6 +22,12 @@ sslTrustStore=${INSTALL_DIR}/ssl_truststore
 sslTrustStoreP12=${INSTALL_DIR}/ssl_truststore.p12
 sslTrustStorePEM=${INSTALL_DIR}/ssl_truststore.pem
 sslTrustStoreBC=${INSTALL_DIR}/ssl_truststore.bcfks
+
+if [ -f /proc/sys/crypto/fips_enabled ]; then
+  FIPS_ENABLED=$(cat /proc/sys/crypto/fips_enabled)
+else
+  FIPS_ENABLED="0"
+fi
 
 if [ "$FIPS_ENABLED" = "1" ]; then
   isFips="true"
