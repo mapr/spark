@@ -17,17 +17,18 @@
 
 package org.apache.spark
 
-import java.io.File
-import java.security.NoSuchAlgorithmException
-
 import com.mapr.web.security.SslConfig.SslConfigScope
 import com.mapr.web.security.WebSecurityManager
-import javax.net.ssl.SSLContext
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.spark.internal.Logging
+import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider
 import org.eclipse.jetty.util.ssl.SslContextFactory
 
+import java.io.File
+import java.security.{NoSuchAlgorithmException, Security}
+import javax.net.ssl.SSLContext
 import scala.util.Try
 
 /**
@@ -74,6 +75,11 @@ private[spark] case class SSLOptions(
     if (enabled) {
       val sslContextFactory = new SslContextFactory.Server()
 
+      if (Security.getProviders.exists(_.getName.toLowerCase.contains("fips"))) {
+        Security.addProvider(new BouncyCastleFipsProvider)
+        Security.addProvider(new BouncyCastleJsseProvider)
+        sslContextFactory.setProvider(BouncyCastleJsseProvider.PROVIDER_NAME)
+      }
       keyStore.foreach(file => sslContextFactory.setKeyStorePath(file.getAbsolutePath))
       keyStorePassword.foreach(sslContextFactory.setKeyStorePassword)
       keyPassword.foreach(sslContextFactory.setKeyManagerPassword)
