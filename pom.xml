@@ -272,9 +272,9 @@
 
       Please check SPARK-36835 for more details.
     -->
-    <hadoop-client-api.artifact>hadoop-client-api</hadoop-client-api.artifact>
-    <hadoop-client-runtime.artifact>hadoop-client-runtime</hadoop-client-runtime.artifact>
-    <hadoop-client-minicluster.artifact>hadoop-client-minicluster</hadoop-client-minicluster.artifact>
+    <hadoop-client-api.artifact>hadoop-client</hadoop-client-api.artifact>
+    <hadoop-client-runtime.artifact>hadoop-yarn-api</hadoop-client-runtime.artifact>
+    <hadoop-client-minicluster.artifact>hadoop-client</hadoop-client-minicluster.artifact>
     <spark.yarn.isHadoopProvided>false</spark.yarn.isHadoopProvided>
 
     <!--
