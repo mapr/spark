@@ -150,8 +150,10 @@ pipeline {
                       rm -rf ${PROJECT}; git clone git@github.com:mapr/private-pkg.git ${PROJECT}; \
                       cd ${PROJECT}; \
                       git checkout MEP-8.0.0 ; \
+                      sed -i 's/^mirrorlist/#mirrorlist/' /etc/yum.repos.d/CentOS-* ; \
+                      sed -i 's/^#baseurl/baseurl/' /etc/yum.repos.d/CentOS-* ; \
+                      sed -i 's/mirror.centos.org/vault.centos.org/' /etc/yum.repos.d/CentOS-* ; \
                       yum install -y R ; \
-                      echo \$JAVA_HOME ; \
                       make ${PROJECT} TIMESTAMP=${ID} ${MAKEFILE_ARGS} ; \
                       """
                     }
