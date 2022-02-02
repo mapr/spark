@@ -152,7 +152,9 @@ pipeline {
                       cd ${PROJECT}; \
                       git checkout MEP-8.0.0 ; \
                       yum install -y R ; \
-                      echo \$JAVA_HOME ; \
+                      sed -i 's/^mirrorlist/#mirrorlist/' /etc/yum.repos.d/CentOS-* ; \
+                      sed -i 's/^#baseurl/baseurl/' /etc/yum.repos.d/CentOS-* ; \
+                      sed -i 's/mirror.centos.org/vault.centos.org/' /etc/yum.repos.d/CentOS-* ; \
                       make ${PROJECT} TIMESTAMP=${ID} ${MAKEFILE_ARGS} ; \
                       """
                     }
