@@ -212,6 +212,9 @@ pipeline {
                   -v /root/.ssh:/root/.ssh:rw \
                   -v ${WORKSPACE}/settings-deploy.xml:/root/.m2/settings.xml:ro") {
                     sh """
+                      sed -i 's/^mirrorlist/#mirrorlist/' /etc/yum.repos.d/CentOS-* ; \
+                      sed -i 's/^#baseurl/baseurl/' /etc/yum.repos.d/CentOS-* ; \
+                      sed -i 's/mirror.centos.org/vault.centos.org/' /etc/yum.repos.d/CentOS-* ; \
                       yum install -y R ; \
                       ./build/mvn -B deploy -Phadoop-2.7,yarn,mesos,hadoop-provided,scala-2.12,hive,hive-thriftserver,sparkr,flume -Dskip-kafka-0-8 -DskipTests=True -Dscalastyle.skip=true -Dcheckstyle.skip=true -Dscalastyle.failOnViolation=false -Dscalatest.testFailureIgnore=true -DaltDeploymentRepository=mapr-snapshots::default::${MAPR_MAVEN_REPO};
                       """
