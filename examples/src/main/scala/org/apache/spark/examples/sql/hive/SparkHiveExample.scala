@@ -17,8 +17,10 @@
 package org.apache.spark.examples.sql.hive
 
 // $example on:spark_hive$
-import java.io.File
+import java.io.{File, FileOutputStream, OutputStream}
 
+import com.google.common.io.ByteSink
+import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 // $example off:spark_hive$
 
@@ -31,7 +33,10 @@ object SparkHiveExample {
   val kv1Stream = SparkHiveExample.getClass.getResourceAsStream("/kv1.txt")
   val kv1File = File.createTempFile("kv1", "txt")
   kv1File.deleteOnExit()
-  ByteStreams.copy(kv1Stream, Files.newOutputStreamSupplier(kv1File))
+
+  new ByteSink {
+    override def openStream(): OutputStream = new FileOutputStream(kv1File)
+  }.writeFrom(kv1Stream)
 
   def main(args: Array[String]) {
     // When working with Hive, one must instantiate `SparkSession` with Hive support, including
