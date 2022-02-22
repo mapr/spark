@@ -68,6 +68,21 @@ import org.slf4j.LoggerFactory;
 import static org.apache.hadoop.hive.conf.MapRSecurityUtil.getSslProtocolVersion;
 import static org.apache.hive.FipsUtil.isFips;
 
+import javax.net.ssl.*;
+import javax.security.auth.login.LoginException;
+import javax.security.sasl.Sasl;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.*;
+
 /**
  * This class helps in some aspects of authentication. It creates the proper Thrift classes for the
  * given configuration as well as helps with authenticating requests.
@@ -144,7 +159,8 @@ public class HiveAuthFactory {
       if (authTypeStr == null) {
         authTypeStr = AuthTypes.NONE.getAuthName();
       }
-      if (isAuthTypeSecured || authTypeStr.equalsIgnoreCase(AuthTypes.KERBEROS.getAuthName())) {
+      if (isAuthTypeSecured || ("PAM".equalsIgnoreCase(authTypeStr)
+              && ShimLoader.getHadoopShims().isSecurityEnabled())) {
         String principal = conf.getVar(ConfVars.HIVE_SERVER2_KERBEROS_PRINCIPAL);
         String keytab = conf.getVar(ConfVars.HIVE_SERVER2_KERBEROS_KEYTAB);
         if (needUgiLogin(UserGroupInformation.getCurrentUser(),
@@ -289,7 +305,7 @@ public class HiveAuthFactory {
   }
 
   public static TTransport getSSLSocket(String host, int port, int loginTimeout,
-    String trustStorePath, String trustStorePassWord, String sslProtocolVersion) throws TTransportException, KeyStoreException {
+                                        String trustStorePath, String trustStorePassWord) throws TTransportException {
     TSSLTransportFactory.TSSLTransportParameters params =
       new TSSLTransportFactory.TSSLTransportParameters(sslProtocolVersion, null);
 

@@ -71,7 +71,7 @@ public class ThriftBinaryCLIService extends ThriftCLIService {
         sslVersionBlacklist.add(sslVersion);
       }
       if (!hiveConf.getBoolVar(ConfVars.HIVE_SERVER2_USE_SSL)) {
-        serverSocket = HiveAuthFactory.getServerSocket(hiveHost, portNum);
+        serverSocket = HiveAuthUtils.getServerSocket(hiveHost, portNum);
       } else {
         String keyStorePath = hiveConf.getVar(ConfVars.HIVE_SERVER2_SSL_KEYSTORE_PATH).trim();
         if (keyStorePath.isEmpty()) {
@@ -81,7 +81,7 @@ public class ThriftBinaryCLIService extends ThriftCLIService {
         String keyStorePassword = ShimLoader.getHadoopShims().getPassword(hiveConf,
             HiveConf.ConfVars.HIVE_SERVER2_SSL_KEYSTORE_PASSWORD.varname);
         String sslProtocolVersion = hiveConf.getVar(ConfVars.HIVE_SSL_PROTOCOL_VERSION);
-        serverSocket = HiveAuthFactory.getServerSSLSocket(hiveHost, portNum, keyStorePath,
+        serverSocket = HiveAuthUtils.getServerSSLSocket(hiveHost, portNum, keyStorePath,
             keyStorePassword, sslVersionBlacklist, sslProtocolVersion);
       }
 
