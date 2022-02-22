@@ -26,6 +26,8 @@ import javax.security.sasl.SaslException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
+import org.apache.spark.network.scram.ScramUtils;
+import org.apache.spark.network.util.AuthUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,7 +85,7 @@ public class SaslClientBootstrap implements TransportClientBootstrap {
 
       client.setClientId(appId);
 
-      if (conf.saslEncryption()) {
+      if (conf.saslEncryption() && AuthUtils.isMD5()) {
         if (!SparkSaslServer.QOP_AUTH_CONF.equals(saslClient.getNegotiatedProperty(Sasl.QOP))) {
           throw new RuntimeException(
             new SaslException("Encryption requests by negotiated non-encrypted connection."));
