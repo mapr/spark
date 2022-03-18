@@ -28,5 +28,13 @@ if [ -z "${SPARK_HOME}" ]; then
   source "$(dirname "$0")"/find-spark-home
 fi
 
+export SPARK_JAVA_OPTS="$SPARK_JAVA_OPTS -Djava.util.logging.config.file=${SPARK_HOME}/conf/log4j.properties"
+
+. "${SPARK_HOME}"/bin/load-spark-env.sh
+#Bug MAPR-22940
+if [ "$MAPR_SECURITY_STATUS" = "true" ]; then
+    export SPARK_JAVA_OPTS="$SPARK_JAVA_OPTS $MAPR_ECOSYSTEM_LOGIN_OPTS -Dmapr_sec_enabled=true -Djava.security.auth.login.config=/opt/mapr/conf/mapr.login.conf -Dzookeeper.saslprovider=com.mapr.security.maprsasl.MaprSaslProvider"
+fi
+
 CLASS="org.apache.hive.beeline.BeeLine"
 exec "${SPARK_HOME}/bin/spark-class" $CLASS "$@"
