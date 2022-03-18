@@ -66,4 +66,6 @@ log4j.logger.org.apache.spark.rpc.netty.Dispatcher=FATAL
 # SPARK-34128：Suppress undesirable TTransportException warnings involved in THRIFT-4805
 log4j.appender.console.filter.1=org.apache.log4j.varia.StringMatchFilter
 log4j.appender.console.filter.1.StringToMatch=Thrift error occurred during processing of message
+#Hide fips specific properties initialization
+log4j.appender.console.filter.1.StringToMatch=org.bouncycastle.jsse.provider.PropertyUtils
 log4j.appender.console.filter.1.AcceptOnMatch=false
