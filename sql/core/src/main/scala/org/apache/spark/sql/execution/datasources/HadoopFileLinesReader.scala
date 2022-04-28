@@ -18,9 +18,11 @@
 package org.apache.spark.sql.execution.datasources
 
 import java.io.Closeable
+import java.net.URI
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileUtil, Path}
+import org.apache.hadoop.fs.shell.PathData
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.lib.input.{FileSplit, LineRecordReader}
@@ -46,13 +48,7 @@ class HadoopFileLinesReader(
   def this(file: PartitionedFile, conf: Configuration) = this(file, None, conf)
 
   private val _iterator = {
-    val filePathData = FileUtil.checkPathForSymlink(new Path(file.filePath), conf)
-    val fileSplit = new FileSplit(
-      filePathData.path,
-      file.start,
-      filePathData.stat.getLen,
-      // TODO: Implement Locality
-      Array.empty)
+    val fileSplit = getFileSplit(file, conf)
     val attemptId = new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 0), 0)
     val hadoopAttemptContext = new TaskAttemptContextImpl(conf, attemptId)
 
@@ -64,6 +60,26 @@ class HadoopFileLinesReader(
 
     reader.initialize(fileSplit, hadoopAttemptContext)
     new RecordReaderIterator(reader)
+  }
+
+  def getFileSplit(file: PartitionedFile, conf: Configuration): FileSplit = {
+    val pathData = new PathData(file.filePath, conf)
+    if (pathData.stat != null && pathData.stat.isSymlink) {
+      val symlinkPathData = FileUtil.checkPathForSymlink(new Path(file.filePath), conf)
+      new FileSplit(
+        symlinkPathData.path,
+        file.start,
+        symlinkPathData.stat.getLen,
+        Array.empty
+      )
+    }
+    else {
+      new FileSplit(
+        new Path(new URI(file.filePath)),
+        file.start,
+        file.length,
+        Array.empty)
+    }
   }
 
   override def hasNext: Boolean = _iterator.hasNext
