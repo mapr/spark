@@ -18,15 +18,18 @@
 package org.apache.spark.sql.execution.datasources
 
 import java.io.Closeable
+import java.net.URI
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileUtil, Path}
+import org.apache.hadoop.fs.shell.PathData
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.lib.input.CombineFileSplit
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 
 import org.apache.spark.input.WholeTextFileRecordReader
+
 
 /**
  * An adaptor from a [[PartitionedFile]] to an [[Iterator]] of [[Text]], which is all of the lines
@@ -48,6 +51,24 @@ class HadoopFileWholeTextReader(file: PartitionedFile, conf: Configuration)
     reader.setConf(hadoopAttemptContext.getConfiguration)
     reader.initialize(fileSplit, hadoopAttemptContext)
     new RecordReaderIterator(reader)
+  }
+
+  def getFileSplit(file: PartitionedFile, conf: Configuration): CombineFileSplit = {
+    val pathData = new PathData(file.filePath, conf)
+    if (pathData.stat != null && pathData.stat.isSymlink) {
+      val filePathData = FileUtil.checkPathForSymlink(new Path(file.filePath), conf)
+      new CombineFileSplit(
+        Array(filePathData.path),
+        Array(file.start),
+        Array(filePathData.stat.getLen),
+        Array.empty[String])
+    } else {
+      new CombineFileSplit(
+        Array(new Path(new URI(file.filePath))),
+        Array(file.start),
+        Array(file.length),
+        Array.empty[String])
+    }
   }
 
   override def hasNext: Boolean = _iterator.hasNext
