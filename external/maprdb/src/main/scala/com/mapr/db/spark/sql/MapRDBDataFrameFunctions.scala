@@ -28,6 +28,10 @@ private[spark] case class MapRDBDataFrameFunctions(@transient df: DataFrame,
                      bulkInsert: Boolean = false): Unit =
     MapRSpark.insert(df, tableName, idFieldPath, createTable, bulkInsert, bufferWrites)
 
+  def deleteFromMapRDB(tableName: String,
+                       idFieldPath: String = DocumentConstants.ID_KEY): Unit =
+    MapRSpark.delete(df, tableName, idFieldPath, bufferWrites)
+
   def joinWithMapRDBTable(table: String,
                           schema: StructType,
                           left: String,

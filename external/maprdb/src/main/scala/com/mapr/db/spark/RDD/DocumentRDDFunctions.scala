@@ -4,6 +4,7 @@ package com.mapr.db.spark.RDD
 import com.mapr.db.exceptions.TableNotFoundException
 import com.mapr.db.spark.RDD.partitioner.MapRDBPartitioner
 import com.mapr.db.spark.configuration.SerializableConfiguration
+import com.mapr.db.spark.dbclient.DBClient
 import com.mapr.db.spark.utils.{LoggingTrait, MapRDBUtils}
 import com.mapr.db.spark.writers._
 import org.apache.hadoop.conf.Configuration
@@ -54,6 +55,17 @@ private[spark] class DocumentRDDFunctions extends LoggingTrait {
     if (isNewAndBulkLoad._1 && isNewAndBulkLoad._2) {
       MapRDBUtils.setBulkLoad(tableName, false)
     }
+  }
+
+  protected def deleteFromMapRDBInternal[T](
+                 rdd: RDD[T],
+                 function1: (Broadcast[SerializableConfiguration], Boolean) =>
+                   ((Iterator[T]) => Unit)): Unit = {
+    val hadoopConf = new Configuration()
+    val serializableConf = new SerializableConfiguration(hadoopConf)
+    val cnf: Broadcast[SerializableConfiguration] =
+      rdd.context.broadcast(serializableConf)
+    rdd.foreachPartition(function1(cnf, false))
   }
 }
 
@@ -133,6 +145,34 @@ private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T], bufferWrites:
       }
     )
   }
+
+  def deleteFromMapRDB(tablename: String,
+                       idFieldPath: String = DocumentConstants.ID_KEY): Unit = {
+    logDebug(
+      s"deleteFromMapRDB in OJAIDocumentRDDFunctions is called for table: $tablename")
+
+    val getID: (Document) => Value = if (idFieldPath == DocumentConstants.ID_KEY) {
+      (doc: Document) => doc.getId
+    } else {
+      (doc: Document) => doc.getValue(idFieldPath)
+    }
+
+    this.deleteFromMapRDBInternal(
+      rdd,
+      (cnf: Broadcast[SerializableConfiguration], isNewAndBulkLoad: Boolean) =>
+        (iter: Iterator[T]) => {
+          if (iter.nonEmpty) {
+            val writer =
+              TableDeleteWriter(DBClient().getTable(tablename, bufferWrites))
+            while (iter.hasNext) {
+              val element = iter.next
+              f.write(f.getValue(element), getID, writer)
+            }
+            writer.close()
+          }
+        }
+    )
+  }
 }
 
 private[spark] case class PairedDocumentRDDFunctions[K, V](rdd: RDD[(K, V)],
@@ -197,6 +237,28 @@ private[spark] case class PairedDocumentRDDFunctions[K, V](rdd: RDD[(K, V)],
             }
             writer.close()
       }
+    )
+  }
+
+  def deleteFromMapRDB(tablename: String): Unit = {
+
+    logDebug("deleteFromMapRDB in PairedDocumentRDDFunctions is called for table: " +
+      tablename)
+
+    this.deleteFromMapRDBInternal[(K, V)](
+      rdd,
+      (cnf: Broadcast[SerializableConfiguration], isnewAndBulkLoad: Boolean) =>
+        (iter: Iterator[(K, V)]) =>
+          if (iter.nonEmpty) {
+            val writer =
+              TableDeleteWriter(DBClient().getTable(tablename, bufferWrites))
+            while (iter.hasNext) {
+              val element = iter.next
+              checkElementForNull(element)
+              f.write(v.getValue(element._2), f.getValue(element._1), writer)
+            }
+            writer.close()
+          }
     )
   }
 
