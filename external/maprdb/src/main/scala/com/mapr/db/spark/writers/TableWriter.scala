@@ -51,6 +51,27 @@ private[spark] case class TableInsertWriter(@transient table: DocumentStore)
   }
 }
 
+private[spark] case class TableDeleteWriter(@transient table: DocumentStore)
+  extends Writer {
+
+  def write(doc: Document, key: ByteBuffer): Unit = {
+    write(doc, DBValueBuilderImpl.KeyValueBuilder.initFrom(key))
+  }
+
+  def write(doc: Document, key: String): Unit = {
+    write(doc, DBValueBuilderImpl.KeyValueBuilder.initFrom(key))
+  }
+
+  def write(doc: Document, key: org.ojai.Value): Unit = {
+    table.delete(doc.setId(key))
+  }
+
+  def close(): Unit = {
+    table.flush()
+    table.close()
+  }
+}
+
 private[spark] case class TableCheckAndMutateWriter(
     @transient table: DocumentStore) {
 
