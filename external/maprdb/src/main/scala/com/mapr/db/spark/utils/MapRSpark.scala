@@ -52,6 +52,15 @@ object MapRSpark {
                                idFieldPath = idFieldPath)
   }
 
+  def delete[D](dataset: Dataset[D],
+                tableName: String,
+                idFieldPath: String,
+                bufferWrites: Boolean): Unit = {
+    val documentRdd = dataset.toDF.rdd.map(MapRSqlUtils.rowToDocument)
+    documentRdd.setBufferWrites(bufferWrites).deleteFromMapRDB(tableName,
+                               idFieldPath = idFieldPath)
+  }
+
   def save(
       dfw: DataFrameWriter[_],
       tableName: String,
