@@ -110,6 +110,11 @@ class DefaultSource
                        bulkInsert = bulkMode,
                        bufferWrites = bufferWrites)
 
+      case "Delete" =>
+        MapRSpark.delete(data,
+                         tableName,
+                         idFieldPath,
+                         bufferWrites = bufferWrites)
 
       case "ErrorIfExists" =>
         if (tableExists) {
