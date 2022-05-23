@@ -76,6 +76,9 @@ public class SparkLauncher extends AbstractLauncher<SparkLauncher> {
   /** Configuration key for the number of executor CPU cores. */
   public static final String EXECUTOR_CORES = "spark.executor.cores";
 
+  /** Configuration key for the daemon memory used by thrift server. */
+  public static final String THRIFT_DAEMON_MEMORY = "spark.thirft.daemon.memory";
+
   static final String PYSPARK_DRIVER_PYTHON = "spark.pyspark.driver.python";
 
   static final String PYSPARK_PYTHON = "spark.pyspark.python";
