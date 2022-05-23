@@ -283,8 +283,8 @@ class SparkSubmitCommandBuilder extends AbstractCommandBuilder {
       // - SPARK_MEM env variable
       // - default value (1g)
       // Take Thrift Server as daemon
-      String tsMemory =
-        isThriftServer(mainClass) ? System.getenv("SPARK_DAEMON_MEMORY") : null;
+      String tsMemory = isThriftServer(mainClass) ?
+        firstNonEmpty(config.get(SparkLauncher.THRIFT_DAEMON_MEMORY), System.getenv("SPARK_DAEMON_MEMORY")) : null;
       String memory = firstNonEmpty(tsMemory, config.get(SparkLauncher.DRIVER_MEMORY),
         System.getenv("SPARK_DRIVER_MEMORY"), System.getenv("SPARK_MEM"), DEFAULT_MEM);
       cmd.add("-Xmx" + memory);
