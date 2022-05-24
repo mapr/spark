@@ -530,6 +530,11 @@ class SparkContext:
         return self._conf.get("spark.ui.enabled", "true")
 
     @property
+    def uiEnabled(self):
+        """Return if the SparkUI is enabled in this SparkContext"""
+        return self._conf.get("spark.ui.enabled", "true")
+
+    @property
     def uiWebUrl(self) -> str:
         """Return the URL of the SparkUI instance started by this SparkContext"""
         return self._jsc.sc().uiWebUrl().get()
