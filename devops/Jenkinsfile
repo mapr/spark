@@ -35,7 +35,7 @@ pipeline {
   parameters {
     choice(name: 'BUILD_TYPE', choices: ['Dev','EBF','Release'], description: 'default - Dev. EBF and Release args you can use only in release branches')
     string(name: 'MAKEFILE_ENV_VARS', defaultValue: '', description: 'Variables you can pass to makefile (command will be: make {THIS VAR} {project-name}). Please DO NOT put component_branch_name')
-    string(name: 'SPARK_HADOOP_PROFILE', defaultValue: '3.3', description: '')
+    string(name: 'SPARK_HADOOP_PROFILE', defaultValue: 'hadoop-2.7', description: '')
     booleanParam(name: 'Spark Deploy', defaultValue: true, description: 'Uncheck and Jenkins will skip ./build/mvn deploy')
   }
   stages {
@@ -217,7 +217,7 @@ pipeline {
                       sed -i 's/^#baseurl/baseurl/' /etc/yum.repos.d/CentOS-* ; \
                       sed -i 's/mirror.centos.org/vault.centos.org/' /etc/yum.repos.d/CentOS-* ; \
                       yum install -y R ; \
-                      ./build/mvn -B deploy -Phadoop-${params.SPARK_HADOOP_PROFILE},yarn,mesos,hadoop-provided,scala-2.12,hive,hive-thriftserver,sparkr,flume -Dskip-kafka-0-8 -DskipTests=True -Dscalastyle.skip=true -Dcheckstyle.skip=true -Dscalastyle.failOnViolation=false -Dscalatest.testFailureIgnore=true -DaltDeploymentRepository=mapr-snapshots::default::${MAPR_MAVEN_REPO};
+                      ./build/mvn -B deploy -P${params.SPARK_HADOOP_PROFILE},yarn,mesos,hadoop-provided,scala-2.12,hive,hive-thriftserver,sparkr,flume -Dskip-kafka-0-8 -DskipTests=True -Dscalastyle.skip=true -Dcheckstyle.skip=true -Dscalastyle.failOnViolation=false -Dscalatest.testFailureIgnore=true -DaltDeploymentRepository=mapr-snapshots::default::${MAPR_MAVEN_REPO};
                       """
                     }
                 }
