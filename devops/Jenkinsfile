@@ -35,7 +35,7 @@ pipeline {
   parameters {
     choice(name: 'BUILD_TYPE', choices: ['Dev','EBF','Release'], description: 'default - Dev. EBF and Release args you can use only in release branches')
     string(name: 'MAKEFILE_ENV_VARS', defaultValue: '', description: 'Variables you can pass to makefile (command will be: make {THIS VAR} {project-name}). Please DO NOT put component_branch_name')
-    string(name: 'SPARK_HADOOP_PROFILE', defaultValue: 'hadoop-2.7', description: '')
+    string(name: 'SPARK_HADOOP_PROFILE', defaultValue: 'hadoop-3.3', description: '')
     booleanParam(name: 'Spark Deploy', defaultValue: true, description: 'Uncheck and Jenkins will skip ./build/mvn deploy')
   }
   stages {
