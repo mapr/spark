@@ -69,7 +69,7 @@ pipeline {
                   configFileProvider([configFile(fileId: 'maven_settings', variable: 'mvn_settings')]) {
                     sh "cat ${env.mvn_settings} > settings.xml"
                   }
-                  docker.image("maprtech/ubuntu16-java11-gcc7").inside (
+                  docker.image("dfdkr.mip.storage.hpecorp.net/ubuntu16-java11-gcc7").inside (
                   "-e MAPR_MIRROR=${MAPR_MIRROR} \
                   -e MAPR_CENTRAL=${MAPR_CENTRAL} \
                   -e MAVEN_CENTRAL=${MAVEN_CENTRAL} \
@@ -131,7 +131,7 @@ pipeline {
                   configFileProvider([configFile(fileId: 'maven_settings', variable: 'mvn_settings')]) {
                     sh "cat ${env.mvn_settings} > settings.xml"
                   }
-                  docker.image("maprtech/centos8-java11-gcc8").inside (
+                  docker.image("dfdkr.mip.storage.hpecorp.net/centos8-java11-gcc8").inside (
                   "-e MAPR_MIRROR=${MAPR_MIRROR} \
                   -e MAPR_CENTRAL=${MAPR_CENTRAL} \
                   -e MAVEN_CENTRAL=${MAVEN_CENTRAL} \
@@ -195,7 +195,7 @@ pipeline {
                   configFileProvider([configFile(fileId: 'maven_settings_spark_deploy', variable: 'mvn_settings')]) {
                     sh "cat ${env.mvn_settings} > settings-deploy.xml"
                   }
-                  docker.image("maprtech/centos8-java11-gcc8").inside (
+                  docker.image("dfdkr.mip.storage.hpecorp.net/centos8-java11-gcc8").inside (
                   "-e MAPR_MIRROR=${MAPR_MIRROR} \
                   -e MAPR_CENTRAL=${MAPR_CENTRAL} \
                   -e MAVEN_CENTRAL=${MAVEN_CENTRAL} \
