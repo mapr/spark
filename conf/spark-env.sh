@@ -108,6 +108,9 @@ if [ -f "$MAPR_HOME/kafka/kafkaversion" ]; then
         MAPR_SPARK_CLASSPATH=$MAPR_SPARK_CLASSPATH:$(find ${BASEMAPR:-$MAPR_HOME}/kafka -name "kafka-eventstreams-*.jar")
 fi
 
+#FIX for EZSPA-772. We need to take mapr-security-web jar from mapr lib folder, not from Hadoop
+MAPR_SPARK_CLASSPATH=$MAPR_SPARK_CLASSPATH:$(find ${BASEMAPR:-$MAPR_HOME}/lib -name "mapr-security-web-*.jar" | egrep -v tests)
+
 SPARK_MAPR_HOME=$MAPR_HOME
 
 export SPARK_LIBRARY_PATH=$MAPR_HADOOP_JNI_PATH
