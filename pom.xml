@@ -3241,6 +3241,7 @@
               <include>org.eclipse.jetty:jetty-server</include>
               <include>com.google.guava:guava</include>
               <include>org.jpmml:*</include>
+              <include>org.apache.orc:*</include>
             </includes>
           </artifactSet>
           <relocations>

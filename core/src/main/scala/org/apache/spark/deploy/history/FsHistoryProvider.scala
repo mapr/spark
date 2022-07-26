@@ -26,10 +26,8 @@ import java.util.zip.ZipOutputStream
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.concurrent.ExecutionException
 import scala.io.{Codec, Source}
 import scala.util.control.NonFatal
-import scala.util.Try
 import scala.xml.Node
 
 import com.fasterxml.jackson.annotation.JsonIgnore
