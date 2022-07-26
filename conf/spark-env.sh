@@ -193,5 +193,5 @@ export SPARK_MASTER_IP=$(hostname --fqdn)
 
 #SPARK-984 fix for resolve conflict with shaded orc jars in the hive-exec.
 #Set own spark orc jars to classpath before jars from spark../jars
-SPARK_FIRST_CLASSPATH="${SPARK_HOME}/jars/orc-mapreduce-1.6.11.jar:${SPARK_HOME}/jars/orc-shims-1.6.11.jar:${SPARK_HOME}/jars/orc-core-1.6.11.jar"
+SPARK_FIRST_CLASSPATH="${SPARK_HOME}/jars/orc-mapreduce-1.7.4.jar:${SPARK_HOME}/jars/orc-shims-1.7.4.jar:${SPARK_HOME}/jars/orc-core-1.7.4.jar"
 
