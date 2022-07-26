@@ -26,12 +26,12 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>classpath-filter_2.12</artifactId>
+    <artifactId>hive-site-editor_2.12</artifactId>
     <packaging>jar</packaging>
-    <name>Spark Сlasspath Filter</name>
+    <name>Hive Site Editor</name>
     <url>http://spark.apache.org/</url>
     <properties>
-        <sbt.project.name>classpath-filter</sbt.project.name>
+        <sbt.project.name>hive-site-editor</sbt.project.name>
     </properties>
 
 
@@ -43,10 +43,16 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.ant</groupId>
-            <artifactId>ant</artifactId>
-            <version>1.10.11</version>
-            <scope>compile</scope>
+            <groupId>org.scala-lang.modules</groupId>
+            <artifactId>scala-xml_${scala.binary.version}</artifactId>
+            <version>${scala.xml.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang3.version}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
@@ -72,7 +78,8 @@
                             <overWriteIfNewer>true</overWriteIfNewer>
                             <useSubDirectoryPerType>true</useSubDirectoryPerType>
                             <includeArtifactIds>
-                                ant
+                                commons-lang3
+                                scala-xml_2.12
                             </includeArtifactIds>
                             <silent>true</silent>
                         </configuration>
