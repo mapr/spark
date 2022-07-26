@@ -23,6 +23,7 @@ import java.nio.file.Files
 import java.util.Base64
 
 import scala.sys.process._
+import scala.language.postfixOps
 
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.io.Text
