@@ -2,7 +2,6 @@
 package com.mapr.db.spark
 
 import org.apache.spark.sql._
-import scala.language.implicitConversions
 
 package object sql {
 
