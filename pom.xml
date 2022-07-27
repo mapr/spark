@@ -26,7 +26,7 @@
   </parent>
   <groupId>org.apache.spark</groupId>
   <artifactId>spark-parent_2.12</artifactId>
-  <version>3.3.0</version>
+  <version>3.3.0.0-eep-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Spark Project Parent POM</name>
   <url>https://spark.apache.org/</url>
@@ -2865,6 +2865,9 @@
               <arg>-unchecked</arg>
               <arg>-deprecation</arg>
               <arg>-feature</arg>
+              <arg>-language:existentials</arg>
+              <arg>-language:implicitConversions</arg>
+              <arg>-language:postfixOps</arg>
               <arg>-explaintypes</arg>
               <arg>-target:jvm-1.8</arg>
               <arg>-Xfatal-warnings</arg>
