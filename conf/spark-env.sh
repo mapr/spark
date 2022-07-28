@@ -103,11 +103,6 @@ MAPR_HADOOP_CLASSPATH=`${SPARK_HOME}/bin/mapr-classpath.sh`
 MAPR_HADOOP_JNI_PATH=`hadoop jnipath`
 MAPR_SPARK_CLASSPATH="$MAPR_HADOOP_CLASSPATH"
 
-#FIX for SPARK-906/KAFKA-717. This should be removed when kafka-eventstreams jar will be added to mapr classpath
-if [ -f "$MAPR_HOME/kafka/kafkaversion" ]; then
-        MAPR_SPARK_CLASSPATH=$MAPR_SPARK_CLASSPATH:$(find ${BASEMAPR:-$MAPR_HOME}/kafka -name "kafka-eventstreams-*.jar")
-fi
-
 #FIX for EZSPA-772. We need to take mapr-security-web jar from mapr lib folder, not from Hadoop
 MAPR_SPARK_CLASSPATH=$MAPR_SPARK_CLASSPATH:$(find ${BASEMAPR:-$MAPR_HOME}/lib -name "mapr-security-web-*.jar" | egrep -v tests)
 
