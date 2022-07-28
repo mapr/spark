@@ -87,6 +87,11 @@
     </dependency>
     --><!-- #endif scala-2.13 -->
     <dependency>
+    <groupId>com.mapr.kafka</groupId>
+    <artifactId>kafka-eventstreams</artifactId>
+    <version>0.2.0-eep-900-SNAPSHOT</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.kafka</groupId>
       <artifactId>kafka-clients</artifactId>
       <version>${kafka.version}</version>
