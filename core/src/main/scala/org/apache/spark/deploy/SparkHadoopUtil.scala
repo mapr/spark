@@ -569,7 +569,8 @@ private[spark] object SparkHadoopUtil extends Logging {
     } else {
       // the builder api does not resolve relative paths, nor does it create parent dirs, while
       // the old api does.
-      if (!fs.mkdirs(path.getParent())) {
+      val parentPath = path.getParent
+      if (!fs.exists(parentPath) && !fs.mkdirs(parentPath)) {
         throw new IOException(s"Failed to create parents of $path")
       }
       val qualifiedPath = fs.makeQualified(path)
