@@ -33,6 +33,7 @@ import org.apache.hadoop.security.authorize.ProxyUsers;
 import org.apache.hive.service.auth.PlainSaslHelper;
 import org.apache.hive.service.cli.HiveSQLException;
 import org.apache.hive.service.cli.thrift.ThriftCLIService;
+import org.apache.thrift.TConfiguration;
 import org.apache.thrift.TProcessorFactory;
 import org.apache.thrift.transport.*;
 import org.slf4j.Logger;
@@ -247,8 +248,8 @@ public class HiveAuthFactory {
     }
   }
 
-  public static TTransport getSocketTransport(String host, int port, int loginTimeout) {
-    return new TSocket(host, port, loginTimeout);
+  public static TTransport getSocketTransport(String host, int port, int loginTimeout) throws TTransportException {
+    return new TSocket(new TConfiguration(), host, port, loginTimeout);
   }
 
   public static TTransport getSSLSocket(String host, int port, int loginTimeout)
