@@ -156,7 +156,7 @@ function createCertificates() {
 
 function setPermissions() {
   #set permissions on key and trust store
-  MAPR_UG="$CURRENT_USER:$CURRENT_USER"
+  MAPR_UG=$(id -g -n)
 
   chown $MAPR_UG ${INSTALL_DIR}/*
   chmod 600 ${INSTALL_DIR}/ssl_keystore*
