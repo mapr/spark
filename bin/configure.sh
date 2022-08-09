@@ -316,9 +316,7 @@ EOF
 			cp $SPARK_HOME/conf/hive-site.xml.security.template $SPARK_HOME/conf/hive-site.xml
 		else
 			if ! grep -q \>hive.server2.thrift.sasl.qop\< "$SPARK_HOME/conf/hive-site.xml"; then
-				CONF="</configuration>"
-				PROPERTIES="<property>\n<name>hive.server2.thrift.sasl.qop</name>\n<value>auth-conf</value>\n</property>\n</configuration>"
-				sed -i "s~$CONF~$PROPERTIES~g" $SPARK_HOME/conf/hive-site.xml
+			  java -cp $SPARK_HOME'/jars/*' org.apache.spark.editor.HiveSiteEditor create hive.server2.thrift.sasl.qop=auth-conf
 			fi
 		fi
 
@@ -354,9 +352,7 @@ function configureOnHive() {
 		fi
 	fi
 	if [ -f $SPARK_HOME/conf/hive-site.xml ] ; then
-		TEZ_PROP_VALUE="<value>tez</value>"
-		MR_PROP_VALUE="<value>mr</value>"
-		sed -i "s~$TEZ_PROP_VALUE~$MR_PROP_VALUE~g" $SPARK_HOME/conf/hive-site.xml
+		java -cp $SPARK_HOME'/jars/*' org.apache.spark.editor.HiveSiteEditor replace hive.security.authorization.manager=org.apache.hadoop.hive.ql.security.authorization.plugin.fallback.FallbackHiveAuthorizerFactory hive.execution.engine=mr
 	fi
 }
 
