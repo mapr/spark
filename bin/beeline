@@ -28,7 +28,7 @@ if [ -z "${SPARK_HOME}" ]; then
   source "$(dirname "$0")"/find-spark-home
 fi
 
-export SPARK_JAVA_OPTS="$SPARK_JAVA_OPTS -Djava.util.logging.config.file=${SPARK_HOME}/conf/log4j.properties"
+export SPARK_JAVA_OPTS="$SPARK_JAVA_OPTS -Djava.util.logging.config.file=${SPARK_HOME}/conf/log4j2.properties"
 
 . "${SPARK_HOME}"/bin/load-spark-env.sh
 #Bug MAPR-22940
