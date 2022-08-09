@@ -88,7 +88,7 @@ if [ -f $SPARK_HOME/etc/.just_updated ] ; then
 	JUST_UPDATED=true
 fi
 
-declare -a SPARK_CONF_FILES=("$SPARK_CONF/spark-defaults.conf" "$SPARK_CONF/spark-env.sh" "$SPARK_CONF/hive-site.xml" "$SPARK_CONF/log4j.properties")
+declare -a SPARK_CONF_FILES=("$SPARK_CONF/spark-defaults.conf" "$SPARK_CONF/spark-env.sh" "$SPARK_CONF/hive-site.xml" "$SPARK_CONF/log4j2.properties")
 
 # Spark ports
 sparkHSUIPort=18080
@@ -164,7 +164,7 @@ chmod  a+rwxt "$SPARK_HOME"/tmp
 #
 # Improved default logging level (WARN instead of INFO)
 #
-sed 's/rootCategory=INFO/rootCategory=WARN/' "$SPARK_HOME/conf/log4j.properties.template" > "$SPARK_HOME/conf/log4j.properties"
+sed 's/rootCategory=INFO/rootCategory=WARN/' "$SPARK_HOME/conf/log4j2.properties.template" > "$SPARK_HOME/conf/log4j2.properties"
 
 #
 # Add MapR customization to spark
@@ -511,8 +511,8 @@ function stopServicesForRestartByWarden() {
 	if [ -f $SPARK_HOME/conf/hive-site.xml ] && [ -f $SPARK_HOME/conf/hive-site.xml.old ] ; then
 		spark_hive_site_diff=`diff ${SPARK_HOME}/conf/hive-site.xml ${SPARK_HOME}/conf/hive-site.xml.old; echo $?`
 	fi
-	if [ -f $SPARK_HOME/conf/log4j.properties ] && [ -f $SPARK_HOME/conf/log4j.properties.old ] ; then
-		spark_log4j_diff=`diff ${SPARK_HOME}/conf/log4j.properties ${SPARK_HOME}/conf/log4j.properties.old; echo $?`
+	if [ -f $SPARK_HOME/conf/log4j2.properties ] && [ -f $SPARK_HOME/conf/log4j2.properties.old ] ; then
+		spark_log4j_diff=`diff ${SPARK_HOME}/conf/log4j2.properties ${SPARK_HOME}/conf/log4j2.properties.old; echo $?`
 	fi
 	if [ ! "$spark_defaults_diff" = "0" ] || [ ! "$spark_env_sh_diff" = "0" ] || [ ! "$spark_hive_site_diff" = "0" ] || [ ! "$spark_log4j_diff" = "0" ]; then
 		stopService master master

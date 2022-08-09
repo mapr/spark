@@ -60,10 +60,45 @@ logger.RetryingHMSHandler.name = org.apache.hadoop.hive.metastore.RetryingHMSHan
 logger.RetryingHMSHandler.level = fatal
 logger.FunctionRegistry.name = org.apache.hadoop.hive.ql.exec.FunctionRegistry
 logger.FunctionRegistry.level = error
+logger.HiveConf.name = org.apache.hadoop.hive.conf.HiveConf
+logger.HiveConf.level = error
+
+# SPARK-327: Settings to suppress the unnecessary warning message from MultiMechsAuthenticationHandler
+logger.MultiMechsAuthenticationHandler.name = org.apache.hadoop.security.authentication.server.MultiMechsAuthenticationHandler
+logger.MultiMechsAuthenticationHandler.level = error
+logger.KerberosAuthHandler.name = org.apache.hadoop.security.authentication.server.KerberosAuthHandler
+logger.KerberosAuthHandler.level = error
+
+# SPARK-575: Settings to suppress the unnecessary warning message from AuthenticationFilter
+logger.AuthenticationFilter.name = org.apache.hadoop.security.authentication.server.AuthenticationFilter
+logger.AuthenticationFilter.level = error
+
+logger.NativeCodeLoader.name = org.apache.hadoop.util.NativeCodeLoader
+logger.NativeCodeLoader.level = error
+logger.YarnClient.name = org.apache.spark.deploy.yarn.Client
+logger.YarnClient.level = error
+logger.HiveUtils.name = org.apache.spark.sql.hive.HiveUtils
+logger.HiveUtils.level = error
+logger.HiveMetastore.name = org.apache.hadoop.hive.metastore.HiveMetastore
+logger.HiveMetastore.level = error
+logger.ObjectStore.name = org.apache.hadoop.hive.metastore.ObjectStore
+logger.ObjectStore.level = error
+logger.SQLCompleter.name = org.apache.hive.beeline.SQLCompleter
+logger.SQLCompleter.level = error
+
+# SPARK-945: Setting to suppress exception when non-cluster admin can not read ssl-server config
+logger.Configuration.name = org.apache.hadoop.conf.Configuration
+logger.Configuration.level = fatal
+
+# Hide Spark netty rpc error when driver is finished
+logger.Dispatcher.name = org.apache.spark.rpc.netty.Dispatcher
+logger.Dispatcher.level = fatal
 
 # For deploying Spark ThriftServer
 # SPARK-34128: Suppress undesirable TTransportException warnings involved in THRIFT-4805
 appender.console.filter.1.type = RegexFilter
 appender.console.filter.1.regex = .*Thrift error occurred during processing of message.*
+# Hide fips specific properties initialization
+appender.console.filter.1.regex = .*org.bouncycastle.jsse.provider.PropertyUtils.*
 appender.console.filter.1.onMatch = deny
 appender.console.filter.1.onMismatch = neutral
