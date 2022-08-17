@@ -315,7 +315,7 @@ class SparkSession(SparkConversionMixin):
         _monkey_patch_RDD(self)
 
         ### Applying MapR patch
-        pyspark.sql.maprpatch.mapr_session_patch(self, self._wrapped, gw = self._sc._gateway)
+        pyspark.sql.maprpatch.mapr_session_patch(self, gw = self._sc._gateway)
 
         install_exception_handler()
         # If we had an instantiated SparkSession attached with a SparkContext
