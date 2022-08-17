@@ -1,7 +1,7 @@
 from py4j.java_gateway import java_import, JavaObject
 from pyspark.sql.dataframe import DataFrame
 
-def mapr_session_patch(original_session, wrapped, gw, default_sample_size=1000.0, default_id_field ="_id", buffer_writes=True):
+def mapr_session_patch(original_session, gw, default_sample_size=1000.0, default_id_field ="_id", buffer_writes=True):
 
     vars = {'buffer_writes': buffer_writes, 'indexPath': None, 'options': {}}
 
@@ -92,7 +92,7 @@ def mapr_session_patch(original_session, wrapped, gw, default_sample_size=1000.0
 
         >>> spark.saveToMapRDB(df, "/test-table")
         """
-        DataFrame(mapr_j_session.saveToMapRDB(dataframe._jdf, table_name, id_field_path, create_table, bulk_insert), wrapped)
+        DataFrame(mapr_j_session.saveToMapRDB(dataframe._jdf, table_name, id_field_path, create_table, bulk_insert), original_session)
 
     original_session.saveToMapRDB = saveToMapRDB
 
@@ -110,6 +110,6 @@ def mapr_session_patch(original_session, wrapped, gw, default_sample_size=1000.0
 
         >>> spark.insertToMapRDB(df, "/test-table")
         """
-        DataFrame(mapr_j_session.insertToMapRDB(dataframe._jdf, table_name, id_field_path, create_table, bulk_insert), wrapped)
+        DataFrame(mapr_j_session.insertToMapRDB(dataframe._jdf, table_name, id_field_path, create_table, bulk_insert), original_session)
 
     original_session.insertToMapRDB = insertToMapRDB
