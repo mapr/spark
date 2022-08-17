@@ -83,6 +83,7 @@
     <module>common/unsafe</module>
     <module>common/tags</module>
     <module>common/classpath-filter</module>
+    <module>common/hive-site-editor</module>
     <module>core</module>
     <module>graphx</module>
     <module>mllib</module>
