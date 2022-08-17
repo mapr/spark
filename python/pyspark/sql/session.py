@@ -593,6 +593,10 @@ class SparkSession(SparkConversionMixin):
             )
         self._jsparkSession = jsparkSession
         _monkey_patch_RDD(self)
+
+        ### Applying MapR patch
+        pyspark.sql.maprpatch.mapr_session_patch(self, gw = self._sc._gateway)
+
         install_exception_handler()
         # If we had an instantiated SparkSession attached with a SparkContext
         # which is stopped now, we need to renew the instantiated SparkSession.
