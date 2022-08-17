@@ -77,7 +77,6 @@ pipeline {
                   -e BUILD_NUMBER=${ID}.${BUILD_NUMBER} \
                   -e MAPR_RELEASES_REPO=${MAPR_RELEASES_REPO} \
                   -e MAPR_SNAPSHOTS_REPO=${MAPR_SNAPSHOTS_REPO} \
-                  -v /root/.m2:/root/.m2:rw \
                   -v /root/yum-proxy.conf:/etc/yum.conf:ro \
                   -v /etc/hosts:/etc/hosts:ro \
                   -v /root/apt-proxy.conf:/etc/apt/apt.conf.d/proxy.conf:ro \
@@ -141,7 +140,6 @@ pipeline {
                   -e MAPR_SNAPSHOTS_REPO=${MAPR_SNAPSHOTS_REPO} \
                   -v /root/yum-proxy.conf:/etc/yum.conf:ro \
                   -v /etc/hosts:/etc/hosts:ro \
-                  -v /root/.m2:/root/.m2:rw \
                   -v /root/apt-proxy.conf:/etc/apt/apt.conf.d/proxy.conf:ro \
                   -v /root/.gradle/gradle.properties:/root/.gradle/gradle.properties:ro \
                   -v /etc/profile.d/proxy.sh:/etc/profile.d/proxy.sh:ro \
@@ -205,7 +203,6 @@ pipeline {
                   -e MAPR_SNAPSHOTS_REPO=${MAPR_SNAPSHOTS_REPO} \
                   -v /root/yum-proxy.conf:/etc/yum.conf:ro \
                   -v /etc/hosts:/etc/hosts:ro \
-                  -v /root/.m2:/root/.m2:rw \
                   -v /root/apt-proxy.conf:/etc/apt/apt.conf.d/proxy.conf:ro \
                   -v /root/.gradle/gradle.properties:/root/.gradle/gradle.properties:ro \
                   -v /etc/profile.d/proxy.sh:/etc/profile.d/proxy.sh:ro \
