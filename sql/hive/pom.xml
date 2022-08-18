@@ -138,6 +138,10 @@
           <groupId>com.mapr.security</groupId>
           <artifactId>mapr-security-web</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.apache.hive.shaded.avatica</groupId>
+          <artifactId>mapr-shaded-avatica</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
