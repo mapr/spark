@@ -2153,6 +2153,10 @@
             <groupId>org.pentaho</groupId>
             <artifactId>pentaho-aggdesigner-algorithm</artifactId>
           </exclusion>
+          <exclusion>
+            <groupId>org.apache.hive.shaded.avatica</groupId>
+            <artifactId>mapr-shaded-avatica</artifactId>
+          </exclusion>
           <!-- End of Hive 2.3 exclusion -->
         </exclusions>
       </dependency>
