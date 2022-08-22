@@ -2054,6 +2054,10 @@
           </exclusion>
           <!-- pull this in when needed; the explicit definition culls the surplus-->
           <exclusion>
+            <groupId>org.apache.hbase</groupId>
+            <artifactId>*</artifactId>
+          </exclusion>
+          <exclusion>
             <groupId>${hive.group}</groupId>
             <artifactId>hive-metastore</artifactId>
           </exclusion>
