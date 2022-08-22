@@ -1,4 +1,5 @@
 /opt/mapr/hadoop/hadoop-2.7.0/share/hadoop/common/lib/avro-1.7.6.jar
 /opt/mapr/hadoop/hadoop-2.7.0/share/hadoop/mapreduce/lib/avro-1.7.6.jar
-/opt/mapr/lib/log4j2/log4j-slf4j-impl-2.12.1.jar
+/opt/mapr/lib/log4j2/log4j-slf4j-impl-2.17.1.jar
+/opt/mapr/lib/slf4j-reload4j-1.7.36.jar
 /opt/mapr/hadoop/hadoop-3.3.3/share/hadoop/common/sources/hadoop-common-3.3.3.0-eep-900-SNAPSHOT-sources.jar
