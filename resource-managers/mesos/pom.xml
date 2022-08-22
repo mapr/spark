@@ -81,6 +81,10 @@
       <scope>provided</scope>
       <exclusions>
         <exclusion>
+          <groupId>org.apache.hbase</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.apache.hive.shaded.avatica</groupId>
           <artifactId>mapr-shaded-avatica</artifactId>
         </exclusion>

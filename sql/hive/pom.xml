@@ -123,6 +123,10 @@
           <artifactId>mapr-log4j-slf4j-impl</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>org.apache.hbase</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>com.mapr.hadoop</groupId>
           <artifactId>maprfs</artifactId>
         </exclusion>
@@ -216,6 +220,10 @@
       <artifactId>hive-hbase-handler</artifactId>
       <version>${hive.version}</version>
       <exclusions>
+        <exclusion>
+          <groupId>org.apache.hbase</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
         <exclusion>
           <groupId>org.apache.tomcat</groupId>
           <artifactId>*</artifactId>
