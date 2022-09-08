@@ -104,6 +104,7 @@ isSparkMasterUIPortDef=false
 
 # secure ui ports
 sparkMasterSecureUIPort=8980
+sparkWorkerSecureUIPort=8981
 sparkHSSecureUIPort=18480
 
 # indicates whether cluster is up or not
@@ -299,6 +300,8 @@ EOF
 		changeWardenConfig "service.ui.port" "service.ui.port=$sparkMasterSecureUIPort" "master"
 		sed -i "/\# ssl/a spark.ssl.standalone.port $sparkMasterSecureUIPort" $SPARK_HOME/conf/spark-defaults.conf
 		sed -i "/\# ssl/a spark.ssl.standalone.keyStore $DEFAULT_SSL_KEYSTORE" $SPARK_HOME/conf/spark-defaults.conf
+	else
+	  sed -i "/\# ssl/a spark.ssl.standalone.port $sparkWorkerSecureUIPort" $SPARK_HOME/conf/spark-defaults.conf
 	fi
 	if [ -f $SPARK_HOME/warden/warden.spark-historyserver.conf ] ; then
 		changeWardenConfig "service.ui.port" "service.ui.port=$sparkHSSecureUIPort" "historyserver"
