@@ -52,6 +52,7 @@ if [ "$HBASE_INSTALLED" = true ]; then
 	HBASE_HOME="$MAPR_HOME"/hbase/hbase-"$HBASE_VERSION"
 fi
 
+HADOOP_VERSION=`cat $MAPR_HOME/hadoop/hadoopversion`
 SPARK_HOME="$MAPR_HOME"/spark/spark-"$SPARK_VERSION"
 SPARK_CONF="$SPARK_HOME"/conf
 SPARK_BIN="$SPARK_HOME"/bin
@@ -460,6 +461,16 @@ function registerPortHistoryServer() {
 	fi
 }
 
+function configureDepBlackList() {
+  dep_blacklist_path=$MAPR_HOME/spark/spark-$SPARK_VERSION/conf/dep-blacklist.txt
+  slf4j_reload4j=$(ls $MAPR_HOME/hadoop/hadoop-$HADOOP_VERSION/share/hadoop/common/lib/ | grep slf4j-reload4j)
+
+  echo $MAPR_HOME/hadoop/hadoop-$HADOOP_VERSION/share/hadoop/common/sources/hadoop-common-$HADOOP_VERSION.0-eep-900-SNAPSHOT-sources.jar >> $dep_blacklist_path
+  echo $MAPR_HOME/hadoop/hadoop-$HADOOP_VERSION/share/hadoop/common/lib/$slf4j_reload4j >> $dep_blacklist_path
+  echo $MAPR_HOME/lib/$slf4j_reload4j >> $dep_blacklist_path
+  echo $MAPR_HOME/lib/log4j2/$(ls /opt/mapr/lib/log4j2/ | grep log4j-slf4j-impl) >> $dep_blacklist_path
+}
+
 function registerServicePorts() {
 	registerPortMaster
 	registerPortThriftServer
@@ -619,6 +630,9 @@ if [ "$HBASE_INSTALLED" = true ]; then
 fi
 if [ ! "$isSecure" -eq 2 ] ; then
 	configureSecurity
+fi
+if [ ! -s $MAPR_HOME/spark/spark-$SPARK_VERSION/conf/dep-blacklist.txt ]; then
+configureDepBlackList
 fi
 createAppsSparkFolder
 change_permissions
