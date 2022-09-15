@@ -139,7 +139,7 @@ private[spark] class SecurityManager(
       val fs = FileSystem.get(hadoopConf)
 
       // If the manageSSLKeys.sh script is not present, copy it from local spark folder
-      if (! fs.exists(new Path(mfsManageSslKeysScriptRemote))) {
+      if (!fs.exists(new Path(mfsManageSslKeysScriptRemote))) {
         val mfsBaseDirPath = new Path(mfsBaseDir)
         if (!fs.exists(mfsBaseDirPath)) {
           fs.mkdirs(mfsBaseDirPath)
@@ -150,7 +150,9 @@ private[spark] class SecurityManager(
       val localBaseDir = s"$currentUserHomeDir/__spark-internal__/security_keys"
       val manageSslKeysScriptLocal = s"$localBaseDir/$certGeneratorName"
 
-      fs.copyToLocalFile(new Path(mfsManageSslKeysScriptRemote), new Path(manageSslKeysScriptLocal))
+      if (!fs.exists(new Path(manageSslKeysScriptLocal))) {
+        fs.copyToLocalFile(new Path(mfsManageSslKeysScriptRemote), new Path(manageSslKeysScriptLocal))
+      }
       val manageSslKeysLocalFile = new File(manageSslKeysScriptLocal)
 
       manageSslKeysLocalFile.setExecutable(true)
@@ -163,7 +165,7 @@ private[spark] class SecurityManager(
 
       while (s"pgrep -fl $certGeneratorName".lineStream_!.nonEmpty) {
         logInfo("manageSSLKeys.sh script is busy, waiting...")
-        Thread.sleep(500)
+        Thread.sleep(5000)
       }
       val res = s"$manageSslKeysScriptLocal $sslKeyStorePass" ! ProcessLogger(stdWriter println, stdWriter println)
       stdWriter.close()
