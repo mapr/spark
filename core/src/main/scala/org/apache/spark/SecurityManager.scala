@@ -24,11 +24,9 @@ import java.util.Base64
 
 import scala.sys.process._
 import scala.language.postfixOps
-
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
-
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.internal.Logging
 import org.apache.spark.internal.config._
@@ -36,6 +34,9 @@ import org.apache.spark.internal.config.UI._
 import org.apache.spark.launcher.SparkLauncher
 import org.apache.spark.network.sasl.SecretKeyHolder
 import org.apache.spark.util.Utils
+
+import scala.annotation.tailrec
+import scala.util.{Failure, Try}
 
 /**
  * Spark class responsible for security.
@@ -129,6 +130,22 @@ private[spark] class SecurityManager(
     s"$sparkBase/spark-$sparkVersion"
   }
 
+  @tailrec
+  private def genViaManageSSLScript(stdWriter: PrintWriter,
+                                    manageSslKeysScriptLocal: String,
+                                    sslKeyStorePass: String,
+                                    count: Int): Int = {
+    Try(s"$manageSslKeysScriptLocal $sslKeyStorePass" ! ProcessLogger(stdWriter println, stdWriter println)) match {
+      case Failure(_) =>
+        if (count == 0) -1 else {
+          logInfo("manageSSLKeys.sh script is busy, waiting...")
+          Thread.sleep(5000)
+          genViaManageSSLScript(stdWriter, manageSslKeysScriptLocal, sslKeyStorePass, count - 1)
+        }
+      case _ => 0
+    }
+  }
+
   def genSSLCertsIfNeededAndPushToMapRFS(): Unit = {
     if (isSSLCertGenerationNeededForWebUI(getSSLOptions("ui"))) {
       val username = UserGroupInformation.getCurrentUser.getShortUserName
@@ -150,9 +167,8 @@ private[spark] class SecurityManager(
       val localBaseDir = s"$currentUserHomeDir/__spark-internal__/security_keys"
       val manageSslKeysScriptLocal = s"$localBaseDir/$certGeneratorName"
 
-      if (!fs.exists(new Path(manageSslKeysScriptLocal))) {
-        fs.copyToLocalFile(new Path(mfsManageSslKeysScriptRemote), new Path(manageSslKeysScriptLocal))
-      }
+      fs.copyToLocalFile(new Path(mfsManageSslKeysScriptRemote), new Path(manageSslKeysScriptLocal))
+
       val manageSslKeysLocalFile = new File(manageSslKeysScriptLocal)
 
       manageSslKeysLocalFile.setExecutable(true)
@@ -163,11 +179,7 @@ private[spark] class SecurityManager(
       val stdStream = new OutputStreamWriter(new FileOutputStream(file), UTF_8)
       val stdWriter = new PrintWriter(stdStream)
 
-      while (s"pgrep -fl $certGeneratorName".lineStream_!.nonEmpty) {
-        logInfo("manageSSLKeys.sh script is busy, waiting...")
-        Thread.sleep(5000)
-      }
-      val res = s"$manageSslKeysScriptLocal $sslKeyStorePass" ! ProcessLogger(stdWriter println, stdWriter println)
+      val res = genViaManageSSLScript(stdWriter, manageSslKeysScriptLocal, sslKeyStorePass, 10)
       stdWriter.close()
 
       val certGeneratorLogMfsLocation = s"/apps/spark/$certGeneratorLog"
