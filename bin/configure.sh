@@ -628,7 +628,9 @@ fi
 if [ ! "$isSecure" -eq 2 ] ; then
 	configureSecurity
 fi
+if [ ! -s $MAPR_HOME/spark/spark-$SPARK_VERSION/conf/dep-blacklist.txt ]; then
 configureDepBlackList
+fi
 createAppsSparkFolder
 change_permissions
 mkBackupForOldConfigs
