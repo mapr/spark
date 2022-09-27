@@ -71,7 +71,7 @@ public class ThriftBinaryCLIService extends ThriftCLIService {
         sslVersionBlacklist.add(sslVersion);
       }
       if (!hiveConf.getBoolVar(ConfVars.HIVE_SERVER2_USE_SSL)) {
-        serverSocket = HiveAuthUtils.getServerSocket(hiveHost, portNum);
+        serverSocket = HiveAuthFactory.getServerSocket(hiveHost, portNum);
       } else {
         String keyStorePath = hiveConf.getVar(ConfVars.HIVE_SERVER2_SSL_KEYSTORE_PATH).trim();
         if (keyStorePath.isEmpty()) {
@@ -81,7 +81,7 @@ public class ThriftBinaryCLIService extends ThriftCLIService {
         String keyStorePassword = ShimLoader.getHadoopShims().getPassword(hiveConf,
             HiveConf.ConfVars.HIVE_SERVER2_SSL_KEYSTORE_PASSWORD.varname);
         String sslProtocolVersion = hiveConf.getVar(ConfVars.HIVE_SSL_PROTOCOL_VERSION);
-        serverSocket = HiveAuthUtils.getServerSSLSocket(hiveHost, portNum, keyStorePath,
+        serverSocket = HiveAuthFactory.getServerSSLSocket(hiveHost, portNum, keyStorePath,
             keyStorePassword, sslVersionBlacklist, sslProtocolVersion);
       }
 
@@ -91,11 +91,15 @@ public class ThriftBinaryCLIService extends ThriftCLIService {
 
       // Server args
       int maxMessageSize = hiveConf.getIntVar(HiveConf.ConfVars.HIVE_SERVER2_THRIFT_MAX_MESSAGE_SIZE);
-
-      TThreadPoolServer.Args sargs = new TThreadPoolServer.Args(serverSocket).processorFactory(processorFactory)
-              .transportFactory(transportFactory).protocolFactory(new TBinaryProtocol.Factory())
-              .inputProtocolFactory(new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize))
-              .executorService(executorService);
+      int requestTimeout = (int) hiveConf.getTimeVar(
+          HiveConf.ConfVars.HIVE_SERVER2_THRIFT_LOGIN_TIMEOUT, TimeUnit.SECONDS);
+      int beBackoffSlotLength = (int) hiveConf.getTimeVar(
+          HiveConf.ConfVars.HIVE_SERVER2_THRIFT_LOGIN_BEBACKOFF_SLOT_LENGTH, TimeUnit.MILLISECONDS);
+      TThreadPoolServer.Args sargs = new TThreadPoolServer.Args(serverSocket)
+          .processorFactory(processorFactory).transportFactory(transportFactory)
+          .protocolFactory(new TBinaryProtocol.Factory())
+          .inputProtocolFactory(new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize))
+          .executorService(executorService);
 
       // TCP Server
       server = new TThreadPoolServer(sargs);
