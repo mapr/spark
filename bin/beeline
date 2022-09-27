@@ -28,12 +28,22 @@ if [ -z "${SPARK_HOME}" ]; then
   source "$(dirname "$0")"/find-spark-home
 fi
 
+if [ -f /proc/sys/crypto/fips_enabled ]; then
+  FIPS_ENABLED=$(cat /proc/sys/crypto/fips_enabled)
+else
+  FIPS_ENABLED="0"
+fi
+
 export SPARK_JAVA_OPTS="$SPARK_JAVA_OPTS -Djava.util.logging.config.file=${SPARK_HOME}/conf/log4j2.properties"
 
 . "${SPARK_HOME}"/bin/load-spark-env.sh
 #Bug MAPR-22940
 if [ "$MAPR_SECURITY_STATUS" = "true" ]; then
-    export SPARK_JAVA_OPTS="$SPARK_JAVA_OPTS $MAPR_ECOSYSTEM_LOGIN_OPTS -Dmapr_sec_enabled=true -Djava.security.auth.login.config=/opt/mapr/conf/mapr.login.conf -Dzookeeper.saslprovider=com.mapr.security.maprsasl.MaprSaslProvider"
+  if [ "$FIPS_ENABLED" = "1" ]; then
+        export SPARK_JAVA_OPTS="$SPARK_JAVA_OPTS $MAPR_ECOSYSTEM_LOGIN_OPTS -Dmapr_sec_enabled=true -Djava.security.properties=/opt/mapr/conf/java.security.fips -Djava.security.auth.login.config=/opt/mapr/conf/mapr.login.conf -Dzookeeper.saslprovider=com.mapr.security.maprsasl.MaprSaslProvider"
+  else
+        export SPARK_JAVA_OPTS="$SPARK_JAVA_OPTS $MAPR_ECOSYSTEM_LOGIN_OPTS -Dmapr_sec_enabled=true -Djava.security.auth.login.config=/opt/mapr/conf/mapr.login.conf -Dzookeeper.saslprovider=com.mapr.security.maprsasl.MaprSaslProvider"
+  fi
 fi
 
 CLASS="org.apache.hive.beeline.BeeLine"
