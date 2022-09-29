@@ -26,7 +26,7 @@
   </parent>
   <groupId>org.apache.spark</groupId>
   <artifactId>spark-parent_2.12</artifactId>
-  <version>3.3.0.0-eep-SNAPSHOT</version>
+  <version>3.3.0.0-eep-900</version>
   <packaging>pom</packaging>
   <name>Spark Project Parent POM</name>
   <url>https://spark.apache.org/</url>
@@ -117,11 +117,11 @@
     <sbt.project.name>spark</sbt.project.name>
     <slf4j.version>1.7.36</slf4j.version>
     <log4j.version>2.17.2</log4j.version>
-    <hadoop.version>2.7.6.300-eep-820-SNAPSHOT</hadoop.version>
-    <maprfs.version>6.2.0-mapr-SNAPSHOT</maprfs.version>
+    <hadoop.version>2.7.6.200-eep-810</hadoop.version>
+    <maprfs.version>6.2.0.0-mapr</maprfs.version>
     <protobuf.version>3.11.1</protobuf.version>
     <yarn.version>${hadoop.version}</yarn.version>
-    <zookeeper.version>3.5.6.0-mapr-SNAPSHOT</zookeeper.version>
+    <zookeeper.version>3.5.6.0-mapr-2210</zookeeper.version>
     <curator.version>4.2.0</curator.version>
     <hive.group>org.apache.hive</hive.group>
     <hive.classifier>core</hive.classifier>
@@ -142,7 +142,7 @@
     <ivy.version>2.5.0</ivy.version>
     <oro.version>2.0.8</oro.version>
 
-    <maprfs.version>6.2.0.0-mapr-SNAPSHOT</maprfs.version>
+    <maprfs.version>6.2.0.0-mapr</maprfs.version>
     <ojai.version>3.1.1-mapr</ojai.version>
     <!--
     If you changes codahale.metrics.version, you also need to change
@@ -3503,7 +3503,7 @@
     <profile>
       <id>hadoop-3.3</id>
       <properties>
-        <hadoop.version>3.3.4.0-eep-900-SNAPSHOT</hadoop.version>
+        <hadoop.version>3.3.4.0-eep-900</hadoop.version>
         <curator.version>4.2.0</curator.version>
         <commons-io.version>2.8.0</commons-io.version>
         <!--
