@@ -296,10 +296,11 @@ spark.io.encryption.keySizeBits 128
 
 # END OF THE SECURITY CONFIGURATION BLOCK
 EOF
-    sed -i "/\# ssl/a spark.ssl.standalone.port $sparkMasterSecureUIPort" $SPARK_HOME/conf/spark-defaults.conf
 	if [ -f $SPARK_HOME/warden/warden.spark-master.conf ] ; then
 		changeWardenConfig "service.ui.port" "service.ui.port=$sparkMasterSecureUIPort" "master"
 		sed -i "/\# ssl/a spark.ssl.standalone.keyStore $DEFAULT_SSL_KEYSTORE" $SPARK_HOME/conf/spark-defaults.conf
+	else
+	  sed -i "/\# ssl/a spark.ssl.standalone.port 8981" $SPARK_HOME/conf/spark-defaults.conf
 	fi
 	if [ -f $SPARK_HOME/warden/warden.spark-historyserver.conf ] ; then
 		changeWardenConfig "service.ui.port" "service.ui.port=$sparkHSSecureUIPort" "historyserver"
