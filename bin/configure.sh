@@ -215,6 +215,10 @@ EOM
 	fi
 }
 
+function addSparkDefaultsSSL() {
+		sed -i "/\# ssl/a $1" $SPARK_HOME/conf/spark-defaults.conf
+}
+
 function changeWardenConfig() {
 	if [ -f $SPARK_HOME/warden/warden.spark-$3.conf ] ; then
 		sed -i "s~^$1.*~$2~" $SPARK_HOME/warden/warden.spark-$3.conf
@@ -299,20 +303,20 @@ spark.io.encryption.keySizeBits 128
 EOF
 	if [ -f $SPARK_HOME/warden/warden.spark-master.conf ] ; then
 		changeWardenConfig "service.ui.port" "service.ui.port=$sparkMasterSecureUIPort" "master"
-		sed -i "/\# ssl/a spark.ssl.standalone.port $sparkMasterSecureUIPort" $SPARK_HOME/conf/spark-defaults.conf
-		sed -i "/\# ssl/a spark.ssl.standalone.keyStore $DEFAULT_SSL_KEYSTORE" $SPARK_HOME/conf/spark-defaults.conf
+		addSparkDefaultsSSL "spark.ssl.standalone.port $sparkMasterSecureUIPort"
+		addSparkDefaultsSSL "spark.ssl.standalone.keyStore $DEFAULT_SSL_KEYSTORE"
 	else
-	  sed -i "/\# ssl/a spark.ssl.standalone.port $sparkWorkerSecureUIPort" $SPARK_HOME/conf/spark-defaults.conf
+	  addSparkDefaultsSSL "spark.ssl.standalone.port $sparkWorkerSecureUIPort"
 	fi
 	if [ -f $SPARK_HOME/warden/warden.spark-historyserver.conf ] ; then
 		changeWardenConfig "service.ui.port" "service.ui.port=$sparkHSSecureUIPort" "historyserver"
-		sed -i "/\# ssl/a spark.ssl.historyServer.port $sparkHSSecureUIPort" $SPARK_HOME/conf/spark-defaults.conf
-		sed -i "/\# ssl/a spark.ssl.historyServer.keyStore $DEFAULT_SSL_KEYSTORE" $SPARK_HOME/conf/spark-defaults.conf
+		addSparkDefaultsSSL "spark.ssl.historyServer.port $sparkHSSecureUIPort"
+		addSparkDefaultsSSL "spark.ssl.historyServer.keyStore $DEFAULT_SSL_KEYSTORE"
 		changeSparkDefaults "spark.yarn.historyServer.address" "spark.yarn.historyServer.address $(hostname --fqdn):$sparkHSSecureUIPort"
 	fi
 	if [ "$FIPS_ENABLED" = "1" ] ; then
-	  sed -i "/\# ssl/a spark.ssl.keyStoreType bcfks" $SPARK_HOME/conf/spark-defaults.conf
-	  sed -i "/\# ssl/a spark.ssl.trustStoreType bcfks" $SPARK_HOME/conf/spark-defaults.conf
+	  addSparkDefaultsSSL "spark.ssl.keyStoreType bcfks"
+	  addSparkDefaultsSSL "spark.ssl.trustStoreType bcfks"
 	  sed -i 's/java.util=ALL-UNNAMED/java.util=ALL-UNNAMED -Djava.security.properties=\/opt\/mapr\/conf\/java.security.fips/g' ${SPARK_HOME}/conf/spark-defaults.conf
 	fi
 	if ! (echo "$CLUSTER_INFO" | grep -q "kerberosEnable=true") ; then
