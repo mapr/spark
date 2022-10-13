@@ -9,7 +9,7 @@ CURRENT_USER=$(id -u -n)
 set -x
 
 MAPR_HOME=${MAPR_HOME:=/opt/mapr}
-INSTALL_DIR=/home/$CURRENT_USER/__spark-internal__/security_keys
+INSTALL_DIR=$HOME/__spark-internal__/security_keys
 MAPRFS_DIR=/apps/spark/__$CURRENT_USER-spark-internal__/security_keys
 BC_JAR="/opt/mapr/lib/bc-fips-1.0.2.1.jar"
 
@@ -104,7 +104,7 @@ function confirmNotThere() {
     if ! [[ $checkKeyResult =~ $errorSubstr ]]; then
       exit 0
     fi
-    rm -rf /home/$USER/__spark-internal__
+    rm -rf $HOME/__spark-internal__
     mkdir -p ${INSTALL_DIR}
   fi
 }
