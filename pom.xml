@@ -208,6 +208,7 @@
     <commons-crypto.version>1.1.0</commons-crypto.version>
     <commons-cli.version>1.5.0</commons-cli.version>
     <bouncycastle.version>1.60</bouncycastle.version>
+    <bc-fips.version>1.0.2.1</bc-fips.version>
     <tink.version>1.6.1</tink.version>
     <!--
     If you are changing Arrow version specification, please check
@@ -2808,38 +2809,6 @@
                 <rules>
                   <banDuplicatePomDependencyVersions/>
                 </rules>
-              </configuration>
-            </execution>
-            <execution>
-              <id>enforce-banned-dependencies</id>
-              <goals>
-                <goal>enforce</goal>
-              </goals>
-              <configuration>
-                <rules>
-                  <bannedDependencies>
-<!--                    <excludes>-->
-<!--                      <exclude>org.apache.hadoop:hadoop*:*:jar:compile</exclude>-->
-<!--                    </excludes>-->
-                  </bannedDependencies>
-                </rules>
-                <fail>true</fail>
-              </configuration>
-            </execution>
-            <execution>
-              <id>enforce-banned-dependencies</id>
-              <goals>
-                <goal>enforce</goal>
-              </goals>
-              <configuration>
-                <rules>
-                  <bannedDependencies>
-<!--                    <excludes>-->
-<!--                      <exclude>org.apache.hadoop:hadoop*:*:jar:compile</exclude>-->
-<!--                    </excludes>-->
-                  </bannedDependencies>
-                </rules>
-                <fail>true</fail>
               </configuration>
             </execution>
           </executions>
