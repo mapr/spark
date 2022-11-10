@@ -186,9 +186,30 @@
       <scope>provided</scope>
       <exclusions>
         <exclusion>
+          <groupId>com.mapr.hadoop</groupId>
+          <artifactId>maprfs</artifactId>
+        </exclusion>
+        <exclusion>
+          <artifactId>hadoop-common</artifactId>
+          <groupId>org.apache.hadoop</groupId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.hadoop</groupId>
+          <artifactId>hadoop-annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.hadoop</groupId>
+          <artifactId>hadoop-auth</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.hadoop</groupId>
+          <artifactId>hadoop-yarn-common</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.apache.hadoop</groupId>
           <artifactId>hadoop-yarn-api</artifactId>
-        </exclusion></exclusions>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 
