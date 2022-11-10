@@ -125,10 +125,6 @@
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>com.mapr.hadoop</groupId>
-          <artifactId>maprfs</artifactId>
-        </exclusion>
-        <exclusion>
           <artifactId>hadoop-common</artifactId>
           <groupId>org.apache.hadoop</groupId>
         </exclusion>
@@ -140,10 +136,6 @@
       <version>${maprfs.version}</version>
       <scope>provided</scope>
       <exclusions>
-        <exclusion>
-          <groupId>com.mapr.hadoop</groupId>
-          <artifactId>maprfs</artifactId>
-        </exclusion>
         <exclusion>
           <artifactId>hadoop-common</artifactId>
           <groupId>org.apache.hadoop</groupId>
@@ -197,10 +189,6 @@
       <version>${maprfs.version}</version>
       <scope>provided</scope>
       <exclusions>
-        <exclusion>
-          <groupId>com.mapr.hadoop</groupId>
-          <artifactId>maprfs</artifactId>
-        </exclusion>
         <exclusion>
           <artifactId>hadoop-common</artifactId>
           <groupId>org.apache.hadoop</groupId>
