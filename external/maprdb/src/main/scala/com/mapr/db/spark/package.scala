@@ -11,6 +11,8 @@ import com.mapr.db.spark.writers.{OJAIKey, OJAIValue}
 import com.mapr.org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark.SparkContext
 
+import scala.language.implicitConversions
+
 import org.apache.spark.rdd.RDD
 
 package object spark {
