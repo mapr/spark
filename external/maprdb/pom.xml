@@ -107,18 +107,6 @@
     </dependency>
 
     <dependency>
-      <groupId>com.mapr.hadoop</groupId>
-      <artifactId>maprfs</artifactId>
-      <version>${maprfs.version}</version>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.hadoop</groupId>
-          <artifactId>hadoop-common</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
       <groupId>com.mapr.db</groupId>
       <artifactId>maprdb</artifactId>
       <version>${maprfs.version}</version>
