@@ -142,7 +142,7 @@
     <ivy.version>2.5.0</ivy.version>
     <oro.version>2.0.8</oro.version>
 
-    <ojai.version>3.1.1-mapr</ojai.version>
+    <ojai.version>3.2.0</ojai.version>
     <!--
     If you changes codahale.metrics.version, you also need to change
     the link to metrics.dropwizard.io in docs/monitoring.md.
