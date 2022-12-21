@@ -95,6 +95,10 @@
           <groupId>com.mapr.hadoop</groupId>
           <artifactId>maprfs</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.ojai</groupId>
+          <artifactId>ojai</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
