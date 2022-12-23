@@ -469,7 +469,7 @@ function configureDepBlackList() {
   dep_blacklist_path=$MAPR_HOME/spark/spark-$SPARK_VERSION/conf/dep-blacklist.txt
   slf4j_reload4j=$(ls $MAPR_HOME/hadoop/hadoop-$HADOOP_VERSION/share/hadoop/common/lib/ | grep slf4j-reload4j)
 
-  echo $MAPR_HOME/hadoop/hadoop-$HADOOP_VERSION/share/hadoop/common/sources/hadoop-common-$HADOOP_VERSION.0-eep-900-SNAPSHOT-sources.jar >> $dep_blacklist_path
+  echo $MAPR_HOME/hadoop/hadoop-$HADOOP_VERSION/share/hadoop/common/sources/hadoop-common-$HADOOP_VERSION.*sources.jar >> $dep_blacklist_path
   echo $MAPR_HOME/hadoop/hadoop-$HADOOP_VERSION/share/hadoop/common/lib/$slf4j_reload4j >> $dep_blacklist_path
   echo $MAPR_HOME/lib/$slf4j_reload4j >> $dep_blacklist_path
   echo $MAPR_HOME/lib/log4j2/$(ls /opt/mapr/lib/log4j2/ | grep log4j-slf4j-impl) >> $dep_blacklist_path
@@ -636,7 +636,7 @@ if [ ! "$isSecure" -eq 2 ] ; then
 	configureSecurity
 fi
 if [ ! -s $MAPR_HOME/spark/spark-$SPARK_VERSION/conf/dep-blacklist.txt ]; then
-configureDepBlackList
+  configureDepBlackList
 fi
 createAppsSparkFolder
 change_permissions
