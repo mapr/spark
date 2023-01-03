@@ -265,6 +265,14 @@
           <groupId>com.mapr.security</groupId>
           <artifactId>mapr-security-web</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.antlr</groupId>
+          <artifactId>antlr-runtime</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.ojai</groupId>
+          <artifactId>ojai</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
