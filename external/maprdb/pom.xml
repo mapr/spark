@@ -150,11 +150,13 @@
       <groupId>org.ojai</groupId>
       <artifactId>ojai</artifactId>
       <version>${ojai.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.ojai</groupId>
       <artifactId>ojai-scala</artifactId>
       <version>${ojai.version}</version>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <groupId>com.fasterxml.jackson.module</groupId>
