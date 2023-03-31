@@ -467,12 +467,31 @@ function registerPortHistoryServer() {
 
 function configureDepBlackList() {
   dep_blacklist_path=$MAPR_HOME/spark/spark-$SPARK_VERSION/conf/dep-blacklist.txt
-  slf4j_reload4j=$(ls $MAPR_HOME/hadoop/hadoop-$HADOOP_VERSION/share/hadoop/common/lib/ | grep slf4j-reload4j)
 
-  echo $MAPR_HOME/hadoop/hadoop-$HADOOP_VERSION/share/hadoop/common/sources/hadoop-common-$HADOOP_VERSION.*sources.jar >> $dep_blacklist_path
-  echo $MAPR_HOME/hadoop/hadoop-$HADOOP_VERSION/share/hadoop/common/lib/$slf4j_reload4j >> $dep_blacklist_path
-  echo $MAPR_HOME/lib/$slf4j_reload4j >> $dep_blacklist_path
-  echo $MAPR_HOME/lib/log4j2/$(ls /opt/mapr/lib/log4j2/ | grep log4j-slf4j-impl) >> $dep_blacklist_path
+  slf4j_reload4j_name=$(ls $MAPR_HOME/hadoop/hadoop-$HADOOP_VERSION/share/hadoop/common/lib/ | grep slf4j-reload4j)
+  slf4j_reload4j_hadoop_path=$MAPR_HOME/hadoop/hadoop-$HADOOP_VERSION/share/hadoop/common/lib/$slf4j_reload4j_name
+  slf4j_reload4j_lib_path=$MAPR_HOME/lib/$slf4j_reload4j_name
+
+  hadoop_common_name=$(ls $MAPR_HOME/hadoop/hadoop-$HADOOP_VERSION/share/hadoop/common/sources/ | grep hadoop-common | grep -v test)
+  hadoop_common_path=$MAPR_HOME/hadoop/hadoop-$HADOOP_VERSION/share/hadoop/common/sources/$hadoop_common_name
+
+  log4j2_slf4j_impl_path=$MAPR_HOME/lib/log4j2/$(ls /opt/mapr/lib/log4j2/ | grep log4j-slf4j-impl)
+
+  if  ! grep -q $hadoop_common_path $dep_blacklist_path; then
+    echo $hadoop_common_path >> $dep_blacklist_path
+  fi
+
+  if  ! grep -q $slf4j_reload4j_hadoop_path $dep_blacklist_path; then
+    echo $slf4j_reload4j_hadoop_path >> $dep_blacklist_path
+  fi
+
+  if  ! grep -q $slf4j_reload4j_lib_path $dep_blacklist_path; then
+    echo $slf4j_reload4j_lib_path >> $dep_blacklist_path
+  fi
+
+  if  ! grep -q $log4j2_slf4j_impl_path $dep_blacklist_path; then
+    echo $log4j2_slf4j_impl_path >> $dep_blacklist_path
+  fi
 }
 
 function registerServicePorts() {
@@ -635,9 +654,7 @@ fi
 if [ ! "$isSecure" -eq 2 ] ; then
 	configureSecurity
 fi
-if [ ! -s $MAPR_HOME/spark/spark-$SPARK_VERSION/conf/dep-blacklist.txt ]; then
-  configureDepBlackList
-fi
+configureDepBlackList
 createAppsSparkFolder
 change_permissions
 mkBackupForOldConfigs
