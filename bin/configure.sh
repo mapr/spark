@@ -644,6 +644,8 @@ while [ ${#} -gt 0 ] ; do
   esac
 done
 
+mkBackupForOldConfigs
+
 registerServicePorts
 if [ "$HIVE_INSTALLED" = true ]; then
 	configureOnHive
@@ -657,7 +659,6 @@ fi
 configureDepBlackList
 createAppsSparkFolder
 change_permissions
-mkBackupForOldConfigs
 
 copyWardenConfFiles
 stopServicesForRestartByWarden
