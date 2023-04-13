@@ -79,6 +79,28 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+              <artifactId>exec-maven-plugin</artifactId>
+              <groupId>org.codehaus.mojo</groupId>
+              <executions>
+                <execution>
+                  <id>build-classpathfilter-go-binary</id>
+                  <phase>compile</phase>
+                  <goals>
+                    <goal>exec</goal>
+                  </goals>
+                  <configuration>
+                    <workingDirectory>src/main/go/classpathfilter</workingDirectory>
+                    <executable>go</executable>
+                    <arguments>
+                        <argument>build</argument>
+                        <argument>-o</argument>
+                        <argument>${project.build.directory}/bin/classpathfilter</argument>
+                    </arguments>
+                  </configuration>
+                </execution>
+              </executions>
+            </plugin>
         </plugins>
     </build>
 </project>

@@ -229,17 +229,17 @@ function changeWardenConfig() {
 # Change permission
 #
 
-function change_permissions() {
-    if [ -f $DAEMON_CONF ]; then
-        if [ ! -z "$MAPR_USER" ]; then
-            chown -R ${MAPR_USER} ${SPARK_HOME}
+function changePermissions() {
+    if [ -f "$DAEMON_CONF" ]; then
+        if [ -n "$MAPR_USER" ] && [ -n "$MAPR_GROUP" ]; then
+            chown -R "${MAPR_USER}:${MAPR_GROUP}" "$SPARK_HOME"
+        elif [ -n "$MAPR_USER" ]; then
+            chown -R "$MAPR_USER" "$SPARK_HOME"
+        elif [ -n "$MAPR_GROUP" ]; then
+            chgrp -R "$MAPR_GROUP" "$SPARK_HOME"
         fi
-
-	    if [ ! -z "$MAPR_GROUP" ]; then
-            chgrp -R ${MAPR_GROUP} ${SPARK_HOME}
-        fi
-        chmod -f u+x $SPARK_HOME/bin/*
     fi
+    chmod -f u+x "$SPARK_HOME"/bin/*
 }
 
 #
@@ -345,8 +345,10 @@ function createAppsSparkFolder() {
       export MAPR_TICKETFILE_LOCATION="${MAPR_HOME}/conf/mapruserticket"
     fi
   fi
-	hadoop fs -mkdir -p /apps/spark > /dev/null 2>&1
-	hadoop fs -chmod 777 /apps/spark > /dev/null 2>&1
+  if ! hadoop fs -test -d /apps/spark >/dev/null 2>&1; then
+    hadoop fs -mkdir -p /apps/spark >/dev/null 2>&1
+    hadoop fs -chmod 777 /apps/spark >/dev/null 2>&1
+  fi
 }
 
 #
@@ -463,35 +465,6 @@ function registerPortHistoryServer() {
 			changeWardenConfig "service.ui.port" "service.ui.port=$sparkHSUIPort" "historyserver"
 		fi
 	fi
-}
-
-function configureDepBlackList() {
-  dep_blacklist_path=$MAPR_HOME/spark/spark-$SPARK_VERSION/conf/dep-blacklist.txt
-
-  slf4j_reload4j_name=$(ls $MAPR_HOME/hadoop/hadoop-$HADOOP_VERSION/share/hadoop/common/lib/ | grep slf4j-reload4j)
-  slf4j_reload4j_hadoop_path=$MAPR_HOME/hadoop/hadoop-$HADOOP_VERSION/share/hadoop/common/lib/$slf4j_reload4j_name
-  slf4j_reload4j_lib_path=$MAPR_HOME/lib/$slf4j_reload4j_name
-
-  hadoop_common_name=$(ls $MAPR_HOME/hadoop/hadoop-$HADOOP_VERSION/share/hadoop/common/sources/ | grep hadoop-common | grep -v test)
-  hadoop_common_path=$MAPR_HOME/hadoop/hadoop-$HADOOP_VERSION/share/hadoop/common/sources/$hadoop_common_name
-
-  log4j2_slf4j_impl_path=$MAPR_HOME/lib/log4j2/$(ls /opt/mapr/lib/log4j2/ | grep log4j-slf4j-impl)
-
-  if  ! grep -q $hadoop_common_path $dep_blacklist_path; then
-    echo $hadoop_common_path >> $dep_blacklist_path
-  fi
-
-  if  ! grep -q $slf4j_reload4j_hadoop_path $dep_blacklist_path; then
-    echo $slf4j_reload4j_hadoop_path >> $dep_blacklist_path
-  fi
-
-  if  ! grep -q $slf4j_reload4j_lib_path $dep_blacklist_path; then
-    echo $slf4j_reload4j_lib_path >> $dep_blacklist_path
-  fi
-
-  if  ! grep -q $log4j2_slf4j_impl_path $dep_blacklist_path; then
-    echo $log4j2_slf4j_impl_path >> $dep_blacklist_path
-  fi
 }
 
 function registerServicePorts() {
@@ -656,9 +629,8 @@ fi
 if [ ! "$isSecure" -eq 2 ] ; then
 	configureSecurity
 fi
-configureDepBlackList
 createAppsSparkFolder
-change_permissions
+changePermissions
 
 copyWardenConfFiles
 stopServicesForRestartByWarden

@@ -1,9 +1,10 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 if [ ! "$(command -v java)" ]; then
   echo "JAVA_HOME is not set" >&2
   exit 1
 fi
 
-SPARK_HOME=$(readlink -f "/usr/local/spark")
-java -cp $SPARK_HOME'/jars/*' org.apache.spark.classpath.ClasspathFilter $(mapr classpath) $SPARK_HOME'/conf/dep-blacklist.txt'
+SPARK_HOME=${SPARK_HOME:-"$(readlink -f /usr/local/spark)"}
+mapr_classpath="$(mapr classpath)"
+exec "${SPARK_HOME}/bin/classpathfilter" -b "${SPARK_HOME}/conf/dep-blacklist.txt" "$mapr_classpath"

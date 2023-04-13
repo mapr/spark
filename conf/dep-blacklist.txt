@@ -1,0 +1,3 @@
+/opt/mapr/lib/log4j2/log4j-slf4j-impl-*.jar
+/opt/mapr/lib/slf4j-reload4j-*.jar
+/opt/mapr/hadoop/hadoop-*/share/hadoop/common/lib/slf4j-reload4j-*.jar
