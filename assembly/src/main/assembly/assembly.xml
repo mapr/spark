@@ -57,6 +57,15 @@
     </fileSet>
     <fileSet>
       <directory>
+        ${project.parent.basedir}/common/classpath-filter/target/bin/
+      </directory>
+      <outputDirectory>bin/</outputDirectory>
+      <includes>
+        <include>classpathfilter</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>
         ${project.parent.basedir}/assembly/target/${spark.jar.dir}
       </directory>
       <outputDirectory></outputDirectory>

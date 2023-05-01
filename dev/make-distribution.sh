@@ -273,6 +273,7 @@ mkdir "$DISTDIR/conf"
 cp "$SPARK_HOME"/conf/* "$DISTDIR/conf"
 cp "$SPARK_HOME/README.md" "$DISTDIR"
 cp -r "$SPARK_HOME/bin" "$DISTDIR"
+cp "${SPARK_HOME}/common/classpath-filter/target/bin/classpathfilter" "$DISTDIR/bin"
 cp -r "$SPARK_HOME/python" "$DISTDIR"
 
 # Remove the python distribution from dist/ if we built it
