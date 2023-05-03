@@ -17,23 +17,19 @@
 
 package org.apache.spark
 
-import java.io.File
-import java.security.NoSuchAlgorithmException
-import javax.net.ssl.SSLContext
-
-import scala.util.Try
-
 import com.mapr.web.security.SslConfig.SslConfigScope
 import com.mapr.web.security.WebSecurityManager
-import javax.net.ssl.SSLContext
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.spark.internal.Logging
+import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider
 import org.eclipse.jetty.util.ssl.SslContextFactory
 
-import org.eclipse.jetty.util.ssl.SslContextFactory
-
-import org.apache.spark.internal.Logging
+import java.io.File
+import java.security.{NoSuchAlgorithmException, Security}
+import javax.net.ssl.SSLContext
+import scala.util.Try
 
 /**
  * SSLOptions class is a common container for SSL configuration options. It offers methods to
@@ -79,6 +75,11 @@ private[spark] case class SSLOptions(
     if (enabled) {
       val sslContextFactory = new SslContextFactory.Server()
 
+      if (Security.getProviders.exists(_.getName.toLowerCase.contains("fips"))) {
+        Security.addProvider(new BouncyCastleFipsProvider)
+        Security.addProvider(new BouncyCastleJsseProvider)
+        sslContextFactory.setProvider(BouncyCastleJsseProvider.PROVIDER_NAME)
+      }
       keyStore.foreach(file => sslContextFactory.setKeyStorePath(file.getAbsolutePath))
       keyStorePassword.foreach(sslContextFactory.setKeyStorePassword)
       keyPassword.foreach(sslContextFactory.setKeyManagerPassword)
@@ -131,16 +132,31 @@ private[spark] case class SSLOptions(
 
     val providerAlgorithms = context.getServerSocketFactory.getSupportedCipherSuites.toSet
 
+    val secureAlgorithms = Set("TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+      "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+      "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+      "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+      "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+      "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+      "TLS_ECDHE_ECDSA_WITH_AES_256_CCM",
+      "TLS_ECDHE_ECDSA_WITH_AES_128_CCM",
+      "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
+      "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256")
+
     // Log which algorithms we are discarding
     (enabledAlgorithms &~ providerAlgorithms).foreach { cipher =>
       logDebug(s"Discarding unsupported cipher $cipher")
+    }
+
+    (providerAlgorithms &~ secureAlgorithms).foreach { cipher =>
+      logDebug(s"Discarding less secure cipher $cipher")
     }
 
     val supported = enabledAlgorithms & providerAlgorithms
     require(supported.nonEmpty || sys.env.contains("SPARK_TESTING"),
       "SSLContext does not support any of the enabled algorithms: " +
         enabledAlgorithms.mkString(","))
-    supported
+    supported & secureAlgorithms
   }
 
   /** Returns a string representation of this SSLOptions with all the passwords masked. */
@@ -193,9 +209,7 @@ private[spark] object SSLOptions extends Logging {
     val defaultSSLKeyStorePassword = "defaultsslpassword"
 
     val enabled = conf.getBoolean(s"$ns.enabled", defaultValue = defaults.exists(_.enabled))
-    if (!enabled) {
-      return new SSLOptions()
-    }
+
     val port = conf.getWithSubstitution(s"$ns.port").map(_.toInt)
     port.foreach { p =>
       require(p >= 0, "Port number must be a non-negative value.")
