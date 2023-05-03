@@ -17,11 +17,14 @@
 
 package org.apache.spark
 
-import java.io.File
+import java.io.{File, FileNotFoundException}
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files
 import java.util.Base64
 
+import scala.sys.process._
+
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 
@@ -32,19 +35,6 @@ import org.apache.spark.internal.config.UI._
 import org.apache.spark.launcher.SparkLauncher
 import org.apache.spark.network.sasl.SecretKeyHolder
 import org.apache.spark.util.Utils
-
-import scala.sys.process._
-import java.io.{File, FileNotFoundException}
-import java.nio.file.{Files, Paths}
-
-import com.mapr.fs.MapRFileSystem
-import org.apache.curator.framework.CuratorFramework
-import org.apache.curator.framework.api.CuratorWatcher
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileSystem, Path}
-
-import scala.collection.JavaConverters._
-import org.apache.zookeeper.WatchedEvent
 
 /**
  * Spark class responsible for security.
@@ -430,6 +420,7 @@ private[spark] class SecurityManager(
    * In other modes, assert that the auth secret is set in the configuration.
    */
   def initializeAuth(): Unit = {
+    import SparkMasterRegex._
 
     if (!sparkConf.get(NETWORK_AUTH_ENABLED)) {
       return

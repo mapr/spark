@@ -214,27 +214,28 @@ private[spark] abstract class YarnSchedulerBackend(
       System.setProperty("spark.ui.proxyBase", proxyBase)
     }
 
-    val hasFilter =
-      filterName != null && filterName.nonEmpty &&
-      filterParams != null && filterParams.nonEmpty
-    if (hasFilter) {
-      // SPARK-26255: Append user provided filters(spark.ui.filters) with yarn filter.
-      val allFilters = Seq(filterName) ++ conf.get(UI_FILTERS)
-      logInfo(s"Add WebUI Filter. $filterName, $filterParams, $proxyBase")
+      val hasFilter =
+        filterName != null && filterName.nonEmpty &&
+          filterParams != null && filterParams.nonEmpty
+      if (hasFilter) {
+        // SPARK-26255: Append user provided filters(spark.ui.filters) with yarn filter.
+        val allFilters = Seq(filterName) ++ conf.get(UI_FILTERS)
+        logInfo(s"Add WebUI Filter. $filterName, $filterParams, $proxyBase")
 
-      // For already installed handlers, prepend the filter.
-      scheduler.sc.ui.foreach { ui =>
-        // Lock the UI so that new handlers are not added while this is running. Set the updated
-        // filter config inside the lock so that we're sure all handlers will properly get it.
-        ui.synchronized {
-          filterParams.foreach { case (k, v) =>
-            conf.set(s"spark.$filterName.param.$k", v)
-          }
-          conf.set(UI_FILTERS, allFilters)
+        // For already installed handlers, prepend the filter.
+        scheduler.sc.ui.foreach { ui =>
+          // Lock the UI so that new handlers are not added while this is running. Set the updated
+          // filter config inside the lock so that we're sure all handlers will properly get it.
+          ui.synchronized {
+            filterParams.foreach { case (k, v) =>
+              conf.set(s"spark.$filterName.param.$k", v)
+            }
+            conf.set(UI_FILTERS, allFilters)
 
-          ui.getDelegatingHandlers.foreach { h =>
-            h.addFilter(filterName, filterName, filterParams)
-            h.prependFilterMapping(filterName, "/*", EnumSet.allOf(classOf[DispatcherType]))
+            ui.getDelegatingHandlers.foreach { h =>
+              h.addFilter(filterName, filterName, filterParams)
+              h.prependFilterMapping(filterName, "/*", EnumSet.allOf(classOf[DispatcherType]))
+            }
           }
         }
       }
