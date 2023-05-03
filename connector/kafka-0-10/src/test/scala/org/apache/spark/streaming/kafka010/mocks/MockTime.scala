@@ -50,7 +50,7 @@ private[kafka010] class MockTime(@volatile private var currentMs: Long) extends 
     scheduler.tick(ms, TimeUnit.MILLISECONDS)
   }
 
-  override def waitObject(obj: Any, condition: Supplier[lang.Boolean], timeoutMs: Long): Unit =
+  def waitObject(obj: Any, condition: Supplier[lang.Boolean], timeoutMs: Long): Unit =
     throw new UnsupportedOperationException
 
   override def toString(): String = s"MockTime($milliseconds)"
