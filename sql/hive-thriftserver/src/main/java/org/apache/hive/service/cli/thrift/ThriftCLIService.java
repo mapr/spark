@@ -256,7 +256,6 @@ public abstract class ThriftCLIService extends AbstractService implements TCLISe
     return resp;
   }
 
-  @Override
   public TSetClientInfoResp SetClientInfo(TSetClientInfoReq req) throws TException {
     // TODO: We don't do anything for now, just log this for debugging.
     //       We may be able to make use of this later, e.g. for workload management.
@@ -687,7 +686,6 @@ public abstract class ThriftCLIService extends AbstractService implements TCLISe
 
   protected abstract void initializeServer();
 
-  @Override
   public TGetQueryIdResp GetQueryId(TGetQueryIdReq req) throws TException {
     try {
       return new TGetQueryIdResp(cliService.getQueryId(req.getOperationHandle()));

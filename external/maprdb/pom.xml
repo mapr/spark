@@ -8,15 +8,13 @@
   <parent>
     <groupId>org.apache.spark</groupId>
     <artifactId>spark-parent_2.12</artifactId>
-    <version>2.4.5.0-mapr-SNAPSHOT</version>
+    <version>3.1.1.0-mapr-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
   <groupId>com.mapr.db</groupId>
   <artifactId>maprdb-spark_2.12</artifactId>
   <packaging>jar</packaging>
-
-
 
   <name>MapR-DB Spark Library</name>
   <url>http://www.mapr.com/</url>

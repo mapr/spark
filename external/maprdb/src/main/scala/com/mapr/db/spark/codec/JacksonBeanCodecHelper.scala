@@ -6,10 +6,9 @@ import java.io.IOException
 
 import com.fasterxml.jackson.core.{JsonGenerator, JsonParser, JsonProcessingException, Version}
 import com.fasterxml.jackson.core.util.VersionUtil
-import com.fasterxml.jackson.databind.{DeserializationContext, JsonDeserializer, JsonSerializer, ObjectMapper, SerializerProvider}
+import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
 import org.ojai.annotation.API
 import org.ojai.beans.jackson.JacksonHelper
 import org.ojai.types.{ODate, OInterval, OTime, OTimestamp}

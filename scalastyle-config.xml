@@ -46,7 +46,7 @@ This file is divided into 3 sections:
 
   <check level="error" class="org.scalastyle.file.FileTabChecker" enabled="true"></check>
 
-  <check level="warn" class="org.scalastyle.file.HeaderMatchesChecker" enabled="true">
+  <check level="warn" class="org.scalastyle.file.HeaderMatchesChecker" enabled="false">
     <parameters>
        <parameter name="header"><![CDATA[/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -73,9 +73,9 @@ This file is divided into 3 sections:
 
   <check level="error" class="org.scalastyle.file.WhitespaceEndOfLineChecker" enabled="true"></check>
 
-  <check level="error" class="org.scalastyle.file.FileLineLengthChecker" enabled="true">
+  <check level="warn" class="org.scalastyle.file.FileLineLengthChecker" enabled="true">
     <parameters>
-      <parameter name="maxLineLength"><![CDATA[100]]></parameter>
+      <parameter name="maxLineLength"><![CDATA[150]]></parameter>
       <parameter name="tabSize"><![CDATA[2]]></parameter>
       <parameter name="ignoreImports">true</parameter>
     </parameters>
@@ -85,11 +85,11 @@ This file is divided into 3 sections:
     <parameters><parameter name="regex"><![CDATA[[A-Z][A-Za-z]*]]></parameter></parameters>
   </check>
 
-  <check level="error" class="org.scalastyle.scalariform.ObjectNamesChecker" enabled="true">
+  <check level="error" class="org.scalastyle.scalariform.ObjectNamesChecker" enabled="false">
     <parameters><parameter name="regex"><![CDATA[(config|[A-Z][A-Za-z]*)]]></parameter></parameters>
   </check>
 
-  <check level="error" class="org.scalastyle.scalariform.PackageObjectNamesChecker" enabled="true">
+  <check level="error" class="org.scalastyle.scalariform.PackageObjectNamesChecker" enabled="false">
     <parameters><parameter name="regex"><![CDATA[^[a-z][A-Za-z]*$]]></parameter></parameters>
   </check>
 

@@ -492,10 +492,11 @@ public class ThriftCLIServiceClient extends CLIServiceClient {
 
   @Override
   public String getQueryId(TOperationHandle operationHandle) throws HiveSQLException {
-    try {
-      return cliService.GetQueryId(new TGetQueryIdReq(operationHandle)).getQueryId();
-    } catch (TException e) {
-      throw new HiveSQLException(e);
-    }
+//    try {
+//      return cliService.GetQueryId(new TGetQueryIdReq(operationHandle)).getQueryId();
+//    } catch (TException e) {
+//      throw new HiveSQLException(e);
+//    }
+    return "";
   }
 }

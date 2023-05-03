@@ -64,6 +64,14 @@ abstract class ConsumerStrategy[K, V] {
     KafkaConfigUpdater("source", kafkaParams.asScala.toMap)
       .setAuthenticationConfigIfNeeded()
       .build()
+
+  def serviceConsumer: Consumer[K, V] = {
+    val serviceConsumerParams = new ju.HashMap[String, Object](executorKafkaParams)
+    val group = executorKafkaParams.get(ConsumerConfig.GROUP_ID_CONFIG)
+    serviceConsumerParams.put(ConsumerConfig.GROUP_ID_CONFIG, group)
+
+    new KafkaConsumer[K, V](serviceConsumerParams)
+  }
 }
 
 /**
