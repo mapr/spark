@@ -38,13 +38,7 @@ import org.apache.spark.input.WholeTextFileRecordReader
 class HadoopFileWholeTextReader(file: PartitionedFile, conf: Configuration)
   extends Iterator[Text] with Closeable {
   private val _iterator = {
-    val filePathData = FileUtil.checkPathForSymlink(new Path(file.filePath), conf)
-    val fileSplit = new CombineFileSplit(
-      Array(file.toPath),
-      Array(file.start),
-      Array(filePathData.stat.getLen),
-      // TODO: Implement Locality
-      Array.empty[String])
+    val fileSplit = getFileSplit(file, conf)
     val attemptId = new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 0), 0)
     val hadoopAttemptContext = new TaskAttemptContextImpl(conf, attemptId)
     val reader = new WholeTextFileRecordReader(fileSplit, hadoopAttemptContext, 0)
