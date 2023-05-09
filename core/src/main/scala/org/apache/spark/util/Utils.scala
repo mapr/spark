@@ -696,7 +696,6 @@ private[spark] object Utils
       targetDir: File,
       filename: String,
       conf: SparkConf,
-      securityMgr: SecurityManager,
       hadoopConf: Configuration): File = {
     val targetFile = new File(targetDir, filename)
     val uri = new URI(url)

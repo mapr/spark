@@ -1807,7 +1807,8 @@ class SparkContext(config: SparkConf) extends Logging {
       logInfo(s"Added file $path at $key with timestamp $timestamp")
       // Fetch the file locally so that closures which are run on the driver can still use the
       // SparkFiles API to access files.
-      Utils.fetchFile(uri.toString, root, conf, hadoopConfiguration, timestamp, useCache = false)
+      Utils.fetchFile(uri.toString, new File(SparkFiles.getRootDirectory()), conf,
+        hadoopConfiguration, timestamp, useCache = false)
       postEnvironmentUpdate()
     } else if (
       isArchive &&

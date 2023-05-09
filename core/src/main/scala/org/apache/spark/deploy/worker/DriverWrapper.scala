@@ -63,6 +63,7 @@ object DriverWrapper extends Logging {
         mainMethod.invoke(null, extraArgs.toArray[String])
 
         rpcEnv.shutdown()
+        System.exit(0)
 
       case _ =>
         // scalastyle:off println
@@ -74,7 +75,6 @@ object DriverWrapper extends Logging {
 
   private def setupDependencies(loader: MutableURLClassLoader, userJar: String): Unit = {
     val sparkConf = new SparkConf()
-    val secMgr = new SecurityManager(sparkConf)
     val hadoopConf = SparkHadoopUtil.newConfiguration(sparkConf)
 
     val ivyProperties = DependencyUtils.getIvyProperties()
@@ -91,8 +91,7 @@ object DriverWrapper extends Logging {
         jarsProp
       }
     }
-    val localJars = DependencyUtils.resolveAndDownloadJars(jars, userJar, sparkConf, hadoopConf,
-      secMgr)
+    val localJars = DependencyUtils.resolveAndDownloadJars(jars, userJar, sparkConf, hadoopConf)
     DependencyUtils.addJarsToClassPath(localJars, loader)
   }
 }
