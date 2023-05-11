@@ -210,9 +210,12 @@ private[spark] abstract class YarnSchedulerBackend(
       filterName: String,
       filterParams: Map[String, String],
       proxyBase: String): Unit = {
-    if (proxyBase != null && proxyBase.nonEmpty) {
-      System.setProperty("spark.ui.proxyBase", proxyBase)
-    }
+    val amIpFilter = "org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter"
+
+    if (filterName != amIpFilter) {
+      if (proxyBase != null && proxyBase.nonEmpty) {
+        System.setProperty("spark.ui.proxyBase", proxyBase)
+      }
 
       val hasFilter =
         filterName != null && filterName.nonEmpty &&
