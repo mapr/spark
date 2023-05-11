@@ -18,7 +18,6 @@
 package org.apache.spark.sql.execution.datasources
 
 import java.io.Closeable
-import java.net.URI
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileUtil, Path}
@@ -63,9 +62,9 @@ class HadoopFileLinesReader(
   }
 
   def getFileSplit(file: PartitionedFile, conf: Configuration): FileSplit = {
-    val pathData = new PathData(file.filePath, conf)
+    val pathData = new PathData(file.filePath.toUri, conf)
     if (pathData.stat != null && pathData.stat.isSymlink) {
-      val symlinkPathData = FileUtil.checkPathForSymlink(new Path(file.filePath), conf)
+      val symlinkPathData = FileUtil.checkPathForSymlink(new Path(file.filePath.toUri), conf)
       new FileSplit(
         symlinkPathData.path,
         file.start,
@@ -75,7 +74,7 @@ class HadoopFileLinesReader(
     }
     else {
       new FileSplit(
-        new Path(new URI(file.filePath)),
+        file.filePath.toPath,
         file.start,
         file.length,
         Array.empty)
