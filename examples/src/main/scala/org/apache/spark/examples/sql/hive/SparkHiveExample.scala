@@ -48,13 +48,10 @@ object SparkHiveExample {
     // application is started.
 
     // $example on:spark_hive$
-    // warehouseLocation points to the default location for managed databases and tables
-    val warehouseLocation = new File("spark-warehouse").getAbsolutePath
 
     val spark = SparkSession
       .builder()
       .appName("Spark Hive Example")
-      .config("spark.sql.warehouse.dir", warehouseLocation)
       .enableHiveSupport()
       .getOrCreate()
 
@@ -62,7 +59,7 @@ object SparkHiveExample {
     import spark.sql
 
     sql("CREATE TABLE IF NOT EXISTS src (key INT, value STRING) USING hive")
-    sql("LOAD DATA LOCAL INPATH 'examples/src/main/resources/kv1.txt' INTO TABLE src")
+    sql(s"LOAD DATA LOCAL INPATH '${kv1File.getAbsolutePath}' INTO TABLE src")
 
     // Queries are expressed in HiveQL
     sql("SELECT * FROM src").show()
@@ -114,7 +111,7 @@ object SparkHiveExample {
 
     // Create a Hive managed Parquet table, with HQL syntax instead of the Spark SQL native syntax
     // `USING hive`
-    sql("CREATE TABLE hive_records(key int, value string) STORED AS PARQUET")
+    sql("CREATE TABLE IF NOT EXISTS hive_records(key int, value string) STORED AS PARQUET")
     // Save DataFrame to the Hive managed table
     val df = spark.table("src")
     df.write.mode(SaveMode.Overwrite).saveAsTable("hive_records")
@@ -130,22 +127,28 @@ object SparkHiveExample {
 
     // Prepare a Parquet data directory
     val dataDir = "/tmp/parquet_data"
-    spark.range(10).write.parquet(dataDir)
+    val filePath = new Path(dataDir)
+    val fs = filePath.getFileSystem(spark.sparkContext.hadoopConfiguration)
+    if (!fs.exists(filePath)) {
+      spark.range(10).write.parquet(dataDir)
+    }
     // Create a Hive external Parquet table
-    sql(s"CREATE EXTERNAL TABLE hive_bigints(id bigint) STORED AS PARQUET LOCATION '$dataDir'")
+    sql(s"CREATE EXTERNAL TABLE IF NOT EXISTS hive_ints(key int) STORED AS PARQUET LOCATION '$dataDir'")
     // The Hive external table should already have data
-    sql("SELECT * FROM hive_bigints").show()
+    sql("SELECT * FROM hive_ints").show()
     // +---+
-    // | id|
+    // |key|
     // +---+
     // |  0|
     // |  1|
     // |  2|
-    // ... Order may vary, as spark processes the partitions in parallel.
+    // ...
 
     // Turn on flag for Hive Dynamic Partitioning
     spark.sqlContext.setConf("hive.exec.dynamic.partition", "true")
     spark.sqlContext.setConf("hive.exec.dynamic.partition.mode", "nonstrict")
+    // Drop table if exists
+    sql("DROP TABLE IF EXISTS hive_part_tbl")
     // Create a Hive partitioned table using DataFrame API
     df.write.partitionBy("key").format("hive").saveAsTable("hive_part_tbl")
     // Partitioned column `key` will be moved to the end of the schema.
