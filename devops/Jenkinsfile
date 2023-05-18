@@ -88,7 +88,7 @@ pipeline {
                     sh """
                       rm -rf ${PROJECT}; git clone git@github.com:mapr/private-pkg.git ${PROJECT}; \
                       cd ${PROJECT}; \
-                      git checkout MEP-9.1.1 ; \
+                      git checkout MEP-9.1.2 ; \
                       apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 51716619E084DAB9 ;\
                       add-apt-repository 'deb [trusted=yes] https://cloud.r-project.org/bin/linux/ubuntu xenial-cran35/'
                       apt update ; \
@@ -149,7 +149,7 @@ pipeline {
                     sh """
                       rm -rf ${PROJECT}; git clone git@github.com:mapr/private-pkg.git ${PROJECT}; \
                       cd ${PROJECT}; \
-                      git checkout MEP-9.1.1 ; \
+                      git checkout MEP-9.1.2 ; \
                       sed -i 's/^mirrorlist/#mirrorlist/' /etc/yum.repos.d/CentOS-* ; \
                       sed -i 's/^#baseurl/baseurl/' /etc/yum.repos.d/CentOS-* ; \
                       sed -i 's/mirror.centos.org/vault.centos.org/' /etc/yum.repos.d/CentOS-* ; \
