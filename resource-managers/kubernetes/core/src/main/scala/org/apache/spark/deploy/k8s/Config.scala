@@ -866,4 +866,9 @@ private[spark] object Config extends Logging {
 
   val KUBERNETES_DNS_SUBDOMAIN_NAME_MAX_LENGTH = 253
   val KUBERNETES_DNS_LABEL_NAME_MAX_LENGTH = 63
+  val KUBERNETES_DNSNAME_MAX_LENGTH = 63
+
+  val KUBERNETES_DRIVER_ENV_KEY = "spark.kubernetes.driverEnv."
+
+  val KUBERNETES_CLUSTER_ENV_KEY = "spark.kubernetes.clusterEnv."
 }
