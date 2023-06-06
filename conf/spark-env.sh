@@ -174,11 +174,18 @@ export SPARK_WORKER_DIR=$SPARK_HOME/tmp
 
 # FIPS
 if [ "$FIPS_ENABLED" = "1" ]; then
-SPARK_WORKER_OPTS="$SPARK_WORKER_OPTS -Djava.security.properties=/opt/mapr/conf/java.security.fips"
-SPARK_HISTORY_OPTS="$SPARK_HISTORY_OPTS -Djava.security.properties=/opt/mapr/conf/java.security.fips"
-SPARK_MASTER_OPTS="$SPARK_MASTER_OPTS -Djava.security.properties=/opt/mapr/conf/java.security.fips"
-SPARK_SUBMIT_OPTS="$SPARK_SUBMIT_OPTS -Djava.security.properties=/opt/mapr/conf/java.security.fips"
+  SPARK_WORKER_OPTS="$SPARK_WORKER_OPTS -Djava.security.properties=/opt/mapr/conf/java.security.fips"
+  SPARK_HISTORY_OPTS="$SPARK_HISTORY_OPTS -Djava.security.properties=/opt/mapr/conf/java.security.fips"
+  SPARK_MASTER_OPTS="$SPARK_MASTER_OPTS -Djava.security.properties=/opt/mapr/conf/java.security.fips"
+  SPARK_SUBMIT_OPTS="$SPARK_SUBMIT_OPTS -Djava.security.properties=/opt/mapr/conf/java.security.fips"
 fi
+
+# Spark services and JDK 17 compatbility
+SPARK_WORKER_OPTS="$SPARK_WORKER_OPTS --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED"
+SPARK_HISTORY_OPTS="$SPARK_HISTORY_OPTS --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED"
+SPARK_MASTER_OPTS="$SPARK_MASTER_OPTS --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED"
+
+
 
 #UI
 export SPARK_SUBMIT_OPTS="$SPARK_SUBMIT_OPTS -Djava.library.path=$SPARK_MAPR_HOME/lib:$HADOOP_HOME/lib/native"
