@@ -89,8 +89,8 @@ pipeline {
                       rm -rf ${PROJECT}; git clone git@github.com:mapr/private-pkg.git ${PROJECT}; \
                       cd ${PROJECT}; \
                       git checkout MEP-9.1.1 ; \
-                      apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 ; \
-                      add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial-cran35/'
+                      apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 51716619E084DAB9 ;\
+                      add-apt-repository 'deb [trusted=yes] https://cloud.r-project.org/bin/linux/ubuntu xenial-cran35/' ;\
                       apt update ; \
                       apt -y install r-base ; \
                       make ${PROJECT} TIMESTAMP=${ID} ${MAKEFILE_ARGS}
