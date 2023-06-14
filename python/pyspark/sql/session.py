@@ -92,6 +92,8 @@ if TYPE_CHECKING:
     from pyspark.sql.connect.shell.progress import ProgressHandler
 
 
+import pyspark.sql.maprpatch
+
 __all__ = ["SparkSession"]
 
 
