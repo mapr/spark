@@ -80,6 +80,8 @@ if TYPE_CHECKING:
     from pyspark.sql.connect.client import SparkConnectClient
 
 
+import pyspark.sql.maprpatch
+
 __all__ = ["SparkSession"]
 
 
