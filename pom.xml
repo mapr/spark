@@ -232,6 +232,8 @@
     <leveldbjni.group>org.fusesource.leveldbjni</leveldbjni.group>
     <kubernetes-client.version>6.7.2</kubernetes-client.version>
 
+    <auth0-version>4.4.0</auth0-version>
+
     <test.java.home>${java.home}</test.java.home>
 
     <!-- Some UI tests require Chrome and Chrome driver installed so those tests are disabled by default. -->
