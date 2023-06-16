@@ -33,6 +33,15 @@ MAPR_CONF_DIR=${MAPR_CONF_DIR:-"$MAPR_HOME/conf"}
 SPARK_VERSION=`cat $MAPR_HOME/spark/sparkversion`
 LATEST_SPARK_TIMESTAMP=0
 
+#
+# Check if Spark is running in K8s cluster
+#
+RUNNING_IN_K8S=false
+if [ -f /var/run/secrets/kubernetes.io/serviceaccount/token ]; then
+    RUNNING_IN_K8S=true
+fi
+
+
 # Hive properties
 HIVE_INSTALLED=false
 if [ -f $MAPR_HOME/hive/hiveversion ]; then
@@ -279,9 +288,6 @@ spark.ssl.enabled true
 spark.ssl.fs.enabled true
 spark.ssl.protocol TLSv1.2
 
-# - PAM
-spark.ui.filters  org.apache.spark.ui.filters.MultiauthWebUiFilter, org.apache.spark.ui.filters.CustomHeadersFilter
-
 # - ACLS
 spark.acls.enable       false
 spark.admin.acls        mapr
@@ -301,6 +307,13 @@ spark.io.encryption.keySizeBits 128
 
 # END OF THE SECURITY CONFIGURATION BLOCK
 EOF
+
+  if [ "$RUNNING_IN_K8S" = false ] ; then
+    sed -i '/# ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK/{N; a\# - PAM\
+spark.ui.filters  org.apache.spark.ui.filters.MultiauthWebUiFilter, org.apache.spark.ui.filters.CustomHeadersFilter\n
+    }' "$SPARK_HOME"/conf/spark-defaults.conf
+  fi
+
 	if [ -f $SPARK_HOME/warden/warden.spark-master.conf ] ; then
 		changeWardenConfig "service.ui.port" "service.ui.port=$sparkMasterSecureUIPort" "master"
 		addSparkDefaultsSSL "spark.ssl.standalone.port $sparkMasterSecureUIPort"
