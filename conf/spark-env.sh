@@ -190,3 +190,4 @@ export SPARK_MASTER_IP=$(hostname --fqdn)
 #Set own spark orc jars to classpath before jars from spark../jars
 SPARK_FIRST_CLASSPATH="${SPARK_HOME}/jars/orc-mapreduce-1.7.4.jar:${SPARK_HOME}/jars/orc-shims-1.7.4.jar:${SPARK_HOME}/jars/orc-core-1.7.4.jar"
 
+export SPARK_RAPIDS_VERSION=$SPARK_VERSION
