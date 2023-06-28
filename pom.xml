@@ -84,6 +84,7 @@
     <module>common/tags</module>
     <module>common/classpath-filter</module>
     <module>common/hive-site-editor</module>
+    <module>common/nvidia-plugin</module>
     <module>core</module>
     <module>graphx</module>
     <module>mllib</module>
