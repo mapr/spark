@@ -37,7 +37,6 @@ import org.apache.hadoop.yarn.api.records._
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.exceptions.ApplicationAttemptNotFoundException
 import org.apache.hadoop.yarn.util.{ConverterUtils, Records}
-
 import org.apache.spark._
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.deploy.history.HistoryServer
@@ -700,8 +699,12 @@ private[spark] class ApplicationMaster(
         d.send(AddWebUIFilter(amFilter, params, proxyBase))
 
       case None =>
-        System.setProperty(UI_FILTERS.key, amFilter)
-        params.foreach { case (k, v) => System.setProperty(s"spark.$amFilter.param.$k", v) }
+        // MAPRYARN-397: EEP Yarn uses redirect instead of proxy by default to avoid SSLHandshake exception.
+        // So we do not need to use AmIpFilter which is using to work with proxy.
+        if (!yarnConf.getBoolean("yarn.web-proxy.redirect.sslhandshake", false)) {
+          System.setProperty(UI_FILTERS.key, amFilter)
+          params.foreach { case (k, v) => System.setProperty(s"spark.$amFilter.param.$k", v) }
+        }
     }
   }
 
