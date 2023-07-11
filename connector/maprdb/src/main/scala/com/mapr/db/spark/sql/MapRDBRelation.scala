@@ -97,6 +97,7 @@ private[spark] case class MapRDBRelation(
     }
 
     value match {
+      case bool: Boolean => getPredicate(true)
       case i: Int => getPredicate(i)
       case b: Byte => getPredicate(b)
       case sh: Short => getPredicate(sh)
