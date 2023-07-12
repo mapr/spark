@@ -80,6 +80,11 @@ initCfgEnv
 
 CLUSTER_INFO=`cat $MAPR_HOME/conf/mapr-clusters.conf`
 
+CUSTOM_HIVE_CONF_IS_ON=false
+if [ -f $SPARK_HOME/etc/.custom_hive_configuration_on ] ; then
+        CUSTOM_HIVE_CONF_IS_ON=true
+fi
+
 IS_FIRST_RUN=false
 if [ -f $SPARK_HOME/etc/.not_configured_yet ] ; then
 	IS_FIRST_RUN=true
@@ -356,7 +361,7 @@ function createAppsSparkFolder() {
 #
 
 function configureOnHive() {
-	if [ -f $HIVE_HOME/conf/hive-site.xml ]; then
+	if [ "$CUSTOM_HIVE_CONF_IS_ON" = false ] && [ -f $HIVE_HOME/conf/hive-site.xml ]; then
 		if [ ! "$isSecure" -eq 2 ] || [ "$IS_FIRST_RUN" = true ]; then
 			cp $HIVE_HOME/conf/hive-site.xml $SPARK_HOME/conf/hive-site.xml
 		fi
