@@ -851,6 +851,7 @@ class SparkContext(config: SparkConf) extends Logging {
   def setJobGroup(groupId: String,
       description: String, interruptOnCancel: Boolean = false): Unit = {
     setLocalProperty(SparkContext.SPARK_JOB_DESCRIPTION, description)
+    setJobDoAsUser()
     setLocalProperty(SparkContext.SPARK_JOB_GROUP_ID, groupId)
     // Note: Specifying interruptOnCancel in setJobGroup (rather than cancelJobGroup) avoids
     // changing several public APIs and allows Spark cancellations outside of the cancelJobGroup
@@ -862,6 +863,7 @@ class SparkContext(config: SparkConf) extends Logging {
   /** Clear the current thread's job group ID and its description. */
   def clearJobGroup(): Unit = {
     setLocalProperty(SparkContext.SPARK_JOB_DESCRIPTION, null)
+    setJobDoAsUser(null)
     setLocalProperty(SparkContext.SPARK_JOB_GROUP_ID, null)
     setLocalProperty(SparkContext.SPARK_JOB_INTERRUPT_ON_CANCEL, null)
   }
@@ -2407,6 +2409,7 @@ class SparkContext(config: SparkConf) extends Logging {
       func: (TaskContext, Iterator[T]) => U,
       partitions: Seq[Int],
       resultHandler: (Int, U) => Unit): Unit = {
+    setJobDoAsUser()
     if (stopped.get()) {
       throw new IllegalStateException("SparkContext has been shutdown")
     }
