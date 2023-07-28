@@ -66,10 +66,9 @@ private[hive] class SparkSQLDriver(val sparkSession: SparkSession = SparkSQLEnv.
       val substitutorCommand = SQLConf.withExistingConf(sparkSession.sessionState.conf) {
         new VariableSubstitution().substitute(command)
       }
-      val redactedCommand =
-        Utils.redact(sparkSession.sessionState.conf.stringRedactionPattern, substitutorCommand)
-      sparkSession.sparkContext.setJobDescription(redactedCommand)
-      val execution = sparkSession.sessionState.executePlan(sparkSession.sql(command).logicalPlan)
+      context.sparkContext.setJobDescription(substitutorCommand)
+      context.sparkContext.setJobDoAsUser()
+      val execution = context.sessionState.executePlan(context.sql(command).logicalPlan)
       // The SQL command has been executed above via `executePlan`, therefore we don't need to
       // wrap it again with a new execution ID when getting Hive result.
       execution.logical match {
