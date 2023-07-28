@@ -363,6 +363,14 @@ class HadoopRDD[K, V](
     new InterruptibleIterator[(K, V)](context, iter)
   }
 
+  def isMaprdbTable(): Boolean = {
+    val maprdbTableName = getJobConf().get("maprdb.table.name")
+    maprdbTableName != null && maprdbTableName != ""
+  }
+
+  override def compute(theSplit: Partition, context: TaskContext): InterruptibleIterator[(K, V)] =
+    doCompute(theSplit: Partition, context: TaskContext)
+
   /** Maps over a partition, providing the InputSplit that was used as the base of the partition. */
   @DeveloperApi
   def mapPartitionsWithInputSplit[U: ClassTag](
