@@ -88,6 +88,21 @@
     --><!-- #endif scala-2.13 -->
     <dependency>
       <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka-eventstreams</artifactId>
+      <version>${kafka.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.mapr.hadoop</groupId>
+          <artifactId>maprfs</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.ojai</groupId>
+          <artifactId>ojai</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
       <artifactId>kafka-clients</artifactId>
       <version>${kafka.version}</version>
       <exclusions>
