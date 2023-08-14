@@ -29,6 +29,8 @@
   <artifactId>spark-sql-kafka-0-10_2.12</artifactId>
   <properties>
     <sbt.project.name>sql-kafka-0-10</sbt.project.name>
+    <!-- note that this should be compatible with Kafka brokers version 0.10 and up -->
+    <kafka.version>3.3.2</kafka.version>
   </properties>
   <packaging>jar</packaging>
   <name>Kafka 0.10+ Source for Structured Streaming</name>
@@ -110,6 +112,26 @@
           <groupId>com.github.luben</groupId>
           <artifactId>zstd-jni</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.sun.jmx</groupId>
+          <artifactId>jmxri</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.jdmk</groupId>
+          <artifactId>jmxtools</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>net.sf.jopt-simple</groupId>
+          <artifactId>jopt-simple</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-simple</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.zookeeper</groupId>
+          <artifactId>zookeeper</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -138,6 +160,18 @@
         <exclusion>
           <groupId>com.fasterxml.jackson.core</groupId>
           <artifactId>jackson-annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.mapr.hadoop</groupId>
+          <artifactId>maprfs</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.mapr.streams</groupId>
+          <artifactId>mapr-streams</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.mapr.db</groupId>
+          <artifactId>maprdb</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
