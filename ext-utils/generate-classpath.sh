@@ -42,6 +42,10 @@ function generate_classpath()
       generate_hadoop_classpath
       ;;
 
+    hadoop3)
+      generate_hadoop3_classpath $component_version
+      ;;
+
     hive)
       generate_hive_classpath $component_version
       ;;
@@ -59,6 +63,13 @@ function generate_classpath()
 function generate_hadoop_classpath()
 {
   generated_classpath=`hadoop classpath`
+}
+
+function generate_hadoop3_classpath()
+{
+  component_name="hadoop"
+  component_version="$1"
+  generated_classpath="$INSTALL_DIR/$component_name/$component_name-$component_version/share/$component_name/mapreduce/*"
 }
 
 function generate_hive_classpath()
