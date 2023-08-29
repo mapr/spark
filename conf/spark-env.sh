@@ -114,6 +114,13 @@ export LD_LIBRARY_PATH="$MAPR_HADOOP_JNI_PATH:$LD_LIBRARY_PATH"
 # Load the classpath generator script
 source ${SPARK_HOME}/mapr-util/generate-classpath.sh
 
+# Hadoop3 compatible jars to include in classpath
+generate_compatible_classpath "spark" "${SPARK_VERSION}" "hadoop3"
+MAPR_HADOOP3_COMPATIBLE_JARS=${generated_classpath}
+if [ ! -z "$MAPR_HADOOP3_COMPATIBLE_JARS" ]; then
+  MAPR_SPARK_CLASSPATH="$MAPR_SPARK_CLASSPATH:$MAPR_HADOOP3_COMPATIBLE_JARS"
+fi
+
 # Calculate hive jars to include in classpath
 generate_compatible_classpath "spark" "${SPARK_VERSION}" "hive"
 MAPR_HIVE_CLASSPATH=${generated_classpath}
