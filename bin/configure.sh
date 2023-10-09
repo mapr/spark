@@ -491,6 +491,13 @@ function registerServicePorts() {
 	registerPortHistoryServer
 }
 
+function configureHiveWarehouseForNonHiveEnv() {
+  cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOM
+# Default location for Warehouse, if not using Hive
+EOM
+  changeSparkDefaults "spark.sql.warehouse.dir" "maprfs:///user/${USER}/spark-warehouse"
+}
+
 #
 # Add warden files
 #
@@ -638,6 +645,7 @@ done
 mkBackupForOldConfigs
 
 registerServicePorts
+configureHiveWarehouseForNonHiveEnv
 if [ "$HIVE_INSTALLED" = true ]; then
 	configureOnHive
 fi
