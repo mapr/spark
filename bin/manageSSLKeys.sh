@@ -11,7 +11,7 @@ set -x
 MAPR_HOME=${MAPR_HOME:=/opt/mapr}
 INSTALL_DIR=$HOME/__spark-internal__/security_keys
 MAPRFS_DIR=/apps/spark/__$CURRENT_USER-spark-internal__/security_keys
-BC_JAR="/opt/mapr/lib/bc-fips-1.0.2.1.jar"
+BC_JAR="/opt/mapr/lib/bc-fips-*.jar"
 
 sslKeyStore=${INSTALL_DIR}/ssl_keystore
 sslKeyStoreP12=${INSTALL_DIR}/ssl_keystore.p12
@@ -98,7 +98,7 @@ function confirmNotThere() {
 
 function confirmNotThere() {
   if [ -f ${sslKeyStore} ]; then
-    keystore_check_cmd='keytool --list -keystore $sslKeyStore -storepass $storePass'
+    keystore_check_cmd='keytool --list -keystore $sslKeyStore -storepass $storePass -storetype $storeFormat $FIPS_STORE_PARAMS'
     checkKeyResult=$(eval $keystore_check_cmd)
     errorSubstr="Keystore was tampered with, or password was incorrect"
     if ! [[ $checkKeyResult =~ $errorSubstr ]]; then
