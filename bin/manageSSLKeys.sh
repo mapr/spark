@@ -8,6 +8,8 @@ CURRENT_USER=$(id -u -n)
 
 set -x
 
+# Extract ${HOME} from /etc/passwd because it might not be initialized properly
+HOME="$(awk -F: '$1 == "'"${USER}"'" { print $6 }' /etc/passwd)"
 MAPR_HOME=${MAPR_HOME:=/opt/mapr}
 INSTALL_DIR=$HOME/__spark-internal__/security_keys
 MAPRFS_DIR=/apps/spark/__$CURRENT_USER-spark-internal__/security_keys
