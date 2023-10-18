@@ -42,7 +42,7 @@ import org.apache.spark.util.Utils
  */
 private[spark] abstract class WebUI(
     val securityManager: SecurityManager,
-    val sslOptions: SSLOptions,
+    val sslOpts: SSLOptions,
     port: Int,
     conf: SparkConf,
     basePath: String = "",
@@ -50,6 +50,7 @@ private[spark] abstract class WebUI(
     poolSize: Int = 200)
   extends Logging {
 
+  protected val sslOptions: SSLOptions = securityManager.genSslCertsForWebUIifNeeded(sslOpts)
   protected val tabs = ArrayBuffer[WebUITab]()
   protected val handlers = ArrayBuffer[ServletContextHandler]()
   protected val pageToHandlers = new HashMap[WebUIPage, ArrayBuffer[ServletContextHandler]]
