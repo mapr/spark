@@ -21,6 +21,9 @@ import java.io.IOException;
 import java.util.Optional;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileUtil;
+import org.apache.hadoop.fs.Path;
 import org.apache.parquet.HadoopReadOptions;
 import org.apache.parquet.ParquetReadOptions;
 import org.apache.parquet.format.converter.ParquetMetadataConverter;
@@ -56,6 +59,19 @@ public class ParquetFooterReader {
           .build()
           .getMetadataFilter();
     }
+    return readFooter(configuration, file.toPath(), filter);
+  }
+
+  public static ParquetMetadata readFooter(Configuration configuration,
+      Path file, ParquetMetadataConverter.MetadataFilter filter) throws IOException {
+    file = FileUtil.checkPathForSymlink(file, configuration).path;
+    return readFooter(HadoopInputFile.fromPath(file, configuration), filter);
+  }
+
+  public static ParquetMetadata readFooter(Configuration configuration,
+      FileStatus fileStatus, ParquetMetadataConverter.MetadataFilter filter) throws IOException {
+    fileStatus = FileUtil.checkPathForSymlink(fileStatus.getPath(), configuration).stat;
+    return readFooter(HadoopInputFile.fromStatus(fileStatus, configuration), filter);
   }
 
   public static ParquetMetadata readFooter(
