@@ -510,7 +510,7 @@ private[spark] class SecurityManager(
         false
 
       case _ =>
-        require(sparkConf.contains(SPARK_AUTH_SECRET_CONF),
+        require(getSecretKey() != null,
           s"A secret key must be specified via the $SPARK_AUTH_SECRET_CONF config.")
         return
     }
