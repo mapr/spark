@@ -162,6 +162,7 @@ private[spark] object HadoopFSUtils extends Logging {
 
     logTrace(s"Listing $path")
     val fs = path.getFileSystem(hadoopConf)
+    val resolvedPath = FileUtil.checkPathForSymlink(path, hadoopConf).path
 
     // Note that statuses only include FileStatus for the files and dirs directly under path,
     // and does not include anything else recursively.
@@ -172,12 +173,12 @@ private[spark] object HadoopFSUtils extends Logging {
         // to listStatus is because the default implementation would potentially throw a
         // FileNotFoundException which is better handled by doing the lookups manually below.
         case (_: DistributedFileSystem | _: ViewFileSystem) if !ignoreLocality =>
-          val remoteIter = fs.listLocatedStatus(path)
+          val remoteIter = fs.listLocatedStatus(resolvedPath)
           new Iterator[LocatedFileStatus]() {
             def next(): LocatedFileStatus = remoteIter.next
             def hasNext(): Boolean = remoteIter.hasNext
           }.toArray
-        case _ => fs.listStatus(path)
+        case _ => fs.listStatus(resolvedPath)
       }
     } catch {
       // If we are listing a root path for SQL (e.g. a top level directory of a table), we need to

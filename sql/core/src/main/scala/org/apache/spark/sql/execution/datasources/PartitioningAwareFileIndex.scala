@@ -160,6 +160,7 @@ abstract class PartitioningAwareFileIndex(
         } else {
           qualifiedPathPre
         }
+        val resolvedPath = FileUtil.checkPathForSymlink(qualifiedPath, hadoopConf).path
 
         // There are three cases possible with each path
         // 1. The path is a directory and has children files in it. Then it must be present in
@@ -168,8 +169,8 @@ abstract class PartitioningAwareFileIndex(
         // 2. The path is a file, then it will be present in leafFiles. Include this path.
         // 3. The path is a directory, but has no children files. Do not include this path.
 
-        leafDirToChildrenFiles.get(qualifiedPath)
-          .orElse { leafFiles.get(qualifiedPath).map(Array(_)) }
+        leafDirToChildrenFiles.get(resolvedPath)
+          .orElse { leafFiles.get(resolvedPath).map(Array(_)) }
           .getOrElse(Array.empty)
       }
     } else {
