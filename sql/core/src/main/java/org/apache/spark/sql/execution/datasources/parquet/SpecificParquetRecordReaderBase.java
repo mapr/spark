@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.hadoop.fs.FileUtil;
 import scala.Option;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -97,8 +98,9 @@ public abstract class SpecificParquetRecordReaderBase<T> extends RecordReader<Vo
       .withRange(split.getStart(), split.getStart() + split.getLength())
       .withCodecFactory(new ParquetCodecFactory(configuration, 0))
       .build();
+    Path resolvedFile = FileUtil.checkPathForSymlink(file, configuration).path;
     ParquetFileReader fileReader = new ParquetFileReader(
-        HadoopInputFile.fromPath(file, configuration), options);
+        HadoopInputFile.fromPath(resolvedFile, configuration), options);
     this.reader = new ParquetRowGroupReaderImpl(fileReader);
     this.fileSchema = fileReader.getFileMetaData().getSchema();
     try {
@@ -160,8 +162,9 @@ public abstract class SpecificParquetRecordReaderBase<T> extends RecordReader<Vo
       .withRange(0, length)
       .withCodecFactory(new ParquetCodecFactory(config, 0))
       .build();
+    Path resolvedFile = FileUtil.checkPathForSymlink(file, config).path;
     ParquetFileReader fileReader = ParquetFileReader.open(
-      HadoopInputFile.fromPath(file, config), options);
+      HadoopInputFile.fromPath(resolvedFile, config), options);
     this.reader = new ParquetRowGroupReaderImpl(fileReader);
     this.fileSchema = fileReader.getFooter().getFileMetaData().getSchema();
 
