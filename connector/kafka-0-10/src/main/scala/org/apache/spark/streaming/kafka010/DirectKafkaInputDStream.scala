@@ -226,7 +226,7 @@ private[spark] class DirectKafkaInputDStream[K, V](
     val c = consumer
     paranoidPoll(c)
 
-    val parts = c.assignment().asScala
+    val parts = KafkaUtils.waitForConsumerAssignment(c, currentOffsets.keySet.asJava).asScala
 
     if (parts.size < currentOffsets.keySet.size) {
       logWarning("Assignment() returned fewer partitions than the previous call")
