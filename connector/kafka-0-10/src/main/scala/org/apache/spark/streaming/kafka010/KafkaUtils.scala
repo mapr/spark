@@ -231,6 +231,8 @@ object KafkaUtils extends Logging {
     var newPartitions = consumer.assignment()
     while ((newPartitions.isEmpty || newPartitions.size() < partitions.size)
       && timeout < waitingForAssigmentTimeout) {
+      logWarning(s"Assignment() returned fewer partitions than the previous call: " +
+          s"${newPartitions.asScala.mkString("[", ",", "]")}")
 
       Thread.sleep(500)
       timeout += 500
