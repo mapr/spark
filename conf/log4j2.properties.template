@@ -16,7 +16,7 @@
 #
 
 # Set everything to be logged to the console
-rootLogger.level = WARNING
+rootLogger.level = WARN
 rootLogger.appenderRef.stdout.ref = console
 
 # In the pattern layout configuration below, we specify an explicit `%ex` conversion
@@ -36,63 +36,63 @@ appender.console.layout.pattern = %d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n%ex
 # the root logger's log level, so that the user can have different defaults
 # for the shell and regular Spark apps.
 logger.repl.name = org.apache.spark.repl.Main
-logger.repl.level = WARNING
+logger.repl.level = WARN
 
 logger.thriftserver.name = org.apache.spark.sql.hive.thriftserver.SparkSQLCLIDriver
-logger.thriftserver.level = WARNING
+logger.thriftserver.level = WARN
 
 # Settings to quiet third party logs that are too verbose
 logger.jetty1.name = org.sparkproject.jetty
-logger.jetty1.level = WARNING
+logger.jetty1.level = WARN
 logger.jetty2.name = org.sparkproject.jetty.util.component.AbstractLifeCycle
-logger.jetty2.level = WARNING
+logger.jetty2.level = WARN
 logger.replexprTyper.name = org.apache.spark.repl.SparkIMain$exprTyper
 logger.replexprTyper.level = INFO
 logger.replSparkILoopInterpreter.name = org.apache.spark.repl.SparkILoop$SparkILoopInterpreter
 logger.replSparkILoopInterpreter.level = INFO
 logger.parquet1.name = org.apache.parquet
-logger.parquet1.level = WARNING
+logger.parquet1.level = WARN
 logger.parquet2.name = parquet
-logger.parquet2.level = WARNING
+logger.parquet2.level = WARN
 
 # SPARK-9183: Settings to avoid annoying messages when looking up nonexistent UDFs in SparkSQL with Hive support
 logger.RetryingHMSHandler.name = org.apache.hadoop.hive.metastore.RetryingHMSHandler
-logger.RetryingHMSHandler.level = WARNING
+logger.RetryingHMSHandler.level = ERROR
 logger.FunctionRegistry.name = org.apache.hadoop.hive.ql.exec.FunctionRegistry
-logger.FunctionRegistry.level = WARNING
+logger.FunctionRegistry.level = ERROR
 logger.HiveConf.name = org.apache.hadoop.hive.conf.HiveConf
-logger.HiveConf.level = WARNING
+logger.HiveConf.level = ERROR
 
 # SPARK-327: Settings to suppress the unnecessary warning message from MultiMechsAuthenticationHandler
 logger.MultiMechsAuthenticationHandler.name = org.apache.hadoop.security.authentication.server.MultiMechsAuthenticationHandler
-logger.MultiMechsAuthenticationHandler.level = WARNING
+logger.MultiMechsAuthenticationHandler.level = ERROR
 logger.KerberosAuthHandler.name = org.apache.hadoop.security.authentication.server.KerberosAuthHandler
-logger.KerberosAuthHandler.level = WARNING
+logger.KerberosAuthHandler.level = ERROR
 
 # SPARK-575: Settings to suppress the unnecessary warning message from AuthenticationFilter
 logger.AuthenticationFilter.name = org.apache.hadoop.security.authentication.server.AuthenticationFilter
-logger.AuthenticationFilter.level = WARNING
+logger.AuthenticationFilter.level = ERROR
 
 logger.NativeCodeLoader.name = org.apache.hadoop.util.NativeCodeLoader
-logger.NativeCodeLoader.level = WARNING
+logger.NativeCodeLoader.level = ERROR
 logger.YarnClient.name = org.apache.spark.deploy.yarn.Client
-logger.YarnClient.level = WARNING
+logger.YarnClient.level = ERROR
 logger.HiveUtils.name = org.apache.spark.sql.hive.HiveUtils
-logger.HiveUtils.level = WARNING
+logger.HiveUtils.level = ERROR
 logger.HiveMetastore.name = org.apache.hadoop.hive.metastore.HiveMetastore
-logger.HiveMetastore.level = WARNING
+logger.HiveMetastore.level = ERROR
 logger.ObjectStore.name = org.apache.hadoop.hive.metastore.ObjectStore
-logger.ObjectStore.level = WARNING
+logger.ObjectStore.level = ERROR
 logger.SQLCompleter.name = org.apache.hive.beeline.SQLCompleter
-logger.SQLCompleter.level = WARNING
+logger.SQLCompleter.level = ERROR
 
 # SPARK-945: Setting to suppress exception when non-cluster admin can not read ssl-server config
 logger.Configuration.name = org.apache.hadoop.conf.Configuration
-logger.Configuration.level = WARNING
+logger.Configuration.level = ERROR
 
 # Hide Spark netty rpc error when driver is finished
 logger.Dispatcher.name = org.apache.spark.rpc.netty.Dispatcher
-logger.Dispatcher.level = WARNING
+logger.Dispatcher.level = ERROR
 
 # For deploying Spark ThriftServer
 # SPARK-34128: Suppress undesirable TTransportException warnings involved in THRIFT-4805
