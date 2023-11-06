@@ -1,0 +1,10 @@
+Package: mapr-spark-historyserver
+Version: __RELEASE_VERSION__ 
+Section: base
+Priority: optional
+Architecture: all
+Depends: mapr-spark (>= __RELEASE_VERSION__) | mapr-spark (<= __RELEASE_VERSION__), mapr-core
+Maintainer: Hewlett Packard Enterprise <ezmeral_software_support@hpe.com>
+Description: Ezmeral Ecosystem Pack: Spark History Server package
+  Tag: __RELEASE_BRANCH__
+  Commit: __GIT_COMMIT__

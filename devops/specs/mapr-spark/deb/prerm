@@ -1,0 +1,33 @@
+#!/bin/sh
+
+set -e
+
+
+case "$1" in
+	upgrade)
+		echo "prerm called with argument \`$1'" >&2
+	;;
+
+    remove|deconfigure)
+        SPARK_VERSION=__VERSION_3DIGIT__
+        SPARK_HOME=__PREFIX__/spark/spark-${SPARK_VERSION}
+        echo "prerm called with argument \`$1'" >&2
+        # Uninstall should only stop slave on localhost and not honor conf/slaves file
+        export HOSTLIST=localhost
+	      ${SPARK_HOME}/sbin/stop-slaves.sh
+        rm -rf __PREFIX__/shark/shark-${SPARK_VERSION}/conf
+        rm -rf __PREFIX__/spark/spark-${SPARK_VERSION}/conf
+    ;;
+
+    abort-upgrade|abort-remove|failed-upgrade)
+        echo "prerm called with argument \`$1'" >&2
+    ;;
+
+    *)
+        echo "prerm called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+
+exit 0
