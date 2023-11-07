@@ -10,11 +10,21 @@ elif [ -e "/etc/SuSE-release" ] || grep -q "ID_LIKE.*suse" "/etc/os-release" 2>/
   OS="suse"
 fi
 
-build_main() {
-  ROLE_NAME="$1"
+setup_role() {
+  package_name="$1"
 
-  opt_mapr="${BUILD_DIR}/root/${ROLE_NAME}${INSTALLATION_PREFIX}"
-  pkg_home="${BUILD_DIR}/root/${ROLE_NAME}${PKG_INSTALL_ROOT}"
+  opt_mapr="${BUILD_DIR}/root/${package_name}${INSTALLATION_PREFIX}"
+
+  mkdir -p "${opt_mapr}/roles"
+  find "devops/specs/${package_name}/roles/" -type f -exec cp {} "${opt_mapr}/roles" \;
+  _replace_build_variables "${opt_mapr}/roles"
+}
+
+setup_package() {
+  package_name="$1"
+
+  opt_mapr="${BUILD_DIR}/root/${package_name}${INSTALLATION_PREFIX}"
+  pkg_home="${BUILD_DIR}/root/${package_name}${PKG_INSTALL_ROOT}"
 
   mkdir -p "$pkg_home"
 
@@ -22,16 +32,6 @@ build_main() {
 
   echo "$PKG_3DIGIT_VERSION" > "${opt_mapr}/${PKG_NAME}/${PKG_NAME}version"
   ln -sr "$pkg_home" "${opt_mapr}/${PKG_NAME}/current"
-}
-
-build_role() {
-  ROLE_NAME="$1"
-
-  opt_mapr="${BUILD_DIR}/root/${ROLE_NAME}${INSTALLATION_PREFIX}"
-
-  mkdir -p "${opt_mapr}/roles"
-  find "devops/specs/${ROLE_NAME}/roles/" -type f -exec cp {} "${opt_mapr}/roles" \;
-  _replace_build_variables "${opt_mapr}/roles"
 }
 
 build_package() {
@@ -43,15 +43,15 @@ build_package() {
 }
 
 _build_rpm() {
-  ROLE_NAME="$1"
+  package_name="$1"
 
-  rpm_root="${BUILD_DIR}/package/${ROLE_NAME}/rpm"
+  rpm_root="${BUILD_DIR}/package/${package_name}/rpm"
 
   mkdir -p "${rpm_root}/SOURCES"
-  mv -T "${BUILD_DIR}/root/${ROLE_NAME}" "${rpm_root}/SOURCES"
+  mv -T "${BUILD_DIR}/root/${package_name}" "${rpm_root}/SOURCES"
 
   mkdir -p "${rpm_root}/SPECS"
-  cp devops/specs/${ROLE_NAME}/rpm/*.spec "${rpm_root}/SPECS"
+  cp devops/specs/${package_name}/rpm/*.spec "${rpm_root}/SPECS"
   _replace_build_variables "${rpm_root}/SPECS"
 
   rpmbuild --bb --define "_topdir ${rpm_root}" --buildroot="${rpm_root}/SOURCES" ${rpm_root}/SPECS/*
@@ -60,15 +60,15 @@ _build_rpm() {
 }
 
 _build_deb() {
-  ROLE_NAME="$1"
+  package_name="$1"
 
-  deb_root="${BUILD_DIR}/package/${ROLE_NAME}/deb"
+  deb_root="${BUILD_DIR}/package/${package_name}/deb"
 
   mkdir -p "$deb_root"
-  mv -T "${BUILD_DIR}/root/${ROLE_NAME}" "${deb_root}"
+  mv -T "${BUILD_DIR}/root/${package_name}" "${deb_root}"
 
   mkdir -p "${deb_root}/DEBIAN"
-  cp devops/specs/${ROLE_NAME}/deb/* "${deb_root}/DEBIAN"
+  cp devops/specs/${package_name}/deb/* "${deb_root}/DEBIAN"
   _replace_build_variables "${deb_root}/DEBIAN"
 
   find "$deb_root" -type f -exec md5sum \{\} \; 2>/dev/null |

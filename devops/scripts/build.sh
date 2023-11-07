@@ -36,12 +36,13 @@ main() {
   echo "Building project..."
   build_spark
 
-  build_role "mapr-spark"
-  build_role "mapr-spark-historyserver"
-  build_role "mapr-spark-master"
-  build_role "mapr-spark-thriftserver"
+  echo "Preparing directory structure..."
+  setup_role "mapr-spark"
+  setup_role "mapr-spark-historyserver"
+  setup_role "mapr-spark-master"
+  setup_role "mapr-spark-thriftserver"
 
-  build_main "mapr-spark"
+  setup_package "mapr-spark"
 
   echo "Building packages..."
   build_package "mapr-spark"
