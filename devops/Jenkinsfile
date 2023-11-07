@@ -1,4 +1,4 @@
-@Library("jenkins-shared-library@newJFversion")_
+@Library("jenkins-shared-library")_
 
 env.MAVEN_CENTRAL="${MAVEN_CENTRAL_COMMON}"
 env.MAPR_CENTRAL="${MAPR_CENTRAL_COMMON}"
@@ -7,6 +7,7 @@ env.MAPR_SNAPSHOTS_REPO="${MAPR_SNAPSHOTS_REPO_COMMON}"
 env.MAPR_MAVEN_REPO="${MAPR_SNAPSHOTS_REPO_COMMON}"
 
 ARTIFACTORY_SERVER=''
+DIST_DIR='devops/dist'
 YAML_CONFIG=''
 env.REPOSITORY_NAME=''
 env.GIT_REPO_URL=''
@@ -18,7 +19,7 @@ env.ARTIFACTORY_PATH=''
 env.ID=''
 env.PROJECT=''
 
-env.DOCKER_REGISTRY="${DOCKER_REGISTRY}"
+IMAGE_NAMES_MAP=[:]
 
 pipeline {
   agent none
@@ -45,7 +46,6 @@ pipeline {
         }
       }
     }
-
     stage("Build & Sign & Upload to Artifactory") {
       agent none
       steps {
@@ -53,23 +53,23 @@ pipeline {
           buildInParallel=[:]
           YAML_CONFIG.build.each {
             buildInParallel["Build ${it.name}"] = { ->
-
               node (it.hostmachine_jenkins_label) {
                 checkout scm
-                build(it)
+                validateBuildImage(it)
+                echo "Using image: ${IMAGE_NAMES_MAP[it.name]}"
+                buildStage(it)
                 if(it.rpmSign == true)
-                  signing.rpmSign("dist")
+                  signing.rpmSign(DIST_DIR)
                 getVersionAndUploadToArtifactory()
               }
-
             }
-          }
+         }
           parallel buildInParallel
         }
       }
     }
 
-    stage ("Whitesource Scan") {
+    stage ("OWASP Scan") {
       agent {label "redhat8"}
       when {
         equals (actual: YAML_CONFIG.whitesourceScan, expected: true)
@@ -78,18 +78,6 @@ pipeline {
         script {
           checkout scm
           ws.dockerScan()
-        /*Get token of product. We have to communicate with WS API only using 64-digits project's token.
-          We are sending request to API and get ALL "project+token" pairs. Then parse this information and find token for current project*/
-          productToken = ws.getWSProductToken()
-
-          //Get reports (Excel and json) from WS site and save these reports to files. Once for each format
-          ws.getWSReports(productToken)
-
-          //Move latest reports to the "old" folder in Artifactory
-          ws.moveOldWsReports(ARTIFACTORY_SERVER)
-
-          //Upload reports (Excel and json) to the Artifactory (to the latest folder)
-          ws.uploadToArtifactory(ARTIFACTORY_SERVER)
         }
       }
     }
@@ -124,42 +112,14 @@ pipeline {
   }
 }
 
-def build(yamlCurrentBuildItem) {
-  def image = yamlCurrentBuildItem.image
-  def imageContext = yamlCurrentBuildItem.imageContext
-
-  if (image) {
-    image = image.replace("_DOCKER_REGISTRY_", DOCKER_REGISTRY)
-  }
-
-  if (imageContext) {
-    if (image) {
-      error "You can not specify 'image' and 'imageContext' options in build-config.yaml"
-    }
-    def imageTagScript = yamlCurrentBuildItem.imageTagScript
-    image = sh script: imageTagScript, returnStdout: true
-    image = image.trim()
-    def imageCheckStatus = sh script: "docker inspect -f . '${image}'", returnStatus: true
-    if (imageCheckStatus != 0) {
-      imageCheckStatus = sh script: "docker pull '${image}'", returnStatus: true
-    }
-    if (imageCheckStatus != 0) {
-      sh """
-        docker build \
-          --build-arg DOCKER_REGISTRY='${DOCKER_REGISTRY}' \
-          -t '${image}' \
-          '${imageContext}'
-        docker push '${image}'
-      """
-    }
-  }
-
+def buildStage(yamlCurrentBuildItem) {
   def buildCommand = yamlCurrentBuildItem.basicBuildCommands.replace("_BUILD_ENV_VARS_","TIMESTAMP=${ID} DO_DEPLOY=${params.DO_DEPLOY} ${params.BUILD_ENV_VARS}")
 
   configFileProvider([configFile(fileId: 'maven_settings_spark_deploy_mvn381_above', variable: 'mvn_settings')]) {
     sh "cat ${env.mvn_settings} > settings.xml"
   }
-  docker.image(image).inside (
+
+  docker.image(IMAGE_NAMES_MAP[yamlCurrentBuildItem.name]).inside (
   "-e MAPR_MIRROR=${MAPR_MIRROR} \
   -e MAPR_CENTRAL=${MAPR_CENTRAL} \
   -e MAVEN_CENTRAL=${MAVEN_CENTRAL} \
@@ -185,7 +145,23 @@ def build(yamlCurrentBuildItem) {
   }
 }
 
+def validateBuildImage(yamlCurrentBuildItem) {
+  def imageStatic = yamlCurrentBuildItem.image
+  def imageCustom = yamlCurrentBuildItem.imageCustom
+  def imageName = ""
+  if (imageStatic) {
+    imageName = imageStatic.replace("_DOCKER_REGISTRY_", DOCKER_REGISTRY)
+  }
+  if (imageCustom) {
+    if (imageStatic) {
+      error "You can not specify 'image' and 'imageCustom' options in build-config.yaml"
+    }
+    imageName = sh(script: imageCustom, returnStdout: true).trim()
+  }
+  IMAGE_NAMES_MAP[yamlCurrentBuildItem.name] = imageName
+}
+
 def getVersionAndUploadToArtifactory() {
   def osVersionContainerRaw = sh script: 'cat os_release_version.txt', returnStdout:true
-  artifactory.uploadToArtifactoryWithOSVersions(ARTIFACTORY_SERVER, osVersionContainerRaw)
+  artifactory.uploadToArtifactoryWithOSVersions(ARTIFACTORY_SERVER, osVersionContainerRaw, DIST_DIR)
 }
