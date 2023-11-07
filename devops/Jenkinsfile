@@ -156,7 +156,7 @@ def build(yamlCurrentBuildItem) {
 
   def buildCommand = yamlCurrentBuildItem.basicBuildCommands.replace("_BUILD_ENV_VARS_","TIMESTAMP=${ID} DO_DEPLOY=${params.DO_DEPLOY} ${params.BUILD_ENV_VARS}")
 
-  configFileProvider([configFile(fileId: 'maven_settings', variable: 'mvn_settings')]) {
+  configFileProvider([configFile(fileId: 'maven_settings_spark_deploy_mvn381_above', variable: 'mvn_settings')]) {
     sh "cat ${env.mvn_settings} > settings.xml"
   }
   docker.image(image).inside (
