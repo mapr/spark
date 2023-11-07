@@ -4,19 +4,19 @@ set -e
 
 case "$1" in
     configure)
-    	  SPARK_VERSION=__VERSION_3DIGIT__
+        SPARK_VERSION=__VERSION_3DIGIT__
         SPARK_HOME=__PREFIX__/spark/spark-${SPARK_VERSION}
         echo "postinst called with argument \`$1'" >&2
         ln -sfn ${SPARK_HOME} /usr/local/spark
 
         if [ "$1" = "configure" ]; then
-		      touch "$SPARK_HOME/etc/.not_configured_yet"
-	      fi
+            touch "${SPARK_HOME}/conf/.not_configured_yet"
+        fi
     ;;
 #####################################################################################################
-	  upgrade|update)
-		    touch "$SPARK_HOME/etc/.just_updated"
-	  ;;
+    upgrade|update)
+        touch "${SPARK_HOME}/conf/.just_updated"
+    ;;
 #####################################################################################################
     abort-upgrade|abort-remove|abort-deconfigure)
         echo "postinst called with argument \`$1'" >&2
