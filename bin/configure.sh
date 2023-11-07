@@ -95,12 +95,12 @@ if [ -f $SPARK_HOME/etc/.custom_hive_configuration_on ] ; then
 fi
 
 IS_FIRST_RUN=false
-if [ -f $SPARK_HOME/etc/.not_configured_yet ] ; then
-	IS_FIRST_RUN=true
+if [ -f "${SPARK_HOME}/conf/.not_configured_yet" ]; then
+    IS_FIRST_RUN=true
 fi
 JUST_UPDATED=false
-if [ -f $SPARK_HOME/etc/.just_updated ] ; then
-	JUST_UPDATED=true
+if [ -f "${SPARK_HOME}/conf/.just_updated" ]; then
+    JUST_UPDATED=true
 fi
 
 declare -a SPARK_CONF_FILES=("$SPARK_CONF/spark-defaults.conf" "$SPARK_CONF/spark-env.sh" "$SPARK_CONF/hive-site.xml" "$SPARK_CONF/log4j2.properties")
@@ -586,10 +586,10 @@ while [ ${#} -gt 0 ] ; do
       isSecure=0;
       shift 1;;
     --customSecure|-cs)
-      if [ -f "$SPARK_HOME/etc/.not_configured_yet" ]; then
-      	isSecure=1;
+      if [ -f "${SPARK_HOME}/conf/.not_configured_yet" ]; then
+        isSecure=1;
       else
-      	isSecure=2;
+        isSecure=2;
       fi
       shift 1;;
     --R|-R)
@@ -654,10 +654,10 @@ copyWardenConfFiles
 stopServicesForRestartByWarden
 
 if [ "$JUST_UPDATED" = true ] ; then
-	replaceConfigFromPreviousVersion
-	rm -f "$SPARK_HOME"/etc/.just_updated
+    replaceConfigFromPreviousVersion
+    rm -f "${SPARK_HOME}/conf/.just_updated"
 fi
 
-rm -f "$SPARK_HOME"/etc/.not_configured_yet
+rm -f "${SPARK_HOME}/conf/.not_configured_yet"
 
 exit $RETURN_SUCCESS

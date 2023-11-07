@@ -1,5 +1,5 @@
-ARG DOCKER_REGISTRY
-FROM ${DOCKER_REGISTRY}/centos8-java11-gcc8
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 RUN sed -i 's/^mirrorlist/#mirrorlist/' /etc/yum.repos.d/CentOS-* && \
     sed -i 's/^#baseurl/baseurl/' /etc/yum.repos.d/CentOS-* && \
