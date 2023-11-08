@@ -482,7 +482,7 @@ function configureHiveWarehouseForNonHiveEnv() {
   cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOM
 # Default location for Warehouse, if not using Hive
 EOM
-  changeSparkDefaults "spark.sql.warehouse.dir" "maprfs:///user/${USER}/spark-warehouse"
+  changeSparkDefaults "spark.sql.warehouse.dir" "spark.sql.warehouse.dir maprfs:///user/${USER}/spark-warehouse"
 }
 
 #
