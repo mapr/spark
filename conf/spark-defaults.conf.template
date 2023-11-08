@@ -26,9 +26,6 @@ spark.eventLog.enabled             true
 spark.eventLog.dir                 maprfs:///apps/spark
 spark.history.fs.logDirectory      maprfs:///apps/spark
 
-# Default location for Warehouse, if not using Hive
-spark.sql.warehouse.dir            maprfs:///user/${system:user.name}/spark-warehouse
-
 # Fix for SPARK-7819
 spark.sql.hive.metastore.sharedPrefixes  com.mysql.jdbc,org.postgresql,com.microsoft.sqlserver,oracle.jdbc,com.mapr.fs.shim.LibraryLoader,com.mapr.security.JNISecurity,com.mapr.fs.jni,com.mapr.fs.ShimLoader
 
