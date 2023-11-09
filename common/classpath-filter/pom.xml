@@ -28,7 +28,7 @@
 
     <artifactId>classpath-filter_2.12</artifactId>
     <packaging>jar</packaging>
-    <name>Spark Сlasspath Filter</name>
+    <name>Spark Classpath Filter</name>
     <url>http://spark.apache.org/</url>
     <properties>
         <sbt.project.name>classpath-filter</sbt.project.name>
