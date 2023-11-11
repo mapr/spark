@@ -4,13 +4,11 @@ initialReleaseTag: '3.3.3.0-eep-921' # Use only for release build
 whitesourceScan: true
 build:
   - name: ubuntu
-    imageContext: devops/buildimages/ubuntu/
-    imageTagScript: devops/buildimages/ubuntu/tag.sh
+    imageCustom: devops/buildimages/ubuntu/image.sh
     basicBuildCommands: "_BUILD_ENV_VARS_ devops/scripts/build.sh"
     hostmachine_jenkins_label: "ubuntu16"
   - name: centos
-    imageContext: devops/buildimages/centos/
-    imageTagScript: devops/buildimages/centos/tag.sh
+    imageCustom: devops/buildimages/centos/image.sh
     basicBuildCommands: "_BUILD_ENV_VARS_ devops/scripts/build.sh"
     hostmachine_jenkins_label: "redhat8"
     rpmSign: true

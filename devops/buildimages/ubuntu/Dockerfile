@@ -1,5 +1,5 @@
-ARG DOCKER_REGISTRY
-FROM ${DOCKER_REGISTRY}/ubuntu16-java11-gcc7
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 51716619E084DAB9 && \
     add-apt-repository 'deb [trusted=yes] https://cloud.r-project.org/bin/linux/ubuntu xenial-cran35/' && \
