@@ -1,4 +1,4 @@
-@Library("jenkins-shared-library")_
+@Library("jenkins-shared-library@newJFversion")_
 
 env.MAVEN_CENTRAL="${MAVEN_CENTRAL_COMMON}"
 env.MAPR_CENTRAL="${MAPR_CENTRAL_COMMON}"
@@ -7,20 +7,18 @@ env.MAPR_SNAPSHOTS_REPO="${MAPR_SNAPSHOTS_REPO_COMMON}"
 env.MAPR_MAVEN_REPO="${MAPR_SNAPSHOTS_REPO_COMMON}"
 
 ARTIFACTORY_SERVER=''
+YAML_CONFIG=''
 env.REPOSITORY_NAME=''
 env.GIT_REPO_URL=''
 env.GIT_SHORT_COMMIT_SHA=''
 env.CURRENT_BUILD_TAG=''
 env.BUILD_BY_TAG=false
 
-env.ARTIFACTORY_PATH_RPM=''
-env.ARTIFACTORY_PATH_DEB=''
+env.ARTIFACTORY_PATH=''
 env.ID=''
-env.MAKEFILE_ARGS=''
 env.PROJECT=''
-MEP_VER=''
 
-MAKEFILE_ARG_BRANCH_NAME = " SPARK_BRANCH_NAME"
+env.DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 
 pipeline {
   agent none
@@ -33,10 +31,9 @@ pipeline {
     timestamps()
   }
   parameters {
-    choice(name: 'BUILD_TYPE', choices: ['Dev','EBF','Release'], description: 'default - Dev. EBF and Release args you can use only in release branches')
-    string(name: 'MAKEFILE_ENV_VARS', defaultValue: '', description: 'Variables you can pass to makefile (command will be: make {THIS VAR} {project-name}). Please DO NOT put component_branch_name')
-    string(name: 'SPARK_HADOOP_PROFILE', defaultValue: 'hadoop-3.3', description: '')
-    booleanParam(name: 'Spark Deploy', defaultValue: true, description: 'Uncheck and Jenkins will skip ./build/mvn deploy')
+    choice(name: 'BUILD_TYPE', choices: ['Dev','EBF','Release'], description: 'default - Dev. EBF and Release args you can use only in release branches.')
+    string(name: 'BUILD_ENV_VARS', defaultValue: '', description: 'Variables you can pass to build script. Command will be: "env {THIS VARS} path/to/build.sh".')
+    booleanParam(name: 'DO_DEPLOY', defaultValue: true, description: 'Uncheck and Jenkins will skip ./build/mvn deploy')
   }
   stages {
     stage("Setup settings and variables") {
@@ -44,217 +41,59 @@ pipeline {
       steps {
         script {
           ARTIFACTORY_SERVER = Artifactory.server 'artifactory.devops.lab'
-          //MAKEFILE_ARG_BRANCH_NAME will use for makefile only for release/EBF branches
-          initVariables(params.BUILD_TYPE, MAKEFILE_ARG_BRANCH_NAME)
+          YAML_CONFIG = initVariablesWithYAMLConfig()
         }
       }
     }
 
-    stage ("Main CI process") {
-      parallel {
-        stage("Ubuntu build") {
-          agent {label "ubuntu"}
-          stages {
-            stage("Checkout") {
-              steps {
-                script {
-                  checkout scm
-                }
-              }
-            }
+    stage("Build & Sign & Upload to Artifactory") {
+      agent none
+      steps {
+        script {
+          buildInParallel=[:]
+          YAML_CONFIG.build.each {
+            buildInParallel["Build ${it.name}"] = { ->
 
-            stage("Build") {
-              steps {
-                script {
-                  configFileProvider([configFile(fileId: 'maven_settings', variable: 'mvn_settings')]) {
-                    sh "cat ${env.mvn_settings} > settings.xml"
-                  }
-                  docker.image("dfdkr.mip.storage.hpecorp.net/ubuntu16-java11-gcc7").inside (
-                  "-e MAPR_MIRROR=${MAPR_MIRROR} \
-                  -e MAPR_CENTRAL=${MAPR_CENTRAL} \
-                  -e MAVEN_CENTRAL=${MAVEN_CENTRAL} \
-                  -e MAPR_MAVEN_REPO=${MAPR_MAVEN_REPO} \
-                  -e BUILD_NUMBER=${ID}.${BUILD_NUMBER} \
-                  -e MAPR_RELEASES_REPO=${MAPR_RELEASES_REPO} \
-                  -e MAPR_SNAPSHOTS_REPO=${MAPR_SNAPSHOTS_REPO} \
-                  -v /root/yum-proxy.conf:/etc/yum.conf:ro \
-                  -v /etc/hosts:/etc/hosts:ro \
-                  -v /root/apt-proxy.conf:/etc/apt/apt.conf.d/proxy.conf:ro \
-                  -v /root/.gradle/gradle.properties:/root/.gradle/gradle.properties:ro \
-                  -v /etc/profile.d/proxy.sh:/etc/profile.d/proxy.sh:ro \
-                  -v /etc/localtime:/etc/localtime:ro \
-                  -v /root/.ssh:/root/.ssh:rw \
-                  -v ${WORKSPACE}/settings.xml:/root/.m2/settings.xml:ro") {
-                    sh """
-                      rm -rf ${PROJECT}; git clone git@github.com:mapr/private-pkg.git ${PROJECT}; \
-                      cd ${PROJECT}; \
-                      git checkout MEP-9.1.2 ; \
-                      apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 51716619E084DAB9 ;\
-                      add-apt-repository 'deb [trusted=yes] https://cloud.r-project.org/bin/linux/ubuntu xenial-cran35/'
-                      apt update ; \
-                      apt -y install r-base ; \
-                      make ${PROJECT} TIMESTAMP=${ID} ${MAKEFILE_ARGS}
-                    """
-                  }
-                }
+              node (it.hostmachine_jenkins_label) {
+                checkout scm
+                build(it)
+                if(it.rpmSign == true)
+                  signing.rpmSign("dist")
+                getVersionAndUploadToArtifactory()
               }
-            }
 
-            stage("Upload to Artifactory") {
-              steps{
-                script {
-                  from = "${WORKSPACE}/${env.PROJECT}/dist/*"
-                  to = "${env.ARTIFACTORY_PATH_DEB}"
-                  props = "deb.distribution=binary;deb.component=trusty;deb.architecture=all;release=${params.BUILD_TYPE}"
-                  artifactory.uploadArtifactsAndBuildInfo(ARTIFACTORY_SERVER, from, to, props)
-                }
-              }
             }
           }
-        }
-
-        stage("Redhat build") {
-          agent { label "redhat8" }
-          stages {
-            stage("Checkout") {
-              steps {
-                script {
-                  checkout scm
-                }
-              }
-            }
-
-            stage("Build") {
-              steps {
-                script {
-                  configFileProvider([configFile(fileId: 'maven_settings', variable: 'mvn_settings')]) {
-                    sh "cat ${env.mvn_settings} > settings.xml"
-                  }
-                  docker.image("dfdkr.mip.storage.hpecorp.net/centos8-java11-gcc8").inside (
-                  "-e MAPR_MIRROR=${MAPR_MIRROR} \
-                  -e MAPR_CENTRAL=${MAPR_CENTRAL} \
-                  -e MAVEN_CENTRAL=${MAVEN_CENTRAL} \
-                  -e MAPR_MAVEN_REPO=${MAPR_MAVEN_REPO} \
-                  -e BUILD_NUMBER=${ID}.${BUILD_NUMBER} \
-                  -e MAPR_RELEASES_REPO=${MAPR_RELEASES_REPO} \
-                  -e MAPR_SNAPSHOTS_REPO=${MAPR_SNAPSHOTS_REPO} \
-                  -v /root/yum-proxy.conf:/etc/yum.conf:ro \
-                  -v /etc/hosts:/etc/hosts:ro \
-                  -v /root/apt-proxy.conf:/etc/apt/apt.conf.d/proxy.conf:ro \
-                  -v /root/.gradle/gradle.properties:/root/.gradle/gradle.properties:ro \
-                  -v /etc/profile.d/proxy.sh:/etc/profile.d/proxy.sh:ro \
-                  -v /etc/localtime:/etc/localtime:ro \
-                  -v /root/.ssh:/root/.ssh:rw \
-                  -v ${WORKSPACE}/settings.xml:/root/.m2/settings.xml:ro") {
-                    sh """
-                      rm -rf ${PROJECT}; git clone git@github.com:mapr/private-pkg.git ${PROJECT}; \
-                      cd ${PROJECT}; \
-                      git checkout MEP-9.1.2 ; \
-                      sed -i 's/^mirrorlist/#mirrorlist/' /etc/yum.repos.d/CentOS-* ; \
-                      sed -i 's/^#baseurl/baseurl/' /etc/yum.repos.d/CentOS-* ; \
-                      sed -i 's/mirror.centos.org/vault.centos.org/' /etc/yum.repos.d/CentOS-* ; \
-                      yum install -y R ; \
-                      make ${PROJECT} TIMESTAMP=${ID} ${MAKEFILE_ARGS} ; \
-                      """
-                    }
-                }
-              }
-            }
-
-            stage("RPM Sign") {
-              steps {
-                configFileProvider([configFile(fileId: 'rpmSignSh', variable: 'rpmSignSh')]) {
-                  sh """
-                  cat ${env.rpmSignSh} > rpm_sign.sh
-                  chmod 765 rpm_sign.sh
-                  ./rpm_sign.sh ${PROJECT}/dist
-                  """
-                }
-              }
-            }
-
-            stage("Upload to Artifactory") {
-              steps{
-                script {
-                  from = "${WORKSPACE}/${env.PROJECT}/dist/*"
-                  to = "${ARTIFACTORY_PATH_RPM}"
-                  props = "release=${params.BUILD_TYPE}"
-                  artifactory.uploadArtifactsAndBuildInfo(ARTIFACTORY_SERVER, from, to, props)
-                }
-              }
-            }
-
-            stage("Spark Deploy") {
-              when {
-                expression { params.'Spark Deploy' == true }
-              }
-              steps {
-                script {
-                  configFileProvider([configFile(fileId: 'maven_settings_spark_deploy', variable: 'mvn_settings')]) {
-                    sh "cat ${env.mvn_settings} > settings-deploy.xml"
-                  }
-                  docker.image("dfdkr.mip.storage.hpecorp.net/centos8-java11-gcc8").inside (
-                  "-e MAPR_MIRROR=${MAPR_MIRROR} \
-                  -e MAPR_CENTRAL=${MAPR_CENTRAL} \
-                  -e MAVEN_CENTRAL=${MAVEN_CENTRAL} \
-                  -e MAPR_MAVEN_REPO=${MAPR_MAVEN_REPO} \
-                  -e BUILD_NUMBER=${ID}.${BUILD_NUMBER} \
-                  -e MAPR_RELEASES_REPO=${MAPR_RELEASES_REPO} \
-                  -e MAPR_SNAPSHOTS_REPO=${MAPR_SNAPSHOTS_REPO} \
-                  -v /root/yum-proxy.conf:/etc/yum.conf:ro \
-                  -v /etc/hosts:/etc/hosts:ro \
-                  -v /root/apt-proxy.conf:/etc/apt/apt.conf.d/proxy.conf:ro \
-                  -v /root/.gradle/gradle.properties:/root/.gradle/gradle.properties:ro \
-                  -v /etc/profile.d/proxy.sh:/etc/profile.d/proxy.sh:ro \
-                  -v /etc/localtime:/etc/localtime:ro \
-                  -v /root/.ssh:/root/.ssh:rw \
-                  -v ${WORKSPACE}/settings-deploy.xml:/root/.m2/settings.xml:ro") {
-                    sh """
-                      sed -i 's/^mirrorlist/#mirrorlist/' /etc/yum.repos.d/CentOS-* ; \
-                      sed -i 's/^#baseurl/baseurl/' /etc/yum.repos.d/CentOS-* ; \
-                      sed -i 's/mirror.centos.org/vault.centos.org/' /etc/yum.repos.d/CentOS-* ; \
-                      yum install -y R ; \
-                      ./build/mvn -B deploy -P${params.SPARK_HADOOP_PROFILE},yarn,mesos,hadoop-provided,scala-2.12,hive,hive-thriftserver,sparkr,flume -Dskip-kafka-0-8 -DskipTests=True -Dscalastyle.skip=true -Dcheckstyle.skip=true -Dscalastyle.failOnViolation=false -Dscalatest.testFailureIgnore=true -DaltDeploymentRepository=mapr-snapshots::default::${MAPR_MAVEN_REPO};
-                      """
-                    }
-                }
-              }
-            }
-
-            stage("Whitesource scan") {
-              steps {
-                script {
-                   ws.dockerScan()
-                }
-              }
-            }
-
-            stage("Push Whitesource reports") {
-              steps {
-                script {
-                  withCredentials([string(credentialsId: 'wsApiKey', variable: 'wsApiKey'), string(credentialsId: 'wsUserKey', variable: 'wsUserKey')]) {
-                    catchError {
-                      /*Get token of product. We have to communicate with WS API only using 64-digits project's token.
-                        We are sending request to API and get ALL "project+token" pairs. Then parse this information and find token for current project*/
-                        productToken = ws.getWSProductToken(PROJECT)
-
-                        //Get reports (Excel and json) from WS site and save these reports to files. Once for each format
-                        ws.getWSReports(productToken)
-
-                        //Move latest reports to the "old" folder in Artifactory
-                        ws.moveOldWsReports(ARTIFACTORY_SERVER)
-
-                        //Upload reports (Excel and json) to the Artifactory (to the latest folder)
-                        ws.uploadToArtifactory(ARTIFACTORY_SERVER)
-                    }
-                  }
-                }
-              }
-            }
-          }
+          parallel buildInParallel
         }
       }
     }
+
+    stage ("Whitesource Scan") {
+      agent {label "redhat8"}
+      when {
+        equals (actual: YAML_CONFIG.whitesourceScan, expected: true)
+      }
+      steps {
+        script {
+          checkout scm
+          ws.dockerScan()
+        /*Get token of product. We have to communicate with WS API only using 64-digits project's token.
+          We are sending request to API and get ALL "project+token" pairs. Then parse this information and find token for current project*/
+          productToken = ws.getWSProductToken()
+
+          //Get reports (Excel and json) from WS site and save these reports to files. Once for each format
+          ws.getWSReports(productToken)
+
+          //Move latest reports to the "old" folder in Artifactory
+          ws.moveOldWsReports(ARTIFACTORY_SERVER)
+
+          //Upload reports (Excel and json) to the Artifactory (to the latest folder)
+          ws.uploadToArtifactory(ARTIFACTORY_SERVER)
+        }
+      }
+    }
+
   }
   post {
     failure {
@@ -272,10 +111,81 @@ pipeline {
         postActions.aborted()
       }
     }
+    success {
+      script {
+        postActions.success()
+      }
+    }
     always {
       script {
         postActions.always()
       }
     }
   }
+}
+
+def build(yamlCurrentBuildItem) {
+  def image = yamlCurrentBuildItem.image
+  def imageContext = yamlCurrentBuildItem.imageContext
+
+  if (image) {
+    image = image.replace("_DOCKER_REGISTRY_", DOCKER_REGISTRY)
+  }
+
+  if (imageContext) {
+    if (image) {
+      error "You can not specify 'image' and 'imageContext' options in build-config.yaml"
+    }
+    def imageTagScript = yamlCurrentBuildItem.imageTagScript
+    image = sh script: imageTagScript, returnStdout: true
+    image = image.trim()
+    def imageCheckStatus = sh script: "docker inspect -f . '${image}'", returnStatus: true
+    if (imageCheckStatus != 0) {
+      imageCheckStatus = sh script: "docker pull '${image}'", returnStatus: true
+    }
+    if (imageCheckStatus != 0) {
+      sh """
+        docker build \
+          --build-arg DOCKER_REGISTRY='${DOCKER_REGISTRY}' \
+          -t '${image}' \
+          '${imageContext}'
+        docker push '${image}'
+      """
+    }
+  }
+
+  def buildCommand = yamlCurrentBuildItem.basicBuildCommands.replace("_BUILD_ENV_VARS_","TIMESTAMP=${ID} DO_DEPLOY=${params.DO_DEPLOY} ${params.BUILD_ENV_VARS}")
+
+  configFileProvider([configFile(fileId: 'maven_settings', variable: 'mvn_settings')]) {
+    sh "cat ${env.mvn_settings} > settings.xml"
+  }
+  docker.image(image).inside (
+  "-e MAPR_MIRROR=${MAPR_MIRROR} \
+  -e MAPR_CENTRAL=${MAPR_CENTRAL} \
+  -e MAVEN_CENTRAL=${MAVEN_CENTRAL} \
+  -e MAPR_MAVEN_REPO=${MAPR_MAVEN_REPO} \
+  -e BUILD_NUMBER=${ID}.${BUILD_NUMBER} \
+  -e MAPR_RELEASES_REPO=${MAPR_RELEASES_REPO} \
+  -e MAPR_SNAPSHOTS_REPO=${MAPR_SNAPSHOTS_REPO} \
+  -v /root/.m2:/root/.m2:rw \
+  -v /root/yum-proxy.conf:/etc/yum.conf:ro \
+  -v /etc/hosts:/etc/hosts:ro \
+  -v /root/apt-proxy.conf:/etc/apt/apt.conf.d/proxy.conf:ro \
+  -v /root/.gradle/gradle.properties:/root/.gradle/gradle.properties:ro \
+  -v /etc/profile.d/proxy.sh:/etc/profile.d/proxy.sh:ro \
+  -e ANT_OPTS=\"-Dhttp.proxyHost=${HPE_PROXY_HOST} -Dhttp.proxyPort=${HPE_PROXY_PORT} -Dhttps.proxyHost=${HPE_PROXY_HOST} -Dhttps.proxyPort=${HPE_PROXY_PORT} -Dhttp.nonProxyHosts='${HPE_PROXY_EXCEPTIONS}'\" \
+  -e MAVEN_OPTS=\"-Dhttp.proxyHost=${HPE_PROXY_HOST} -Dhttp.proxyPort=${HPE_PROXY_PORT} -Dhttps.proxyHost=${HPE_PROXY_HOST} -Dhttps.proxyPort=${HPE_PROXY_PORT} -Dhttp.nonProxyHosts='${HPE_PROXY_EXCEPTIONS}'\" \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v /root/.ssh:/root/.ssh:rw \
+  -v ${WORKSPACE}/settings.xml:/root/.m2/settings.xml:ro") {
+    sh """
+      cat /etc/*-release > os_release_version.txt; \
+      ${buildCommand}
+    """
+  }
+}
+
+def getVersionAndUploadToArtifactory() {
+  def osVersionContainerRaw = sh script: 'cat os_release_version.txt', returnStdout:true
+  artifactory.uploadToArtifactoryWithOSVersions(ARTIFACTORY_SERVER, osVersionContainerRaw)
 }

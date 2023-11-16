@@ -1,0 +1,31 @@
+#!/bin/sh
+                  
+set -e            
+SPARK_VERSION=__VERSION_3DIGIT__
+MAPR_SPARK_HOME=$(dir -d -1 __PREFIX__/spark/spark-${SPARK_VERSION} 2> /dev/null | tail -1)
+case "$1" in      
+    remove|upgrade|deconfigure)
+        echo "prerm called with argument \`$1'" >&2
+        echo "stopping any alive Spark-HistoryServer daemon on the node"
+		rm -f __PREFIX__/conf/conf.d/warden.spark-historyserver.conf
+		rm -f $MAPR_SPARK_HOME/warden/warden.spark-historyserver.conf
+		if [ -f ${MAPR_SPARK_HOME}/sbin/stop-history-server.sh ]; then
+			${MAPR_SPARK_HOME}/sbin/stop-history-server.sh
+		fi
+		if [ -f $MAPR_SPARK_HOME/conf/spark-defaults.conf ]; then
+			sed -i '/^spark.yarn.historyServer.address/ d' ${MAPR_SPARK_HOME}/conf/spark-defaults.conf
+		fi
+    ;;
+    
+    abort-upgrade|abort-remove|failed-upgrade)
+        echo "prerm called with argument \`$1'" >&2
+    ;;
+    
+    *)
+        echo "prerm called with unknown argument \`$1'" >&2
+        exit 1
+    ;;  
+esac
+
+
+exit 0
