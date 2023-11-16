@@ -1,0 +1,35 @@
+#!/bin/sh
+
+set -e
+
+case "$1" in
+    upgrade)
+        # This code does not seem to work as OLD_TIMESTAMP ends up being set to an empty
+        # string. The command below does work correctly after install, so it seems like
+        # dpkg -s mapr-spark does not report the currently installed package correctly
+        # during the upgrade process. dpkg does run the old pkg prerm script before running
+        # the new pkg preinst script (this one).
+        #
+        # $2 during an upgrade is the old version with timestamp.
+        OLD_TIMESTAMP="$2"
+        OLD_VERSION="$( echo ${OLD_TIMESTAMP} | cut -d'.' -f1-3 )"
+        OLD_CONF_DIR=__PREFIX__/spark/spark-${OLD_TIMESTAMP}/conf
+        CURRENT_CONF_DIR=__PREFIX__/spark/spark-${OLD_VERSION}/conf
+        if [ -n "$OLD_TIMESTAMP" ] && [ -n "$OLD_VERSION" ]; then
+            mkdir -p ${OLD_CONF_DIR}
+            if [ -d "$CURRENT_CONF_DIR" ]; then
+                cp -r ${CURRENT_CONF_DIR}/* ${OLD_CONF_DIR}
+            fi
+        fi
+    ;;
+    install|abort-upgrade)
+        # Nothing to do
+    ;;
+
+    *)
+        echo "preinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+exit 0
