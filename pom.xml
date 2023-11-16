@@ -83,7 +83,7 @@
     <module>common/unsafe</module>
     <module>common/utils</module>
     <module>common/tags</module>
-    <module>common/classpath-filter</module>
+<!--    <module>common/classpath-filter</module>-->
     <module>common/hive-site-editor</module>
     <module>common/nvidia-plugin</module>
     <module>core</module>
@@ -117,6 +117,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.version>1.8</java.version>
+    <javaMaxBytecodeRequired.version>11</javaMaxBytecodeRequired.version>
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
     <maven.version>3.9.6</maven.version>
@@ -132,7 +133,7 @@
     <protobuf.version>3.23.4</protobuf.version>
     <protoc-jar-maven-plugin.version>3.11.4</protoc-jar-maven-plugin.version>
     <yarn.version>${hadoop.version}</yarn.version>
-    <zookeeper.version>3.5.6.0-mapr-2210</zookeeper.version>
+    <zookeeper.version>3.5.6.0-mapr-SNAPSHOT</zookeeper.version>
     <curator.version>4.2.0</curator.version>
     <hive.group>org.apache.hive</hive.group>
     <hive.classifier>core</hive.classifier>
@@ -365,7 +366,7 @@
         <enabled>true</enabled>
       </releases>
       <snapshots>
-        <enabled>false</enabled>
+        <enabled>true</enabled>
       </snapshots>
     </repository>
     <repository>
@@ -2904,7 +2905,7 @@
                     <searchTransitive>true</searchTransitive>
                   </bannedDependencies>
                   <enforceBytecodeVersion>
-                    <maxJdkVersion>${java.version}</maxJdkVersion>
+                    <maxJdkVersion>${javaMaxBytecodeRequired.version}</maxJdkVersion>
                     <ignoredScopes>test</ignoredScopes>
                     <ignoredScopes>provided</ignoredScopes>
                     <excludes>
