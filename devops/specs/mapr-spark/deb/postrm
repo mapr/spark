@@ -1,0 +1,35 @@
+#!/bin/sh
+
+set -e
+
+case "$1" in
+    upgrade)
+        echo "postrm called with argument \`$1'" >&2
+        if [ -n "$2" ]; then
+        	SPARK_VERSION=__VERSION_3DIGIT__
+    		NEW_VERSION="$( echo $2 | cut -d'.' -f1-3 )"
+    		REMOVE_VERSION="$( echo $SPARK_VERSION| cut -d'.' -f1-3 )"
+    		if [ "$NEW_VERSION" != "$REMOVE_VERSION" ]; then
+        		rm -rf __INSTALL_3DIGIT__
+    		fi
+		fi
+    ;;
+
+    remove|purge|disappear)
+        echo "postrm called with argument \`$1'" >&2
+        rm -rf __PREFIX__/shark
+        rm -rf __PREFIX__/spark
+	rm -rf /usr/local/spark
+    ;;
+
+    abort-install|abort-upgrade|failed-upgrade)
+        echo "postrm called with argument \`$1'" >&2
+    ;;
+
+    *)
+        echo "postrm called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+exit 0

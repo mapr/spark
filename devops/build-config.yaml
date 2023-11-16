@@ -1,0 +1,18 @@
+---
+slackChannel: "eco-build"
+initialReleaseTag: '3.5.0.0-eep' # Use only for release build
+whitesourceScan: true
+build:
+  - name: ubuntu
+    imageContext: devops/buildimages/ubuntu/
+    imageTagScript: devops/buildimages/ubuntu/tag.sh
+    basicBuildCommands: "_BUILD_ENV_VARS_ devops/scripts/build.sh"
+    hostmachine_jenkins_label: "ubuntu16"
+  - name: centos
+    imageContext: devops/buildimages/centos/
+    imageTagScript: devops/buildimages/centos/tag.sh
+    basicBuildCommands: "_BUILD_ENV_VARS_ devops/scripts/build.sh"
+    hostmachine_jenkins_label: "redhat8"
+    rpmSign: true
+
+# "_DOCKER_REGISTRY_" and "_BUILD_ENV_VARS_" names will be generated and added automatically during the build
