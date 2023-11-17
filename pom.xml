@@ -133,7 +133,7 @@
     <protobuf.version>3.23.4</protobuf.version>
     <protoc-jar-maven-plugin.version>3.11.4</protoc-jar-maven-plugin.version>
     <yarn.version>${hadoop.version}</yarn.version>
-    <zookeeper.version>3.5.6.0-mapr-SNAPSHOT</zookeeper.version>
+    <zookeeper.version>3.5.6.0-mapr</zookeeper.version>
     <curator.version>4.2.0</curator.version>
     <hive.group>org.apache.hive</hive.group>
     <hive.classifier>core</hive.classifier>
@@ -2927,22 +2927,6 @@
                 <rules>
                   <banDuplicatePomDependencyVersions/>
                 </rules>
-              </configuration>
-            </execution>
-            <execution>
-              <id>enforce-banned-dependencies</id>
-              <goals>
-                <goal>enforce</goal>
-              </goals>
-              <configuration>
-                <rules>
-                  <bannedDependencies>
-                    <excludes>
-                      <exclude>org.apache.hadoop:hadoop*:*:jar:compile</exclude>
-                    </excludes>
-                  </bannedDependencies>
-                </rules>
-                <fail>true</fail>
               </configuration>
             </execution>
           </executions>
