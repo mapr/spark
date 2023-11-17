@@ -1151,7 +1151,7 @@ private[spark] class Executor(
         // Fetch file with useCache mode, close cache for local mode.
         Utils.fetchFile(name, new File(SparkFiles.getRootDirectory()), conf,
           hadoopConf, timestamp, useCache = !isLocal)
-        currentFiles(name) = timestamp
+        state.currentFiles(name) = timestamp
       }
       for ((name, timestamp) <- newArchives if
           state.currentArchives.getOrElse(name, -1L) < timestamp) {
@@ -1179,7 +1179,7 @@ private[spark] class Executor(
           // Fetch file with useCache mode, close cache for local mode.
           Utils.fetchFile(name, new File(SparkFiles.getRootDirectory()), conf,
             hadoopConf, timestamp, useCache = !isLocal)
-          currentJars(name) = timestamp
+          state.currentJars(name) = timestamp
           // Add it to our class loader
           val url = new File(root, localName).toURI.toURL
           if (!state.urlClassLoader.getURLs().contains(url)) {
