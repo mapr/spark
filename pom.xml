@@ -83,7 +83,7 @@
     <module>common/unsafe</module>
     <module>common/utils</module>
     <module>common/tags</module>
-<!--    <module>common/classpath-filter</module>-->
+    <module>common/classpath-filter</module>
     <module>common/hive-site-editor</module>
     <module>common/nvidia-plugin</module>
     <module>core</module>
@@ -133,7 +133,7 @@
     <protobuf.version>3.23.4</protobuf.version>
     <protoc-jar-maven-plugin.version>3.11.4</protoc-jar-maven-plugin.version>
     <yarn.version>${hadoop.version}</yarn.version>
-    <zookeeper.version>3.5.6.0-mapr</zookeeper.version>
+    <zookeeper.version>3.5.6.0-mapr-2210</zookeeper.version>
     <curator.version>4.2.0</curator.version>
     <hive.group>org.apache.hive</hive.group>
     <hive.classifier>core</hive.classifier>
