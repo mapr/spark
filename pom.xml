@@ -83,7 +83,7 @@
     <module>common/unsafe</module>
     <module>common/utils</module>
     <module>common/tags</module>
-<!--    <module>common/classpath-filter</module>-->
+    <module>common/classpath-filter</module>
     <module>common/hive-site-editor</module>
     <module>common/nvidia-plugin</module>
     <module>core</module>
@@ -143,7 +143,7 @@
     <!-- Version used for internal directory structure -->
     <hive.version.short>2.3</hive.version.short>
     <!-- note that this should be compatible with Kafka brokers version 0.10 and up -->
-    <kafka.version>2.6.1.600-eep-912</kafka.version>
+    <kafka.version>2.6.1.600-eep-912-SNAPSHOT</kafka.version>
     <derby.version>10.14.2.0</derby.version>
     <parquet.version>1.13.1</parquet.version>
     <orc.version>1.9.4</orc.version>
