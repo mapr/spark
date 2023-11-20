@@ -47,7 +47,7 @@ private[streaming] class MapRDBSink(parameters: Map[String, String]) extends Sin
         }
       }
 
-      val encoder = RowEncoder(data.schema)
+      val encoder = RowEncoder.encoderFor(data.schema)
         .resolveAndBind(logicalPlan.output, data.sparkSession.sessionState.analyzer)
         .createDeserializer()
 

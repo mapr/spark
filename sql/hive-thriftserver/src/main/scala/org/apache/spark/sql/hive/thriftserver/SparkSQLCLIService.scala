@@ -19,7 +19,6 @@ package org.apache.spark.sql.hive.thriftserver
 
 import java.io.IOException
 import java.util.{List => JList}
-
 import javax.security.auth.login.LoginException
 
 import scala.collection.JavaConverters._
