@@ -18,7 +18,7 @@
 package org.apache.spark.sql.hive
 
 import java.io.File
-import java.net.{URL, URLClassLoader}
+import java.net.URL
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 

@@ -28,7 +28,7 @@ class MapRDBPartitionReader(table: String,
   extends PartitionReader[InternalRow] with LoggingTrait {
 
   private val toRow = {
-    RowEncoder(schema).resolveAndBind().createSerializer()
+    RowEncoder.encoderFor(schema).resolveAndBind().createSerializer()
   }
 
   logDebug(filters.mkString("FILTERS: [", ", ", "]"))
