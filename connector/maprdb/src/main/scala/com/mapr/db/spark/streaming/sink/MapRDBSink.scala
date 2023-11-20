@@ -4,10 +4,9 @@ package com.mapr.db.spark.streaming.sink
 import com.mapr.db.spark._
 import com.mapr.db.spark.streaming.MapRDBSourceConfig
 import org.ojai.DocumentConstants
-
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.catalyst.encoders.RowEncoder
+import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder
 import org.apache.spark.sql.catalyst.plans.logical.{Command, LocalRelation, LogicalPlan, Union}
 import org.apache.spark.sql.execution.streaming.Sink
 
@@ -47,7 +46,7 @@ private[streaming] class MapRDBSink(parameters: Map[String, String]) extends Sin
         }
       }
 
-      val encoder = RowEncoder.encoderFor(data.schema)
+      val encoder = ExpressionEncoder(data.schema)
         .resolveAndBind(logicalPlan.output, data.sparkSession.sessionState.analyzer)
         .createDeserializer()
 

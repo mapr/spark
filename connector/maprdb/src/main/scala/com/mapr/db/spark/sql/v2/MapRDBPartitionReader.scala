@@ -1,13 +1,11 @@
 package com.mapr.db.spark.sql.v2
 
 import scala.collection.JavaConverters._
-
 import com.mapr.db.spark.sql.utils.MapRSqlUtils
 import com.mapr.db.spark.utils.LoggingTrait
 import org.ojai.store._
-
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.encoders.RowEncoder
+import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder
 import org.apache.spark.sql.connector.read.PartitionReader
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types._
@@ -28,7 +26,7 @@ class MapRDBPartitionReader(table: String,
   extends PartitionReader[InternalRow] with LoggingTrait {
 
   private val toRow = {
-    RowEncoder.encoderFor(schema).resolveAndBind().createSerializer()
+    ExpressionEncoder(schema).resolveAndBind().createSerializer()
   }
 
   logDebug(filters.mkString("FILTERS: [", ", ", "]"))
