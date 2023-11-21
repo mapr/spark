@@ -1,4 +1,4 @@
-@Library("jenkins-shared-library@newJFversion")_
+@Library("jenkins-shared-library")_
 
 env.MAVEN_CENTRAL="${MAVEN_CENTRAL_COMMON}"
 env.MAPR_CENTRAL="${MAPR_CENTRAL_COMMON}"
