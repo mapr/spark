@@ -14,7 +14,7 @@ DEPLOY_ARGS=${DEPLOY_ARGS:-"
     -DaltDeploymentRepository=mapr-snapshots::default::${MAPR_MAVEN_REPO}
 "}
 
-DIST_DIR=${DIST_DIR:-"dist"}
+DIST_DIR=${DIST_DIR:-"devops/dist"}
 
 # rpmbuild does not work properly when relatve path specified here
-BUILD_DIR=${BUILD_DIR:-"$(pwd)/devops/build"}
+BUILD_ROOT=${BUILD_ROOT:-"$(pwd)/devops/buildroot"}

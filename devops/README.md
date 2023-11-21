@@ -1,8 +1,8 @@
-`BUILD_DIR=devops/build` - root dir for everything
+`BUILD_DIR=devops/buildroot` - root dir for everything
 
 ```
 >   devops
->   └── build
+>   └── buildroot
 ```
 
 
@@ -11,8 +11,8 @@ Build your project and put build restuls in `${BUILD_DIR}/build`.
 
 ```
     devops
-    └── build
->       └── bulid
+    └── buildroot
+>       └── build
 >           ├── bin
 >           ├── conf
 >           ├── ...
@@ -24,8 +24,8 @@ Prepare directory structure for roles in `${BUILD_DIR}/root`.
 
 ```
     devops
-    └── build
-        ├── bulid
+    └── buildroot
+        ├── build
         │   ├── bin
         │   ├── conf
         │   ├── ...
@@ -48,8 +48,8 @@ Prepare directory structure of the main package and put build results in corresp
 
 ```
     devops
-    └── build
-        ├── bulid
+    └── buildroot
+        ├── build
         │   ├── bin
         │   ├── conf
         │   ├── ...
@@ -80,8 +80,8 @@ Setup directory structure for RPM/DEB packages in `${BUILD_DIR}/package` and bui
 Example for DEB package:
 ```
     devops
-    └── build
-        ├── bulid
+    └── buildroot
+        ├── build
         │   ├── bin
         │   ├── conf
         │   ├── ...
@@ -134,8 +134,8 @@ Example for DEB package:
 Example for RPM package:
 ```
     devops
-    └── build
-        ├── bulid
+    └── buildroot
+        ├── build
         │   ├── bin
         │   ├── conf
         │   ├── ...

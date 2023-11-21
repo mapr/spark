@@ -13,7 +13,7 @@ fi
 setup_role() {
   package_name="$1"
 
-  opt_mapr="${BUILD_DIR}/root/${package_name}${INSTALLATION_PREFIX}"
+  opt_mapr="${BUILD_ROOT}/root/${package_name}${INSTALLATION_PREFIX}"
 
   mkdir -p "${opt_mapr}/roles"
   find "devops/specs/${package_name}/roles/" -type f -exec cp {} "${opt_mapr}/roles" \;
@@ -23,12 +23,12 @@ setup_role() {
 setup_package() {
   package_name="$1"
 
-  opt_mapr="${BUILD_DIR}/root/${package_name}${INSTALLATION_PREFIX}"
-  pkg_home="${BUILD_DIR}/root/${package_name}${PKG_INSTALL_ROOT}"
+  opt_mapr="${BUILD_ROOT}/root/${package_name}${INSTALLATION_PREFIX}"
+  pkg_home="${BUILD_ROOT}/root/${package_name}${PKG_INSTALL_ROOT}"
 
   mkdir -p "$pkg_home"
 
-  mv -T "${BUILD_DIR}/build" "$pkg_home"
+  mv -T "${BUILD_ROOT}/build" "$pkg_home"
 
   echo "$PKG_3DIGIT_VERSION" > "${opt_mapr}/${PKG_NAME}/${PKG_NAME}version"
   ln -sr "$pkg_home" "${opt_mapr}/${PKG_NAME}/current"
@@ -45,10 +45,10 @@ build_package() {
 _build_rpm() {
   package_name="$1"
 
-  rpm_root="${BUILD_DIR}/package/${package_name}/rpm"
+  rpm_root="${BUILD_ROOT}/package/${package_name}/rpm"
 
   mkdir -p "${rpm_root}/SOURCES"
-  mv -T "${BUILD_DIR}/root/${package_name}" "${rpm_root}/SOURCES"
+  mv -T "${BUILD_ROOT}/root/${package_name}" "${rpm_root}/SOURCES"
 
   mkdir -p "${rpm_root}/SPECS"
   cp devops/specs/${package_name}/rpm/*.spec "${rpm_root}/SPECS"
@@ -62,10 +62,10 @@ _build_rpm() {
 _build_deb() {
   package_name="$1"
 
-  deb_root="${BUILD_DIR}/package/${package_name}/deb"
+  deb_root="${BUILD_ROOT}/package/${package_name}/deb"
 
   mkdir -p "$deb_root"
-  mv -T "${BUILD_DIR}/root/${package_name}" "${deb_root}"
+  mv -T "${BUILD_ROOT}/root/${package_name}" "${deb_root}"
 
   mkdir -p "${deb_root}/DEBIAN"
   cp devops/specs/${package_name}/deb/* "${deb_root}/DEBIAN"

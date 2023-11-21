@@ -7,6 +7,7 @@ env.MAPR_SNAPSHOTS_REPO="${MAPR_SNAPSHOTS_REPO_COMMON}"
 env.MAPR_MAVEN_REPO="${MAPR_SNAPSHOTS_REPO_COMMON}"
 
 ARTIFACTORY_SERVER=''
+DIST_DIR='devops/dist'
 YAML_CONFIG=''
 env.REPOSITORY_NAME=''
 env.GIT_REPO_URL=''
@@ -58,7 +59,7 @@ pipeline {
                 echo "Using image: ${IMAGE_NAMES_MAP[it.name]}"
                 buildStage(it)
                 if(it.rpmSign == true)
-                  signing.rpmSign("dist")
+                  signing.rpmSign(DIST_DIR)
                 getVersionAndUploadToArtifactory(it)
               }
             }
@@ -145,24 +146,22 @@ def buildStage(yamlCurrentBuildItem) {
 }
 
 def validateBuildImage(yamlCurrentBuildItem) {
-    def imageStatic = yamlCurrentBuildItem.image
-    def imageCustom = yamlCurrentBuildItem.imageCustom
-    def imageName = ""
+  def imageStatic = yamlCurrentBuildItem.image
+  def imageCustom = yamlCurrentBuildItem.imageCustom
+  def imageName = ""
+  if (imageStatic) {
+    imageName = imageStatic.replace("_DOCKER_REGISTRY_", DOCKER_REGISTRY)
+  }
+  if (imageCustom) {
     if (imageStatic) {
-      imageName = imageStatic.replace("_DOCKER_REGISTRY_", DOCKER_REGISTRY)
+      error "You can not specify 'image' and 'imageCustom' options in build-config.yaml"
     }
-    if (imageCustom) {
-      if (imageStatic) {
-        error "You can not specify 'image' and 'imageCustom' options in build-config.yaml"
-      }
-      imageName = sh(script: imageCustom, returnStdout: true).trim()
-    }
-    IMAGE_NAMES_MAP[yamlCurrentBuildItem.name] = imageName
+    imageName = sh(script: imageCustom, returnStdout: true).trim()
+  }
+  IMAGE_NAMES_MAP[yamlCurrentBuildItem.name] = imageName
 }
 
 def getVersionAndUploadToArtifactory(yamlCurrentBuildItem) {
-  stage("Get Version And Upload to Artifactory stage:${yamlCurrentBuildItem.name}") {
-    def osVersionContainerRaw = sh script: 'cat os_release_version.txt', returnStdout:true
-    artifactory.uploadToArtifactoryWithOSVersions(ARTIFACTORY_SERVER, osVersionContainerRaw)
-  }
+  def osVersionContainerRaw = sh script: 'cat os_release_version.txt', returnStdout:true
+  artifactory.uploadToArtifactoryWithOSVersions(ARTIFACTORY_SERVER, osVersionContainerRaw, DIST_DIR)
 }
