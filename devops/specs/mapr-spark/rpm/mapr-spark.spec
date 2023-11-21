@@ -51,10 +51,10 @@ ln -sfn $SPARK_HOME /usr/local/spark
 
 case "$1" in
   1)
-    touch "$SPARK_HOME/etc/.not_configured_yet"
+    touch "${SPARK_HOME}/conf/.not_configured_yet"
   ;;
   2)
-   	touch "$SPARK_HOME/etc/.just_updated"
+     touch "${SPARK_HOME}/conf/.just_updated"
   ;;
 esac
 

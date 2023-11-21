@@ -22,7 +22,9 @@ build_spark() {
   cp ext-utils/* ext-conf/compatibility.version "${BUILD_DIR}/build/mapr-util"
 
   mkdir -p "${BUILD_DIR}/build/warden"
-  cp ext-conf/warden.spark-{historyserver,master,thriftserver}.conf "${BUILD_DIR}/build/warden"
+  cp ext-conf/warden.spark-historyserver.conf "${BUILD_DIR}/build/warden/warden.spark-historyserver.conf.template"
+  cp ext-conf/warden.spark-master.conf        "${BUILD_DIR}/build/warden/warden.spark-master.conf.template"
+  cp ext-conf/warden.spark-thriftserver.conf  "${BUILD_DIR}/build/warden/warden.spark-thriftserver.conf.template"
 
   cp -rp ext-lib/scala "${BUILD_DIR}/build"
 }
