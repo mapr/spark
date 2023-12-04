@@ -157,6 +157,10 @@
               </excludes>
             </relocation>
             <relocation>
+              <pattern>com.google.common</pattern>
+              <shadedPattern>${spark.shade.packageName}.guava</shadedPattern>
+            </relocation>
+            <relocation>
               <pattern>io.netty</pattern>
               <shadedPattern>${spark.shade.packageName}.io.netty</shadedPattern>
             </relocation>
