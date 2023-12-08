@@ -1,8 +1,10 @@
+#!/bin/sh
+
 BASE_IMAGE=${DOCKER_REGISTRY}/ubuntu16-java11-gcc7
 BASE_TAG=latest
 
 BASEDIR=$(dirname $0)
-DOCKERFILE_CHECKSUM=$(md5sum "${BASEDIR}/Dockerfile" | head -c 7)
+DOCKERFILE_CHECKSUM=$(find "$BASEDIR" | cpio -o 2>/dev/null | md5sum | head -c 7)
 
 IMAGE_NAME_FOR_BUILD=${BASE_IMAGE}-custom-${REPOSITORY_NAME}:${BASE_TAG}-${DOCKERFILE_CHECKSUM}
 
