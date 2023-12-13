@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.spark</groupId>
     <artifactId>spark-parent_2.12</artifactId>
-    <version>3.3.3.0-eep-SNAPSHOT</version>
+    <version>3.3.3.0-eep-921</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -87,9 +87,9 @@
     </dependency>
     --><!-- #endif scala-2.13 -->
     <dependency>
-      <groupId>com.mapr.kafka</groupId>
+      <groupId>org.apache.kafka</groupId>
       <artifactId>kafka-eventstreams</artifactId>
-      <version>0.2.0-eep-900-SNAPSHOT</version>
+      <version>${kafka.version}</version>
       <exclusions>
         <exclusion>
           <groupId>com.mapr.hadoop</groupId>

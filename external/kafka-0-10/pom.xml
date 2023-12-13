@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.spark</groupId>
     <artifactId>spark-parent_2.12</artifactId>
-    <version>3.3.3.0-eep-SNAPSHOT</version>
+    <version>3.3.3.0-eep-921</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -29,7 +29,7 @@
   <properties>
     <sbt.project.name>streaming-kafka-0-10</sbt.project.name>
     <!-- note that this should be compatible with Kafka brokers version 0.10 and up -->
-    <kafka.version>2.6.1.700-eep-920-SNAPSHOT</kafka.version>
+    <kafka.version>2.6.1.700-eep-921</kafka.version>
   </properties>
   <packaging>jar</packaging>
   <name>Spark Integration for Kafka 0.10</name>
