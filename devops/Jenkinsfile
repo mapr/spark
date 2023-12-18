@@ -23,16 +23,13 @@ IMAGE_NAMES_MAP=[:]
 
 pipeline {
   agent none
-  triggers {
-    pollSCM 'H/5 * * * *'
-  }
   options {
     skipDefaultCheckout()
     disableConcurrentBuilds()
     timestamps()
   }
   parameters {
-    choice(name: 'BUILD_TYPE', choices: ['Dev','EBF','Release'], description: 'default - Dev. EBF and Release args you can use only in release branches.')
+    choice(name: 'BUILD_TYPE', choices: ['Dev','EBF','Mid_Release','Release'], description: 'default - Dev. EBF and Release args you can use only in release branches.')
     string(name: 'BUILD_ENV_VARS', defaultValue: '', description: 'Variables you can pass to build script. Command will be: "env {THIS VARS} path/to/build.sh".')
     booleanParam(name: 'DO_DEPLOY', defaultValue: true, description: 'Uncheck and Jenkins will skip ./build/mvn deploy')
   }
@@ -113,7 +110,11 @@ pipeline {
 }
 
 def buildStage(yamlCurrentBuildItem) {
-  def buildCommand = yamlCurrentBuildItem.basicBuildCommands.replace("_BUILD_ENV_VARS_","TIMESTAMP=${ID} DO_DEPLOY=${params.DO_DEPLOY} ${params.BUILD_ENV_VARS}")
+  def buildCommand =''
+  if(params.BUILD_TYPE == "Mid_Release") {
+    buildCommand += "bash ./devops/scripts/upd_build_version.sh ${CURRENT_BUILD_TAG}; "
+  }
+  buildCommand += yamlCurrentBuildItem.basicBuildCommands.replace("_BUILD_ENV_VARS_","TIMESTAMP=${ID} ${params.BUILD_ENV_VARS}")
 
   configFileProvider([configFile(fileId: 'maven_settings_spark_deploy_mvn381_above', variable: 'mvn_settings')]) {
     sh "cat ${env.mvn_settings} > settings.xml"
