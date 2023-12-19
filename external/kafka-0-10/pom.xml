@@ -29,7 +29,7 @@
   <properties>
     <sbt.project.name>streaming-kafka-0-10</sbt.project.name>
     <!-- note that this should be compatible with Kafka brokers version 0.10 and up -->
-    <kafka.version>2.6.1.700-eep-921</kafka.version>
+    <kafka.version>2.6.1.700-eep-921-v202312191113</kafka.version>
   </properties>
   <packaging>jar</packaging>
   <name>Spark Integration for Kafka 0.10</name>
