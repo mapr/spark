@@ -3549,7 +3549,7 @@
     <profile>
       <id>hadoop-3.3</id>
       <properties>
-        <hadoop.version>3.3.5.200-eep-921</hadoop.version>
+        <hadoop.version>3.3.5.200-eep-921-v202312190455</hadoop.version>
         <curator.version>4.2.0</curator.version>
         <commons-io.version>2.13.0</commons-io.version>
         <!--
