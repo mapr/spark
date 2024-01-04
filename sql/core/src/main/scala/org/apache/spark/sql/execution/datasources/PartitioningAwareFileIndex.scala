@@ -258,7 +258,7 @@ abstract class PartitioningAwareFileIndex(
         val qualifiedBasePath = fs.makeQualified(userDefinedBasePath)
         val qualifiedBasePathStr = qualifiedBasePath.toString
         rootPaths
-          .find(!fs.makeQualified(_).toString.startsWith(qualifiedBasePathStr))
+          .find(!fs.makeQualified(_).toString.filterNot(_ == '/').startsWith(qualifiedBasePathStr.filterNot(_ == '/')))
           .foreach { rp =>
             throw new IllegalArgumentException(
               s"Wrong basePath $userDefinedBasePath for the root path: $rp")
