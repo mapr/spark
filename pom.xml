@@ -83,7 +83,7 @@
     <module>common/unsafe</module>
     <module>common/utils</module>
     <module>common/tags</module>
-    <module>common/classpath-filter</module>
+<!--    <module>common/classpath-filter</module>-->
     <module>common/hive-site-editor</module>
     <module>common/nvidia-plugin</module>
     <module>common/ez-aws-credential-provider</module>
@@ -285,6 +285,10 @@
     <orc.deps.scope>compile</orc.deps.scope>
     <parquet.deps.scope>compile</parquet.deps.scope>
     <parquet.test.deps.scope>test</parquet.test.deps.scope>
+
+    <hadoop-client-api.artifact>hadoop-client</hadoop-client-api.artifact>
+    <hadoop-client-runtime.artifact>hadoop-yarn-api</hadoop-client-runtime.artifact>
+    <hadoop-client-minicluster.artifact>hadoop-client</hadoop-client-minicluster.artifact>
 
     <spark.yarn.isHadoopProvided>false</spark.yarn.isHadoopProvided>
 
@@ -1372,19 +1376,19 @@
       <!-- Hadoop 3.x dependencies -->
       <dependency>
         <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-client-api</artifactId>
+        <artifactId>${hadoop-client-api.artifact}</artifactId>
         <version>${hadoop.version}</version>
         <scope>${hadoop.deps.scope}</scope>
       </dependency>
       <dependency>
         <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-client-runtime</artifactId>
+        <artifactId>${hadoop-client-runtime.artifact}</artifactId>
         <version>${hadoop.version}</version>
         <scope>${hadoop.deps.scope}</scope>
       </dependency>
       <dependency>
         <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-client-minicluster</artifactId>
+        <artifactId>${hadoop-client-minicluster.artifact}</artifactId>
         <version>${yarn.version}</version>
         <scope>test</scope>
       </dependency>
@@ -3647,6 +3651,7 @@
           the declaration site above of these variables explains why we need to re-assign them here
         -->
         <hadoop-client-api.artifact>hadoop-client</hadoop-client-api.artifact>
+        <hadoop-client-runtime.artifact>hadoop-yarn-api</hadoop-client-runtime.artifact>
         <hadoop-client-minicluster.artifact>hadoop-client</hadoop-client-minicluster.artifact>
       </properties>
     </profile>
