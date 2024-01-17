@@ -239,6 +239,14 @@ function changeWardenConfig() {
 	fi
 }
 
+function changeCompatibilityVersions() {
+  component_name=$1
+  component_version=$2
+  compatibility_version_file_path="${SPARK_HOME}/mapr-util/compatibility.version"
+  new_component_line="${component_name}_versions=${component_version}"
+  sed -i "/$component_name/c\\$new_component_line" "$compatibility_version_file_path"
+}
+
 #
 # Change permission
 #
@@ -382,6 +390,7 @@ function configureOnHive() {
 	if [ -f $SPARK_HOME/conf/hive-site.xml ] ; then
 		java -cp $SPARK_HOME'/jars/*' org.apache.spark.editor.HiveSiteEditor replace hive.security.authorization.manager=org.apache.hadoop.hive.ql.security.authorization.plugin.fallback.FallbackHiveAuthorizerFactory hive.execution.engine=mr
 	fi
+	changeCompatibilityVersions hive $HIVE_VERSION
 }
 
 #
@@ -392,6 +401,15 @@ function configureOnHbase() {
     if [ -f $HBASE_HOME/conf/hbase-site.xml ]; then
         cp $HBASE_HOME/conf/hbase-site.xml $SPARK_HOME/conf/hbase-site.xml
     fi
+    changeCompatibilityVersions hbase $HBASE_VERSION
+}
+
+#
+# Configure on Hadoop
+#
+
+function configureOnHadoop() {
+  changeCompatibilityVersions hbase $HBASE_VERSION
 }
 
 #
@@ -652,6 +670,7 @@ fi
 if [ "$HBASE_INSTALLED" = true ]; then
 	configureOnHbase
 fi
+configureOnHadoop
 if [ ! "$isSecure" -eq 2 ] ; then
 	configureSecurity
 fi
