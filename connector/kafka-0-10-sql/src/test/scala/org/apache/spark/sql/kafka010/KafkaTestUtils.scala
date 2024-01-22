@@ -39,6 +39,7 @@ import org.apache.kafka.clients.producer._
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.config.SaslConfigs
 import org.apache.kafka.common.network.ListenerName
+// import org.apache.kafka.common.requests.FetchRequest
 import org.apache.kafka.common.security.auth.SecurityProtocol.{PLAINTEXT, SASL_PLAINTEXT}
 import org.apache.kafka.common.serialization.StringSerializer
 import org.apache.kafka.common.utils.SystemTime
@@ -599,7 +600,7 @@ class KafkaTestUtils(
 //        .getPartitionInfo(topic, partition) match {
 //      case Some(partitionState) =>
 //        zkClient.getLeaderForPartition(new TopicPartition(topic, partition)).isDefined &&
-//          Request.isValidBrokerId(partitionState.leader) &&
+//          FetchRequest.isValidBrokerId(partitionState.leader) &&
 //          !partitionState.replicas.isEmpty
 //
 //      case _ =>
