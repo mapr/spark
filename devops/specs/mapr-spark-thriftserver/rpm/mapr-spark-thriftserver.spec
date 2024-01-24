@@ -9,7 +9,7 @@ release:     1
 prefix:      /
 group:       MapR
 buildarch:   noarch
-requires:    mapr-spark = __RELEASE_VERSION__, mapr-core
+requires:    mapr-spark = __RELEASE_VERSION__
 AutoReqProv: no
 
 %description
