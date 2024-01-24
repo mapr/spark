@@ -3,7 +3,7 @@ Version: __RELEASE_VERSION__
 Section: base
 Priority: optional
 Architecture: all
-Depends: mapr-spark (>= __RELEASE_VERSION__) | mapr-spark (<= __RELEASE_VERSION__), mapr-core
+Depends: mapr-spark (= __RELEASE_VERSION__)
 Maintainer: Hewlett Packard Enterprise <ezmeral_software_support@hpe.com>
 Description: Ezmeral Ecosystem Pack: Spark Thrift Server package
   Tag: __RELEASE_BRANCH__
