@@ -3,7 +3,7 @@ Version: __RELEASE_VERSION__
 Section: base
 Priority: optional
 Architecture: all
-Depends: mapr-client, mapr-hadoop-client
+Depends: mapr-client, mapr-hadoop-client, mapr-core
 Maintainer: Hewlett Packard Enterprise <ezmeral_software_support@hpe.com>
 Description: Ezmeral Ecosystem Pack: Spark package
   Tag: __RELEASE_BRANCH__
