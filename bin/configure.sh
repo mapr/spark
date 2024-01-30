@@ -390,7 +390,6 @@ function configureOnHive() {
 	if [ -f $SPARK_HOME/conf/hive-site.xml ] ; then
 		java -cp $SPARK_HOME'/jars/*' org.apache.spark.editor.HiveSiteEditor replace hive.security.authorization.manager=org.apache.hadoop.hive.ql.security.authorization.plugin.fallback.FallbackHiveAuthorizerFactory hive.execution.engine=mr
 	fi
-	changeCompatibilityVersions hive $HIVE_VERSION
 }
 
 #
@@ -409,7 +408,7 @@ function configureOnHbase() {
 #
 
 function configureOnHadoop() {
-  changeCompatibilityVersions hbase $HBASE_VERSION
+  changeCompatibilityVersions hadoop3 $HADOOP_VERSION
 }
 
 #
