@@ -284,6 +284,26 @@
       </dependencies>
     </profile>
     <profile>
+      <id>include-kafka-09</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.spark</groupId>
+          <artifactId>spark-streaming-kafka-0-10_${scala.binary.version}</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>include-kafka-sql</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.spark</groupId>
+          <artifactId>spark-sql-kafka-0-10_${scala.binary.version}</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
       <id>include-maprdb</id>
       <dependencies>
         <dependency>
