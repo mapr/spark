@@ -278,7 +278,7 @@
       </dependencies>
     </profile>
     <profile>
-      <id>include-kafka-09</id>
+      <id>include-kafka</id>
       <dependencies>
         <dependency>
           <groupId>org.apache.spark</groupId>
