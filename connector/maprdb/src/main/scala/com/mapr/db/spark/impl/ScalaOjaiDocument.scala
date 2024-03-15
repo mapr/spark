@@ -29,7 +29,7 @@ private[spark] abstract class ScalaOjaiDocument[B <: ScalaOjaiDocument[B]](
     with LoggingTrait {
 
   // constructor required for serialization.
-  def this() {
+  def this() = {
     this(null)
   }
 
@@ -95,7 +95,7 @@ private[spark] abstract class ScalaOjaiDocument[B <: ScalaOjaiDocument[B]](
 
   def getIdBinarySerializable: DBBinaryValue = new DBBinaryValue(this.dc.getIdBinary)
 
-  override def isReadOnly: Boolean = this.isReadOnly()
+  override def isReadOnly: Boolean = this.dc.isReadOnly
 
 
   override def size: Int = this.dc.size
@@ -611,12 +611,12 @@ private[spark] abstract class ScalaOjaiDocument[B <: ScalaOjaiDocument[B]](
 
   override def getList(fieldPath: String): Seq[AnyRef] = {
     val result: java.util.List[Object] = this.dc.getList(fieldPath)
-    if (result == null) null else new DBArrayValue(result.asScala)
+    if (result == null) null else new DBArrayValue(result.asScala.toSeq).toSeq
   }
 
   override def getList(fieldPath: FieldPath): Seq[AnyRef] = {
     val result = this.dc.getList(fieldPath)
-    if (result == null) null else new DBArrayValue(result.asScala)
+    if (result == null) null else new DBArrayValue(result.asScala.toSeq).toSeq
   }
 
   override def asJsonString(): String = {

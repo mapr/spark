@@ -12,7 +12,7 @@ import org.ojai.store.QueryCondition
 private[spark] class DBQueryCondition(@transient var condition: QueryCondition)
     extends Externalizable {
 
-  def this() {
+  def this() = {
     this(null)
   }
 

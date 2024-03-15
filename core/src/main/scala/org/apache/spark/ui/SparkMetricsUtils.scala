@@ -104,7 +104,7 @@ private[spark] object SparkMetricsUtils extends SparkMetricsUtils with Logging {
     mfs.getZkConnectString
   }
 
-  private def mkdir(zk: CuratorFramework, path: String) {
+  private def mkdir(zk: CuratorFramework, path: String): Unit = {
     if (zk.checkExists().forPath(path) == null) {
       zk.create().creatingParentsIfNeeded().forPath(path)
     }

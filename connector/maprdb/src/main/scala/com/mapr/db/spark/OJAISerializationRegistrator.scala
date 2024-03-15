@@ -20,7 +20,7 @@ import org.apache.spark.serializer.KryoRegistrator
 */
 class OJAIKryoRegistrator extends KryoRegistrator {
 
-  override def registerClasses(kryo: Kryo) {
+  override def registerClasses(kryo: Kryo): Unit = {
     kryo.register(classOf[ODate], new ODateSerializer())
     kryo.register(classOf[OTime], new OTimeSerializer())
     kryo.register(classOf[OTimestamp], new OTimeStampSerializer())
