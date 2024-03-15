@@ -234,7 +234,7 @@ private[spark] class SecurityManager(
     sslOptions.enabled && sslOptions.keyStore.isEmpty
   }
 
-  def copyFromMfs(localBaseDir: String) {
+  def copyFromMfs(localBaseDir: String): Unit = {
     val username = UserGroupInformation.getCurrentUser.getShortUserName
     val mfsBaseDir = s"/apps/spark/__$username-spark-internal__/security_keys"
     val mfsKeyStore = s"$mfsBaseDir/ssl_keystore"

@@ -12,7 +12,7 @@ import org.ojai.store.DocumentStore
 trait OJAIKEY[T] extends Serializable {
   type Self
   def getValue(value: Any): Self
-  def getTabletInfo(store: DocumentStore, value: Self)
+  def getTabletInfo(store: DocumentStore, value: Self): Unit
   def getRange(splitkeys: (Self, Self)): RowkeyRange
   def getBytes(value: Any): Array[Byte]
   def getValueFromBinary(value: DBBinaryValue): Self

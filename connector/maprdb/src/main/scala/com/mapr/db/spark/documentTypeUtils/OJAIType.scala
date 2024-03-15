@@ -28,7 +28,7 @@ object OJAIType {
       } else if (result.getType == Value.Type.MAP) {
         new DBMapValue(result.getMap.asScala.toMap)
       } else if (result.getType == Value.Type.ARRAY) {
-        new DBArrayValue(result.getList.asScala)
+        new DBArrayValue(result.getList.asScala.toSeq)
       } else if (result.getType == Value.Type.BINARY) {
         new DBBinaryValue(result.getBinary)
       } else result.getObject
@@ -205,7 +205,7 @@ object OJAIType {
     type Self = DBArrayValue[AnyRef]
     def getValue(doc: Document, fieldPath: String): Self = {
       val result = doc.getList(fieldPath)
-      if (result == null) null else new DBArrayValue(result.asScala)
+      if (result == null) null else new DBArrayValue(result.asScala.toSeq)
     }
     def setValue(dc: OJAIDocument,
                  name: String,
@@ -231,7 +231,7 @@ object OJAIType {
     def getValue(doc: Document, fieldPath: String): Self = {
       val result: java.util.List[Object] = doc.getList(fieldPath)
 
-      if (result == null) null else new DBArrayValue(result.asScala)
+      if (result == null) null else new DBArrayValue(result.asScala.toSeq)
     }
     override def setValue(dc: OJAIDocument,
                           name: String,
@@ -244,7 +244,7 @@ object OJAIType {
     def getValue(doc: Document, fieldPath: String): Self = {
       val result: java.util.List[Object] = doc.getList(fieldPath)
 
-      if (result == null) null else new DBArrayValue(result.asScala)
+      if (result == null) null else new DBArrayValue(result.asScala.toSeq)
     }
     override def setValue(dc: OJAIDocument,
                           name: String,

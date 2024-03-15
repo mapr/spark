@@ -282,7 +282,7 @@ object KafkaUtilsPythonHelper {
       Pickler.registerCustomPickler(this.getClass, this)
     }
 
-    def pickle(obj: Object, out: OutputStream, pickler: Pickler) {
+    def pickle(obj: Object, out: OutputStream, pickler: Pickler): Unit = {
       if (obj == this) {
         out.write(Opcodes.GLOBAL)
         out.write(s"$module\nKafkaMessageAndMetadata\n".getBytes(UTF_8))
