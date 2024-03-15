@@ -60,7 +60,7 @@ private[spark] case class MapRDBRelation(
     optimizedByFilter
       .map(doc => doc.asReader())
       .mapPartitions(
-        MapRSqlUtils.documentsToRow(_, StructType(fields), requiredColumns))
+        MapRSqlUtils.documentsToRow(_, StructType(fields.toSeq), requiredColumns))
   }
 
 

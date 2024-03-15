@@ -41,7 +41,7 @@ class DefaultSource
       parameters.getOrElse("Operation", "InsertOrReplace"),
       parameters.getOrElse("FailOnConflict", "false"),
       parameters.filterKeys(k =>
-        k.startsWith("ojai.mapr.query") || k.startsWith("spark.maprdb")).map(identity)
+        k.startsWith("ojai.mapr.query") || k.startsWith("spark.maprdb")).map(identity).toMap
     )
   }
 
@@ -64,7 +64,7 @@ class DefaultSource
       parameters.getOrElse("Operation", "InsertOrReplace"),
       parameters.getOrElse("FailOnConflict", "false"),
       parameters.filterKeys(k =>
-        k.startsWith("ojai.mapr.query") || k.startsWith("spark.maprdb")).map(identity)
+        k.startsWith("ojai.mapr.query") || k.startsWith("spark.maprdb")).map(identity).toMap
     )
   }
 
@@ -152,7 +152,7 @@ class DefaultSource
       parameters.getOrElse("Operation", "InsertOrReplace"),
       parameters.getOrElse("FailOnConflict", "false"),
       parameters.filterKeys(k =>
-        k.startsWith("ojai.mapr.query") || k.startsWith("spark.maprdb")).map(identity)
+        k.startsWith("ojai.mapr.query") || k.startsWith("spark.maprdb")).map(identity).toMap
     )
   }
 

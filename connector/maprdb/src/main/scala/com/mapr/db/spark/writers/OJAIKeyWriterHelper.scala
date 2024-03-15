@@ -12,7 +12,7 @@ import org.apache.spark.sql.Row
 private[spark] sealed trait OJAIValue[T] extends Serializable {
   type Self
   def getValue(elem: T): Document
-  def write(doc: Document, getID: (Document) => Value, writer: Writer)
+  def write(doc: Document, getID: (Document) => Value, writer: Writer): Unit
 }
 
 private[spark] object OJAIValue extends BaseOJAIValue {

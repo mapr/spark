@@ -11,13 +11,13 @@ import org.ojai.Document
 
 private[spark] trait Writer extends Serializable {
 
-  def write(doc: Document, key: ByteBuffer)
+  def write(doc: Document, key: ByteBuffer): Unit
 
-  def write(doc: Document, key: String)
+  def write(doc: Document, key: String): Unit
 
-  def write(doc: Document, key: org.ojai.Value)
+  def write(doc: Document, key: org.ojai.Value): Unit
 
-  def close()
+  def close(): Unit
 }
 
 private[spark] object Writer {
