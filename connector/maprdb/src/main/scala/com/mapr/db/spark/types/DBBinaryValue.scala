@@ -12,7 +12,7 @@ import com.mapr.org.apache.hadoop.hbase.util.Bytes
 private[spark] final class DBBinaryValue(
     @transient private[spark] var bin: ByteBuffer)
     extends Externalizable {
-  def this() = {
+  def this() {
     this(null)
   }
 

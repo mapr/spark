@@ -5,6 +5,7 @@ import java.io.{Externalizable, ObjectInput, ObjectOutput}
 import java.nio._
 
 import scala.collection.JavaConverters._
+import scala.collection.MapLike
 
 import com.mapr.db.rowcol.RowcolCodec
 import com.mapr.db.spark.dbclient.DBClient
@@ -15,9 +16,10 @@ import java.util
 private[spark] final class DBMapValue(
     @transient private[spark] var value: Map[String, AnyRef])
     extends Map[String, AnyRef]
+    with MapLike[String, AnyRef, DBMapValue]
     with Externalizable {
 
-  def this() = {
+  def this() {
     this(null)
   }
 
@@ -27,19 +29,14 @@ private[spark] final class DBMapValue(
 
   override def +[B1 >: AnyRef](kv: (String, B1)): Map[String, B1] = m + kv
 
-// use "removed" method because "-" method is final in Scala 2.13
-//  override def -(k: String): DBMapValue = new DBMapValue(m - k)
+  override def -(k: String): DBMapValue = new DBMapValue(m - k)
 
   override def iterator: MapIterator = new MapIterator(m)
-
-  override def removed(k: String): Map[String, AnyRef] = m.removed(k)
-
-  override def updated[V1 >: AnyRef](k: String, v: V1): Map[String, V1] = m.updated(k, v)
 
   override def get(s: String): Option[AnyRef] = {
     val element = m.get(s)
     if (element.isDefined && element.get.isInstanceOf[java.util.List[_]]) {
-      Option(new DBArrayValue(element.get.asInstanceOf[java.util.List[Object]].asScala.toSeq))
+      Option(new DBArrayValue(element.get.asInstanceOf[java.util.List[Object]].asScala))
     } else if (element.isDefined && element.get.isInstanceOf[java.util.Map[_, _]]) {
       Option(new DBMapValue(element.get.asInstanceOf[util.Map[String, Object]].asScala.toMap))
     } else {

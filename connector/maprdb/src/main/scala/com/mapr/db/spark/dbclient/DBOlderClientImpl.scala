@@ -26,7 +26,7 @@ object DBOlderClientImpl extends DBClient {
     connection.getStore(tablePath, connection.newDocument()
       .set(bufferWritesOption, bufferWrites))
       .asInstanceOf[OjaiDocumentStore].getTable.getMetaTable
-      .getScanRanges(cond).asScala.toSeq
+      .getScanRanges(cond).asScala
   }
 
   override def getTabletInfos(tablePath: String, bufferWrites: Boolean): Seq[ScanRange] = {
@@ -34,7 +34,7 @@ object DBOlderClientImpl extends DBClient {
       connection.getStore(tablePath, connection.newDocument()
         .set(bufferWritesOption, bufferWrites))
         .asInstanceOf[OjaiDocumentStore].getTable.getMetaTable
-        .getScanRanges().asScala.toSeq
+        .getScanRanges().asScala
   }
 
   override def newDocument(jsonString: String): Document =

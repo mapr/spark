@@ -1,3 +1,3 @@
 module classpathfilter
 
-go 1.19.10
+go 1.16
