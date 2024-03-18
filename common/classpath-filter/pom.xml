@@ -79,27 +79,49 @@
                     </execution>
                 </executions>
             </plugin>
+<!--            <plugin>-->
+<!--              <artifactId>exec-maven-plugin</artifactId>-->
+<!--              <groupId>org.codehaus.mojo</groupId>-->
+<!--              <executions>-->
+<!--                <execution>-->
+<!--                  <id>build-classpathfilter-go-binary</id>-->
+<!--                  <phase>compile</phase>-->
+<!--                  <goals>-->
+<!--                    <goal>exec</goal>-->
+<!--                  </goals>-->
+<!--                  <configuration>-->
+<!--                    <workingDirectory>src/main/go/classpathfilter</workingDirectory>-->
+<!--                    <executable>go</executable>-->
+<!--                    <arguments>-->
+<!--                        <argument>build</argument>-->
+<!--                        <argument>-o</argument>-->
+<!--                        <argument>${project.build.directory}/bin/classpathfilter</argument>-->
+<!--                    </arguments>-->
+<!--                  </configuration>-->
+<!--                </execution>-->
+<!--              </executions>-->
+<!--            </plugin>-->
             <plugin>
-              <artifactId>exec-maven-plugin</artifactId>
-              <groupId>org.codehaus.mojo</groupId>
-              <executions>
-                <execution>
-                  <id>build-classpathfilter-go-binary</id>
-                  <phase>compile</phase>
-                  <goals>
-                    <goal>exec</goal>
-                  </goals>
-                  <configuration>
-                    <workingDirectory>src/main/go/classpathfilter</workingDirectory>
-                    <executable>go</executable>
-                    <arguments>
-                        <argument>build</argument>
-                        <argument>-o</argument>
-                        <argument>${project.build.directory}/bin/classpathfilter</argument>
-                    </arguments>
-                  </configuration>
-                </execution>
-              </executions>
+                <groupId>com.igormaznitsa</groupId>
+                <artifactId>mvn-golang-wrapper</artifactId>
+                <version>2.3.10</version>
+                <extensions>true</extensions>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                        <configuration>
+                            <goVersion>1.19.10</goVersion>
+                            <packages>
+                                <package>main.go</package>
+                            </packages>
+                            <sources>${basedir}/src/main/go/classpathfilter</sources>
+                            <resultFolder>${project.build.directory}/bin</resultFolder>
+                            <resultName>classpathfilter</resultName>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
