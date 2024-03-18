@@ -32,7 +32,6 @@
     <url>http://spark.apache.org/</url>
     <properties>
         <sbt.project.name>classpath-filter</sbt.project.name>
-        <mvn.golang.go.version>1.19.10</mvn.golang.go.version>
     </properties>
 
 
@@ -110,12 +109,16 @@
                 <executions>
                     <execution>
                         <goals>
-                            <goal>run</goal>
+                            <goal>build</goal>
                         </goals>
                         <configuration>
+                            <goVersion>1.19.10</goVersion>
                             <packages>
                                 <package>main.go</package>
                             </packages>
+                            <sources>${basedir}/src/main/go/classpathfilter</sources>
+                            <resultFolder>${project.build.directory}/bin</resultFolder>
+                            <resultName>classpathfilter</resultName>
                         </configuration>
                     </execution>
                 </executions>
