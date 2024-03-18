@@ -805,11 +805,11 @@ class SparkContext(config: SparkConf) extends Logging {
   /**
    * MAPR_SPECIFIC: Used to implement impersonation in SparkExecutor
    */
-  def setJobDoAsUser(user: String): Unit = {
+  def setJobDoAsUser(user: String) {
     setLocalProperty(SparkContext.SPARK_JOB_DOASUSER, user)
   }
 
-  def setJobDoAsUser(): Unit = {
+  def setJobDoAsUser() {
     setLocalProperty(SparkContext.SPARK_JOB_DOASUSER, UserGroupInformation.getCurrentUser.getUserName)
   }
 

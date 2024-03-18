@@ -1,6 +1,6 @@
 package com.mapr.db.spark.sql.v2
 
-import scala.jdk.CollectionConverters._
+import scala.collection.JavaConversions._
 
 import com.mapr.db.spark.sql.v2.QueryConditionExtensions._
 import org.ojai.store.{Connection, QueryCondition}
@@ -82,7 +82,7 @@ object QueryConditionBuilder extends Logging {
     val simpleCondition = filter match {
       case IsNull(field) => connection.newCondition().notExists(field)
       case IsNotNull(field) => connection.newCondition().exists(field)
-      case In(field, values) => connection.newCondition().in(field, values.toList.asJava)
+      case In(field, values) => connection.newCondition().in(field, values.toList)
       case StringStartsWith(field, value) => connection.newCondition().matches(field, value)
       case EqualTo(field, value) => connection.newCondition().field(field) === value
       case LessThan(field, value) => connection.newCondition().field(field) < value

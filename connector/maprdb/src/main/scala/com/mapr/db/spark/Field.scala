@@ -163,7 +163,7 @@ case class field(fieldPath: String) {
     */
   def notmatches(regex: String): NotMatches = NotMatches(this, regex)
 
-  override def toString: String = s"* $fieldPath *"
+  override def toString: String = s"\42 $fieldPath \42"
 }
 
 object field {

@@ -6,7 +6,7 @@ import com.mapr.db.exceptions.DBException
 class SchemaMappingException(message: String, throwable: Throwable)
     extends DBException(message, throwable) {
 
-  def this(message: String) = {
+  def this(message: String) {
     this(message, null)
   }
 }

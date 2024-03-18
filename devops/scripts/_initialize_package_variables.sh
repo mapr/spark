@@ -12,7 +12,7 @@ DIST_DIR=${DIST_DIR:-"devops/dist"}
 # rpmbuild does not work properly when relatve path specified here
 BUILD_ROOT=${BUILD_ROOT:-"$(pwd)/devops/buildroot"}
 
-MVN_PROFILE_ARG=${MVN_PROFILE_ARG:-"-Pyarn,hadoop-provided,hadoop-3.3,scala-2.13,hive,hive-thriftserver,sparkr,kubernetes,include-kafka,include-kafka-sql,include-maprdb"}
+MVN_PROFILE_ARG=${MVN_PROFILE_ARG:-"-Pyarn,hadoop-provided,hadoop-3.3,scala-2.12,hive,hive-thriftserver,sparkr,kubernetes,include-kafka,include-kafka-sql,include-maprdb"}
 DEPLOY_ARGS=${DEPLOY_ARGS:-"
     -Dscalastyle.skip=true -Dcheckstyle.skip=true -Dscalastyle.failOnViolation=false -Dscalatest.testFailureIgnore=true
     -DaltDeploymentRepository=mapr-snapshots::default::${MAPR_MAVEN_REPO}

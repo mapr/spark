@@ -259,7 +259,7 @@ object MapRSqlUtils {
     row.schema.fields.zipWithIndex.foreach({
       case (field, i) if !row.isNullAt(i) =>
         document.set(field.name, convertToDataType(row.get(i), field.dataType))
-      case (field, _) => document.setNull(field.name)
+      case (field, i) if row.isNullAt(i) => document.setNull(field.name)
     })
     document
   }

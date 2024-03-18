@@ -3,50 +3,36 @@ package com.mapr.db.spark.types
 
 import java.io.{Externalizable, ObjectInput, ObjectOutput}
 import java.nio._
-import scala.collection.{IterableFactoryDefaults, SeqFactory, SeqLike, mutable}
+
+import scala.collection.{mutable, SeqLike}
 import scala.collection.JavaConverters._
+import scala.collection.generic.{CanBuildFrom, GenericTraversableTemplate, SeqFactory}
 import scala.collection.mutable.ListBuffer
+
 import com.mapr.db.rowcol.RowcolCodec
 import com.mapr.db.spark.dbclient.DBClient
 import com.mapr.db.spark.utils.MapRDBUtils
 import com.mapr.db.util.ByteBufs
-
 import java.util
-import scala.collection.generic.CanBuildFrom
-import scala.collection.immutable.SeqOps
 
 private[spark] object DBArrayValue extends SeqFactory[DBArrayValue] {
-  implicit def canBuildFrom[T]: CanBuildFrom[Iterable[T], T, DBArrayValue[T]] =
-    new CanBuildFrom[Iterable[T], T, DBArrayValue[T]] {
-      def apply(): mutable.Builder[T, DBArrayValue[T]] =
-        DBArrayValue.newBuilder[T]
-
-      override def fromSpecific(from: Iterable[T])(it: IterableOnce[T]): DBArrayValue[T] = {
-        val builder = newBuilder(from)
-        builder.addAll(it)
-        builder.result()
-      }
-
-      override def newBuilder(from: Iterable[T]): mutable.Builder[T, DBArrayValue[T]] = DBArrayValue.newBuilder[T]
-    }
+  implicit def canBuildFrom[T]: CanBuildFrom[Coll, T, DBArrayValue[T]] =
+    new GenericCanBuildFrom[T]
 
   def newBuilder[T]: mutable.Builder[T, DBArrayValue[T]] =
     new ListBuffer[T] mapResult (x => new DBArrayValue(x))
-
-  override def from[A](source: IterableOnce[A]): DBArrayValue[A] = new DBArrayValue[A](source.iterator.to(Seq))
-
-  override def empty[A]: DBArrayValue[A] = new DBArrayValue[A](Seq.empty)
 }
 
 private[spark] class DBArrayValue[T]( @transient private[spark] var arr : Seq[T])
   extends Seq[T]
-    with Externalizable {
+    with GenericTraversableTemplate[T, DBArrayValue]
+    with SeqLike[T, DBArrayValue[T]] with Externalizable{
 
-  def this() = {
+  def this() {
     this(null)
   }
 
-  override def iterableFactory: DBArrayValue.type = DBArrayValue
+  override def companion: DBArrayValue.type = DBArrayValue
 
   def iterator: Iterator[T] = new ListIterator[T](arr)
 
@@ -55,7 +41,7 @@ private[spark] class DBArrayValue[T]( @transient private[spark] var arr : Seq[T]
     val element = arr(idx)
     element match {
       case _: util.List[_] =>
-        new DBArrayValue(element.asInstanceOf[util.List[Object]].asScala.toSeq).asInstanceOf[T]
+        new DBArrayValue(element.asInstanceOf[util.List[Object]].asScala).asInstanceOf[T]
       case _: util.Map[_, _] =>
         new DBMapValue(element.asInstanceOf[util.Map[String, Object]].asScala.toMap).asInstanceOf[T]
       case _ => element
@@ -79,7 +65,7 @@ private[spark] class DBArrayValue[T]( @transient private[spark] var arr : Seq[T]
     val buffer = ByteBufs.allocate(buffersize)
     MapRDBUtils.readBytes(buffer, buffersize, objectinput)
     val doc = RowcolCodec.decode(buffer)
-    this.arr = doc.getList("encode").asScala.toSeq.map(a => a.asInstanceOf[T])
+    this.arr = doc.getList("encode").asScala.map(a => a.asInstanceOf[T])
   }
 
   override def toString: String = this.arr.toString()

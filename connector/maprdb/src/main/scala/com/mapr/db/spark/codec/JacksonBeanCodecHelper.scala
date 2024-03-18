@@ -21,7 +21,7 @@ object JacksonBeanCodecHelper {
   class ByteSerializer extends JsonSerializer[Byte] {
     @throws[IOException]
     @throws[JsonProcessingException]
-    def serialize(value: Byte, jgen: JsonGenerator, provider: SerializerProvider): Unit = {
+    def serialize(value: Byte, jgen: JsonGenerator, provider: SerializerProvider) {
       jgen.writeObject(value)
     }
   }
@@ -29,7 +29,7 @@ object JacksonBeanCodecHelper {
   class IntervalSerializer extends JsonSerializer[OInterval] {
     @throws[IOException]
     @throws[JsonProcessingException]
-    def serialize(value: OInterval, jgen: JsonGenerator, provider: SerializerProvider): Unit = {
+    def serialize(value: OInterval, jgen: JsonGenerator, provider: SerializerProvider) {
       jgen.writeObject(value)
     }
   }
@@ -45,7 +45,7 @@ object JacksonBeanCodecHelper {
   class DateSerializer extends JsonSerializer[ODate] {
     @throws[IOException]
     @throws[JsonProcessingException]
-    def serialize(value: ODate, jgen: JsonGenerator, provider: SerializerProvider): Unit = {
+    def serialize(value: ODate, jgen: JsonGenerator, provider: SerializerProvider) {
       jgen.writeObject(value)
     }
   }
@@ -61,7 +61,7 @@ object JacksonBeanCodecHelper {
   class TimeSerializer extends JsonSerializer[OTime] {
     @throws[IOException]
     @throws[JsonProcessingException]
-    def serialize(value: OTime, jgen: JsonGenerator, provider: SerializerProvider): Unit = {
+    def serialize(value: OTime, jgen: JsonGenerator, provider: SerializerProvider) {
       jgen.writeObject(value)
     }
   }
@@ -77,7 +77,7 @@ object JacksonBeanCodecHelper {
   class TimestampSerializer extends JsonSerializer[OTimestamp] {
     @throws[IOException]
     @throws[JsonProcessingException]
-    def serialize(value: OTimestamp, jgen: JsonGenerator, provider: SerializerProvider): Unit = {
+    def serialize(value: OTimestamp, jgen: JsonGenerator, provider: SerializerProvider) {
       jgen.writeObject(value)
     }
   }
