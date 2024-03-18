@@ -11,11 +11,11 @@ import org.ojai.store.DocumentMutation
 private[spark] sealed trait OJAIKey[T] extends Serializable {
   type Self
   def getValue(elem: T): Self
-  def write(doc: Document, key: Self, table: Writer): Unit
+  def write(doc: Document, key: Self, table: Writer)
   def checkAndMutate(mutation: DocumentMutation,
                      queryCondition: DBQueryCondition,
                      key: Self,
-                     table: TableCheckAndMutateWriter): Unit
+                     table: TableCheckAndMutateWriter)
 }
 
 private[spark] object OJAIKey {
