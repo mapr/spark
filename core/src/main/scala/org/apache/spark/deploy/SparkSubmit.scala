@@ -1032,6 +1032,15 @@ private[spark] class SparkSubmit extends Logging {
       app.start(childArgs.toArray, sparkConf)
     } catch {
       case t: Throwable =>
+        findCause(t) match {
+          case SparkUserAppException(exitCode) =>
+            System.exit(exitCode)
+
+          case t: Throwable =>
+            // TODO: fix MultiauthWebUiFilter and return standart Spark behavior
+            log.error(t.getMessage, t)
+            System.exit(1)
+        }
         throw findCause(t)
     } finally {
       if (args.master.startsWith("k8s") && !isShell(args.primaryResource) &&
