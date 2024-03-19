@@ -1050,6 +1050,10 @@ private[spark] class SparkSubmit extends Logging {
         cause match {
           case e: SparkUserAppException =>
             exitCode = e.exitCode
+          case t: Throwable =>
+            // TODO: fix MultiauthWebUiFilter and return standart Spark behavior
+            log.error(t.getMessage, t)
+            System.exit(1)
           case _ =>
         }
         // Store the diagnostics externally if enabled, but still throw to complete the application.
