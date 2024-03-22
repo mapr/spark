@@ -34,7 +34,7 @@ else
   FIPS_ENABLED="0"
 fi
 
-export SPARK_JAVA_OPTS="$SPARK_JAVA_OPTS -Djava.util.logging.config.file=${SPARK_HOME}/conf/log4j2.properties"
+export SPARK_JAVA_OPTS="$SPARK_JAVA_OPTS -Dlog4j.configuration=${SPARK_HOME}/conf/log4j2.properties"
 
 . "${SPARK_HOME}"/bin/load-spark-env.sh
 #Bug MAPR-22940
