@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.apache.spark</groupId>
     <artifactId>spark-parent_2.12</artifactId>
-    <version>3.5.2</version>
+    <version>3.5.1.0-eep-SNAPSHOT</version>
     <relativePath>../../../../pom.xml</relativePath>
   </parent>
 
@@ -114,7 +114,6 @@
           <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
           <artifactSet>
             <includes>
-              <include>com.google.guava:*</include>
               <include>com.google.android:*</include>
               <include>com.google.api.grpc:*</include>
               <include>com.google.code.findbugs:*</include>
@@ -134,13 +133,6 @@
             </includes>
           </artifactSet>
           <relocations>
-            <relocation>
-              <pattern>com.google.common</pattern>
-              <shadedPattern>${spark.shade.packageName}.connect.guava</shadedPattern>
-              <includes>
-                <include>com.google.common.**</include>
-              </includes>
-            </relocation>
             <relocation>
               <pattern>io.grpc</pattern>
               <shadedPattern>${spark.shade.packageName}.io.grpc</shadedPattern>
