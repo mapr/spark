@@ -183,6 +183,11 @@ private[spark] class SecurityManager(
       val stdStream = new OutputStreamWriter(new FileOutputStream(file), UTF_8)
       val stdWriter = new PrintWriter(stdStream)
 
+      while (s"pgrep -fl $certGeneratorName".lineStream_!.nonEmpty) {
+        logInfo("manageSSLKeys.sh script is busy, waiting...")
+        Thread.sleep(500)
+      }
+
       val res = genViaManageSSLScript(stdWriter, manageSslKeysScriptLocal, sslKeyStorePass, 10)
       stdWriter.close()
 
