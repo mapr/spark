@@ -153,6 +153,7 @@ private[spark] object RDDOperationScope extends Logging {
       // Remember to restore any state that was modified before exiting
       sc.setLocalProperty(scopeKey, oldScopeJson)
       sc.setLocalProperty(noOverrideKey, oldNoOverride)
+      sc.setJobDoAsUser()
     }
   }
 }
