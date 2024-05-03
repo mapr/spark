@@ -19,15 +19,14 @@ package org.apache.spark.streaming.kafka010
 
 import java.{util => ju}
 import java.time.Duration
-
 import scala.collection.JavaConverters._
-
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.common.{KafkaException, TopicPartition}
-
 import org.apache.spark.TaskContext
 import org.apache.spark.internal.Logging
 import org.apache.spark.kafka010.KafkaConfigUpdater
+
+import scala.annotation.tailrec
 
 private[kafka010] sealed trait KafkaDataConsumer[K, V] {
   /**
@@ -142,25 +141,37 @@ private[kafka010] class InternalKafkaConsumer[K, V](
     require(buffer.hasNext(),
       s"Failed to get records for $groupId $topicPartition $offset after polling for $timeout")
     var record = buffer.next()
-
-    if (record.offset != offset) {
-      logInfo(s"Buffer miss for $groupId $topicPartition $offset")
-      seek(offset)
-      poll(timeout)
-      require(buffer.hasNext(),
-        s"Failed to get records for $groupId $topicPartition $offset after polling for $timeout")
-      record = buffer.next()
-      require(record.offset == offset,
-        s"Got wrong record for $groupId $topicPartition even after seeking to offset $offset " +
-          s"got offset ${record.offset} instead. If this is a compacted topic, consider enabling " +
-          "spark.streaming.kafka.allowNonConsecutiveOffsets"
-      )
-    }
-
     nextOffset = offset + 1
-    record
+
+    skipNegativeOffsets(record)
+
+//    if (record.offset != offset) {
+//      logInfo(s"Buffer miss for $groupId $topicPartition $offset")
+//      seek(offset)
+//      poll(timeout)
+//      require(buffer.hasNext(),
+//        s"Failed to get records for $groupId $topicPartition $offset after polling for $timeout")
+//      record = buffer.next()
+//      require(record.offset == offset,
+//        s"Got wrong record for $groupId $topicPartition even after seeking to offset $offset " +
+//          s"got offset ${record.offset} instead. If this is a compacted topic, consider enabling " +
+//          "spark.streaming.kafka.allowNonConsecutiveOffsets"
+//      )
+//    }
+//
+//    nextOffset = offset + 1
+//    record
   }
 
+  @tailrec
+  private def skipNegativeOffsets(record: ConsumerRecord[K, V]): ConsumerRecord[K, V] = {
+    if (record.offset() == KafkaUtils.eofOffset) {
+      log.debug("EOF message is received")
+      if (buffer.hasNext) skipNegativeOffsets(buffer.next()) else null
+    } else {
+      record
+    }
+  }
   /**
    * Start a batch on a compacted topic
    */
