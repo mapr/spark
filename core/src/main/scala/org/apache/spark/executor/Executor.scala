@@ -634,6 +634,7 @@ private[spark] class Executor(
               }
             }
             val proxyUgi = UserGroupInformation.createProxyUser(doAsUserName, ugi)
+            proxyUgi.addCredentials(ugi.getCredentials)
             proxyUgi.doAs(doAsAction)
           }
         } {
