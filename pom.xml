@@ -235,7 +235,7 @@
     If you are changing Arrow version specification, please check
     ./python/pyspark/sql/pandas/utils.py, and ./python/setup.py too.
     -->
-    <arrow.version>16.0.8</arrow.version>
+    <arrow.version>16.0.0</arrow.version>
     <ammonite.version>2.5.9</ammonite.version>
 
     <!-- org.fusesource.leveldbjni will be used except on arm64 platform. -->
@@ -645,7 +645,7 @@
       <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-text</artifactId>
-        <version>1.10.0</version>
+        <version>1.12.0</version>
       </dependency>
       <dependency>
         <groupId>commons-lang</groupId>
@@ -2086,6 +2086,10 @@
           <exclusion>
             <groupId>org.apache.orc</groupId>
             <artifactId>orc-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-rewrite</artifactId>
           </exclusion>
           <!-- jetty-all conflict with jetty 9.4.12.v20180830 -->
           <exclusion>
