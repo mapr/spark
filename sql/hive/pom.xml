@@ -113,6 +113,10 @@
           <groupId>com.mapr.security</groupId>
           <artifactId>mapr-security-web</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-rewrite</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
