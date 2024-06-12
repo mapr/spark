@@ -219,10 +219,16 @@ EOM
 # Change config functions
 #
 
+# Usage: $1 - option name, $2 - option name + value, $3 - comment if needed
 function changeSparkDefaults() {
 	if grep -q $1 "$SPARK_HOME/conf/spark-defaults.conf"; then
 		sed -i "s~^$1.*~$2~" $SPARK_HOME/conf/spark-defaults.conf
 	else
+	  if [ ! -z "$3" ]; then
+	    cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOM
+$3
+EOM
+	  fi
 		cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOM
 $2
 EOM
@@ -509,10 +515,7 @@ function registerServicePorts() {
 }
 
 function configureHiveWarehouseForNonHiveEnv() {
-  cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOM
-# Default location for Warehouse, if not using Hive
-EOM
-  changeSparkDefaults "spark.sql.warehouse.dir" "spark.sql.warehouse.dir maprfs:///user/${USER}/spark-warehouse"
+  changeSparkDefaults "spark.sql.warehouse.dir" "spark.sql.warehouse.dir maprfs:///user/${USER}/spark-warehouse" "# Default location for Warehouse, if not using Hive"
 }
 
 #
