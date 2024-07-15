@@ -26,7 +26,7 @@
   </parent>
   <groupId>org.apache.spark</groupId>
   <artifactId>spark-parent_2.12</artifactId>
-  <version>3.5.1.0-eep-SNAPSHOT</version>
+  <version>3.5.1.0-eep-930</version>
   <packaging>pom</packaging>
   <name>Spark Project Parent POM</name>
   <url>https://spark.apache.org/</url>
@@ -128,7 +128,7 @@
     <slf4j.version>2.0.7</slf4j.version>
     <log4j.version>2.20.0</log4j.version>
     <!-- make sure to update IsolatedClientLoader whenever this version is changed -->
-    <hadoop.version>3.3.5.200-eep-921</hadoop.version>
+    <hadoop.version>3.3.5.400-eep-930</hadoop.version>
     <maprfs.version>7.4.0.0-mapr</maprfs.version>
     <!-- SPARK-41247: When updating `protobuf.version`, also need to update `protoVersion` in `SparkBuild.scala` -->
     <protobuf.version>3.23.4</protobuf.version>
@@ -144,7 +144,7 @@
     <!-- Version used for internal directory structure -->
     <hive.version.short>2.3</hive.version.short>
     <!-- note that this should be compatible with Kafka brokers version 0.10 and up -->
-    <kafka.version>3.6.1.0-eep-930-SNAPSHOT</kafka.version>
+    <kafka.version>3.6.1.0-eep-930</kafka.version>
     <derby.version>10.14.2.0</derby.version>
     <parquet.version>1.13.1</parquet.version>
     <orc.version>1.9.2</orc.version>

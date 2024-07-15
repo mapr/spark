@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.spark</groupId>
     <artifactId>spark-parent_2.12</artifactId>
-    <version>3.5.1.0-eep-SNAPSHOT</version>
+    <version>3.5.1.0-eep-930</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -30,7 +30,7 @@
   <properties>
     <sbt.project.name>sql-kafka-0-10</sbt.project.name>
     <!-- note that this should be compatible with Kafka brokers version 0.10 and up -->
-    <kafka.version>3.6.1.0-eep-930-SNAPSHOT</kafka.version>
+    <kafka.version>3.6.1.0-eep-930</kafka.version>
   </properties>
   <packaging>jar</packaging>
   <name>Kafka 0.10+ Source for Structured Streaming</name>
@@ -91,7 +91,7 @@
     <dependency>
       <groupId>org.apache.kafka</groupId>
       <artifactId>kafka-eventstreams</artifactId>
-      <version>3.6.1.0-eep-930-SNAPSHOT</version>
+      <version>3.6.1.0-eep-930</version>
       <exclusions>
         <exclusion>
           <groupId>com.mapr.hadoop</groupId>
