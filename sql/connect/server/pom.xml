@@ -300,6 +300,13 @@
             </includes>
           </artifactSet>
           <relocations>
+<!--            <relocation>-->
+<!--              <pattern>com.google.common</pattern>-->
+<!--              <shadedPattern>${spark.shade.packageName}.connect.guava</shadedPattern>-->
+<!--              <includes>-->
+<!--                <include>com.google.common.**</include>-->
+<!--              </includes>-->
+<!--            </relocation>-->
             <!--
               Keep the Guava classes relocation rules consistent with other modules to ensure
               correct runtime linkage to Guava classes included in spark-network-common jar.
