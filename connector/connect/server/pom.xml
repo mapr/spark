@@ -310,13 +310,13 @@
             </includes>
           </artifactSet>
           <relocations>
-            <relocation>
-              <pattern>com.google.common</pattern>
-              <shadedPattern>${spark.shade.packageName}.connect.guava</shadedPattern>
-              <includes>
-                <include>com.google.common.**</include>
-              </includes>
-            </relocation>
+<!--            <relocation>-->
+<!--              <pattern>com.google.common</pattern>-->
+<!--              <shadedPattern>${spark.shade.packageName}.connect.guava</shadedPattern>-->
+<!--              <includes>-->
+<!--                <include>com.google.common.**</include>-->
+<!--              </includes>-->
+<!--            </relocation>-->
             <relocation>
               <pattern>com.google.thirdparty</pattern>
               <shadedPattern>${spark.shade.packageName}.connect.guava</shadedPattern>
