@@ -285,7 +285,9 @@ spark.ssl.fs.enabled true
 spark.ssl.protocol TLSv1.2
 
 # - PAM
-spark.ui.filters  org.apache.spark.ui.filters.MultiauthWebUiFilter, org.apache.spark.ui.filters.CustomHeadersFilter
+spark.ui.filters  org.apache.spark.ui.filters.MultiauthWebUiFilter, org.apache.spark.ui.filters.CustomHeadersFilter, org.apache.spark.ui.filters.AuthTimeoutFilter
+spark.org.apache.spark.ui.filters.AuthTimeoutFilter.param.inactiveTimeout 30
+spark.org.apache.spark.ui.filters.AuthTimeoutFilter.param.absoluteTimeout 600
 
 # - ACLS
 spark.acls.enable       false

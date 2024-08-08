@@ -80,7 +80,16 @@ private[kafka010] class InternalKafkaConsumer(
     logDebug(s"Polled $groupId ${p.partitions()}  ${r.size}")
     val offsetAfterPoll = consumer.position(topicPartition)
     logDebug(s"Offset changed from $offset to $offsetAfterPoll after polling")
-    val range = getAvailableOffsetRange()
+
+    val rListIterator = r.listIterator()
+    val getRange = rListIterator.hasNext && r.get(rListIterator.nextIndex()).offset() > offset
+
+    val range = if (r.isEmpty || getRange) {
+      getAvailableOffsetRange()
+    } else {
+      AvailableOffsetRange(UNKNOWN_OFFSET, UNKNOWN_OFFSET)
+    }
+
     val fetchedData = (r, offsetAfterPoll, range)
     if (r.isEmpty) {
       // We cannot fetch anything after `poll`. Two possible cases:
