@@ -86,6 +86,9 @@ private[history] class HistoryPage(parent: HistoryServer) extends WebUIPage("") 
               }
             </a>
           </div>
+          <div>
+            <a href="/logout">Logout</a>
+          </div>
       </div>
     UIUtils.basicSparkPage(request, content, "History Server", true)
   }
@@ -101,4 +104,5 @@ private[history] class HistoryPage(parent: HistoryServer) extends WebUIPage("") 
   private def isApplicationCompleted(appInfo: ApplicationInfo): Boolean = {
     appInfo.attempts.nonEmpty && appInfo.attempts.head.completed
   }
+
 }

@@ -33,6 +33,7 @@ import org.apache.spark.internal.config._
 import org.apache.spark.internal.config.History
 import org.apache.spark.internal.config.UI._
 import org.apache.spark.status.api.v1.{ApiRootResource, ApplicationInfo, UIRoot}
+import org.apache.spark.ui.JettyUtils.createServletHandler
 import org.apache.spark.ui.{SparkUI, UIUtils, WebUI}
 import org.apache.spark.util.{ShutdownHookManager, SystemClock, Utils}
 
@@ -156,6 +157,7 @@ class HistoryServer(
     val contextHandler = new ServletContextHandler
     contextHandler.setContextPath(HistoryServer.UI_PATH_PREFIX)
     contextHandler.addServlet(new ServletHolder(loaderServlet), "/*")
+    attachHandler(createServletHandler("/logout", new LogoutServlet(), ""))
     attachHandler(contextHandler)
   }
 
