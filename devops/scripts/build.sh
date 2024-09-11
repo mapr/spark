@@ -21,6 +21,7 @@ build_spark() {
   cp ext-conf/warden.spark-historyserver.conf "${BUILD_ROOT}/build/warden/warden.spark-historyserver.conf.template"
   cp ext-conf/warden.spark-master.conf        "${BUILD_ROOT}/build/warden/warden.spark-master.conf.template"
   cp ext-conf/warden.spark-thriftserver.conf  "${BUILD_ROOT}/build/warden/warden.spark-thriftserver.conf.template"
+  cp ext-conf/warden.spark-connectserver.conf  "${BUILD_ROOT}/build/warden/warden.spark-connectserver.conf.template"
 
   cp -rp ext-lib/scala "${BUILD_ROOT}/build"
 }
@@ -42,6 +43,7 @@ main() {
   setup_role "mapr-spark-historyserver"
   setup_role "mapr-spark-master"
   setup_role "mapr-spark-thriftserver"
+  setup_role "mapr-spark-connectserver"
 
   setup_package "mapr-spark"
 
@@ -50,6 +52,7 @@ main() {
   build_package "mapr-spark-historyserver"
   build_package "mapr-spark-master"
   build_package "mapr-spark-thriftserver"
+  build_package "mapr-spark-connectserver"
 
   echo "Resulting packages:"
   find "$DIST_DIR" -exec readlink -f {} \;

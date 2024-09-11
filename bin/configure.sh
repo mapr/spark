@@ -108,6 +108,8 @@ declare -a SPARK_CONF_FILES=("$SPARK_CONF/spark-defaults.conf" "$SPARK_CONF/spar
 # Spark ports
 sparkHSUIPort=18080
 isSparkHSUIPortDef=false
+sparkCSPort=15002
+isSparkCSPortDef=false
 sparkTSPort=2304
 isSparkTSPortDef=false
 sparkTSUIPort=4040
@@ -513,10 +515,27 @@ function registerPortHistoryServer() {
 	fi
 }
 
+function registerPortConnectServer() {
+	if [ -f $SPARK_HOME/warden/warden.spark-connectserver.conf ] ; then
+		if checkNetworkPortAvailability $sparkCSPort 2>/dev/null; then
+			{ set +x; } 2>/dev/null
+			registerNetworkPort spark_connectServer $sparkCSPort 2>/dev/null
+		else
+			{ set +x; } 2>/dev/null
+			logWarn "Spark-connectServer port already has been taken by $(whoHasNetworkPort $sparkCSPort)"
+		fi
+
+		if [ "$isSparkCSPortDef" = true ] || [ "$IS_FIRST_RUN" = true ] ; then
+			changeWardenConfig "service.port" "service.port=$sparkCSPort" "connectserver"
+		fi
+	fi
+}
+
 function registerServicePorts() {
 	registerPortMaster
 	registerPortThriftServer
 	registerPortHistoryServer
+	registerPortConnectServer
 }
 
 function configureHiveWarehouseForNonHiveEnv() {
@@ -543,6 +562,7 @@ function copyWardenConfFiles() {
 	copyWardenFile master
 	copyWardenFile historyserver
 	copyWardenFile thriftserver
+	copyWardenFile connectserver
 }
 
 function mkBackupForOldConfigs() {
@@ -578,6 +598,7 @@ function stopServicesForRestartByWarden() {
 		stopService master master
 		stopService historyserver history-server
 		stopService thriftserver thriftserver
+		stopService connectserver connect-server
 	fi
 }
 
@@ -605,7 +626,7 @@ function replaceConfigFromPreviousVersion() {
 
 USAGE="usage: $0 [-s|--secure || -u|--unsecure || -cs|--customSecure] [-R] [--EC <common args>] [-h|--help]]"
 
-{ OPTS=`getopt -n "$0" -a -o suhR --long secure,unsecure,customSecure,help,EC:,sparkHSUIPort:,sparkMasterPort:,sparkTSPort:,sparkMasterUIPort:,sparkTSUIPort: -- "$@"`; } 2>/dev/null
+{ OPTS=`getopt -n "$0" -a -o suhR --long secure,unsecure,customSecure,help,EC:,sparkHSUIPort:,sparkCSPort:,sparkMasterPort:,sparkTSPort:,sparkMasterUIPort:,sparkTSUIPort: -- "$@"`; } 2>/dev/null
 
 eval set -- "$OPTS"
 
@@ -637,6 +658,11 @@ while [ ${#} -gt 0 ] ; do
     --sparkHSUIPort)
       sparkHSUIPort=$2
       isSparkHSUIPortDef=true
+      shift 2
+      ;;
+    --sparkCSPort)
+      sparkCSPort=$2
+      isSparkCSPortDef=true
       shift 2
       ;;
     --sparkMasterPort)
