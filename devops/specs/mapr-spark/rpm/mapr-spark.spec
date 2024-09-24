@@ -11,7 +11,7 @@ release:     1
 prefix:      /
 group:       MapR
 buildarch:   noarch
-Requires:    mapr-client, mapr-hadoop-client, mapr-core
+Requires:    mapr-client, mapr-hadoop-client
 AutoReqProv: no
 
 
