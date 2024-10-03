@@ -2134,10 +2134,6 @@
             <groupId>org.apache.orc</groupId>
             <artifactId>orc-core</artifactId>
           </exclusion>
-          <exclusion>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-rewrite</artifactId>
-          </exclusion>
           <!-- jetty-all conflict with jetty 9.4.12.v20180830 -->
           <exclusion>
             <groupId>org.eclipse.jetty.aggregate</groupId>
