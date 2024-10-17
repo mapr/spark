@@ -8,10 +8,8 @@ CURRENT_USER=$(id -u -n)
 
 set -x
 
-# Extract ${HOME} using getent because it might not be initialized properly
-HOME="$(getent passwd ${USER} | cut -d: -f6)"
 MAPR_HOME=${MAPR_HOME:=/opt/mapr}
-INSTALL_DIR=$HOME/__spark-internal__/security_keys
+INSTALL_DIR=$2
 MAPRFS_DIR=/apps/spark/__$CURRENT_USER-spark-internal__/security_keys
 BC_JAR="/opt/mapr/lib/bc-fips-*.jar"
 
@@ -106,7 +104,7 @@ function confirmNotThere() {
     if ! [[ $checkKeyResult =~ $errorSubstr ]]; then
       exit 0
     fi
-    rm -rf $HOME/__spark-internal__
+    rm -rf ${INSTALL_DIR%/*}
     mkdir -p ${INSTALL_DIR}
   fi
 }

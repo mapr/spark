@@ -138,13 +138,14 @@ private[spark] class SecurityManager(
   private def genViaManageSSLScript(stdWriter: PrintWriter,
                                     manageSslKeysScriptLocal: String,
                                     sslKeyStorePass: String,
+                                    sslKeyLocation: String,
                                     count: Int): Int = {
-    Try(s"$manageSslKeysScriptLocal $sslKeyStorePass" ! ProcessLogger(stdWriter println, stdWriter println)) match {
+    Try(s"$manageSslKeysScriptLocal $sslKeyStorePass $sslKeyLocation" ! ProcessLogger(stdWriter println, stdWriter println)) match {
       case Failure(_) =>
         if (count == 0) -1 else {
           logInfo("manageSSLKeys.sh script is busy, waiting...")
           Thread.sleep(5000)
-          genViaManageSSLScript(stdWriter, manageSslKeysScriptLocal, sslKeyStorePass, count - 1)
+          genViaManageSSLScript(stdWriter, manageSslKeysScriptLocal, sslKeyStorePass, sslKeyLocation, count - 1)
         }
       case _ => 0
     }
@@ -167,8 +168,8 @@ private[spark] class SecurityManager(
         }
         fs.copyFromLocalFile(new Path(getCertGeneratorPath(certGeneratorName)), new Path(mfsManageSslKeysScriptRemote))
       }
-      val currentUserHomeDir = System.getProperty("user.home")
-      val localBaseDir = s"$currentUserHomeDir/__spark-internal__/security_keys"
+      val currentUserHomeDir = sparkConf.get("spark.ssl.internal.keys.location", System.getProperty("user.home"))
+      val localBaseDir = s"$currentUserHomeDir/__$username-spark-internal__/security_keys"
       val manageSslKeysScriptLocal = s"$localBaseDir/$certGeneratorName"
 
       fs.copyToLocalFile(new Path(mfsManageSslKeysScriptRemote), new Path(manageSslKeysScriptLocal))
@@ -188,7 +189,7 @@ private[spark] class SecurityManager(
         Thread.sleep(500)
       }
 
-      val res = genViaManageSSLScript(stdWriter, manageSslKeysScriptLocal, sslKeyStorePass, 10)
+      val res = genViaManageSSLScript(stdWriter, manageSslKeysScriptLocal, sslKeyStorePass, localBaseDir, 10)
       stdWriter.close()
 
       val certGeneratorLogMfsLocation = s"/apps/spark/$certGeneratorLog"
@@ -222,8 +223,9 @@ private[spark] class SecurityManager(
 
   def genSslCertsForWebUIifNeeded(sslOptions: SSLOptions): SSLOptions = {
     if (isSSLCertGenerationNeededForWebUI(sslOptions)) {
-      val currentUserHomeDir = System.getProperty("user.home")
-      val localBaseDir = s"$currentUserHomeDir/__spark-internal__/security_keys"
+      val username = UserGroupInformation.getCurrentUser.getShortUserName
+      val currentUserHomeDir = sparkConf.get("spark.ssl.internal.keys.location", System.getProperty("user.home"))
+      val localBaseDir = s"$currentUserHomeDir/__$username-spark-internal__/security_keys"
       val sslKeyStore = s"$localBaseDir/ssl_keystore"
       val sslKeyStorePass = sslOptions.keyStorePassword.get
       val updatedSslOptions = updateSslOptsWithNewKeystore(sslOptions, sslKeyStore, sslKeyStorePass)
