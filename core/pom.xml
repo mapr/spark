@@ -155,7 +155,12 @@
     <dependency>
       <groupId>com.auth0</groupId>
       <artifactId>java-jwt</artifactId>
-      <version>${auth0-version}</version>
+      <version>${java-jwt.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.auth0</groupId>
+      <artifactId>jwks-rsa</artifactId>
+      <version>${jwks-rsa.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
