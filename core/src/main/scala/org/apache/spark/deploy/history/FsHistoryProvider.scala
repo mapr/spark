@@ -457,7 +457,18 @@ private[history] class FsHistoryProvider(conf: SparkConf, clock: Clock)
       // right after this check and before the check for stale entities will be identified as stale
       // and will be deleted from the UI until the next 'checkForLogs' run.
       val notStale = mutable.HashSet[String]()
-      val updated = Option(fs.listStatus(new Path(logDir))).map(_.toSeq).getOrElse(Nil)
+
+      val logFiles = if (conf.getBoolean("spark.history.recursive.read", defaultValue = false)) {
+        val logFilesIterator = fs.listFiles(new Path(logDir), true)
+        Iterator.continually {
+          if (logFilesIterator.hasNext) Some(logFilesIterator.next()) else None
+        }.takeWhile(_.isDefined).flatten.toSeq
+      } else {
+        Option(fs.listStatus(new Path(logDir))).map(_.toSeq).getOrElse(Nil)
+      }
+
+//      val updated = Option(fs.listStatus(new Path(logDir))).map(_.toSeq).getOrElse(Nil)
+      val updated = logFiles
         .filter { entry => isAccessible(entry.getPath) }
         .filter { entry =>
           if (isProcessing(entry.getPath)) {
@@ -788,7 +799,7 @@ private[history] class FsHistoryProvider(conf: SparkConf, clock: Clock)
       ((!appCompleted && fastInProgressParsing) || reparseChunkSize > 0)
 
     val bus = new ReplayListenerBus()
-    val listener = new AppListingListener(reader, clock, shouldHalt)
+    val listener = new AppListingListener(reader, logPath, clock, shouldHalt)
     bus.addListener(listener)
 
     logInfo(s"Parsing $logPath for listing data...")
@@ -1502,11 +1513,12 @@ private[history] class ApplicationInfoWrapper(
 
 private[history] class AppListingListener(
     reader: EventLogFileReader,
+    logPath: Path,
     clock: Clock,
     haltEnabled: Boolean) extends SparkListener {
 
   private val app = new MutableApplicationInfo()
-  private val attempt = new MutableAttemptInfo(reader.rootPath.getName(),
+  private val attempt = new MutableAttemptInfo(reader.rootPath.toString.stripPrefix(s"""$logPath/"""),
     reader.fileSizeForLastIndex, reader.lastIndex)
 
   private var gotEnvUpdate = false
