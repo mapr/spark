@@ -112,7 +112,7 @@
                             <goal>build</goal>
                         </goals>
                         <configuration>
-                            <goVersion>1.21.5</goVersion>
+                            <goVersion>1.21.11</goVersion>
                             <packages>
                                 <package>main.go</package>
                             </packages>
