@@ -10,32 +10,39 @@ import com.auth0.jwt.interfaces.Verification;
 import org.apache.hadoop.security.authentication.client.AuthenticationException;
 import org.apache.hadoop.security.authentication.server.AuthenticationHandler;
 import org.apache.hadoop.security.authentication.server.AuthenticationToken;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.KeyFactory;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
 
 import static org.apache.spark.ui.filters.HttpConstants.AUTHORIZATION_HEADER;
 
 /**
- * Primitive JWT authentication handler designed to authenticate requests with Bearer scheme
- * Configuration parameters:
- * - user.identity.claim - JWT claim to be used to get username from token
+ * JWT authentication handler designed to authenticate requests with Bearer scheme.
+ * Supports both JWKS URL and local PEM files for token verification.
  */
 public final class JWTAuthHandler implements AuthenticationHandler {
 
     private static Logger logger = LoggerFactory.getLogger(JWTAuthHandler.class);
-    private static final String IDENTITY_CLAIM_PARAM = "jwt.identity.claim";
-    private static final String JWK_PROVIDER_URL_PARAM = "jwk.provider.url";
-    private static final String JWT_ISSUERS_PARAM = "jwt.issuers";
-    private static final String JWT_AUDIENCE_PARAM = "jwt.audiences";
+
+    private static final String JWK_PROVIDER_PARAM_PREFIX = "jwk.";
+    private static final String JWT_PARAM_PREFIX = "jwt.";
+    private static final String PROVIDER_URL_SUFFIX = ".provider.source";
+    private static final String ISSUER_SUFFIX = ".issuer";
+    private static final String AUDIENCES_SUFFIX = ".audiences";
+    private static final String IDENTITY_CLAIM_SUFFIX = ".identity.claim";
 
     private final String type = "jwt-bearer";
     private List<JWTConfig> jwtConfigList;
@@ -52,33 +59,30 @@ public final class JWTAuthHandler implements AuthenticationHandler {
         jwtConfigList = new ArrayList<>();
 
         for (String key: config.stringPropertyNames()) {
-            if (key.startsWith(JWK_PROVIDER_URL_PARAM)) {
-                String providerNumber = key.substring(JWK_PROVIDER_URL_PARAM.length());
-                String jwkProviderURL = config.getProperty(key);
 
-                String issuersKey = JWT_ISSUERS_PARAM + providerNumber;
-                String audKey = JWT_AUDIENCE_PARAM + providerNumber;
-                String identityClaimKey = IDENTITY_CLAIM_PARAM + providerNumber;
+            if (key.startsWith(JWK_PROVIDER_PARAM_PREFIX) && key.endsWith(PROVIDER_URL_SUFFIX)) {
+                String providerName = key.substring(
+                        JWK_PROVIDER_PARAM_PREFIX.length(),
+                        key.length() - PROVIDER_URL_SUFFIX.length()
+                );
 
-                String jwtIssuers = config.getProperty(issuersKey);
+                String source = config.getProperty(key);
+                String issuerKey = JWT_PARAM_PREFIX + providerName + ISSUER_SUFFIX;
+                String audKey = JWT_PARAM_PREFIX + providerName + AUDIENCES_SUFFIX;
+                String identityClaimKey = JWT_PARAM_PREFIX + providerName + IDENTITY_CLAIM_SUFFIX;
+
+                String jwtIssuer = config.getProperty(issuerKey);
                 String jwtAud = config.getProperty(audKey);
                 String userIdentityClaim = config.getProperty(identityClaimKey);
 
-                if (jwkProviderURL != null && jwtIssuers != null && userIdentityClaim != null) {
-                    try {
-                        JwkProvider jwkProvider = new JwkProviderBuilder(new URL(jwkProviderURL)).build();
-                        List<String> issuersList = List.of(jwtIssuers.split(","));
-                        List<String> audList = jwtAud != null ? List.of(jwtAud.split(",")) : List.of();
+                if (source != null && jwtIssuer != null && userIdentityClaim != null) {
+                    List<String> audList = jwtAud != null ? List.of(jwtAud.split(",")) : List.of();
 
-                        jwtConfigList.add(new JWTConfig(jwkProvider, issuersList, audList, userIdentityClaim));
-
-                        logger.info("Added provider: {} with issuers: {} and audiences: {}, and identity claim: {}",
-                                jwkProviderURL, issuersList, audList, userIdentityClaim);
-                    } catch (MalformedURLException e) {
-                        throw new RuntimeException("JwtProviderURL is not set or is invalid");
-                    }
+                    jwtConfigList.add(new JWTConfig(source, jwtIssuer, audList, userIdentityClaim));
+                    logger.info("Added provider '{}' with issuer: {}, audiences: {}, and identity claim: {}",
+                            providerName, jwtIssuer, audList, userIdentityClaim);
                 } else {
-                    logger.error("Missing issuers or audience for provider: {}", jwkProviderURL);
+                    logger.error("Missing issuer or claim for provider '{}'", providerName);
                 }
             }
         }
@@ -123,7 +127,7 @@ public final class JWTAuthHandler implements AuthenticationHandler {
         }
 
         for (JWTConfig jwtConfig: jwtConfigList) {
-            if (jwtConfig.issuers.contains(decodedJWT.getIssuer())) {
+            if (jwtConfig.issuer.equals(decodedJWT.getIssuer())) {
                 AuthenticationToken token = verifyAndAuthenticate(decodedJWT, jwtConfig);
                 if (token != null) {
                     return token;
@@ -131,18 +135,18 @@ public final class JWTAuthHandler implements AuthenticationHandler {
             }
         }
 
-        logger.error("No valid JWKS provider could verify the token");
+        logger.error("No valid JWKS could verify the token");
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         return null;
     }
 
     private AuthenticationToken verifyAndAuthenticate(DecodedJWT decodedJWT, JWTConfig jwtConfig) {
         try {
-            RSAPublicKey publicKey = (RSAPublicKey) jwtConfig.jwkProvider.get(decodedJWT.getKeyId()).getPublicKey();
+            RSAPublicKey publicKey = jwtConfig.getPublicKey(decodedJWT.getKeyId());
             Algorithm algorithm = Algorithm.RSA256(publicKey, null);
 
             Verification verifierBuilder = JWT.require(algorithm)
-                    .withIssuer(jwtConfig.issuers.toArray(new String[0]));
+                    .withIssuer(jwtConfig.issuer);
 
             List<String> audiences = jwtConfig.audiences;
             if (audiences != null && !audiences.isEmpty()) {
@@ -155,7 +159,7 @@ public final class JWTAuthHandler implements AuthenticationHandler {
             String username = decodedJWT.getClaim(jwtConfig.identityClaim).asString();
             if (username != null && !username.trim().isEmpty()) {
                 logger.info("Authenticated user: {}", username);
-                return new AuthenticationToken(username, username, "jwt-bearer");
+                return new AuthenticationToken(username, username, type);
             } else {
                 logger.error("Username claim '{}' not found in token", jwtConfig.identityClaim);
                 return null;
@@ -168,16 +172,69 @@ public final class JWTAuthHandler implements AuthenticationHandler {
     }
 
     private static class JWTConfig {
-        private final JwkProvider jwkProvider;
-        private final List<String> issuers;
+        private final String issuer;
         private final List<String> audiences;
         private final String identityClaim;
+        private final JwkProvider jwkProvider;
+        private RSAPublicKey publicKey;
 
-        public JWTConfig(JwkProvider jwkProvider, List<String> issuers, List<String> audiences, String identityClaim) {
-            this.jwkProvider = jwkProvider;
-            this.issuers = issuers;
+        public JWTConfig(String source, String issuer, List<String> audiences, String identityClaim) {
+            this.issuer = issuer;
             this.audiences = audiences;
             this.identityClaim = identityClaim;
+
+            if (isValidURL(source)) {
+                try {
+                    this.jwkProvider = new JwkProviderBuilder(new URL(source))
+                            .cached(true)
+                            .build();
+                } catch (MalformedURLException e) {
+                    throw new RuntimeException("Invalid JWKS URL: " + source, e);
+                }
+            } else {
+                try {
+                    this.jwkProvider = null;
+                    this.publicKey = loadPublicKeyFromFile(source);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        public RSAPublicKey getPublicKey(String keyId) {
+            if (jwkProvider != null) {
+                try {
+                    Jwk jwk = jwkProvider.get(keyId);
+                    return (RSAPublicKey) jwk.getPublicKey();
+                } catch (JwkException e) {
+                    throw new RuntimeException("Failed to get public key from JWKS provider", e);
+                }
+            }
+            return publicKey;
+        }
+
+        private RSAPublicKey loadPublicKeyFromFile(String filePath) throws IOException {
+            try (PemReader pemReader = new PemReader(new FileReader(filePath))) {
+                PemObject pemObject = pemReader.readPemObject();
+                byte[] keyBytes = pemObject.getContent();
+                KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+                X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
+                return (RSAPublicKey) keyFactory.generatePublic(keySpec);
+            } catch (Exception e) {
+                throw new IOException("Failed to load public key from file", e);
+            }
+        }
+
+        private boolean isValidURL(String source) {
+            try {
+                URL url = new URL(source);
+                String protocol = url.getProtocol();
+                return protocol.equalsIgnoreCase("http") ||
+                        protocol.equalsIgnoreCase("https") ||
+                        protocol.equalsIgnoreCase("ftp");
+            } catch (MalformedURLException e) {
+                return false;
+            }
         }
     }
 
