@@ -74,7 +74,12 @@ abstract class EventLogFileWriter(
   protected var writer: Option[PrintWriter] = None
 
   protected def requireLogBaseDirAsDirectory(): Unit = {
-    if (!fileSystem.getFileStatus(new Path(logBaseDir)).isDirectory) {
+    var path = new Path(logBaseDir)
+    if (!fileSystem.exists(path)) {
+      // Create the directory if it does not exist
+      fileSystem.mkdirs(path)
+      logInfo(s"Successfully created log directory $logBaseDir")
+    } else if (!fileSystem.getFileStatus(path).isDirectory) {
       throw new IllegalArgumentException(s"Log directory $logBaseDir is not a directory.")
     }
   }
