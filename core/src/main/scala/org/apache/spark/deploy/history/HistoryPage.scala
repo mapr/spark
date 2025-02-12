@@ -99,7 +99,7 @@ private[history] class HistoryPage(parent: HistoryServer) extends WebUIPage("") 
         <p><a href={UIUtils.prependBaseUri(request, "/logPage/?self&logType=out")}>
           Show server log</a></p>
         <div>
-          <a href="/logout">Logout</a>
+          <button onclick="logoutAction()">Log Out</button>
         </div>
       </div>
     val content =

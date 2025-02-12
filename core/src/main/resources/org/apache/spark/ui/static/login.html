@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon"/>
+    <title>Spark HS login</title>
+    <link rel="stylesheet" href="/static/bootstrap.min.css"/>
+    <link rel="stylesheet" href="/static/login.css"/>
+</head>
+<body>
+<main class="py-5">
+    <section class="py-5">
+        <div class="container">
+            <div id="loginBox" class="boxContainer">
+                <img src="/static/hpe-logo-invert.svg" alt="hpe-logo"/>
+                <div id="hpeLogo" class="hpe-logo">
+                    <br><br>
+                    <div class="inputsForm">
+                        <input autocomplete="off" placeholder="User Name" name="username" type="text" id="loginUser" class="form-control mt-3" required/>
+                    </div>
+                    <div class="inputsForm">
+                        <input autocomplete="off" placeholder="Enter your password" name="password" type="password" id="loginPassword" class="form-control mt-3"  required/>
+                    </div>
+                    <span id="error"></span>
+                    <div class="inputsForm">
+                        <button id="loginBtn" class="btn btn-main my-4 w-100">
+                            Log in
+                        </button>
+                    </div>
+                    <br><br>
+                    <div class="inputsForm">
+                        <button id="ssoBtn" class="btn btn-main my-4 w-100">
+                            Log in with SSO
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+<script src="/static/login.js"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+body {
+  font-family: "Quicksand", sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  background-color: #263040
+}
+
+@font-face {
+    font-family: "hpeFont";
+    src: url(MetricHPE-Web-Semibold.woff);
+}
+
+.btn-main {
+  background-color: #04AA6D; /* Green */
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-family: "hpeFont"
+}
+
+.btn-main:hover { background: #04AA6D; }
+
+.boxContainer {
+  max-width: 600px;
+  margin: auto;
+}
