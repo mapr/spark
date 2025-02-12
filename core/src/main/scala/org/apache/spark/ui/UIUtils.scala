@@ -242,6 +242,7 @@ private[spark] object UIUtils extends Logging {
     <script src={prependBaseUri(request, "/static/timeline-view.js")}></script>
     <script src={prependBaseUri(request, "/static/log-view.js")}></script>
     <script src={prependBaseUri(request, "/static/webui.js")}></script>
+    <script src={prependBaseUri(request, "/static/login.js")}></script>
     <script>setUIRoot('{UIUtils.uiRoot(request)}')</script>
   }
 
@@ -317,6 +318,7 @@ private[spark] object UIUtils extends Logging {
             <span class="navbar-text navbar-right d-none d-md-block">
               <strong title={appName} class="text-nowrap">{shortAppName}</strong>
               <span class="text-nowrap">application UI</span>
+              <span class="text-nowrap"><button onclick="logoutAction()">Log Out</button></span>
             </span>
           </div>
         </nav>

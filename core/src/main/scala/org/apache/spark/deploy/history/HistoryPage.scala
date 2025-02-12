@@ -87,7 +87,7 @@ private[history] class HistoryPage(parent: HistoryServer) extends WebUIPage("") 
             </a>
           </div>
           <div>
-            <a href="/logout">Logout</a>
+            <button onclick="logoutAction()">Log Out</button>
           </div>
       </div>
     UIUtils.basicSparkPage(request, content, "History Server", true)
