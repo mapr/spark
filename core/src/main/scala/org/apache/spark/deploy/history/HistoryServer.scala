@@ -158,7 +158,7 @@ class HistoryServer(
     addStaticHandler(SparkUI.STATIC_RESOURCE_DIR)
     addRenderLogHandler(this, conf)
 
-    attachHandler(createServletHandler("/login", new LoginServlet(), ""))
+    attachHandler(createServletHandler("/login", new LoginServlet, ""))
 
     val contextHandler = new ServletContextHandler
     contextHandler.setContextPath(HistoryServer.UI_PATH_PREFIX)

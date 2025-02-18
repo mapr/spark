@@ -17,6 +17,8 @@
 
 package org.apache.spark.ui
 
+import org.apache.spark.deploy.history.LoginServlet
+
 import java.util.Date
 
 import jakarta.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
@@ -112,6 +114,7 @@ private[spark] class SparkUI private (
     }
     attachTab(new ExecutorsTab(this))
     addStaticHandler(SparkUI.STATIC_RESOURCE_DIR)
+    attachHandler(createServletHandler("/login", new LoginServlet, ""))
     attachHandler(createRedirectHandler("/", "/jobs/", basePath = basePath))
     attachHandler(ApiRootResource.getServletHandler(this))
     if (sc.map(_.conf.get(UI_PROMETHEUS_ENABLED)).getOrElse(false)) {
