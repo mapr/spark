@@ -154,7 +154,8 @@ private[ui] class WorkerPage(parent: WorkerWebUI) extends WebUIPage("") {
             }
           }
         </div>
-      </div>;
+      </div>
+      <div><button onclick="logoutAction()">Log Out</button></div>;
     UIUtils.basicSparkPage(request, content, "Spark Worker at %s:%s".format(
       workerState.host, workerState.port))
   }

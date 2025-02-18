@@ -242,7 +242,8 @@ private[ui] class MasterPage(parent: MasterWebUI) extends WebUIPage("") {
               </div>
             }
           }
-        </div>;
+        </div>
+        <div><button onclick="logoutAction()">Log Out</button></div>;
 
     UIUtils.basicSparkPage(request, content, "Spark Master at " + state.uri)
   }
