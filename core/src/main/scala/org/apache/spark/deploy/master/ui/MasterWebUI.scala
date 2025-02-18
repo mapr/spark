@@ -21,8 +21,10 @@ import java.net.{InetAddress, NetworkInterface, SocketException}
 
 import jakarta.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
 
+import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
 import org.apache.spark.deploy.DeployMessages.{DecommissionWorkersOnHosts, MasterStateResponse, RequestMasterState}
 import org.apache.spark.deploy.Utils.addRenderLogHandler
+import org.apache.spark.deploy.history.LoginServlet
 import org.apache.spark.deploy.master.Master
 import org.apache.spark.internal.Logging
 import org.apache.spark.internal.LogKeys.{HOSTS, NUM_REMOVED_WORKERS}
@@ -62,6 +64,7 @@ class MasterWebUI(
       master.conf))
     attachPage(masterPage)
     addStaticHandler(MasterWebUI.STATIC_RESOURCE_DIR)
+    attachHandler(createServletHandler("/login", new LoginServlet, ""))
     addRenderLogHandler(this, master.conf)
     if (killEnabled) {
       attachHandler(createRedirectHandler(
