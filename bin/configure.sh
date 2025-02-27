@@ -311,6 +311,7 @@ spark.ssl.protocol TLSv1.2
 
 # - PAM
 spark.ui.filters  org.apache.spark.ui.filters.MultiauthWebUiFilter, org.apache.spark.ui.filters.CustomHeadersFilter, org.apache.spark.ui.filters.AuthTimeoutFilter
+spark.org.apache.spark.ui.filters.MultiauthWebUiFilter.param.allowedResources /login,/login/,/static/login.js,/static/login.css,/static/bootstrap.min.css,/static/hpe-logo-invert.svg,/static/MetricHPE-Web-Semibold.woff,/static/favicon.ico
 spark.org.apache.spark.ui.filters.AuthTimeoutFilter.param.inactiveTimeout 30
 spark.org.apache.spark.ui.filters.AuthTimeoutFilter.param.absoluteTimeout 600
 
