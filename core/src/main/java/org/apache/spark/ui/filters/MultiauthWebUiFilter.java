@@ -4,7 +4,6 @@ import org.apache.hadoop.security.authentication.server.AuthenticationFilter;
 import org.apache.hadoop.security.authentication.util.SignerSecretProvider;
 
 import javax.servlet.*;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -16,6 +15,7 @@ import java.util.List;
 public class MultiauthWebUiFilter extends AuthenticationFilter {
 
   private List<String> allowedResources = new ArrayList<>();
+  private int servicePort;
 
   @Override
   public void init(FilterConfig filterConfig) throws ServletException {
@@ -50,13 +50,7 @@ public class MultiauthWebUiFilter extends AuthenticationFilter {
     HttpServletRequest httpRequest = (HttpServletRequest) request;
     HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-    Cookie[] cookies = httpRequest.getCookies();
-    boolean isLoggedOut = checkForCookie(cookies, "logout");
-    if (isLoggedOut) {
-      cleanCookieForResponse(cookies, httpResponse);
-      httpResponse.sendRedirect("/login");
-      return;
-    }
+    servicePort = httpRequest.getServerPort();
 
     if (allowedResources.contains(httpRequest.getRequestURI())) {
       chain.doFilter(httpRequest, httpResponse);
@@ -65,28 +59,8 @@ public class MultiauthWebUiFilter extends AuthenticationFilter {
     }
   }
 
-  private void cleanCookieForResponse(Cookie[] cookies, HttpServletResponse httpResponse) {
-    if (cookies != null) {
-      for (Cookie cookie : cookies) {
-        cookie.setValue("");
-        cookie.setPath("/");
-        cookie.setMaxAge(0);
-        httpResponse.addCookie(cookie);
-      }
-    }
-  }
-
-  private boolean checkForCookie(Cookie[] cookies, String cookieName) {
-    boolean isCookiePresent = false;
-
-    if (cookies != null) {
-      for (Cookie cookie : cookies) {
-        if (cookieName.equals(cookie.getName())) {
-          isCookiePresent = true;
-          break;
-        }
-      }
-    }
-    return isCookiePresent;
+  @Override
+  public String getCookieTokenName(){
+    return "hadoop.auth." + servicePort;
   }
 }

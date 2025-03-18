@@ -67,7 +67,6 @@ function logoutAction() {
         .catch(error => {
             console.error("Error during logout:", error);
         });
-    document.cookie = "logout=true; path=/; max-age=3600; Secure; SameSite=Lax";
 }
 
 loginBtn.addEventListener("click", function () {
