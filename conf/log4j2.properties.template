@@ -94,6 +94,10 @@ logger.Configuration.level = ERROR
 logger.Dispatcher.name = org.apache.spark.rpc.netty.Dispatcher
 logger.Dispatcher.level = ERROR
 
+# SPARK-1352: suppress "SSO configuration not yet available on cluster" error from MaprShellCommandExecutor when SSO is not configured
+logger.MaprShellCommandExecutor.name = org.apache.hadoop.util.MaprShellCommandExecutor
+logger.MaprShellCommandExecutor.level = FATAL
+
 # For deploying Spark ThriftServer
 # SPARK-34128: Suppress undesirable TTransportException warnings involved in THRIFT-4805
 appender.console.filter.1.type = RegexFilter
