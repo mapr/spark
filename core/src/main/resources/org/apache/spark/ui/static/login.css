@@ -2,28 +2,84 @@ body {
   font-family: "Quicksand", sans-serif;
   font-weight: 500;
   letter-spacing: 0.5px;
-  background-color: #263040
+  background-color: #263040;
 }
 
 @font-face {
-    font-family: "hpeFont";
-    src: url(MetricHPE-Web-Semibold.woff);
+  font-family: "hpeSemiFont";
+  src: url(MetricHPE-Web-Semibold.woff);
+}
+
+@font-face {
+  font-family: "hpeRegularFont";
+  src: url(MetricHPE-Web-Regular.woff);
+}
+
+@font-face {
+  font-family: "hpeBoldFont";
+  src: url(MetricHPE-Web-Bold.woff);
+}
+
+.brand-name {
+  display: flex;
+  font-family: "hpeBoldFont";
+  font-size: 24px;
+  user-select: none;
+  padding-top: 11px;
+  padding-left: 0;
+  color: #FFFFFF;
+}
+
+.product-name {
+  display: flex;
+  font-family: "hpeRegularFont";
+  font-size: 24px;
+  user-select: none;
+  padding-bottom: 11px;
+  padding-left: 0;
+  color: #FFFFFF;
 }
 
 .btn-main {
   background-color: #04AA6D; /* Green */
   border: none;
   color: white;
-  padding: 15px 32px;
   text-align: center;
   text-decoration: none;
   display: inline-block;
-  font-family: "hpeFont"
+  font-family: "hpeSemiFont";
+  width: 100%;
 }
 
 .btn-main:hover { background: #04AA6D; }
 
+.btn-main:disabled {
+  cursor: not-allowed;
+  opacity: .65;
+  background-color: transparent;
+  color: #606b7d !important;
+  border-color: #606b7d;
+  border: 1px solid #bbb;
+  pointer-events: all !important;
+}
+
 .boxContainer {
-  max-width: 600px;
-  margin: auto;
+  display: block;
+  unicode-bidi: isolate;
+  box-sizing: border-box;
+  top: 35%;
+  left: 50%;
+  position: absolute;
+  width: 450px;
+  margin: -100px 0 0 -230px;
+}
+
+.customForm {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.customSsoForm {
+  padding-top: 15px;
+  padding-bottom: 15px;
 }

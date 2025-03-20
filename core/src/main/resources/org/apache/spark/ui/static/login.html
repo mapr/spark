@@ -4,37 +4,39 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon"/>
-    <title>Spark login</title>
+    <title>Login - Spark</title>
     <link rel="stylesheet" href="/static/bootstrap.min.css"/>
     <link rel="stylesheet" href="/static/login.css"/>
 </head>
 <body>
 <main class="py-5">
     <section class="py-5">
-        <div class="container">
-            <div id="loginBox" class="boxContainer">
+        <div id="loginBox" class="boxContainer">
+            <div class="container">
                 <img src="/static/hpe-logo-invert.svg" alt="hpe-logo"/>
-                <div id="hpeLogo" class="hpe-logo">
-                    <br><br>
-                    <div class="inputsForm">
-                        <input autocomplete="off" placeholder="User Name" name="username" type="text" id="loginUser" class="form-control mt-3" required/>
+                <form id="hpeLogo" class="hpe-logo">
+                    <div id="testText">
+                        <div class="brand-name ">HPE Ezmeral Data Fabric</div>
+                        <div><span class="product-name " id="serviceName"></span></div>
                     </div>
-                    <div class="inputsForm">
-                        <input autocomplete="off" placeholder="Enter your password" name="password" type="password" id="loginPassword" class="form-control mt-3"  required/>
+                    <div class="inputsForm customForm">
+                        <input autocomplete="off" placeholder="User Name" name="username" type="text" id="loginUser" class="form-control" required/>
                     </div>
+                    <form class="inputsForm customForm">
+                        <input autocomplete="off" placeholder="Enter your password" name="password" type="password" id="loginPassword" class="form-control"  required/>
+                    </form>
                     <span id="error"></span>
-                    <div class="inputsForm">
-                        <button id="loginBtn" class="btn btn-main my-4 w-100">
+                    <div class="inputsForm customForm">
+                        <button id="loginBtn" class="btn btn-main">
                             Log in
                         </button>
                     </div>
-                    <br><br>
-                    <div class="inputsForm">
-                        <button id="ssoBtn" class="btn btn-main my-4 w-100">
+                    <div class="inputsForm customSsoForm">
+                        <button id="ssoBtn" class="btn btn-main">
                             Log in with SSO
                         </button>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
     </section>
