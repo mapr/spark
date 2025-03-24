@@ -75,7 +75,6 @@ func getMaprClasspath() (maprClasspath []string, err error) {
 
 type Classpath struct {
 	entries            []string
-	_duplicateDict     map[string]bool
 	_blacklistDict     map[string]bool
 	_blacklistPatterns []string
 }
@@ -83,7 +82,6 @@ type Classpath struct {
 func NewClasspath() *Classpath {
 	cp := new(Classpath)
 	cp.entries = make([]string, 0, 2048)
-	cp._duplicateDict = make(map[string]bool, 2048)
 	cp._blacklistDict = make(map[string]bool, 256)
 	cp._blacklistPatterns = make([]string, 256)
 
@@ -91,7 +89,7 @@ func NewClasspath() *Classpath {
 }
 
 func (cp *Classpath) SetBlacklist(blacklist []string) {
-	isPattern := func (path string) bool {
+	isPattern := func(path string) bool {
 		magicChars := `*?[\`
 		return strings.ContainsAny(path, magicChars)
 	}
@@ -105,21 +103,54 @@ func (cp *Classpath) SetBlacklist(blacklist []string) {
 	}
 }
 
-func (cp *Classpath) AppendEntry(entry string) {
-	if _, found := cp._duplicateDict[entry]; found {
-		return
-	}
+func (cp *Classpath) IsBlacklisted(entry string) bool {
 	if _, found := cp._blacklistDict[entry]; found {
-		return
+		return true
 	}
 	for _, pattern := range cp._blacklistPatterns {
 		if matched, _ := filepath.Match(pattern, entry); matched {
-			return
+			return true
 		}
 	}
 
-	cp.entries = append(cp.entries, entry)
-	cp._duplicateDict[entry] = true
+	return false
+}
+
+func (cp *Classpath) HandleWildcard(entry string) (entries []string) {
+	expand := false
+
+	entryLocation := strings.TrimSuffix(entry, "*")
+
+	files, err := os.ReadDir(entryLocation)
+	if err != nil {
+		// log.Printf("Can not read '%s' directory: %s\n", entryLocation, err)
+
+		// If we can't read it then lets leave it as is:
+		return cp.HandleLocation(entry)
+	}
+	for _, file := range files {
+		filename := file.Name()
+		fullpath := filepath.Join(entryLocation, filename)
+		if cp.IsBlacklisted(fullpath) {
+			expand = true
+		} else {
+			entries = append(entries, fullpath)
+		}
+	}
+
+	if expand {
+		return entries
+	}
+
+	return cp.HandleLocation(entry)
+}
+
+func (cp *Classpath) HandleLocation(entry string) (entries []string) {
+	if !cp.IsBlacklisted(entry) {
+		entries = append(entries, entry)
+	}
+
+	return entries
 }
 
 func (cp *Classpath) AsString() string {
@@ -131,35 +162,13 @@ func classpathFilter(classpath []string, blacklist []string) string {
 	cp.SetBlacklist(blacklist)
 
 	for _, classpathEntry := range classpath {
-		if classpathEntry[0] == '/' && strings.HasSuffix(classpathEntry, "/*") {
-			classpathEntryLocation := classpathEntry[:len(classpathEntry)-1]
-
-			/*
-			 * Original ClasspathFilter from Spark scan directories recursively.
-			 * However, it's most likely this is a bug.
-			 */
-			// files, err := filepath.WalkDir(classpathEntryLocation)
-			// ...
-
-			files, err := os.ReadDir(classpathEntryLocation)
-			if err != nil {
-				// log.Printf("Can not read '%s' directory: %s\n", classpathEntry, err)
-			}
-			for _, file := range files {
-				filename := file.Name()
-				filetype := file.Type()
-
-				if (filetype == 0 || filetype&os.ModeSymlink != 0) &&
-					strings.HasSuffix(filename, ".jar") {
-					fullpath := filepath.Join(classpathEntryLocation, filename)
-					cp.AppendEntry(fullpath)
-				}
-			}
+		var entries []string
+		if strings.HasSuffix(classpathEntry, "/*") {
+			entries = cp.HandleWildcard(classpathEntry)
 		} else {
-			if _, err := os.Stat(classpathEntry); err == nil { // remove non existing files
-				cp.AppendEntry(classpathEntry)
-			}
+			entries = cp.HandleLocation(classpathEntry)
 		}
+		cp.entries = append(cp.entries, entries[:]...)
 	}
 
 	return cp.AsString()
