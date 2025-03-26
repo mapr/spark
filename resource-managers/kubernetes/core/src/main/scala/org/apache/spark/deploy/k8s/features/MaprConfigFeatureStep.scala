@@ -134,7 +134,7 @@ private[spark] class MaprConfigFeatureStep(conf: KubernetesConf)
   private def applySparkExtraConfigs(podBuilder: PodBuilder, containerBuilder: ContainerBuilder): Unit = {
     val confSecretName = sparkConf.get(MAPR_SPARK_EXTRACONF_SECRET_NAME)
 
-    if (confSecretName.isEmpty) {
+    if (confSecretName.forall(_.isEmpty)) {
       return
     }
 
@@ -160,7 +160,7 @@ private[spark] class MaprConfigFeatureStep(conf: KubernetesConf)
   private def applyUserSecret(podBuilder: PodBuilder, containerBuilder: ContainerBuilder): Unit = {
     val userSecretNameConfig = sparkConf.get(MAPR_USER_SECRET)
 
-    if (userSecretNameConfig.isEmpty) {
+    if (userSecretNameConfig.forall(_.isEmpty)) {
       return
     }
 
