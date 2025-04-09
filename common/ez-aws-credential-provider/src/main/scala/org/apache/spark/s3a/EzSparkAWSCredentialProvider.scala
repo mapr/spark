@@ -13,7 +13,10 @@ import scala.util.Properties._
 
 class EzSparkAWSCredentialProvider(uri: URI, conf: Configuration) extends AWSCredentialsProvider with Logging {
 
+  private val KeyLocationProperty = "fs.s3a.access.key.location"
+
   private val DefaultAccessKeyLocation = "/etc/secrets/ezua/.auth_token"
+  private val ServiceAccountAccessKeyLocation = "/run/secrets/kubernetes.io/serviceaccount/token"
   private val DefaultSecretKeyLocation = ""
 
   private var accessKey = ""
@@ -33,7 +36,9 @@ class EzSparkAWSCredentialProvider(uri: URI, conf: Configuration) extends AWSCre
 
   private def getUpdatedAccessKey(): String = {
     logInfo(s"Updating accessKey")
-    val accessKeyLocation: String = envOrElse("AWS_ACCESS_KEY_LOCATION", DefaultAccessKeyLocation)
+    var accessKeyLocation = getAccessKeyLocation
+    accessKeyLocation = envOrElse("AWS_ACCESS_KEY_LOCATION", accessKeyLocation)
+    accessKeyLocation = conf.getTrimmed(KeyLocationProperty, accessKeyLocation)
     getKeyFromLocation(accessKeyLocation)
   }
 
@@ -92,4 +97,19 @@ class EzSparkAWSCredentialProvider(uri: URI, conf: Configuration) extends AWSCre
       case e: Exception => logError("Error starting file monitor", e)
     }
   }
+
+  /**
+   * Get the access key location.
+   *
+   * If the default access key location does not exist, return the service account token
+   * location.
+   */
+  private def getAccessKeyLocation: String = {
+    if (new java.io.File(DefaultAccessKeyLocation).exists) {
+      DefaultAccessKeyLocation
+    } else {
+      ServiceAccountAccessKeyLocation
+    }
+  }
+
 }
