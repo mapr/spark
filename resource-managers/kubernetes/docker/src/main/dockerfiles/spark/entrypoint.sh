@@ -19,23 +19,6 @@
 # echo commands to the terminal output
 set -ex
 
-if [ -f "/tmp/usersecret/CLUSTER_NAME" ]; then
-  echo "DF env detected. Starting DF configuration"
-  # common configuration
-  source "$MAPR_HOME"/kubernetes/common.sh
-
-  READY_FLAG=$MAPR_KUBERNETES/ready
-  CURRENT_FILE="entrypoint.sh"
-  COMPONENT_NAME="SPARK DRIVER/EXECUTOR"
-  cleanup_ready
-  prologue $COMPONENT_NAME
-  wait
-  client_init spark
-  echo "DF configuration complete"
-else
-  echo "Not in DF env. Skipping DF configuration"
-fi
-
 # Check whether there is a passwd entry for the container UID
 myuid=$(id -u)
 mygid=$(id -g)
@@ -132,4 +115,4 @@ case "$1" in
 esac
 
 # Execute the container CMD under tini for better hygiene
-exec /tini -s -- "${CMD[@]}"
+exec /usr/bin/tini -s -- "${CMD[@]}"
