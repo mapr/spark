@@ -26,7 +26,7 @@
   </parent>
   <groupId>org.apache.spark</groupId>
   <artifactId>spark-parent_2.12</artifactId>
-  <version>3.3.3.6-eep-921</version>
+  <version>3.3.3.7-eep-921</version>
   <packaging>pom</packaging>
   <name>Spark Project Parent POM</name>
   <url>https://spark.apache.org/</url>
@@ -134,7 +134,7 @@
     <!-- note that this should be compatible with Kafka brokers version 0.10 and up -->
     <kafka.version>2.6.1.701-eep-921</kafka.version>
     <derby.version>10.14.2.0</derby.version>
-    <parquet.version>1.12.2</parquet.version>
+    <parquet.version>1.15.1</parquet.version>
     <orc.version>1.7.8</orc.version>
     <jetty.version>9.4.53.v20231009</jetty.version>
     <jakartaservlet.version>4.0.3</jakartaservlet.version>
