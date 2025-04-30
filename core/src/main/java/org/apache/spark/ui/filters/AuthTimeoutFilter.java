@@ -14,7 +14,7 @@ public class AuthTimeoutFilter extends AuthenticationFilter {
   private int ABSOLUTE_TIMEOUT_DURATION = 600; // 600
   private final String LAST_ACTIVITY_COOKIE_NAME = "lastActivity";
   private final String SESSION_START_COOKIE_NAME = "sessionStart";
-  private final String LOGOUT_COOKIE_NAME = "logout";
+  private final String HADOOP_AUTH_COOKIE_NAME = "hadoop.auth.";
 
   @Override
   public void init(FilterConfig filterConfig) throws ServletException {
@@ -30,7 +30,6 @@ public class AuthTimeoutFilter extends AuthenticationFilter {
     Cookie[] cookies = httpRequest.getCookies();
     Cookie lastActivityCookie = null;
     Cookie sessionStartCookie = null;
-    Cookie logoutCookie = null;
 
     if (cookies != null) {
       for (Cookie cookie : cookies) {
@@ -41,23 +40,11 @@ public class AuthTimeoutFilter extends AuthenticationFilter {
           case SESSION_START_COOKIE_NAME:
             sessionStartCookie = cookie;
             break;
-          case LOGOUT_COOKIE_NAME:
-            logoutCookie = cookie;
-            break;
         }
       }
     }
 
     long currentTime = System.currentTimeMillis();
-
-    if (logoutCookie != null && sessionStartCookie != null && lastActivityCookie != null) {
-      invalidateCookie(httpResponse, SESSION_START_COOKIE_NAME);
-      invalidateCookie(httpResponse, LAST_ACTIVITY_COOKIE_NAME);
-      httpResponse.setHeader("WWW-Authenticate", "Basic realm=\"session_logout\"");
-      httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Logged out");
-      return;
-    }
-    invalidateCookie(httpResponse, LOGOUT_COOKIE_NAME);
 
     if (lastActivityCookie != null && sessionStartCookie != null) {
       try {
@@ -69,9 +56,8 @@ public class AuthTimeoutFilter extends AuthenticationFilter {
 
           invalidateCookie(httpResponse, LAST_ACTIVITY_COOKIE_NAME);
           invalidateCookie(httpResponse, SESSION_START_COOKIE_NAME);
-
-          httpResponse.setHeader("WWW-Authenticate", "Basic realm=\"session_timeout\"");
-          httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Session timed out");
+          invalidateCookie(httpResponse, HADOOP_AUTH_COOKIE_NAME + httpRequest.getServerPort());
+          httpResponse.sendRedirect("/login");
 
           return;
         }
