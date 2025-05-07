@@ -135,7 +135,8 @@
     <kafka.version>2.6.1.701-eep-921</kafka.version>
     <derby.version>10.14.2.0</derby.version>
     <parquet.version>1.15.1</parquet.version>
-    <orc.version>1.7.8</orc.version>
+    <orc.version>1.9.5</orc.version>
+    <orc.classifier>shaded-protobuf</orc.classifier>
     <jetty.version>9.4.56.v20240826</jetty.version>
     <jakartaservlet.version>4.0.3</jakartaservlet.version>
     <chill.version>0.10.0</chill.version>
@@ -2540,6 +2541,7 @@
         <groupId>org.apache.orc</groupId>
         <artifactId>orc-core</artifactId>
         <version>${orc.version}</version>
+        <classifier>${orc.classifier}</classifier>
         <scope>${orc.deps.scope}</scope>
         <exclusions>
           <exclusion>
@@ -2568,6 +2570,7 @@
         <groupId>org.apache.orc</groupId>
         <artifactId>orc-mapreduce</artifactId>
         <version>${orc.version}</version>
+        <classifier>${orc.classifier}</classifier>
         <scope>${orc.deps.scope}</scope>
         <exclusions>
           <exclusion>
