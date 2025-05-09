@@ -3697,7 +3697,7 @@
     <profile>
       <id>hadoop-3.3</id>
       <properties>
-        <hadoop.version>3.4.1.100-eep-941-SNAPSHOT</hadoop.version>
+        <hadoop.version>3.3.5.600-eep-932</hadoop.version>
         <curator.version>4.2.0</curator.version>
         <commons-io.version>2.8.0</commons-io.version>
         <!--
@@ -3707,6 +3707,11 @@
         <hadoop-client-runtime.artifact>hadoop-yarn-api</hadoop-client-runtime.artifact>
         <hadoop-client-minicluster.artifact>hadoop-client</hadoop-client-minicluster.artifact>
       </properties>
+    </profile>
+
+    <profile>
+      <id>hadoop-3.4</id>
+      <!-- Default hadoop profile. Uses global properties. -->
     </profile>
 
     <profile>

@@ -65,7 +65,7 @@
       </dependencies>
     </profile>
     <profile>
-      <id>hadoop-3.3</id>
+      <id>hadoop-3.4</id>
       <dependencies>
         <dependency>
           <groupId>org.apache.hadoop</groupId>
