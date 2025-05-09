@@ -121,9 +121,8 @@
     <maprfs.version>7.4.0.0-mapr</maprfs.version>
     <protobuf.version>3.21.9</protobuf.version>
     <yarn.version>${hadoop.version}</yarn.version>
-    <curator.version>2.13.0</curator.version>
-    <zookeeper.version>3.5.6.0-mapr-2210</zookeeper.version>
     <curator.version>4.2.0</curator.version>
+    <zookeeper.version>3.5.6.0-mapr-2210</zookeeper.version>
     <hive.group>org.apache.hive</hive.group>
     <hive.classifier>core</hive.classifier>
     <!-- Version used in Maven Hive dependency -->
@@ -3556,17 +3555,7 @@
 
     <profile>
       <id>hadoop-3.3</id>
-      <properties>
-        <hadoop.version>3.3.5.325-eep-923-SNAPSHOT</hadoop.version>
-        <curator.version>4.2.0</curator.version>
-        <commons-io.version>2.14.0</commons-io.version>
-        <!--
-          the declaration site above of these variables explains why we need to re-assign them here
-        -->
-        <hadoop-client-api.artifact>hadoop-client</hadoop-client-api.artifact>
-        <hadoop-client-runtime.artifact>hadoop-yarn-api</hadoop-client-runtime.artifact>
-        <hadoop-client-minicluster.artifact>hadoop-client</hadoop-client-minicluster.artifact>
-      </properties>
+      <!-- Default hadoop profile. Uses global properties. -->
     </profile>
 
     <profile>
