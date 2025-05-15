@@ -2,7 +2,6 @@ package org.apache.spark.ui.filters;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.security.authentication.client.AuthenticationException;
-import org.apache.hadoop.security.authentication.server.AuthenticationHandler;
 import org.apache.hadoop.security.authentication.server.AuthenticationToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,15 +18,9 @@ import static org.apache.spark.ui.filters.HttpConstants.AUTHORIZATION_HEADER;
  * Copy of com.mapr.security.maprauth.BasicAuthHandler
  * The original auth handler can't be used because of its coupling with mapr MultiMechsAuthenticationHandler
  */
-public final class BasicAuthHandler implements AuthenticationHandler {
+public final class BasicAuthHandler extends MultiSchemeAuthHandler {
 
     private static Logger logger = LoggerFactory.getLogger(BasicAuthHandler.class);
-    private static final String TYPE = "Basic";
-
-    @Override
-    public String getType() {
-        return TYPE;
-    }
 
     @Override
     public void init(Properties config) throws ServletException {

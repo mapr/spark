@@ -8,7 +8,6 @@ import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.Verification;
 import org.apache.hadoop.security.authentication.client.AuthenticationException;
-import org.apache.hadoop.security.authentication.server.AuthenticationHandler;
 import org.apache.hadoop.security.authentication.server.AuthenticationToken;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
@@ -33,7 +32,7 @@ import static org.apache.spark.ui.filters.HttpConstants.AUTHORIZATION_HEADER;
  * JWT authentication handler designed to authenticate requests with Bearer scheme.
  * Supports both JWKS URL and local PEM files for token verification.
  */
-public final class JWTAuthHandler implements AuthenticationHandler {
+public final class JWTAuthHandler extends MultiSchemeAuthHandler {
 
     private static Logger logger = LoggerFactory.getLogger(JWTAuthHandler.class);
 
@@ -44,13 +43,7 @@ public final class JWTAuthHandler implements AuthenticationHandler {
     private static final String AUDIENCES_SUFFIX = ".audiences";
     private static final String IDENTITY_CLAIM_SUFFIX = ".identity.claim";
 
-    private final String type = "jwt-bearer";
     private List<JWTConfig> jwtConfigList;
-
-    @Override
-    public String getType() {
-        return type;
-    }
 
     @Override
     public void init(Properties config) throws ServletException {
@@ -159,7 +152,7 @@ public final class JWTAuthHandler implements AuthenticationHandler {
             String username = decodedJWT.getClaim(jwtConfig.identityClaim).asString();
             if (username != null && !username.trim().isEmpty()) {
                 logger.info("Authenticated user: {}", username);
-                return new AuthenticationToken(username, username, type);
+                return new AuthenticationToken(username, username, getType());
             } else {
                 logger.error("Username claim '{}' not found in token", jwtConfig.identityClaim);
                 return null;
