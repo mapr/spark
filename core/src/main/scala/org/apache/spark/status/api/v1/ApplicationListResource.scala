@@ -16,7 +16,9 @@
  */
 package org.apache.spark.status.api.v1
 
-import java.util.{ List => JList}
+import org.apache.spark.internal.config.History.HISTORY_LIST_ALL_ENABLED
+
+import java.util.{List => JList}
 import javax.ws.rs.{DefaultValue, GET, Produces, QueryParam}
 import javax.ws.rs.core.MediaType
 
@@ -37,15 +39,22 @@ private[v1] class ApplicationListResource extends ApiRequestContext {
     val includeCompleted = status.isEmpty || status.contains(ApplicationStatus.COMPLETED)
     val includeRunning = status.isEmpty || status.contains(ApplicationStatus.RUNNING)
 
-    uiRoot.getApplicationInfoList.filter { app =>
-      val anyRunning = app.attempts.isEmpty || !app.attempts.head.completed
-      // if any attempt is still running, we consider the app to also still be running;
-      // keep the app if *any* attempts fall in the right time window
-      ((!anyRunning && includeCompleted) || (anyRunning && includeRunning)) &&
-      app.attempts.exists { attempt =>
-        isAttemptInRange(attempt, minDate, maxDate, minEndDate, maxEndDate, anyRunning)
+    val user = httpRequest.getRemoteUser()
+
+    val listAllEnabled = uiRoot.securityManager.getSparkConf.get(HISTORY_LIST_ALL_ENABLED)
+
+    uiRoot.getApplicationInfoList
+      .withFilter { app =>
+        val anyRunning = app.attempts.isEmpty || !app.attempts.head.completed
+        val matchesStatus =
+          (anyRunning && includeRunning) || (!anyRunning && includeCompleted)
+        val inTimeRange = app.attempts.exists { attempt =>
+          isAttemptInRange(attempt, minDate, maxDate, minEndDate, maxEndDate, anyRunning)
+        }
+        matchesStatus && inTimeRange
       }
-    }.take(numApps)
+      .filter(app => !listAllEnabled && uiRoot.checkUIViewPermissions(app.id, None, user) || listAllEnabled)
+      .take(numApps)
   }
 
   private def isAttemptInRange(

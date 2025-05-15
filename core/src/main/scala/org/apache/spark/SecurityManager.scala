@@ -134,6 +134,8 @@ private[spark] class SecurityManager(
     s"$sparkBase/spark-$sparkVersion"
   }
 
+  def getSparkConf: SparkConf = sparkConf
+
   @tailrec
   private def genViaManageSSLScript(stdWriter: PrintWriter,
                                     manageSslKeysScriptLocal: String,

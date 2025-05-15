@@ -26,6 +26,11 @@ private[spark] object History {
 
   val DEFAULT_LOG_DIR = "file:/tmp/spark-events"
 
+  val HISTORY_LIST_ALL_ENABLED = ConfigBuilder("spark.history.listAll.enabled")
+    .version("3.5.5")
+    .booleanConf
+    .createWithDefault(false)
+
   val HISTORY_LOG_DIR = ConfigBuilder("spark.history.fs.logDirectory")
     .version("1.1.0")
     .stringConf
