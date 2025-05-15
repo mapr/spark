@@ -24,7 +24,7 @@ import static org.apache.spark.ui.filters.HttpConstants.*;
  * - added support for 'Bearer' scheme
  * - fixed NPE in 'authenticate' method for case if internal handler returned null token
  */
-public final class MultiSchemeAuthHandler implements AuthenticationHandler {
+public class MultiSchemeAuthHandler implements AuthenticationHandler {
     private static Logger logger = LoggerFactory
             .getLogger(MultiSchemeAuthHandler.class);
     public static final String SCHEMES_PROPERTY =
