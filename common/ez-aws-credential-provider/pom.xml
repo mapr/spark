@@ -45,7 +45,7 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-bundle</artifactId>
-            <version>1.12.609</version>
+            <version>${aws.java.sdk.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
