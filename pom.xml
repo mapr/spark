@@ -146,7 +146,7 @@
     <!-- note that this should be compatible with Kafka brokers version 0.10 and up -->
     <kafka.version>3.6.1.200-eep-940-SNAPSHOT</kafka.version>
     <derby.version>10.14.2.0</derby.version>
-    <parquet.version>1.15.1</parquet.version>
+    <parquet.version>1.15.2</parquet.version>
     <orc.version>1.9.5</orc.version>
     <orc.classifier>shaded-protobuf</orc.classifier>
     <jetty.version>9.4.56.v20240826</jetty.version>
