@@ -33,6 +33,15 @@ MAPR_CONF_DIR=${MAPR_CONF_DIR:-"$MAPR_HOME/conf"}
 SPARK_VERSION=`cat $MAPR_HOME/spark/sparkversion`
 LATEST_SPARK_TIMESTAMP=0
 
+#
+# Check if Spark is running in K8s cluster
+#
+RUNNING_IN_K8S=false
+if [ -f /var/run/secrets/kubernetes.io/serviceaccount/token ]; then
+    RUNNING_IN_K8S=true
+fi
+
+
 # Hive properties
 HIVE_INSTALLED=false
 if [ -f $MAPR_HOME/hive/hiveversion ]; then
@@ -52,11 +61,19 @@ if [ "$HBASE_INSTALLED" = true ]; then
 	HBASE_HOME="$MAPR_HOME"/hbase/hbase-"$HBASE_VERSION"
 fi
 
+HADOOP_VERSION=`cat $MAPR_HOME/hadoop/hadoopversion`
 SPARK_HOME="$MAPR_HOME"/spark/spark-"$SPARK_VERSION"
 SPARK_CONF="$SPARK_HOME"/conf
 SPARK_BIN="$SPARK_HOME"/bin
 SPARK_LOGS="$SPARK_HOME"/logs
 DAEMON_CONF=${MAPR_HOME}/conf/daemon.conf
+DEFAULT_SSL_KEYSTORE="$MAPR_HOME"/conf/ssl_keystore
+
+if [ -f /proc/sys/crypto/fips_enabled ]; then
+  FIPS_ENABLED=$(cat /proc/sys/crypto/fips_enabled)
+else
+  FIPS_ENABLED="0"
+fi
 
 MAPR_USER=${MAPR_USER:-$( awk -F = '$1 == "mapr.daemon.user" { print $2 }' $DAEMON_CONF)}
 MAPR_GROUP=${MAPR_GROUP:-$( awk -F = '$1 == "mapr.daemon.group" { print $2 }' $DAEMON_CONF)}
@@ -72,20 +89,27 @@ initCfgEnv
 
 CLUSTER_INFO=`cat $MAPR_HOME/conf/mapr-clusters.conf`
 
-IS_FIRST_RUN=false
-if [ -f $SPARK_HOME/etc/.not_configured_yet ] ; then
-	IS_FIRST_RUN=true
-fi
-JUST_UPDATED=false
-if [ -f $SPARK_HOME/etc/.just_updated ] ; then
-	JUST_UPDATED=true
+CUSTOM_HIVE_CONF_IS_ON=false
+if [ -f $SPARK_HOME/etc/.custom_hive_configuration_on ] ; then
+        CUSTOM_HIVE_CONF_IS_ON=true
 fi
 
-declare -a SPARK_CONF_FILES=("$SPARK_CONF/spark-defaults.conf" "$SPARK_CONF/spark-env.sh" "$SPARK_CONF/hive-site.xml" "$SPARK_CONF/log4j.properties")
+IS_FIRST_RUN=false
+if [ -f "${SPARK_HOME}/conf/.not_configured_yet" ]; then
+    IS_FIRST_RUN=true
+fi
+JUST_UPDATED=false
+if [ -f "${SPARK_HOME}/conf/.just_updated" ]; then
+    JUST_UPDATED=true
+fi
+
+declare -a SPARK_CONF_FILES=("$SPARK_CONF/spark-defaults.conf" "$SPARK_CONF/spark-env.sh" "$SPARK_CONF/hive-site.xml" "$SPARK_CONF/log4j2.properties")
 
 # Spark ports
 sparkHSUIPort=18080
 isSparkHSUIPortDef=false
+sparkCSPort=15002
+isSparkCSPortDef=false
 sparkTSPort=2304
 isSparkTSPortDef=false
 sparkTSUIPort=4040
@@ -97,6 +121,7 @@ isSparkMasterUIPortDef=false
 
 # secure ui ports
 sparkMasterSecureUIPort=8980
+sparkWorkerSecureUIPort=8981
 sparkHSSecureUIPort=18480
 
 # indicates whether cluster is up or not
@@ -157,7 +182,7 @@ chmod  a+rwxt "$SPARK_HOME"/tmp
 #
 # Improved default logging level (WARN instead of INFO)
 #
-sed 's/rootCategory=INFO/rootCategory=WARN/' "$SPARK_HOME/conf/log4j.properties.template" > "$SPARK_HOME/conf/log4j.properties"
+sed 's/rootCategory=INFO/rootCategory=WARN/' "$SPARK_HOME/conf/log4j2.properties.template" > "$SPARK_HOME/conf/log4j2.properties"
 
 #
 # Add MapR customization to spark
@@ -196,14 +221,24 @@ EOM
 # Change config functions
 #
 
+# Usage: $1 - option name, $2 - option name + value, $3 - comment if needed
 function changeSparkDefaults() {
 	if grep -q $1 "$SPARK_HOME/conf/spark-defaults.conf"; then
 		sed -i "s~^$1.*~$2~" $SPARK_HOME/conf/spark-defaults.conf
 	else
+	  if [ ! -z "$3" ]; then
+	    cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOM
+$3
+EOM
+	  fi
 		cat >> "$SPARK_HOME"/conf/spark-defaults.conf << EOM
 $2
 EOM
 	fi
+}
+
+function addSparkDefaultsSSL() {
+		sed -i "/\# ssl/a $1" $SPARK_HOME/conf/spark-defaults.conf
 }
 
 function changeWardenConfig() {
@@ -212,21 +247,29 @@ function changeWardenConfig() {
 	fi
 }
 
+function changeCompatibilityVersions() {
+  component_name=$1
+  component_version=$2
+  compatibility_version_file_path="${SPARK_HOME}/mapr-util/compatibility.version"
+  new_component_line="${component_name}_versions=${component_version}"
+  sed -i "/$component_name/c\\$new_component_line" "$compatibility_version_file_path"
+}
+
 #
 # Change permission
 #
 
-function change_permissions() {
-    if [ -f $DAEMON_CONF ]; then
-        if [ ! -z "$MAPR_USER" ]; then
-            chown -R ${MAPR_USER} ${SPARK_HOME}
+function changePermissions() {
+    if [ -f "$DAEMON_CONF" ]; then
+        if [ -n "$MAPR_USER" ] && [ -n "$MAPR_GROUP" ]; then
+            chown -R "${MAPR_USER}:${MAPR_GROUP}" "$SPARK_HOME"
+        elif [ -n "$MAPR_USER" ]; then
+            chown -R "$MAPR_USER" "$SPARK_HOME"
+        elif [ -n "$MAPR_GROUP" ]; then
+            chgrp -R "$MAPR_GROUP" "$SPARK_HOME"
         fi
-
-	    if [ ! -z "$MAPR_GROUP" ]; then
-            chgrp -R ${MAPR_GROUP} ${SPARK_HOME}
-        fi
-        chmod -f u+x $SPARK_HOME/bin/*
     fi
+    chmod -f u+x "$SPARK_HOME"/bin/*
 }
 
 #
@@ -264,12 +307,7 @@ if [ "$isSecure" == 1 ] ; then
 # ssl
 spark.ssl.enabled true
 spark.ssl.fs.enabled true
-spark.ssl.trustStore $MAPR_HOME/conf/ssl_truststore
-spark.ssl.keyStore $MAPR_HOME/conf/ssl_keystore
 spark.ssl.protocol TLSv1.2
-
-# - PAM
-spark.ui.filters  org.apache.spark.ui.filters.MultiauthWebUiFilter, org.apache.spark.ui.filters.CustomHeadersFilter
 
 # - ACLS
 spark.acls.enable       false
@@ -290,30 +328,40 @@ spark.io.encryption.keySizeBits 128
 
 # END OF THE SECURITY CONFIGURATION BLOCK
 EOF
+
+  if [ "$RUNNING_IN_K8S" = false ] ; then
+    sed -i '/# ALL SECURITY PROPERTIES MUST BE PLACED IN THIS BLOCK/{N; a\# - PAM\
+spark.ui.filters  org.apache.spark.ui.filters.MultiauthWebUiFilter, org.apache.spark.ui.filters.CustomHeadersFilter, org.apache.spark.ui.filters.AuthTimeoutFilter\
+spark.org.apache.spark.ui.filters.MultiauthWebUiFilter.param.allowedResources /login,/login/,/static/login.js,/static/login.css,/static/bootstrap.min.css,/static/hpe-logo-invert.svg,/static/MetricHPE-Web-Semibold.woff,/static/favicon.ico\
+spark.org.apache.spark.ui.filters.AuthTimeoutFilter.param.inactiveTimeout 30\
+spark.org.apache.spark.ui.filters.AuthTimeoutFilter.param.absoluteTimeout 600\n
+    }' "$SPARK_HOME"/conf/spark-defaults.conf
+  fi
+
 	if [ -f $SPARK_HOME/warden/warden.spark-master.conf ] ; then
 		changeWardenConfig "service.ui.port" "service.ui.port=$sparkMasterSecureUIPort" "master"
-		sed -i "/\# ssl/a spark.ssl.standalone.port $sparkMasterSecureUIPort" $SPARK_HOME/conf/spark-defaults.conf
+		addSparkDefaultsSSL "spark.ssl.standalone.port $sparkMasterSecureUIPort"
+		addSparkDefaultsSSL "spark.ssl.standalone.keyStore $DEFAULT_SSL_KEYSTORE"
+	else
+	  addSparkDefaultsSSL "spark.ssl.standalone.port $sparkWorkerSecureUIPort"
 	fi
 	if [ -f $SPARK_HOME/warden/warden.spark-historyserver.conf ] ; then
 		changeWardenConfig "service.ui.port" "service.ui.port=$sparkHSSecureUIPort" "historyserver"
-		sed -i "/\# ssl/a spark.ssl.historyServer.port $sparkHSSecureUIPort" $SPARK_HOME/conf/spark-defaults.conf
+		addSparkDefaultsSSL "spark.ssl.historyServer.port $sparkHSSecureUIPort"
+		addSparkDefaultsSSL "spark.ssl.historyServer.keyStore $DEFAULT_SSL_KEYSTORE"
 		changeSparkDefaults "spark.yarn.historyServer.address" "spark.yarn.historyServer.address $(hostname --fqdn):$sparkHSSecureUIPort"
 	fi
-
+	if [ "$FIPS_ENABLED" = "1" ] ; then
+	  addSparkDefaultsSSL "spark.ssl.keyStoreType bcfks"
+	  addSparkDefaultsSSL "spark.ssl.trustStoreType bcfks"
+	  sed -i 's/java.util=ALL-UNNAMED/java.util=ALL-UNNAMED -Djava.security.properties=\/opt\/mapr\/conf\/java.security.fips/g' ${SPARK_HOME}/conf/spark-defaults.conf
+	fi
 	if ! (echo "$CLUSTER_INFO" | grep -q "kerberosEnable=true") ; then
 		if [ ! -f $SPARK_HOME/conf/hive-site.xml ] ; then
 			cp $SPARK_HOME/conf/hive-site.xml.security.template $SPARK_HOME/conf/hive-site.xml
 		else
 			if ! grep -q \>hive.server2.thrift.sasl.qop\< "$SPARK_HOME/conf/hive-site.xml"; then
-				CONF="</configuration>"
-				PROPERTIES="<property>\n<name>hive.server2.thrift.sasl.qop</name>\n<value>auth-conf</value>\n</property>\n</configuration>"
-				sed -i "s~$CONF~$PROPERTIES~g" $SPARK_HOME/conf/hive-site.xml
-			fi
-
-			if ! grep -q \>hive.server2.authentication\< "$SPARK_HOME/conf/hive-site.xml"; then
-				CONF="</configuration>"
-				PROPERTIES="<property>\n<name>hive.server2.authentication</name>\n<value>MAPRSASL</value>\n</property>\n</configuration>"
-				sed -i "s~$CONF~$PROPERTIES~g" $SPARK_HOME/conf/hive-site.xml
+			  java -cp $SPARK_HOME'/jars/*' org.apache.spark.editor.HiveSiteEditor create hive.server2.thrift.sasl.qop=auth-conf
 			fi
 		fi
 
@@ -325,8 +373,19 @@ fi
 }
 
 function createAppsSparkFolder() {
-	sudo -u ${MAPR_USER} hadoop fs -mkdir -p /apps/spark > /dev/null 2>&1
-	sudo -u ${MAPR_USER} hadoop fs -chmod 777 /apps/spark > /dev/null 2>&1
+  if [ -z "$MAPR_TICKETFILE_LOCATION" ]; then
+    isSecured="false"
+    if [ -e "${MAPR_HOME}/conf/mapr-clusters.conf" ]; then
+      isSecured=$(head -n1 "${MAPR_HOME}/conf/mapr-clusters.conf" | grep -o 'secure=\w*' | cut -d '=' -f 2)
+    fi
+    if [ "$isSecured" = "true" ] && [ -e "${MAPR_HOME}/conf/mapruserticket" ]; then
+      export MAPR_TICKETFILE_LOCATION="${MAPR_HOME}/conf/mapruserticket"
+    fi
+  fi
+  if ! hadoop fs -test -d /apps/spark >/dev/null 2>&1; then
+    hadoop fs -mkdir -p /apps/spark >/dev/null 2>&1
+    hadoop fs -chmod 777 /apps/spark >/dev/null 2>&1
+  fi
 }
 
 #
@@ -334,15 +393,13 @@ function createAppsSparkFolder() {
 #
 
 function configureOnHive() {
-	if [ -f $HIVE_HOME/conf/hive-site.xml ]; then
+	if [ "$CUSTOM_HIVE_CONF_IS_ON" = false ] && [ -f $HIVE_HOME/conf/hive-site.xml ]; then
 		if [ ! "$isSecure" -eq 2 ] || [ "$IS_FIRST_RUN" = true ]; then
 			cp $HIVE_HOME/conf/hive-site.xml $SPARK_HOME/conf/hive-site.xml
 		fi
 	fi
 	if [ -f $SPARK_HOME/conf/hive-site.xml ] ; then
-		TEZ_PROP_VALUE="<value>tez</value>"
-		MR_PROP_VALUE="<value>mr</value>"
-		sed -i "s~$TEZ_PROP_VALUE~$MR_PROP_VALUE~g" $SPARK_HOME/conf/hive-site.xml
+		java -cp $SPARK_HOME'/jars/*' org.apache.spark.editor.HiveSiteEditor replace hive.security.authorization.manager=org.apache.hadoop.hive.ql.security.authorization.plugin.fallback.FallbackHiveAuthorizerFactory hive.execution.engine=mr
 	fi
 }
 
@@ -354,6 +411,15 @@ function configureOnHbase() {
     if [ -f $HBASE_HOME/conf/hbase-site.xml ]; then
         cp $HBASE_HOME/conf/hbase-site.xml $SPARK_HOME/conf/hbase-site.xml
     fi
+    changeCompatibilityVersions hbase $HBASE_VERSION
+}
+
+#
+# Configure on Hadoop
+#
+
+function configureOnHadoop() {
+  changeCompatibilityVersions hadoop3 $HADOOP_VERSION
 }
 
 #
@@ -447,20 +513,46 @@ function registerPortHistoryServer() {
 	fi
 }
 
+function registerPortConnectServer() {
+	if [ -f $SPARK_HOME/warden/warden.spark-connectserver.conf ] ; then
+		if checkNetworkPortAvailability $sparkCSPort 2>/dev/null; then
+			{ set +x; } 2>/dev/null
+			registerNetworkPort spark_connectServer $sparkCSPort 2>/dev/null
+		else
+			{ set +x; } 2>/dev/null
+			logWarn "Spark-connectServer port already has been taken by $(whoHasNetworkPort $sparkCSPort)"
+		fi
+
+		if [ "$isSparkCSPortDef" = true ] || [ "$IS_FIRST_RUN" = true ] ; then
+			changeWardenConfig "service.port" "service.port=$sparkCSPort" "connectserver"
+		fi
+	fi
+}
+
 function registerServicePorts() {
 	registerPortMaster
 	registerPortThriftServer
 	registerPortHistoryServer
+	registerPortConnectServer
+}
+
+function configureHiveWarehouseForNonHiveEnv() {
+  changeSparkDefaults "spark.sql.warehouse.dir" "spark.sql.warehouse.dir maprfs:///user/${USER}/spark-warehouse" "# Default location for Warehouse, if not using Hive"
 }
 
 #
 # Add warden files
 #
+is_warden_file_already_copied() {
+  local role=$1
+  [ -f "$MAPR_CONF_DIR/conf.d/warden.spark-${role}.conf" ]
+}
 
 function copyWardenFile() {
-	if [ -f $SPARK_HOME/warden/warden.spark-$1.conf ] ; then
-		cp "${SPARK_HOME}/warden/warden.spark-${1}.conf" "${MAPR_CONF_DIR}/conf.d/" 2>/dev/null || :
-	fi
+        if [ -f $SPARK_HOME/warden/warden.spark-$1.conf ] && ! is_warden_file_already_copied "$1" ; then
+                logInfo "Copying warden.spark-${1}.conf file"
+                cp "${SPARK_HOME}/warden/warden.spark-${1}.conf" "${MAPR_CONF_DIR}/conf.d/" 2>/dev/null || :
+        fi
 }
 
 function copyWardenConfFiles() {
@@ -468,6 +560,7 @@ function copyWardenConfFiles() {
 	copyWardenFile master
 	copyWardenFile historyserver
 	copyWardenFile thriftserver
+	copyWardenFile connectserver
 }
 
 function mkBackupForOldConfigs() {
@@ -496,13 +589,14 @@ function stopServicesForRestartByWarden() {
 	if [ -f $SPARK_HOME/conf/hive-site.xml ] && [ -f $SPARK_HOME/conf/hive-site.xml.old ] ; then
 		spark_hive_site_diff=`diff ${SPARK_HOME}/conf/hive-site.xml ${SPARK_HOME}/conf/hive-site.xml.old; echo $?`
 	fi
-	if [ -f $SPARK_HOME/conf/log4j.properties ] && [ -f $SPARK_HOME/conf/log4j.properties.old ] ; then
-		spark_log4j_diff=`diff ${SPARK_HOME}/conf/log4j.properties ${SPARK_HOME}/conf/log4j.properties.old; echo $?`
+	if [ -f $SPARK_HOME/conf/log4j2.properties ] && [ -f $SPARK_HOME/conf/log4j2.properties.old ] ; then
+		spark_log4j_diff=`diff ${SPARK_HOME}/conf/log4j2.properties ${SPARK_HOME}/conf/log4j2.properties.old; echo $?`
 	fi
 	if [ ! "$spark_defaults_diff" = "0" ] || [ ! "$spark_env_sh_diff" = "0" ] || [ ! "$spark_hive_site_diff" = "0" ] || [ ! "$spark_log4j_diff" = "0" ]; then
 		stopService master master
 		stopService historyserver history-server
 		stopService thriftserver thriftserver
+		stopService connectserver connect-server
 	fi
 }
 
@@ -530,7 +624,7 @@ function replaceConfigFromPreviousVersion() {
 
 USAGE="usage: $0 [-s|--secure || -u|--unsecure || -cs|--customSecure] [-R] [--EC <common args>] [-h|--help]]"
 
-{ OPTS=`getopt -n "$0" -a -o suhR --long secure,unsecure,customSecure,help,EC:,sparkHSUIPort:,sparkMasterPort:,sparkTSPort:,sparkMasterUIPort:,sparkTSUIPort: -- "$@"`; } 2>/dev/null
+{ OPTS=`getopt -n "$0" -a -o suhR --long secure,unsecure,customSecure,help,EC:,sparkHSUIPort:,sparkCSPort:,sparkMasterPort:,sparkTSPort:,sparkMasterUIPort:,sparkTSUIPort: -- "$@"`; } 2>/dev/null
 
 eval set -- "$OPTS"
 
@@ -543,10 +637,10 @@ while [ ${#} -gt 0 ] ; do
       isSecure=0;
       shift 1;;
     --customSecure|-cs)
-      if [ -f "$SPARK_HOME/etc/.not_configured_yet" ]; then
-      	isSecure=1;
+      if [ -f "${SPARK_HOME}/conf/.not_configured_yet" ]; then
+        isSecure=1;
       else
-      	isSecure=2;
+        isSecure=2;
       fi
       shift 1;;
     --R|-R)
@@ -562,6 +656,11 @@ while [ ${#} -gt 0 ] ; do
     --sparkHSUIPort)
       sparkHSUIPort=$2
       isSparkHSUIPortDef=true
+      shift 2
+      ;;
+    --sparkCSPort)
+      sparkCSPort=$2
+      isSparkCSPortDef=true
       shift 2
       ;;
     --sparkMasterPort)
@@ -592,28 +691,31 @@ while [ ${#} -gt 0 ] ; do
   esac
 done
 
+mkBackupForOldConfigs
+
 registerServicePorts
+configureHiveWarehouseForNonHiveEnv
 if [ "$HIVE_INSTALLED" = true ]; then
 	configureOnHive
 fi
 if [ "$HBASE_INSTALLED" = true ]; then
 	configureOnHbase
 fi
+configureOnHadoop
 if [ ! "$isSecure" -eq 2 ] ; then
 	configureSecurity
 fi
 createAppsSparkFolder
-change_permissions
-mkBackupForOldConfigs
+changePermissions
 
 copyWardenConfFiles
 stopServicesForRestartByWarden
 
 if [ "$JUST_UPDATED" = true ] ; then
-	replaceConfigFromPreviousVersion
-	rm -f "$SPARK_HOME"/etc/.just_updated
+    replaceConfigFromPreviousVersion
+    rm -f "${SPARK_HOME}/conf/.just_updated"
 fi
 
-rm -f "$SPARK_HOME"/etc/.not_configured_yet
+rm -f "${SPARK_HOME}/conf/.not_configured_yet"
 
 exit $RETURN_SUCCESS
