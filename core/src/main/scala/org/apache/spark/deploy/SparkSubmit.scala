@@ -398,6 +398,9 @@ private[spark] class SparkSubmit extends Logging {
     args.pyFiles = Option(args.pyFiles).map(resolveGlobPaths(_, hadoopConf)).orNull
     args.archives = Option(args.archives).map(resolveGlobPaths(_, hadoopConf)).orNull
 
+    lazy val secMgr = new SecurityManager(sparkConf)
+
+    secMgr.genSSLCertsIfNeededAndPushToMapRFS()
 
     // In client mode, download remote files.
     var localPrimaryResource: String = null
