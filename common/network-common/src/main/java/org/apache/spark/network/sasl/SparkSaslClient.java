@@ -29,12 +29,23 @@ import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 
 import org.apache.spark.internal.SparkLogger;
 import org.apache.spark.internal.SparkLoggerFactory;
+import org.apache.spark.network.scram.ScramClientCallbackHandler;
+import org.apache.spark.network.scram.ScramUtils;
+import org.apache.spark.network.util.AuthUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.callback.*;
+import javax.security.sasl.*;
+import java.util.Map;
 
 import static org.apache.spark.network.sasl.SparkSaslServer.*;
+import static org.apache.spark.network.scram.ScramUtils.*;
 
 /**
  * A SASL Client for Spark which simply keeps track of the state of a single SASL session, from the
@@ -58,8 +69,13 @@ public class SparkSaslClient implements SaslEncryptionBackend {
       .put(Sasl.QOP, expectedQop)
       .build();
     try {
-      this.saslClient = Sasl.createSaslClient(new String[] { DIGEST }, null, null, DEFAULT_REALM,
-        saslProps, new ClientCallbackHandler());
+      if (AuthUtils.isSCRAM()) {
+        this.saslClient = Sasl.createSaslClient(new String[]{ScramUtils.SCRAM_SHA_256}, null, null, DEFAULT_REALM,
+                saslProps, new ScramClientCallbackHandler(getScramUserName(), createSecretScram()));
+      } else {
+        this.saslClient = Sasl.createSaslClient(new String[]{DIGEST}, null, null, DEFAULT_REALM,
+                saslProps, new ClientCallbackHandler());
+      }
     } catch (SaslException e) {
       throw new RuntimeException(e);
     }

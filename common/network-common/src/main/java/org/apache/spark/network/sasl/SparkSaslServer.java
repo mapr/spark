@@ -31,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -38,6 +39,18 @@ import io.netty.handler.codec.base64.Base64;
 
 import org.apache.spark.internal.SparkLogger;
 import org.apache.spark.internal.SparkLoggerFactory;
+import org.apache.hadoop.security.scram.ScramCredential;
+import org.apache.spark.network.scram.ScramServerCallbackHandler;
+import org.apache.spark.network.util.AuthUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.callback.*;
+import javax.security.sasl.*;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+
+import static org.apache.spark.network.scram.ScramUtils.*;
 
 /**
  * A SASL Server for Spark which simply keeps track of the state of a single SASL session, from the
@@ -90,8 +103,14 @@ public class SparkSaslServer implements SaslEncryptionBackend {
       .put(Sasl.QOP, qop)
       .build();
     try {
-      this.saslServer = Sasl.createSaslServer(DIGEST, null, DEFAULT_REALM, saslProps,
-        new DigestCallbackHandler());
+      if (AuthUtils.isSCRAM()) {
+        this.saslServer = Sasl.createSaslServer(SCRAM_SHA_256, null, DEFAULT_REALM, saslProps,
+                new ScramServerCallbackHandler(createCache().cache(SCRAM_SHA_256, ScramCredential.class)));
+
+      } else {
+        this.saslServer = Sasl.createSaslServer(DIGEST, null, DEFAULT_REALM, saslProps,
+                new DigestCallbackHandler());
+      }
     } catch (SaslException e) {
       throw new RuntimeException(e);
     }
