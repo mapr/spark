@@ -29,6 +29,7 @@ import org.apache.kafka.common.TopicPartition
 import org.apache.spark.internal.LogKeys.{NUM_RETRY, OFFSETS}
 import org.apache.spark.sql.catalyst.util.CaseInsensitiveMap
 import org.apache.spark.sql.kafka010.KafkaSourceProvider.StrategyOnNoMatchStartingOffset
+import org.apache.spark.streaming.kafka010.KafkaUtils
 import org.apache.spark.util.{UninterruptibleThread, UninterruptibleThreadRunner}
 import org.apache.spark.util.ArrayImplicits._
 
@@ -133,7 +134,9 @@ private[kafka010] class KafkaOffsetReaderConsumer(
       assert(Thread.currentThread().isInstanceOf[UninterruptibleThread])
       // Poll to get the latest assigned partitions
       consumer.poll(0)
-      val partitions = consumer.assignment()
+
+      val partitions = KafkaUtils.waitForConsumerAssignment(consumer)
+
       consumer.pause(partitions)
       partitions.asScala.toSet
   }
@@ -496,7 +499,7 @@ private[kafka010] class KafkaOffsetReaderConsumer(
     withRetriesWithoutInterrupt {
       // Poll to get the latest assigned partitions
       consumer.poll(0)
-      val partitions = consumer.assignment()
+      val partitions = KafkaUtils.waitForConsumerAssignment(consumer)
 
       if (!fetchingEarliestOffset) {
         // Call `position` to wait until the potential offset request triggered by `poll(0)` is
