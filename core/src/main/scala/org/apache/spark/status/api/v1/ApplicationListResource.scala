@@ -16,7 +16,8 @@
  */
 package org.apache.spark.status.api.v1
 
-import java.util.{List => JList}
+import java.util.{Date, List => JList}
+import javax.servlet.http.HttpServletRequest
 
 import jakarta.ws.rs.{DefaultValue, GET, Produces, QueryParam}
 import jakarta.ws.rs.core.MediaType
