@@ -17,7 +17,7 @@
 
 package org.apache.spark.streaming.kafka010.mocks
 
-import java.util.concurrent.{ScheduledFuture, TimeUnit}
+import java.util.concurrent.TimeUnit
 
 import org.apache.kafka.common.utils.Time
 import org.apache.kafka.server.util.Scheduler
