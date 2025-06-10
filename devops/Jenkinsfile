@@ -1,0 +1,167 @@
+@Library("jenkins-shared-library")_
+
+env.MAVEN_CENTRAL="${MAVEN_CENTRAL_COMMON}"
+env.MAPR_CENTRAL="${MAPR_CENTRAL_COMMON}"
+env.MAPR_RELEASES_REPO="${MAPR_RELEASES_REPO_COMMON}"
+env.MAPR_SNAPSHOTS_REPO="${MAPR_SNAPSHOTS_REPO_COMMON}"
+env.MAPR_MAVEN_REPO="${MAPR_SNAPSHOTS_REPO_COMMON}"
+
+ARTIFACTORY_SERVER=''
+DIST_DIR='devops/dist'
+YAML_CONFIG=''
+env.REPOSITORY_NAME=''
+env.GIT_REPO_URL=''
+env.GIT_SHORT_COMMIT_SHA=''
+env.CURRENT_BUILD_TAG=''
+env.BUILD_BY_TAG=false
+
+env.ARTIFACTORY_PATH=''
+env.ID=''
+env.PROJECT=''
+
+IMAGE_NAMES_MAP=[:]
+
+pipeline {
+  agent none
+  triggers {
+    pollSCM 'H/5 * * * *'
+  }
+  options {
+    skipDefaultCheckout()
+    disableConcurrentBuilds()
+    timestamps()
+  }
+  parameters {
+    choice(name: 'BUILD_TYPE', choices: ['Dev','EBF','Release'], description: 'default - Dev. EBF and Release args you can use only in release branches.')
+    string(name: 'BUILD_ENV_VARS', defaultValue: '', description: 'Variables you can pass to build script. Command will be: "env {THIS VARS} path/to/build.sh".')
+    booleanParam(name: 'DO_DEPLOY', defaultValue: true, description: 'Uncheck and Jenkins will skip ./build/mvn deploy')
+  }
+  stages {
+    stage("Setup settings and variables") {
+      agent {label "redhat8"}
+      steps {
+        script {
+          ARTIFACTORY_SERVER = Artifactory.server 'artifactory.devops.lab'
+          YAML_CONFIG = initVariablesWithYAMLConfig()
+        }
+      }
+    }
+    stage("Build & Sign & Upload to Artifactory") {
+      agent none
+      steps {
+        script {
+          buildInParallel=[:]
+          YAML_CONFIG.build.each {
+            buildInParallel["Build ${it.name}"] = { ->
+              node (it.hostmachine_jenkins_label) {
+                checkout scm
+                validateBuildImage(it)
+                echo "Using image: ${IMAGE_NAMES_MAP[it.name]}"
+                buildStage(it)
+                if(it.rpmSign == true)
+                  signing.rpmSign(DIST_DIR)
+                getVersionAndUploadToArtifactory()
+              }
+            }
+         }
+          parallel buildInParallel
+        }
+      }
+    }
+
+    stage ("OWASP Scan") {
+      agent {label "redhat8"}
+      when {
+        equals (actual: YAML_CONFIG.whitesourceScan, expected: true)
+      }
+      steps {
+        script {
+          checkout scm
+          ws.dockerScan()
+        }
+      }
+    }
+
+  }
+  post {
+    failure {
+      script {
+        postActions.failure()
+      }
+    }
+    fixed {
+      script {
+        postActions.fixed()
+      }
+    }
+    aborted {
+      script {
+        postActions.aborted()
+      }
+    }
+    success {
+      script {
+        postActions.success()
+      }
+    }
+    always {
+      script {
+        postActions.always()
+      }
+    }
+  }
+}
+
+def buildStage(yamlCurrentBuildItem) {
+  def buildCommand = yamlCurrentBuildItem.basicBuildCommands.replace("_BUILD_ENV_VARS_","TIMESTAMP=${ID} DO_DEPLOY=${params.DO_DEPLOY} ${params.BUILD_ENV_VARS}")
+
+  configFileProvider([configFile(fileId: 'maven_settings_spark_deploy_mvn381_above', variable: 'mvn_settings')]) {
+    sh "cat ${env.mvn_settings} > settings.xml"
+  }
+
+  docker.image(IMAGE_NAMES_MAP[yamlCurrentBuildItem.name]).inside (
+  "-e MAPR_MIRROR=${MAPR_MIRROR} \
+  -e MAPR_CENTRAL=${MAPR_CENTRAL} \
+  -e MAVEN_CENTRAL=${MAVEN_CENTRAL} \
+  -e MAPR_MAVEN_REPO=${MAPR_MAVEN_REPO} \
+  -e BUILD_NUMBER=${ID}.${BUILD_NUMBER} \
+  -e MAPR_RELEASES_REPO=${MAPR_RELEASES_REPO} \
+  -e MAPR_SNAPSHOTS_REPO=${MAPR_SNAPSHOTS_REPO} \
+  -v /root/.m2:/root/.m2:rw \
+  -v /root/yum-proxy.conf:/etc/yum.conf:ro \
+  -v /etc/hosts:/etc/hosts:ro \
+  -v /root/apt-proxy.conf:/etc/apt/apt.conf.d/proxy.conf:ro \
+  -v /root/.gradle/gradle.properties:/root/.gradle/gradle.properties:ro \
+  -v /etc/profile.d/proxy.sh:/etc/profile.d/proxy.sh:ro \
+  -e ANT_OPTS=\"-Dhttp.proxyHost=${HPE_PROXY_HOST} -Dhttp.proxyPort=${HPE_PROXY_PORT} -Dhttps.proxyHost=${HPE_PROXY_HOST} -Dhttps.proxyPort=${HPE_PROXY_PORT} -Dhttp.nonProxyHosts='${HPE_PROXY_EXCEPTIONS}'\" \
+  -e MAVEN_OPTS=\"-Dhttp.proxyHost=${HPE_PROXY_HOST} -Dhttp.proxyPort=${HPE_PROXY_PORT} -Dhttps.proxyHost=${HPE_PROXY_HOST} -Dhttps.proxyPort=${HPE_PROXY_PORT} -Dhttp.nonProxyHosts='${HPE_PROXY_EXCEPTIONS}'\" \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v /root/.ssh:/root/.ssh:rw \
+  -v ${WORKSPACE}/settings.xml:/root/.m2/settings.xml:ro") {
+    sh """
+      cat /etc/*-release > os_release_version.txt; \
+      ${buildCommand}
+    """
+  }
+}
+
+def validateBuildImage(yamlCurrentBuildItem) {
+  def imageStatic = yamlCurrentBuildItem.image
+  def imageCustom = yamlCurrentBuildItem.imageCustom
+  def imageName = ""
+  if (imageStatic) {
+    imageName = imageStatic.replace("_DOCKER_REGISTRY_", DOCKER_REGISTRY)
+  }
+  if (imageCustom) {
+    if (imageStatic) {
+      error "You can not specify 'image' and 'imageCustom' options in build-config.yaml"
+    }
+    imageName = sh(script: imageCustom, returnStdout: true).trim()
+  }
+  IMAGE_NAMES_MAP[yamlCurrentBuildItem.name] = imageName
+}
+
+def getVersionAndUploadToArtifactory() {
+  def osVersionContainerRaw = sh script: 'cat os_release_version.txt', returnStdout:true
+  artifactory.uploadToArtifactoryWithOSVersions(ARTIFACTORY_SERVER, osVersionContainerRaw, DIST_DIR)
+}

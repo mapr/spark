@@ -1,0 +1,10 @@
+Package: mapr-spark
+Version: __RELEASE_VERSION__
+Section: base
+Priority: optional
+Architecture: all
+Depends: mapr-client, mapr-hadoop-client
+Maintainer: Hewlett Packard Enterprise <ezmeral_software_support@hpe.com>
+Description: Ezmeral Ecosystem Pack: Spark package
+  Tag: __RELEASE_BRANCH__
+  Commit: __GIT_COMMIT__

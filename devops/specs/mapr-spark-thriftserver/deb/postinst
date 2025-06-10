@@ -1,0 +1,27 @@
+#!/bin/sh
+
+set -e
+
+SPARK_VERSION=__VERSION_3DIGIT__
+MAPR_SPARK_HOME=$(dir -d -1 __PREFIX__/spark/spark-${SPARK_VERSION} 2> /dev/null | tail -1)
+
+case "$1" in
+    configure)
+        echo "postinst called with argument \`$1'" >&2
+
+        cp ${MAPR_SPARK_HOME}/warden/warden.spark-thriftserver.conf.template \
+        ${MAPR_SPARK_HOME}/warden/warden.spark-thriftserver.conf
+
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+        echo "postinst called with argument \`$1'" >&2
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+
