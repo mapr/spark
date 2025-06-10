@@ -1073,6 +1073,11 @@ private[spark] class SparkSubmit extends Logging {
           log"because ${MDC(LogKeys.CONFIG, SUBMIT_CALL_SYSTEM_EXIT_ON_MAIN_EXIT.key)}=true")
         exitFn(exitCode, Option(cause))
       }
+      // TODO: fix MultiauthWebUiFilter and return standart Spark behavior
+      if (!isThriftServer(childMainClass)
+        && !sparkConf.getBoolean("spark.byLauncher.started", false)) {
+        System.exit(0)
+      }
     }
   }
 

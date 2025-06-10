@@ -23,9 +23,10 @@ import java.util.{Collections, HexFormat, UUID}
 
 import scala.jdk.CollectionConverters._
 
-import io.fabric8.kubernetes.api.model.{Container, ContainerBuilder, ContainerStateRunning, ContainerStateTerminated, ContainerStateWaiting, ContainerStatus, EnvVar, EnvVarBuilder, EnvVarSourceBuilder, HasMetadata, OwnerReferenceBuilder, Pod, PodBuilder, Quantity}
+import io.fabric8.kubernetes.api.model.{Container, ContainerBuilder, ContainerStateRunning, ContainerStateTerminated, ContainerStateWaiting, ContainerStatus, EnvVar, EnvVarBuilder, EnvVarSourceBuilder, LocalObjectReference, HasMetadata, OwnerReferenceBuilder, Pod, PodBuilder, Quantity}
 import io.fabric8.kubernetes.client.KubernetesClient
 import org.apache.hadoop.fs.{FileSystem, Path}
+
 import org.apache.spark.{SparkConf, SparkException}
 import org.apache.spark.annotation.{DeveloperApi, Since, Unstable}
 import org.apache.spark.deploy.SparkHadoopUtil

@@ -1432,8 +1432,9 @@ private[spark] class Executor(
         logInfo(log"Fetching ${MDC(FILE_NAME, name)} with" +
           log" timestamp ${MDC(TIMESTAMP, timestamp)}")
         // Fetch file with useCache mode, close cache for local mode.
-        Utils.fetchFile(name, root, conf, hadoopConf, timestamp, useCache = !isLocal)
-        state.currentFiles(name) = timestamp
+        Utils.fetchFile(name, new File(SparkFiles.getRootDirectory()), conf,
+          env.securityManager, hadoopConf, timestamp, useCache = !isLocal)
+        currentFiles(name) = timestamp
       }
       for ((name, timestamp) <- newArchives if
           state.currentArchives.getOrElse(name, -1L) < timestamp) {
@@ -1442,7 +1443,7 @@ private[spark] class Executor(
         val sourceURI = new URI(name)
         val uriToDownload = Utils.getUriBuilder(sourceURI).fragment(null).build()
         val source = Utils.fetchFile(uriToDownload.toString, Utils.createTempDir(), conf,
-          hadoopConf, timestamp, useCache = !isLocal, shouldUntar = false)
+          env.securityManager, hadoopConf, timestamp, useCache = !isLocal, shouldUntar = false)
         val dest = new File(
           root,
           if (sourceURI.getFragment != null) sourceURI.getFragment else source.getName)
@@ -1464,9 +1465,9 @@ private[spark] class Executor(
           logInfo(log"Fetching ${MDC(JAR_URL, name)} with" +
             log" timestamp ${MDC(TIMESTAMP, timestamp)}")
           // Fetch file with useCache mode, close cache for local mode.
-          Utils.fetchFile(name, root, conf,
-            hadoopConf, timestamp, useCache = !isLocal)
-          state.currentJars(name) = timestamp
+          Utils.fetchFile(name, new File(SparkFiles.getRootDirectory()), conf,
+            env.securityManager, hadoopConf, timestamp, useCache = !isLocal)
+          currentJars(name) = timestamp
           // Add it to our class loader
           val url = new File(root, localName).toURI.toURL
           if (!state.urlClassLoader.getURLs().contains(url)) {
