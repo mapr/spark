@@ -1218,6 +1218,10 @@ object ExcludedDependencies {
       ExclusionRule(organization = "ch.qos.logback"),
       ExclusionRule("org.slf4j", "slf4j-simple"),
       ExclusionRule("javax.servlet", "javax.servlet-api"))
+      ExclusionRule("javax.ws.rs", "jsr311-api"),
+      ExclusionRule("io.netty", "netty-handler"),
+      ExclusionRule("io.netty", "netty-transport-native-epoll"))
+  )
   )
 }
 
