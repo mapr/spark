@@ -41,7 +41,7 @@ class OJAIDocument(@transient private var dc: org.ojai.Document)
 
   override def THIS: OJAIDocument = this
 
-  private[spark] def this() {
+  private[spark] def this() = {
     this(null)
   }
 
