@@ -71,9 +71,9 @@ private[spark] class KubernetesExecutorBuilder {
       new MountSecretsFeatureStep(conf),
       new EnvSecretsFeatureStep(conf),
       new MountVolumesFeatureStep(conf),
-      new LocalDirsFeatureStep(conf)) ++ userFeatures,
-    new HadoopConfExecutorFeatureStep(conf),
-    new MaprConfigFeatureStep(conf))
+      new LocalDirsFeatureStep(conf),
+      new HadoopConfExecutorFeatureStep(conf),
+      new MaprConfigFeatureStep(conf)) ++ userFeatures
 
     val features = allFeatures.filterNot(f =>
       conf.get(Config.KUBERNETES_EXECUTOR_POD_EXCLUDED_FEATURE_STEPS).contains(f.getClass.getName))
