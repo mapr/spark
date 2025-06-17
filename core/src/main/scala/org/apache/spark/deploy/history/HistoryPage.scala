@@ -98,6 +98,9 @@ private[history] class HistoryPage(parent: HistoryServer) extends WebUIPage("") 
         </a>
         <p><a href={UIUtils.prependBaseUri(request, "/logPage/?self&logType=out")}>
           Show server log</a></p>
+        <div>
+          <a href="/logout">Logout</a>
+        </div>
       </div>
     val content =
       <script type="module" src={UIUtils.prependBaseUri(
@@ -119,4 +122,5 @@ private[history] class HistoryPage(parent: HistoryServer) extends WebUIPage("") 
   private def isApplicationCompleted(appInfo: ApplicationInfo): Boolean = {
     appInfo.attempts.nonEmpty && appInfo.attempts.head.completed
   }
+
 }
