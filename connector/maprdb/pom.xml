@@ -7,13 +7,13 @@
 
   <parent>
     <groupId>org.apache.spark</groupId>
-    <artifactId>spark-parent_2.12</artifactId>
-    <version>3.5.5.100-eep-SNAPSHOT</version>
+    <artifactId>spark-parent_2.13</artifactId>
+    <version>4.0.0.0-eep-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
   <groupId>com.mapr.db</groupId>
-  <artifactId>maprdb-spark_2.12</artifactId>
+  <artifactId>maprdb-spark_2.13</artifactId>
   <packaging>jar</packaging>
 
   <name>MapR-DB Spark Library</name>

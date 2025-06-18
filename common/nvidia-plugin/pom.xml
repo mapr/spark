@@ -21,12 +21,12 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.apache.spark</groupId>
-        <artifactId>spark-parent_2.12</artifactId>
-        <version>3.4.0.0-SNAPSHOT</version>
+        <artifactId>spark-parent_2.13</artifactId>
+        <version>4.0.0.0-eep-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>nvidia-plugin_2.12</artifactId>
+    <artifactId>nvidia-plugin_2.13</artifactId>
     <packaging>jar</packaging>
     <name>Nvdia Rapids plugin integration</name>
     <url>http://spark.apache.org/</url>
@@ -49,7 +49,7 @@
         </dependency>
         <dependency>
             <groupId>com.nvidia</groupId>
-            <artifactId>rapids-4-spark_2.12</artifactId>
+            <artifactId>rapids-4-spark_2.13</artifactId>
             <version>23.06.0</version>
             <scope>provided</scope>
         </dependency>

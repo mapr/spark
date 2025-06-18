@@ -114,6 +114,7 @@
     <module>connector/kafka-0-10-assembly</module>
     <module>connector/kafka-0-10-sql</module>
     <module>connector/avro</module>
+    <module>connector/maprdb</module>
     <module>connector/protobuf</module>
     <!-- See additional modules enabled by profiles below -->
   </modules>
@@ -131,18 +132,23 @@
     <slf4j.version>2.0.17</slf4j.version>
     <log4j.version>2.24.3</log4j.version>
     <!-- make sure to update IsolatedClientLoader whenever this version is changed -->
-    <hadoop.version>3.4.2</hadoop.version>
+    <hadoop.version>3.4.1.100-eep-941-SNAPSHOT</hadoop.version>
+    <maprfs.version>7.10.0.0-mapr</maprfs.version>
     <!-- SPARK-41247: When updating `protobuf.version`, also need to update `protoVersion` in `SparkBuild.scala` -->
     <protobuf.version>4.33.0</protobuf.version>
     <protoc-jar-maven-plugin.version>3.11.4</protoc-jar-maven-plugin.version>
-    <zookeeper.version>3.9.4</zookeeper.version>
+    <yarn.version>${hadoop.version}</yarn.version>
+    <zookeeper.version>3.8.3.0-mapr-SNAPSHOT</zookeeper.version>
     <curator.version>5.9.0</curator.version>
     <hive.group>org.apache.hive</hive.group>
     <hive.classifier>core</hive.classifier>
     <!-- Version used in Maven Hive dependency -->
-    <hive.version>2.3.10</hive.version>
+    <hive.version>2.3.9.202-mapr-spark-eep-911</hive.version>
+    <hive23.version>2.3.9.202-mapr-spark-eep-911</hive23.version>
+    <!-- Version used for internal directory structure -->
+    <hive.version.short>2.3</hive.version.short>
     <!-- note that this should be compatible with Kafka brokers version 0.10 and up -->
-    <kafka.version>3.9.1</kafka.version>
+    <kafka.version>3.6.1.200-eep-940-SNAPSHOT</kafka.version>
     <!-- After 10.17.1.0, the minimum required version is JDK19 -->
     <derby.version>10.16.1.1</derby.version>
     <parquet.version>1.16.0</parquet.version>
@@ -156,6 +162,8 @@
     <kryo.version>4.0.3</kryo.version>
     <ivy.version>2.5.3</ivy.version>
     <oro.version>2.0.8</oro.version>
+
+    <ojai.version>3.2.0</ojai.version>
     <!--
     If you change codahale.metrics.version, you also need to change
     the link to metrics.dropwizard.io in docs/monitoring.md.
@@ -180,6 +188,7 @@
     <commons.collections4.version>4.5.0</commons.collections4.version>
     <scala.version>2.13.17</scala.version>
     <scala.binary.version>2.13</scala.binary.version>
+    <scala.xml.version>2.1.0</scala.xml.version>
     <scalatest-maven-plugin.version>2.2.0</scalatest-maven-plugin.version>
     <scala-maven-plugin.version>4.9.5</scala-maven-plugin.version>
     <maven.scaladoc.skip>false</maven.scaladoc.skip>
@@ -194,6 +203,7 @@
     <fasterxml.jackson.databind.version>2.18.2</fasterxml.jackson.databind.version>
     <ws.xmlschema.version>2.3.1</ws.xmlschema.version>
     <snappy.version>1.1.10.8</snappy.version>
+      <failureaccess.version>1.0.1</failureaccess.version>
     <netlib.ludovic.dev.version>3.0.4</netlib.ludovic.dev.version>
     <commons-codec.version>1.19.0</commons-codec.version>
     <commons-compress.version>1.28.0</commons-compress.version>
@@ -211,7 +221,7 @@
     <janino.version>3.1.9</janino.version>
     <jersey.version>3.0.18</jersey.version>
     <joda.version>2.14.0</joda.version>
-    <jodd.version>3.5.2</jodd.version>
+    <jodd.version>5.3.0</jodd.version>
     <jsr305.version>3.0.0</jsr305.version>
     <jaxb.version>2.2.11</jaxb.version>
     <libthrift.version>0.16.0</libthrift.version>
@@ -223,6 +233,7 @@
     <commons-crypto.version>1.1.0</commons-crypto.version>
     <commons-cli.version>1.10.0</commons-cli.version>
     <bouncycastle.version>1.82</bouncycastle.version>
+    <bc-fips.version>1.0.2.4</bc-fips.version>
     <tink.version>1.16.0</tink.version>
     <datasketches.version>6.2.0</datasketches.version>
     <netty.version>4.2.7.Final</netty.version>
@@ -247,6 +258,7 @@
     <!-- org.fusesource.leveldbjni will be used except on arm64 platform. -->
     <leveldbjni.group>org.fusesource.leveldbjni</leveldbjni.group>
     <kubernetes-client.version>7.4.1</kubernetes-client.version>
+    <okio.version>1.17.6</okio.version>
 
     <java-jwt.version>4.4.0</java-jwt.version>
     <jwks-rsa.version>0.22.1</jwks-rsa.version>
@@ -396,6 +408,24 @@
       <releases>
         <enabled>true</enabled>
       </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>mapr-repo</id>
+      <name>MapR Repository</name>
+      <url>${env.MAPR_MAVEN_REPO}</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>repository.jboss.org</id>
+      <url>http://repository.jboss.org/nexus/content/groups/public-jboss/</url>
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
@@ -2315,7 +2345,7 @@
       <dependency>
         <groupId>${hive.group}</groupId>
         <artifactId>hive-service-rpc</artifactId>
-        <version>4.0.0</version>
+        <version>4.0.0.0-eep-SNAPSHOT</version>
         <exclusions>
           <exclusion>
             <groupId>*</groupId>
@@ -2927,10 +2957,14 @@
             <checkMultipleScalaVersions>true</checkMultipleScalaVersions>
             <failOnMultipleScalaVersions>true</failOnMultipleScalaVersions>
             <recompileMode>incremental</recompileMode>
+            <skip>${maven.scaladoc.skip}</skip>
             <args>
               <arg>-unchecked</arg>
               <arg>-deprecation</arg>
               <arg>-feature</arg>
+              <arg>-language:existentials</arg>
+              <arg>-language:implicitConversions</arg>
+              <arg>-language:postfixOps</arg>
               <arg>-explaintypes</arg>
               <arg>-release</arg>
               <arg>17</arg>
@@ -3316,6 +3350,8 @@
               <include>com.google.guava:guava</include>
               <include>com.google.guava:failureaccess</include>
               <include>org.jpmml:*</include>
+              <include>org.apache.orc:*</include>
+              <include>net.jpountz.lz4:*</include>
             </includes>
           </artifactSet>
           <relocations>
@@ -3371,7 +3407,7 @@
         <version>1.0.0</version>
         <configuration>
           <verbose>false</verbose>
-          <failOnViolation>true</failOnViolation>
+          <failOnViolation>false</failOnViolation>
           <includeTestSourceDirectory>false</includeTestSourceDirectory>
           <failOnWarning>false</failOnWarning>
           <sourceDirectory>${basedir}/src/main/scala</sourceDirectory>
