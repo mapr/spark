@@ -63,7 +63,7 @@ private[spark] object SparkMetricsUtils extends SparkMetricsUtils with Logging {
     val subFolder = s"$sparkMetricsZkRoot/$fqdn"
     val node = s"$subFolder/$boundPort"
 
-    val zkURLs = getZookeeperURLs
+    val zkURLs = getZookeeperURLs()
     sparkConf.set(metricsZkConf, zkURLs)
     val zk: CuratorFramework = SparkCuratorUtil.newClient(sparkConf, metricsZkConf)
     sparkConf.remove(metricsZkConf)

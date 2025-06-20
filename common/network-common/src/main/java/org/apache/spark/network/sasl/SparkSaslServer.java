@@ -42,13 +42,6 @@ import org.apache.spark.internal.SparkLoggerFactory;
 import org.apache.hadoop.security.scram.ScramCredential;
 import org.apache.spark.network.scram.ScramServerCallbackHandler;
 import org.apache.spark.network.util.AuthUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.callback.*;
-import javax.security.sasl.*;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 import static org.apache.spark.network.scram.ScramUtils.*;
 

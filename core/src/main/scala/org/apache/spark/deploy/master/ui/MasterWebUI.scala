@@ -21,7 +21,7 @@ import java.net.{InetAddress, NetworkInterface, SocketException}
 
 import jakarta.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
 
-import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
+import jakarta.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
 import org.apache.spark.deploy.DeployMessages.{DecommissionWorkersOnHosts, MasterStateResponse, RequestMasterState}
 import org.apache.spark.deploy.Utils.addRenderLogHandler
 import org.apache.spark.deploy.history.LoginServlet

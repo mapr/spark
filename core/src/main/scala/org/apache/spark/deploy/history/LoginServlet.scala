@@ -1,7 +1,7 @@
 package org.apache.spark.deploy.history
 
 import java.io.{BufferedReader, InputStreamReader}
-import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
+import jakarta.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
 
 import scala.util.Using
 

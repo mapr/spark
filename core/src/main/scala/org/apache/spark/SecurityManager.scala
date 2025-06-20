@@ -195,7 +195,7 @@ private[spark] class SecurityManager(
       val stdStream = new OutputStreamWriter(new FileOutputStream(file), UTF_8)
       val stdWriter = new PrintWriter(stdStream)
 
-      while (s"pgrep -fl $certGeneratorName".lineStream_!.nonEmpty) {
+      while (s"pgrep -fl $certGeneratorName".lazyLines_!.nonEmpty) {
         logInfo("manageSSLKeys.sh script is busy, waiting...")
         Thread.sleep(500)
       }
@@ -273,18 +273,18 @@ private[spark] class SecurityManager(
                                            sslKeyStore: String,
                                            sslKeyStorePass: String): SSLOptions = {
     new SSLOptions(
-      sslOptions.enabled,
-      sslOptions.port,
-      Some(new File(sslKeyStore)),
-      Some(sslKeyStorePass),
-      sslOptions.keyPassword,
-      sslOptions.keyStoreType,
-      sslOptions.needClientAuth,
-      sslOptions.trustStore,
-      sslOptions.trustStorePassword,
-      sslOptions.trustStoreType,
-      sslOptions.protocol,
-      sslOptions.enabledAlgorithms)
+      enabled = sslOptions.enabled,
+      port = sslOptions.port,
+      keyStore = Some(new File(sslKeyStore)),
+      keyStorePassword = Some(sslKeyStorePass),
+      keyPassword = sslOptions.keyPassword,
+      keyStoreType = sslOptions.keyStoreType,
+      needClientAuth = sslOptions.needClientAuth,
+      trustStore = sslOptions.trustStore,
+      trustStorePassword = sslOptions.trustStorePassword,
+      trustStoreType = sslOptions.trustStoreType,
+      protocol = sslOptions.protocol,
+      enabledAlgorithms = sslOptions.enabledAlgorithms)
   }
 
   /**
