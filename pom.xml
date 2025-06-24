@@ -1514,7 +1514,7 @@
         <groupId>org.apache.hadoop</groupId>
         <artifactId>${hadoop-client-api.artifact}</artifactId>
         <version>${hadoop.version}</version>
-        <scope>${hadoop.deps.scope}</scope>
+        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.apache.hadoop</groupId>
@@ -2344,7 +2344,7 @@
       <dependency>
         <groupId>${hive.group}</groupId>
         <artifactId>hive-service-rpc</artifactId>
-        <version>4.0.0.0-eep-SNAPSHOT</version>
+        <version>4.0.0</version>
         <exclusions>
           <exclusion>
             <groupId>*</groupId>

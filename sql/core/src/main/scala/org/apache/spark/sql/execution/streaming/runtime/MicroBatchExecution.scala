@@ -478,19 +478,19 @@ class MicroBatchExecution(
 
       execCtx.startTrigger()
 
-        reportTimeTaken("triggerExecution") {
-          // We'll do this initialization only once every start / restart
-          if (currentBatchId < 0) {
-            AcceptsLatestSeenOffsetHandler.setLatestSeenOffsetOnSources(
-              offsetLog.getLatest().map(_._2), sources)
-            populateStartOffsets(sparkSessionForStream)
-            logInfo(s"Stream started from $committedOffsets")
-          }
+      execCtx.reportTimeTaken("triggerExecution") {
+        // We'll do this initialization only once every start / restart
+        if (execCtx.batchId < 0) {
+          AcceptsLatestSeenOffsetHandler.setLatestSeenOffsetOnSources(
+            offsetLog.getLatest().map(_._2), sources)
+          populateStartOffsets(execCtx, sparkSessionForStream)
+          logInfo(s"Stream started from $committedOffsets")
+        }
 
-          // Set this before calling constructNextBatch() so any Spark jobs executed by sources
-          // while getting new data have the correct description
-          sparkSession.sparkContext.setJobDescription(getBatchDescriptionString)
-          sparkSession.sparkContext.setJobDoAsUser()
+        // Set this before calling constructNextBatch() so any Spark jobs executed by sources
+        // while getting new data have the correct description
+        sparkSession.sparkContext.setJobDescription(getBatchDescriptionString)
+        sparkSession.sparkContext.setJobDoAsUser()
 
         // Try to construct the next batch. This will return true only if the next batch is
         // ready and runnable. Note that the current batch may be runnable even without
