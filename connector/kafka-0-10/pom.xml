@@ -29,7 +29,7 @@
   <properties>
     <sbt.project.name>streaming-kafka-0-10</sbt.project.name>
     <!-- note that this should be compatible with Kafka brokers version 0.10 and up -->
-    <kafka.version>3.3.2</kafka.version>
+    <kafka.version>3.9.0</kafka.version>
   </properties>
   <packaging>jar</packaging>
   <name>Spark Integration for Kafka 0.10</name>
@@ -95,6 +95,18 @@
           <artifactId>zookeeper</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-common</artifactId>
+      <scope>provided</scope>
+      <version>${hadoop.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-client-api</artifactId>
+      <version>${hadoop.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.kafka</groupId>

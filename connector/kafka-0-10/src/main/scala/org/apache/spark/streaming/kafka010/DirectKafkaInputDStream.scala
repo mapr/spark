@@ -17,12 +17,11 @@
 
 package org.apache.spark.streaming.kafka010
 
-import java.{util => ju}
+import java.{ util => ju }
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicReference
 
 import scala.annotation.tailrec
-import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 import scala.jdk.CollectionConverters._
@@ -371,7 +370,7 @@ private[spark] class DirectKafkaInputDStream[K, V](
       if (KafkaUtils.isStreams(currentOffsets)) {
         serviceConsumer.commitAsync(m, commitCallback.get)
       } else {
-        consumer.commitAsync(m, commitCallback.get)
+        consumer().commitAsync(m, commitCallback.get)
       }
     }
   }

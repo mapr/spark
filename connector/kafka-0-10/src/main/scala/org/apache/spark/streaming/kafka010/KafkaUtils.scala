@@ -19,7 +19,7 @@ package org.apache.spark.streaming.kafka010
 
 import java.io.OutputStream
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import com.google.common.base.Charsets.UTF_8
 import java.{util => ju}
 
@@ -287,7 +287,7 @@ object KafkaUtilsPythonHelper {
       Pickler.registerCustomPickler(this.getClass, this)
     }
 
-    def pickle(obj: Object, out: OutputStream, pickler: Pickler) {
+    def pickle(obj: Object, out: OutputStream, pickler: Pickler): Unit = {
       if (obj == this) {
         out.write(Opcodes.GLOBAL)
         out.write(s"$module\nKafkaMessageAndMetadata\n".getBytes(UTF_8))

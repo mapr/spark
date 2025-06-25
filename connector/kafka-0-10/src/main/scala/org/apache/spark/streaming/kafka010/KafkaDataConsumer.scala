@@ -22,9 +22,9 @@ import java.time.Duration
 
 import scala.jdk.CollectionConverters._
 
-import scala.collection.JavaConverters._
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.common.{KafkaException, TopicPartition}
+
 import org.apache.spark.TaskContext
 import org.apache.spark.internal.Logging
 import org.apache.spark.internal.LogKeys._

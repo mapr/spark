@@ -17,7 +17,6 @@
 
 package org.apache.hive.service.cli.thrift;
 
-import java.security.KeyStore;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.concurrent.SynchronousQueue;
@@ -39,8 +38,6 @@ import org.apache.spark.sql.hive.thriftserver.HiveThriftServer2$;
 import org.apache.thrift.TProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
-import org.apache.thrift.server.TServlet;
-import org.apache.zookeeper.common.KeyStoreFileType;
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.eclipse.jetty.server.AbstractConnectionFactory;
