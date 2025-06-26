@@ -3,7 +3,7 @@ package com.mapr.db.spark.sql.utils
 
 import java.nio.ByteBuffer
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import com.mapr.db.rowcol.DBValueBuilderImpl
@@ -33,7 +33,7 @@ object MapRSqlUtils {
       convertRootField(record, schema) match {
         case row: Row => row :: Nil
         case array: ArrayData =>
-          if (array.numElements == 0) Nil
+          if (array.numElements() == 0) Nil
           else array.toArray[Row](schema)
     })
   }

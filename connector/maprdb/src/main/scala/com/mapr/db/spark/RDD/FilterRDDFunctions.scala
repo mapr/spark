@@ -43,7 +43,7 @@ case class FilterRDDFunctions[K: OJAIKey: quotes](rdd: RDD[K]) {
       var res = List[D]()
 
       while (partition.hasNext) {
-        gets = gets :+ partition.next
+        gets = gets :+ partition.next()
         if (gets.size == 4) {
           val condition = field(DocumentConstants.ID_KEY) in gets
           res = res ++ reqType.getValue(

@@ -49,7 +49,7 @@ private[spark] case class MapRDBRelation(
 
     val optimizedByColumns =
       if (!requiredColumns.isEmpty) {
-        rdd.select(requiredColumns: _*)
+        rdd.select(requiredColumns.toIndexedSeq: _*)
       } else rdd
 
     val optimizedByFilter =
@@ -136,8 +136,8 @@ private[spark] case class MapRDBRelation(
         if (!inNot) getPredicate(fld, QueryCondition.Op.GREATER_OR_EQUAL, value)
         else getPredicate(fld, QueryCondition.Op.LESS, value)
       case In(fld, values) =>
-        if (!inNot) field(fld) in values
-        else field(fld) notin values
+        if (!inNot) field(fld) in values.toIndexedSeq
+        else field(fld) notin values.toIndexedSeq
       case LessThan(fld, value) =>
         if (!inNot) getPredicate(fld, QueryCondition.Op.LESS, value)
         else getPredicate(fld, QueryCondition.Op.GREATER_OR_EQUAL, value)

@@ -1,6 +1,6 @@
 package com.mapr.db.spark.sql.v2
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import com.mapr.db.spark.sql.utils.MapRSqlUtils
 import com.mapr.db.spark.utils.LoggingTrait
 import org.ojai.store._

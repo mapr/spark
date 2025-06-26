@@ -37,7 +37,7 @@ case class SparkContextFunctions(@transient sc: SparkContext,
   def loadFromMapRDB[T: ClassTag](tableName: String)(
     implicit e: T DefaultType OJAIDocument,
     f: RDDTYPE[T]): MapRDBTableScanRDD[T] =
-    MapRSpark.builder
+    MapRSpark.builder()
       .sparkContext(sc)
       .configuration()
       .setTable(tableName)

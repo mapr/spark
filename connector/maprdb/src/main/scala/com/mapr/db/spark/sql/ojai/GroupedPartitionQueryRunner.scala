@@ -11,7 +11,7 @@ import org.apache.spark.sql.types.StructType
   */
 private[ojai] class GroupedPartitionQueryRunner(querySize: Int) extends OJAISparkPartitionReader {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   import com.mapr.db.spark.sql.concurrent.ConcurrentContext.Implicits._
   import com.mapr.db.spark.sql.utils.MapRSqlUtils._

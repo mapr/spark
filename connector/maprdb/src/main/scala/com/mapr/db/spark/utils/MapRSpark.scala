@@ -45,7 +45,7 @@ object MapRSpark {
                 createTable: Boolean,
                 bulkInsert: Boolean,
                 bufferWrites: Boolean): Unit = {
-    val documentRdd = dataset.toDF.rdd.map(MapRSqlUtils.rowToDocument)
+    val documentRdd = dataset.toDF().rdd.map(MapRSqlUtils.rowToDocument)
     documentRdd.setBufferWrites(bufferWrites).insertToMapRDB(tableName,
                                createTable = createTable,
                                bulkInsert = bulkInsert,
@@ -56,7 +56,7 @@ object MapRSpark {
                 tableName: String,
                 idFieldPath: String,
                 bufferWrites: Boolean): Unit = {
-    val documentRdd = dataset.toDF.rdd.map(MapRSqlUtils.rowToDocument)
+    val documentRdd = dataset.toDF().rdd.map(MapRSqlUtils.rowToDocument)
     documentRdd.setBufferWrites(bufferWrites).deleteFromMapRDB(tableName,
                                idFieldPath = idFieldPath)
   }
@@ -243,7 +243,7 @@ case class MapRSpark(sparkSession: Option[SparkSession],
 
 
   def toOJAIDocumentRDD(tableName: String): MapRDBBaseRDD[OJAIDocument] = {
-    MapRSpark.builder
+    MapRSpark.builder()
       .sparkSession(sparkSession.get)
       .sparkContext(sc.get)
       .configuration()
@@ -274,7 +274,7 @@ case class MapRSpark(sparkSession: Option[SparkSession],
     var derived: StructType = null
     if (Schema != null) derived = Schema
     else {
-      derived = GenerateSchema.reflectSchema[T] match {
+      derived = GenerateSchema.reflectSchema[T]() match {
         case Some(reflectedSchema) => reflectedSchema
         case None =>
           GenerateSchema(toOJAIDocumentRDD(tableName.get), sampleSize)

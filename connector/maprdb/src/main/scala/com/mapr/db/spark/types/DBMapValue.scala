@@ -4,7 +4,7 @@ package com.mapr.db.spark.types
 import java.io.{Externalizable, ObjectInput, ObjectOutput}
 import java.nio._
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import com.mapr.db.rowcol.RowcolCodec
 import com.mapr.db.spark.dbclient.DBClient

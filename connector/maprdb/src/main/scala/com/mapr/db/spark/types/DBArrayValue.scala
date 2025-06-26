@@ -3,21 +3,20 @@ package com.mapr.db.spark.types
 
 import java.io.{Externalizable, ObjectInput, ObjectOutput}
 import java.nio._
-import scala.collection.{IterableFactoryDefaults, SeqFactory, SeqLike, mutable}
-import scala.collection.JavaConverters._
+import scala.collection.{BuildFrom, IterableFactoryDefaults, SeqFactory, SeqLike, mutable}
+import scala.jdk.CollectionConverters._
 import scala.collection.mutable.ListBuffer
 import com.mapr.db.rowcol.RowcolCodec
 import com.mapr.db.spark.dbclient.DBClient
 import com.mapr.db.spark.utils.MapRDBUtils
 import com.mapr.db.util.ByteBufs
-
 import java.util
-import scala.collection.generic.CanBuildFrom
+import scala.collection.immutable.ArraySeq
 import scala.collection.immutable.SeqOps
 
 private[spark] object DBArrayValue extends SeqFactory[DBArrayValue] {
-  implicit def canBuildFrom[T]: CanBuildFrom[Iterable[T], T, DBArrayValue[T]] =
-    new CanBuildFrom[Iterable[T], T, DBArrayValue[T]] {
+  implicit def canBuildFrom[T]: BuildFrom[Iterable[T], T, DBArrayValue[T]] =
+    new BuildFrom[Iterable[T], T, DBArrayValue[T]] {
       def apply(): mutable.Builder[T, DBArrayValue[T]] =
         DBArrayValue.newBuilder[T]
 
@@ -51,13 +50,20 @@ private[spark] class DBArrayValue[T]( @transient private[spark] var arr : Seq[T]
   def iterator: Iterator[T] = new ListIterator[T](arr)
 
   def apply(idx: Int): T = {
-    if (idx < 0 || idx>=length) throw new IndexOutOfBoundsException
+    if (idx < 0 || idx >= length) throw new IndexOutOfBoundsException
     val element = arr(idx)
     element match {
       case _: util.List[_] =>
-        new DBArrayValue(element.asInstanceOf[util.List[Object]].asScala.toSeq).asInstanceOf[T]
+        val scalaSeq = ArraySeq.unsafeWrapArray(
+          element.asInstanceOf[util.List[Object]].asScala.toArray
+        )
+        new DBArrayValue(scalaSeq).asInstanceOf[T]
+
       case _: util.Map[_, _] =>
-        new DBMapValue(element.asInstanceOf[util.Map[String, Object]].asScala.toMap).asInstanceOf[T]
+        new DBMapValue(
+          element.asInstanceOf[util.Map[String, Object]].asScala.toMap
+        ).asInstanceOf[T]
+
       case _ => element
     }
   }

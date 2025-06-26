@@ -61,6 +61,7 @@ package object MapRDBSpark {
     private def expand(path: String): Seq[String] =
       FileOps.fs
         .globStatus(new Path(path), FileOps.dbPathFilter)
+        .toIndexedSeq
         .map(_.getPath.toString)
   }
 

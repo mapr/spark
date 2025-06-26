@@ -72,7 +72,7 @@ private[spark] class MapRDBTableScanRDD[T: ClassTag](
   def toDF[T <: Product: TypeTag](): DataFrame = maprspark[T]()
 
   def maprspark[T <: Product: TypeTag](): DataFrame = {
-    MapRSpark.builder
+    MapRSpark.builder()
       .sparkSession(sparkSession)
       .configuration()
       .sparkContext(sparkSession.sparkContext)
@@ -81,7 +81,7 @@ private[spark] class MapRDBTableScanRDD[T: ClassTag](
       .setBufferWrites(bufferWrites)
       .setColumnProjection(Option(columns))
       .setQueryOptions(queryOptions)
-      .build
+      .build()
       .toDF[T]()
   }
 
@@ -103,7 +103,7 @@ private[spark] class MapRDBTableScanRDD[T: ClassTag](
         val tableCond = a._1.getCondition
         MaprDBPartition(a._2,
           tableName,
-          a._1.getLocations,
+          a._1.getLocations.toIndexedSeq,
           DBClient().getEstimatedSize(a._1),
           DBQueryCondition(tableCond)).asInstanceOf[Partition]
       })
@@ -153,7 +153,7 @@ private[spark] class MapRDBTableScanRDD[T: ClassTag](
     }
 
     queryOptions
-      .filterKeys(k => k.startsWith("ojai.mapr.query")).map(identity)
+      .view.filterKeys(k => k.startsWith("ojai.mapr.query")).map(identity)
         .filter(opt => opt._2 != null)
         .map(opt => {
           opt._2.toLowerCase match {

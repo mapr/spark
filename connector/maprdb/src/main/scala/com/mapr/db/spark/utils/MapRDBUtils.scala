@@ -4,7 +4,7 @@ package com.mapr.db.spark.utils
 import java.io.ObjectInput
 import java.nio.ByteBuffer
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 
 import com.mapr.db.exceptions.{TableExistsException, TableNotFoundException}

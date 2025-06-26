@@ -4,7 +4,7 @@ package com.mapr.db.spark.impl
 import java.io.{Externalizable, ObjectInput, ObjectOutput}
 import java.nio.{ByteBuffer, ByteOrder}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import com.mapr.db.impl.IdCodec
 import com.mapr.db.rowcol.RowcolCodec

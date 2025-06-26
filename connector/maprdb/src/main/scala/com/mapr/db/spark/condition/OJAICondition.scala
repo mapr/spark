@@ -2,7 +2,7 @@
 
 package com.mapr.db.spark.condition
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import com.mapr.db.spark.dbclient.DBClient
 import com.mapr.db.spark.field

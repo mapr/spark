@@ -1,7 +1,7 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.sql.api.java
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import com.mapr.db.spark.sql.{GenerateSchema, SingleFragmentOption}
 import com.mapr.db.spark.utils.MapRSpark

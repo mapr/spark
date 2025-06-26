@@ -103,7 +103,7 @@ private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T], bufferWrites:
             val writer =
               Writer.initialize(tableName, cnf.value, isNewAndBulkLoad, true, bufferWrites)
             while (iter.hasNext) {
-              val element = iter.next
+              val element = iter.next()
               f.write(f.getValue(element), getID, writer)
             }
             writer.close()
@@ -137,7 +137,7 @@ private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T], bufferWrites:
             val writer =
               Writer.initialize(tablename, cnf.value, isNewAndBulkLoad, false, bufferWrites)
             while (iter.hasNext) {
-              val element = iter.next
+              val element = iter.next()
               f.write(f.getValue(element), getID, writer)
             }
             writer.close()
@@ -165,7 +165,7 @@ private[spark] case class OJAIDocumentRDDFunctions[T](rdd: RDD[T], bufferWrites:
             val writer =
               TableDeleteWriter(DBClient().getTable(tablename, bufferWrites))
             while (iter.hasNext) {
-              val element = iter.next
+              val element = iter.next()
               f.write(f.getValue(element), getID, writer)
             }
             writer.close()
@@ -204,7 +204,7 @@ private[spark] case class PairedDocumentRDDFunctions[K, V](rdd: RDD[(K, V)],
             val writer =
               Writer.initialize(tableName, cnf.value, isnewAndBulkLoad, true, bufferWrites)
             while (iter.hasNext) {
-              val element = iter.next
+              val element = iter.next()
               checkElementForNull(element)
               f.write(v.getValue(element._2), f.getValue(element._1), writer)
             }
@@ -231,7 +231,7 @@ private[spark] case class PairedDocumentRDDFunctions[K, V](rdd: RDD[(K, V)],
             val writer =
               Writer.initialize(tablename, cnf.value, isnewAndBulkLoad, false, bufferWrites)
             while (iter.hasNext) {
-              val element = iter.next
+              val element = iter.next()
               checkElementForNull(element)
               f.write(v.getValue(element._2), f.getValue(element._1), writer)
             }
@@ -253,7 +253,7 @@ private[spark] case class PairedDocumentRDDFunctions[K, V](rdd: RDD[(K, V)],
             val writer =
               TableDeleteWriter(DBClient().getTable(tablename, bufferWrites))
             while (iter.hasNext) {
-              val element = iter.next
+              val element = iter.next()
               checkElementForNull(element)
               f.write(v.getValue(element._2), f.getValue(element._1), writer)
             }

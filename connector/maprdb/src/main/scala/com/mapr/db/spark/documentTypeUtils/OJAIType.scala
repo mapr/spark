@@ -3,7 +3,7 @@ package com.mapr.db.spark.documentTypeUtils
 
 import java.nio.ByteBuffer
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import com.mapr.db.spark.impl.OJAIDocument
 import com.mapr.db.spark.types.{DBArrayValue, DBBinaryValue, DBMapValue}

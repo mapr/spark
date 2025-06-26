@@ -169,7 +169,7 @@ object conversions {
     def get(value: Value): Double = value.getInt
   }
   val int2floatconversion = new convert[Value, Float] {
-    def get(value: Value): Float = value.getInt
+    def get(value: Value): Float = value.getInt.toFloat
   }
   val int2intervalconversion = new convert[Value, OInterval]{
     def get(value: Value): OInterval = new OInterval(value.getInt)
@@ -317,7 +317,7 @@ object conversions {
     def get(value: Value): Double = value.getDateAsInt
   }
   val date2floatconversion = new convert[Value, Float] {
-    def get(value: Value): Float = value.getDateAsInt
+    def get(value: Value): Float = value.getDateAsInt.toFloat
   }
   val date2intervalconversion = new convert[Value, OInterval]{
     def get(value: Value): OInterval = throw new Exception("cannot convert date to interval")
@@ -535,10 +535,10 @@ object conversions {
     def get(value: Value): BigDecimal = BigDecimal(value.getLong)
   }
   val long2doubleconversion = new convert[Value, Double] {
-    def get(value: Value): Double = value.getLong
+    def get(value: Value): Double = value.getLong.toDouble
   }
   val long2floatconversion = new convert[Value, Float] {
-    def get(value: Value): Float = value.getLong
+    def get(value: Value): Float = value.getLong.toFloat
   }
   val long2intervalconversion = new convert[Value, OInterval]{
     def get(value: Value): OInterval = new OInterval(value.getLong)
