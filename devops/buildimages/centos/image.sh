@@ -1,6 +1,6 @@
 #!/bin/sh
 
-BASE_IMAGE=${DOCKER_REGISTRY}/centos8-java11-gcc8
+BASE_IMAGE=${DOCKER_REGISTRY}/centos8-java17-gcc8
 BASE_TAG=latest
 
 BASEDIR=$(dirname $0)

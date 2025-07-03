@@ -1,6 +1,6 @@
 #!/bin/sh
 
-BASE_IMAGE=${DOCKER_REGISTRY}/ubuntu16-java11-gcc7
+BASE_IMAGE=${DOCKER_REGISTRY}/ubuntu18-java17-gcc7
 BASE_TAG=latest
 
 BASEDIR=$(dirname $0)
