@@ -23,7 +23,7 @@ build_spark() {
   cp ext-conf/warden.spark-thriftserver.conf  "${BUILD_ROOT}/build/warden/warden.spark-thriftserver.conf.template"
   cp ext-conf/warden.spark-connectserver.conf  "${BUILD_ROOT}/build/warden/warden.spark-connectserver.conf.template"
 
-  cp -rp ext-lib/scala "${BUILD_ROOT}/build"
+#  cp -rp ext-lib/scala "${BUILD_ROOT}/build"
 }
 
 main() {
