@@ -23,8 +23,10 @@ public class MultiauthWebUiFilter extends AuthenticationFilter {
     filterConfigWrapper.setInitParameter(AuthenticationFilter.AUTH_TYPE,
       "org.apache.hadoop.security.authentication.server.MultiMechsAuthenticationHandler");
 
-    filterConfigWrapper.setInitParameter("kerberos.disable", filterConfig.getInitParameter("kerberosDisable"));
-
+    String kerberosDisable = filterConfig.getInitParameter("kerberosDisable");
+    if (kerberosDisable != null) {
+      filterConfigWrapper.setInitParameter("kerberos.disable", kerberosDisable);
+    }
     super.init(filterConfigWrapper);
   }
 }
