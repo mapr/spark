@@ -31,6 +31,11 @@ public class MultiauthWebUiFilter extends AuthenticationFilter {
     filterConfigWrapper.setInitParameter(AuthenticationFilter.AUTH_TYPE,
             "org.apache.hadoop.security.authentication.server.MultiMechsAuthenticationHandler");
 
+    String kerberosDisable = filterConfig.getInitParameter("kerberosDisable");
+    if (kerberosDisable != null) {
+      filterConfigWrapper.setInitParameter("kerberos.disable", kerberosDisable);
+    }
+
     SignerSecretProvider signerProvider = SparkSignerSecretProvider.getInstance(filterConfig.getServletContext(),
             getConfiguration("", filterConfigWrapper), false);
     filterConfigWrapper.getServletContext().setAttribute(AuthenticationFilter.SIGNER_SECRET_PROVIDER_ATTRIBUTE,
