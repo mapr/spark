@@ -6,7 +6,7 @@ build:
   - name: ubuntu
     imageCustom: devops/buildimages/ubuntu/image.sh
     basicBuildCommands: "_BUILD_ENV_VARS_ devops/scripts/build.sh"
-    hostmachine_jenkins_label: "ubuntu16"
+    hostmachine_jenkins_label: "ubuntu18"
   - name: centos
     imageCustom: devops/buildimages/centos/image.sh
     basicBuildCommands: "_BUILD_ENV_VARS_ devops/scripts/build.sh"
