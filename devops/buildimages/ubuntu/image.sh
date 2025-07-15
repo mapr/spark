@@ -1,7 +1,7 @@
 #!/bin/sh
 
-BASE_IMAGE=${DOCKER_REGISTRY}/ubuntu18-java17-gcc7
-BASE_TAG=latest
+BASE_IMAGE=${DOCKER_REGISTRY}/ubuntu22-java17-gcc11
+BASE_TAG=core-latest
 
 BASEDIR=$(dirname $0)
 DOCKERFILE_CHECKSUM=$(find "$BASEDIR" | cpio -o 2>/dev/null | md5sum | head -c 7)
