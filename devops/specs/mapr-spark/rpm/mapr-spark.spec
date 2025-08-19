@@ -2,21 +2,21 @@
 %define _binaries_in_noarch_packages_terminate_build 0
 
 
-summary:     MapR
+summary:     HPE DataFabric Ecosystem Pack: Apache Spark
 license:     Hewlett Packard Enterprise, CopyRight
-Vendor:      Hewlett Packard Enterprise, <ezmeral_software_support@hpe.com>
+Vendor:      Hewlett Packard Enterprise
 name:        mapr-spark
 version:     __RELEASE_VERSION__
 release:     1
 prefix:      /
-group:       MapR
+group:       HPE
 buildarch:   noarch
 Requires:    mapr-client, mapr-hadoop-client
 AutoReqProv: no
 
 
 %description
-Ezmeral Ecosystem Pack: Spark package
+Apache Spark distribution included in HPE DataFabric Software Ecosystem Pack
 Tag: __RELEASE_BRANCH__
 Commit: __GIT_COMMIT__
 
