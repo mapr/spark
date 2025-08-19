@@ -4,7 +4,7 @@ Section: base
 Priority: optional
 Architecture: all
 Depends: mapr-client, mapr-hadoop-client
-Maintainer: Hewlett Packard Enterprise <ezmeral_software_support@hpe.com>
-Description: Ezmeral Ecosystem Pack: Spark package
+Maintainer: Hewlett Packard Enterprise
+Description: Apache Spark distribution included in HPE DataFabric Software Ecosystem Pack
   Tag: __RELEASE_BRANCH__
   Commit: __GIT_COMMIT__

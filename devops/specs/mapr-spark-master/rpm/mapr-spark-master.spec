@@ -1,19 +1,19 @@
 %undefine __check_files
 
-summary:     MapR
+summary:     HPE DataFabric Ecosystem Pack: Apache Spark Master
 license:     Hewlett Packard Enterprise, CopyRight
-Vendor:      Hewlett Packard Enterprise, <ezmeral_software_support@hpe.com>
+Vendor:      Hewlett Packard Enterprise
 name:        mapr-spark-master
 version:     __RELEASE_VERSION__
 release:     1
 prefix:      /
-group:       MapR
+group:       HPE
 buildarch:   noarch
 requires:    mapr-spark = __RELEASE_VERSION__
 AutoReqProv: no
 
 %description
-Ezmeral Ecosystem Pack: Spark Master package
+Apache Spark Master distribution included in HPE DataFabric Software Ecosystem Pack
 Tag: __RELEASE_BRANCH__
 Commit: __GIT_COMMIT__
 
