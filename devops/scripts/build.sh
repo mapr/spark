@@ -24,6 +24,11 @@ build_spark() {
   cp ext-conf/warden.spark-connectserver.conf  "${BUILD_ROOT}/build/warden/warden.spark-connectserver.conf.template"
 
   cp -rp ext-lib/scala "${BUILD_ROOT}/build"
+
+  mkdir -p "${BUILD_ROOT}/build/ext-libs"
+  wget -P "${BUILD_ROOT}/build/ext-libs" \
+    https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.5_2.12/1.10.0/iceberg-spark-runtime-3.5_2.12-1.10.0.jar
+
 }
 
 main() {

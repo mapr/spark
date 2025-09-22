@@ -393,6 +393,13 @@ private[spark] class SparkSubmit extends Logging {
       }
     }
 
+    // Inject $SPARK_HOME/ext-libs jars into spark.jars
+    if (sparkConf.getBoolean("spark.jars.ext-libs.use", false)) {
+      val extLibsGlob = sparkConf.get("spark.jars.ext-libs.dir",
+        s"file:${sparkConf.getOption("spark.home").orElse(Option(System.getenv("SPARK_HOME"))).get}/ext-libs/") + "*.jar"
+      args.jars = mergeFileLists(args.jars, extLibsGlob)
+    }
+
     // Resolve glob path for different resources.
     args.jars = Option(args.jars).map(resolveGlobPaths(_, hadoopConf)).orNull
     args.files = Option(args.files).map(resolveGlobPaths(_, hadoopConf)).orNull

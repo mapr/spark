@@ -2457,6 +2457,21 @@ package object config {
       .toSequence
       .createWithDefault(Nil)
 
+  private[spark] val EXT_LIBS_JARS_USE =
+    ConfigBuilder("spark.jars.ext-libs.use")
+      .doc("If true, all jars from spark.jars.ext-libs.dir will be added to classpath")
+      .version("3.5.5")
+      .booleanConf
+      .createWithDefault(false)
+
+  private[spark] val EXT_LIBS_JARS_DIR =
+    ConfigBuilder("spark.jars.ext-libs.dir")
+      .doc("Path to the directory whose contents will be added to classpath." +
+        "Format: file:/home/user/ext-libs/")
+      .version("3.5.5")
+      .stringConf
+      .createOptional
+
   private[spark] val JAR_PACKAGES_EXCLUSIONS =
     ConfigBuilder("spark.jars.excludes")
       .doc("Comma-separated list of groupId:artifactId, " +
