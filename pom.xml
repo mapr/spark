@@ -1958,6 +1958,14 @@
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
           </exclusion>
+          <exclusion>
+              <groupId>org.bouncycastle</groupId>
+              <artifactId>bc-fips</artifactId>
+          </exclusion>
+          <exclusion>
+              <groupId>org.bouncycastle</groupId>
+              <artifactId>bctls-fips</artifactId>
+          </exclusion>
         </exclusions>
       </dependency>
       <dependency>
