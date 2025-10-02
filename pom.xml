@@ -1787,6 +1787,14 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-core</artifactId>
           </exclusion>
+          <exclusion>
+              <groupId>org.bouncycastle</groupId>
+              <artifactId>bc-fips</artifactId>
+          </exclusion>
+          <exclusion>
+              <groupId>org.bouncycastle</groupId>
+              <artifactId>bctls-fips</artifactId>
+          </exclusion>
         </exclusions>
       </dependency>
       <dependency>
