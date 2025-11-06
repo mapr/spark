@@ -51,9 +51,10 @@ private[v1] class ApplicationListResource extends ApiRequestContext {
         val inTimeRange = app.attempts.exists { attempt =>
           isAttemptInRange(attempt, minDate, maxDate, minEndDate, maxEndDate, anyRunning)
         }
-        matchesStatus && inTimeRange
+        val canView = app.attempts.filter(attempt =>
+          listAllEnabled || uiRoot.checkUIViewPermissions(app.id, attempt.attemptId, user))
+        matchesStatus && inTimeRange && canView.nonEmpty
       }
-      .filter(app => !listAllEnabled && uiRoot.checkUIViewPermissions(app.id, None, user) || listAllEnabled)
       .take(numApps)
   }
 
