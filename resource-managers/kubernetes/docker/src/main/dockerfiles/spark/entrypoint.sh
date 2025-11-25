@@ -40,10 +40,6 @@ if [ -z "$JAVA_HOME" ]; then
   JAVA_HOME=$(java -XshowSettings:properties -version 2>&1 > /dev/null | grep 'java.home' | awk '{print $3}')
 fi
 
-if ! source "${SPARK_HOME}/bin/load-spark-env.sh"; then
-    echo "Error: Failed to source ${SPARK_HOME}/bin/load-spark-env.sh" >&2
-fi
-
 SPARK_CLASSPATH="$SPARK_CLASSPATH:${SPARK_HOME}/jars/*"
 env | grep SPARK_JAVA_OPT_ | sort -t_ -k4 -n | sed 's/[^=]*=\(.*\)/\1/g' > java_opts.txt
 if [ "$(command -v readarray)" ]; then
