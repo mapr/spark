@@ -131,8 +131,8 @@
     <slf4j.version>2.0.17</slf4j.version>
     <log4j.version>2.25.3</log4j.version>
     <!-- make sure to update IsolatedClientLoader whenever this version is changed -->
-    <hadoop.version>3.4.1.100-eep-941-SNAPSHOT</hadoop.version>
-    <maprfs.version>7.10.0.0-mapr-SNAPSHOT</maprfs.version>
+    <hadoop.version>3.4.1.300-dep-1001-SNAPSHOT</hadoop.version>
+    <maprfs.version>7.10.0.0-mapr</maprfs.version>
     <!-- SPARK-41247: When updating `protobuf.version`, also need to update `protoVersion` in `SparkBuild.scala` -->
     <protobuf.version>4.33.0</protobuf.version>
     <protoc-jar-maven-plugin.version>3.11.4</protoc-jar-maven-plugin.version>
@@ -147,8 +147,7 @@
     <!-- Version used for internal directory structure -->
     <hive.version.short>2.3</hive.version.short>
     <!-- note that this should be compatible with Kafka brokers version 0.10 and up -->
-    <kafka.version>3.6.1.200-eep-940-SNAPSHOT</kafka.version>
-    <!-- After 10.17.1.0, the minimum required version is JDK19 -->
+    <kafka.version>3.6.1.300-dep-1000-SNAPSHOT</kafka.version>
     <derby.version>10.16.1.1</derby.version>
     <parquet.version>1.16.0</parquet.version>
     <orc.version>2.2.1</orc.version>
