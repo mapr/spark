@@ -30,7 +30,7 @@
   <properties>
     <sbt.project.name>sql-kafka-0-10</sbt.project.name>
     <!-- note that this should be compatible with Kafka brokers version 0.10 and up -->
-    <kafka.version>3.6.1.300-dep-1000</kafka.version>
+    <kafka.version>3.6.1.300-dep-1000-SNAPSHOT</kafka.version>
   </properties>
   <packaging>jar</packaging>
   <name>Kafka 0.10+ Source for Structured Streaming</name>
