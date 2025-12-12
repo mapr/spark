@@ -79,46 +79,75 @@
                     </execution>
                 </executions>
             </plugin>
-<!--            <plugin>-->
-<!--              <artifactId>exec-maven-plugin</artifactId>-->
-<!--              <groupId>org.codehaus.mojo</groupId>-->
-<!--              <executions>-->
-<!--                <execution>-->
-<!--                  <id>build-classpathfilter-go-binary</id>-->
-<!--                  <phase>compile</phase>-->
-<!--                  <goals>-->
-<!--                    <goal>exec</goal>-->
-<!--                  </goals>-->
-<!--                  <configuration>-->
-<!--                    <workingDirectory>src/main/go/classpathfilter</workingDirectory>-->
-<!--                    <executable>go</executable>-->
-<!--                    <arguments>-->
-<!--                        <argument>build</argument>-->
-<!--                        <argument>-o</argument>-->
-<!--                        <argument>${project.build.directory}/bin/classpathfilter</argument>-->
-<!--                    </arguments>-->
-<!--                  </configuration>-->
-<!--                </execution>-->
-<!--              </executions>-->
-<!--            </plugin>-->
             <plugin>
                 <groupId>com.igormaznitsa</groupId>
-                <artifactId>mvn-golang-wrapper</artifactId>
-                <version>2.3.10</version>
-                <extensions>true</extensions>
+                <artifactId>gosdk-wrapper-maven-plugin</artifactId>
+                <version>1.1.2</version>
+
+                <configuration>
+                    <sdkSite>https://go.dev/dl/?mode=json</sdkSite>
+                    <goVersion>1.21.11</goVersion>
+                </configuration>
+
                 <executions>
                     <execution>
+                        <id>cache-gosdk</id>
+                        <phase>initialize</phase>
                         <goals>
-                            <goal>build</goal>
+                            <goal>cache-sdk</goal>
                         </goals>
                         <configuration>
-                            <goVersion>1.21.11</goVersion>
-                            <packages>
-                                <package>main.go</package>
-                            </packages>
-                            <sources>${basedir}/src/main/go/classpathfilter</sources>
-                            <resultFolder>${project.build.directory}/bin</resultFolder>
-                            <resultName>classpathfilter</resultName>
+                            <propertyGoCommandPath>go.command.path</propertyGoCommandPath>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>mkdir-bin</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.build.directory}/bin"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>build-classpathfilter</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>${basedir}/src/main/go/classpathfilter</workingDirectory>
+                            <executable>${go.command.path}</executable>
+
+                            <environmentVariables>
+                                <GOROOT></GOROOT>
+                                <GOTOOLDIR></GOTOOLDIR>
+                            </environmentVariables>
+
+                            <arguments>
+                                <argument>build</argument>
+                                <argument>-o</argument>
+                                <argument>${project.build.directory}/bin/classpathfilter</argument>
+                                <argument>main.go</argument>
+                            </arguments>
                         </configuration>
                     </execution>
                 </executions>
