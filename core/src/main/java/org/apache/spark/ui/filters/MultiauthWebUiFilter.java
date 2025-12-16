@@ -49,6 +49,12 @@ public class MultiauthWebUiFilter extends AuthenticationFilter {
     super.init(filterConfigWrapper);
   }
 
+  private boolean isStaticDirectoryRequest(HttpServletRequest req) {
+    String path = req.getRequestURI();
+    return path.matches("(.*/)?static/?$")
+            || path.matches("(.*/)?static/.+/$");
+  }
+
   @Override
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
           throws IOException, ServletException {
@@ -56,6 +62,11 @@ public class MultiauthWebUiFilter extends AuthenticationFilter {
     HttpServletResponse httpResponse = (HttpServletResponse) response;
 
     servicePort = httpRequest.getServerPort();
+
+    if (isStaticDirectoryRequest(httpRequest)) {
+      httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN);
+      return;
+    }
 
     if (allowedResources.contains(httpRequest.getRequestURI())) {
       chain.doFilter(httpRequest, httpResponse);
