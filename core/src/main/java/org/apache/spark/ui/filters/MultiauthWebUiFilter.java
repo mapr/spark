@@ -7,8 +7,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Enumeration;
+import java.util.regex.Pattern;
 
 public class MultiauthWebUiFilter extends AuthenticationFilter {
+
+  private static final Pattern STATIC_DIR =
+          Pattern.compile("(.*/)?static/?$|(.*/)?static/.+/$");
 
   @Override
   public void init(FilterConfig filterConfig) throws ServletException {
@@ -23,7 +27,7 @@ public class MultiauthWebUiFilter extends AuthenticationFilter {
     }
 
     filterConfigWrapper.setInitParameter(AuthenticationFilter.AUTH_TYPE,
-      "org.apache.hadoop.security.authentication.server.MultiMechsAuthenticationHandler");
+            "org.apache.hadoop.security.authentication.server.MultiMechsAuthenticationHandler");
 
     String kerberosDisable = filterConfig.getInitParameter("kerberosDisable");
     if (kerberosDisable != null) {
@@ -34,8 +38,7 @@ public class MultiauthWebUiFilter extends AuthenticationFilter {
 
   private boolean isStaticDirectoryRequest(HttpServletRequest req) {
     String path = req.getRequestURI();
-    return path.matches("(.*/)?static/?$")
-            || path.matches("(.*/)?static/.+/$");
+    return path != null && STATIC_DIR.matcher(path).matches();
   }
 
   @Override
@@ -45,10 +48,11 @@ public class MultiauthWebUiFilter extends AuthenticationFilter {
     HttpServletResponse httpResponse = (HttpServletResponse) response;
 
     if (isStaticDirectoryRequest(httpRequest)) {
-      httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN);
+      httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
       return;
     }
 
-    chain.doFilter(httpRequest, httpResponse);
+    super.doFilter(request, response, chain);
   }
+
 }
