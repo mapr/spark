@@ -148,7 +148,7 @@
     <parquet.version>1.15.2</parquet.version>
     <orc.version>1.9.5</orc.version>
     <orc.classifier>shaded-protobuf</orc.classifier>
-    <jetty.version>9.4.56.v20240826</jetty.version>
+    <jetty.version>9.4.58.v20250814</jetty.version>
     <jakartaservlet.version>4.0.3</jakartaservlet.version>
     <chill.version>0.10.0</chill.version>
     <!--
