@@ -231,7 +231,7 @@
     <bc-fips.version>2.1.2</bc-fips.version>
     <bcutil-fips.version>2.1.5</bcutil-fips.version>
     <tink.version>1.9.0</tink.version>
-    <netty.version>4.1.108.Final</netty.version>
+    <netty.version>4.1.131.Final</netty.version>
     <!--
     If you are changing Arrow version specification, please check
     ./python/pyspark/sql/pandas/utils.py, and ./python/setup.py too.
@@ -1019,6 +1019,11 @@
         <artifactId>netty-transport-native-kqueue</artifactId>
         <version>${netty.version}</version>
         <classifier>osx-x86_64</classifier>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-handler</artifactId>
+        <version>${netty.version}</version>
       </dependency>
       <!-- Netty End -->
 
