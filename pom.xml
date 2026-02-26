@@ -126,7 +126,7 @@
     <sbt.project.name>spark</sbt.project.name>
     <asm.version>9.5</asm.version>
     <slf4j.version>2.0.7</slf4j.version>
-    <log4j.version>2.20.0</log4j.version>
+    <log4j.version>2.25.3</log4j.version>
     <!-- make sure to update IsolatedClientLoader whenever this version is changed -->
     <hadoop.version>3.3.5.700-eep-933-SNAPSHOT</hadoop.version>
     <maprfs.version>7.8.0.0-mapr-SNAPSHOT</maprfs.version>
