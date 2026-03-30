@@ -22,7 +22,6 @@ import java.util.{List => JList, Locale}
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.jdk.CollectionConverters._
-import scala.language.existentials
 
 import org.apache.hadoop.fs.Path
 import org.json4s.DefaultFormats

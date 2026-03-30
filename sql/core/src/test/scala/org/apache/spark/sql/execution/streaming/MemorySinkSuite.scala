@@ -17,7 +17,6 @@
 
 package org.apache.spark.sql.execution.streaming
 
-import scala.language.implicitConversions
 
 import org.scalatest.BeforeAndAfter
 

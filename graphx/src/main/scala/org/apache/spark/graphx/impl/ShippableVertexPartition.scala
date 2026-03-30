@@ -67,7 +67,6 @@ object ShippableVertexPartition {
     new ShippableVertexPartition(map.keySet, map._values, map.keySet.getBitSet, routingTable)
   }
 
-  import scala.language.implicitConversions
 
   /**
    * Implicit conversion to allow invoking `VertexPartitionBase` operations directly on a

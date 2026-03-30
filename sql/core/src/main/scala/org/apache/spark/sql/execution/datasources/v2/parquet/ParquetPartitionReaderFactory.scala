@@ -22,6 +22,7 @@ import java.util.Optional
 import org.apache.hadoop.mapred.FileSplit
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
+import org.apache.hadoop.fs.FileUtil
 import org.apache.parquet.filter2.compat.FilterCompat
 import org.apache.parquet.filter2.predicate.{FilterApi, FilterPredicate}
 import org.apache.parquet.hadoop._
@@ -91,7 +92,7 @@ case class ParquetPartitionReaderFactory(
   private def openFileAndReadFooter(file: PartitionedFile): OpenedParquetFooter = {
     val hadoopConf = broadcastedConf.value.value
     if (aggregation.isDefined) {
-      val inputFile = HadoopInputFile.fromPath(file.toPath, hadoopConf)
+      val inputFile = HadoopInputFile.fromPath(FileUtil.checkPathForSymlink(file.toPath, hadoopConf).path, hadoopConf)
       // When there are aggregates to push down, we get max/min/count from footer statistics.
       val footer = ParquetFooterReader.readFooter(
         inputFile,

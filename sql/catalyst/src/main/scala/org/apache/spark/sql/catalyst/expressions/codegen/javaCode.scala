@@ -20,7 +20,6 @@ package org.apache.spark.sql.catalyst.expressions.codegen
 import java.lang.{Boolean => JBool}
 
 import scala.collection.mutable.ArrayBuffer
-import scala.language.implicitConversions
 
 import org.apache.spark.SparkException
 import org.apache.spark.sql.catalyst.trees.{LeafLike, TreeNode}

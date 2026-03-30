@@ -22,7 +22,6 @@ import java.util
 
 import scala.annotation.varargs
 import scala.jdk.CollectionConverters._
-import scala.language.implicitConversions
 
 import breeze.linalg.{DenseVector => BDV, SparseVector => BSV, Vector => BV}
 import org.json4s.{DefaultFormats, Formats}

@@ -20,7 +20,6 @@ import java.sql.{Date, Timestamp}
 import java.time.{Duration, LocalDateTime, LocalTime, Period}
 import java.util.concurrent.TimeUnit
 
-import scala.language.implicitConversions
 
 import org.apache.spark.SparkThrowable
 import org.apache.spark.sql.catalyst.FunctionIdentifier

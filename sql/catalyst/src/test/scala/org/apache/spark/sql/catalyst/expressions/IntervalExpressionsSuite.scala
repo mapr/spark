@@ -20,7 +20,6 @@ package org.apache.spark.sql.catalyst.expressions
 import java.time.{Duration, Period}
 import java.time.temporal.ChronoUnit
 
-import scala.language.implicitConversions
 
 import org.apache.spark.SparkFunSuite
 import org.apache.spark.sql.catalyst.analysis.TypeCoercion

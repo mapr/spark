@@ -19,7 +19,6 @@ package org.apache.spark.sql.execution.streaming.state
 
 import java.io._
 
-import scala.language.implicitConversions
 
 import org.apache.hadoop.conf.Configuration
 

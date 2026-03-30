@@ -20,7 +20,6 @@ package org.apache.spark.storage
 import java.util.Properties
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 import org.scalatest.time.SpanSugar._

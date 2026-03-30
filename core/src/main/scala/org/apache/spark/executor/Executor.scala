@@ -23,7 +23,6 @@ import java.lang.management.ManagementFactory
 import java.net.{URI, URL, URLClassLoader}
 import java.nio.ByteBuffer
 import java.security.PrivilegedExceptionAction
-import java.util.Properties
 import java.util.{Locale, Properties}
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicBoolean

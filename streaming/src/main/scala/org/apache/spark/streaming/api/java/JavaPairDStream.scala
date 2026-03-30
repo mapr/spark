@@ -22,7 +22,6 @@ import java.lang.{Iterable => JIterable}
 import java.util.{List => JList}
 
 import scala.jdk.CollectionConverters._
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 import org.apache.hadoop.conf.Configuration

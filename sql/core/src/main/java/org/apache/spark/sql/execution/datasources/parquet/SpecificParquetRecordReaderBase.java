@@ -181,9 +181,9 @@ public abstract class SpecificParquetRecordReaderBase<T> extends RecordReader<Vo
       .builder(configuration, file)
       .withRange(0, length)
       .build();
-    Path resolvedFile = FileUtil.checkPathForSymlink(file, config).path;
+    Path resolvedFile = FileUtil.checkPathForSymlink(file, configuration).path;
     ParquetFileReader fileReader = ParquetFileReader.open(
-      HadoopInputFile.fromPath(resolvedFile, config), options);
+      HadoopInputFile.fromPath(resolvedFile, configuration), options);
     this.reader = new ParquetRowGroupReaderImpl(fileReader);
     this.fileSchema = fileReader.getFooter().getFileMetaData().getSchema();
 

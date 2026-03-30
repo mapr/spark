@@ -3,7 +3,7 @@ package com.mapr.db.spark.types
 
 import java.io.{Externalizable, ObjectInput, ObjectOutput}
 import java.nio._
-import scala.collection.{BuildFrom, IterableFactoryDefaults, SeqFactory, SeqLike, mutable}
+import scala.collection.{BuildFrom, SeqFactory, mutable}
 import scala.jdk.CollectionConverters._
 import scala.collection.mutable.ListBuffer
 import com.mapr.db.rowcol.RowcolCodec
@@ -12,7 +12,6 @@ import com.mapr.db.spark.utils.MapRDBUtils
 import com.mapr.db.util.ByteBufs
 import java.util
 import scala.collection.immutable.ArraySeq
-import scala.collection.immutable.SeqOps
 
 private[spark] object DBArrayValue extends SeqFactory[DBArrayValue] {
   implicit def canBuildFrom[T]: BuildFrom[Iterable[T], T, DBArrayValue[T]] =

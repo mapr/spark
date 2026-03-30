@@ -42,7 +42,7 @@ import org.apache.spark.deploy.k8s.Fabric8Aliases._
 import org.apache.spark.internal.config._
 import org.apache.spark.resource._
 import org.apache.spark.scheduler.cluster.k8s.ExecutorLifecycleTestUtils._
-import org.apache.spark.util.{ManualClock, SparkExitCode}
+import org.apache.spark.util.ManualClock
 
 class ExecutorPodsAllocatorSuite extends SparkFunSuite with BeforeAndAfter {
 

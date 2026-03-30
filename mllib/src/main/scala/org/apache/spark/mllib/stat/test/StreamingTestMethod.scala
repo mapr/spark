@@ -19,7 +19,6 @@ package org.apache.spark.mllib.stat.test
 
 import java.io.Serializable
 
-import scala.language.implicitConversions
 import scala.math.pow
 
 import com.twitter.chill.MeatLocker

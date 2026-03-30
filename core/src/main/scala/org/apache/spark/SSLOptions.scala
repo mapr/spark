@@ -17,12 +17,8 @@
 
 package org.apache.spark
 
-import java.io.File
-import java.security.NoSuchAlgorithmException
 import java.util.HashMap
 import java.util.Map
-import javax.net.ssl.SSLContext
-import scala.util.Try
 import com.mapr.web.security.SslConfig.SslConfigScope
 import com.mapr.web.security.WebSecurityManager
 
@@ -30,10 +26,8 @@ import javax.net.ssl.SSLContext
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SSLOptions.{ENV_RPC_SSL_KEY_PASSWORD, ENV_RPC_SSL_KEY_STORE_PASSWORD}
-import org.apache.spark.internal.Logging
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider
-import org.eclipse.jetty.util.ssl.SslContextFactory
 import org.eclipse.jetty.util.ssl.SslContextFactory
 import org.apache.spark.internal.Logging
 import org.apache.spark.network.util.ConfigProvider

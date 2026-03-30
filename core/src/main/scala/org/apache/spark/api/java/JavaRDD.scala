@@ -20,7 +20,6 @@ package org.apache.spark.api.java
 import java.io.{DataInputStream, EOFException, FileInputStream, InputStream}
 
 import scala.collection.mutable
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 import org.apache.spark._

@@ -20,7 +20,6 @@ package org.apache.spark.sql.execution.datasources.parquet
 import java.util.{Optional, PrimitiveIterator}
 
 import scala.collection.mutable.ArrayBuffer
-import scala.language.implicitConversions
 
 import org.apache.parquet.column.{ColumnDescriptor, ParquetProperties}
 import org.apache.parquet.column.impl.ColumnWriteStoreV1

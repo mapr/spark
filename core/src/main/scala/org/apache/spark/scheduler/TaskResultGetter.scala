@@ -20,7 +20,6 @@ package org.apache.spark.scheduler
 import java.nio.ByteBuffer
 import java.util.concurrent.{ExecutorService, RejectedExecutionException}
 
-import scala.language.existentials
 import scala.util.control.NonFatal
 
 import org.apache.spark._

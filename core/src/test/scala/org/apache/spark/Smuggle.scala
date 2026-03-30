@@ -21,7 +21,6 @@ import java.util.UUID
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
 import scala.collection.mutable
-import scala.language.implicitConversions
 
 /**
  * Utility wrapper to "smuggle" objects into tasks while bypassing serialization.

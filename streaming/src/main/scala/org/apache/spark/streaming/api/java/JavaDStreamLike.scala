@@ -21,7 +21,6 @@ import java.{lang => jl}
 import java.util.{List => JList}
 
 import scala.jdk.CollectionConverters._
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 import org.apache.spark.api.java.{JavaPairRDD, JavaRDD, JavaRDDLike}

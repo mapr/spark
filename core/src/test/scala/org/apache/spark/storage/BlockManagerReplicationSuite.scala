@@ -22,7 +22,6 @@ import java.util.Locale
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration._
-import scala.language.implicitConversions
 
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{doAnswer, mock, spy, when}

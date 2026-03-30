@@ -20,7 +20,6 @@ package org.apache.spark.sql.execution.streaming.sources
 import java.io.File
 
 import scala.collection.mutable
-import scala.language.implicitConversions
 
 import org.apache.spark.ExecutorDeadException
 import org.apache.spark.sql._

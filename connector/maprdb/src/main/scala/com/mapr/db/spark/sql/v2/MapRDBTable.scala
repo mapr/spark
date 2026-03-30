@@ -11,7 +11,7 @@ import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 case class MapRDBTable(
-      schema: StructType,
+      override val schema: StructType,
       tablePath: String,
       hintedIndexes: Array[String],
       readersPerTablet: Int)

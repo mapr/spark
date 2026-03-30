@@ -20,7 +20,6 @@ package org.apache.spark.ui
 import java.net.{URI, URL, URLDecoder}
 import java.util.EnumSet
 
-import scala.language.implicitConversions
 import scala.util.Try
 import scala.xml.Node
 

@@ -16,7 +16,6 @@
  */
 package org.apache.spark.sql.classic
 
-import scala.language.implicitConversions
 
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.sql

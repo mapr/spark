@@ -4,7 +4,6 @@ package com.mapr.db.spark.sql
 import java.util.Arrays.sort
 import java.util.Comparator
 
-import scala.Array._
 import scala.reflect.runtime.universe._
 
 import com.mapr.db.spark.RDD.MapRDBBaseRDD

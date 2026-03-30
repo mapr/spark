@@ -17,7 +17,6 @@
 
 package org.apache.spark.graphx
 
-import scala.language.existentials
 import scala.reflect.ClassTag
 
 import org.apache.spark.Dependency

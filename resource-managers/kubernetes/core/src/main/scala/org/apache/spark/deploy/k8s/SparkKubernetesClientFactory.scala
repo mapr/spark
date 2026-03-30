@@ -125,7 +125,6 @@ object SparkKubernetesClientFactory extends Logging {
   }
 
   object ClientType extends Enumeration {
-    import scala.language.implicitConversions
     val Driver: ClientTypeVal =
       ClientTypeVal(DRIVER_CLIENT_REQUEST_TIMEOUT, DRIVER_CLIENT_CONNECTION_TIMEOUT)
     val Submission: ClientTypeVal =

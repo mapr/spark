@@ -19,7 +19,6 @@ package org.apache.spark.storage
 
 import java.nio.ByteBuffer
 
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 import org.scalatest._

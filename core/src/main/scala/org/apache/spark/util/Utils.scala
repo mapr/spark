@@ -366,7 +366,6 @@ private[spark] object Utils
       url: String,
       targetDir: File,
       conf: ReadOnlySparkConf,
-      securityMgr: SecurityManager,
       hadoopConf: Configuration,
       timestamp: Long,
       useCache: Boolean,
@@ -641,7 +640,6 @@ private[spark] object Utils
       targetDir: File,
       filename: String,
       conf: ReadOnlySparkConf,
-      securityMgr: SecurityManager,
       hadoopConf: Configuration): File = {
     val targetFile = new File(targetDir, filename)
     val uri = new URI(url)

@@ -20,7 +20,6 @@ package org.apache.spark.util
 import java.util.Properties
 
 import scala.jdk.CollectionConverters._
-import scala.language.implicitConversions
 
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import com.fasterxml.jackson.databind.node.{ObjectNode, TextNode}

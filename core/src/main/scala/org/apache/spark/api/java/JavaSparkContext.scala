@@ -23,7 +23,6 @@ import java.util.{Map => JMap}
 
 import scala.annotation.varargs
 import scala.jdk.CollectionConverters._
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 import org.apache.hadoop.conf.Configuration

@@ -20,7 +20,6 @@ package org.apache.spark.sql.hive.thriftserver
 import java.nio.ByteBuffer
 
 import scala.jdk.CollectionConverters._
-import scala.language.implicitConversions
 
 import org.apache.hive.service.rpc.thrift._
 

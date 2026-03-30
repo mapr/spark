@@ -18,7 +18,6 @@
 package org.apache.spark.scheduler
 
 import scala.collection.mutable.ArrayBuffer
-import scala.language.implicitConversions
 
 import org.apache.spark.{SparkException, SparkFunSuite}
 import org.apache.spark.resource.{ResourceAmountUtils, ResourceProfileBuilder, TaskResourceRequests}

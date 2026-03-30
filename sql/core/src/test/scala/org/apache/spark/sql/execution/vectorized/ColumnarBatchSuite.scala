@@ -26,7 +26,6 @@ import java.util
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
-import scala.language.implicitConversions
 import scala.util.Random
 
 import org.apache.arrow.vector.IntVector

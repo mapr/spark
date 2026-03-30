@@ -101,7 +101,6 @@ class LogEntry(messageWithContext: => MessageWithContext) {
  * Companion object for the wrapper to enable implicit conversions
  */
 object LogEntry {
-  import scala.language.implicitConversions
 
   implicit def from(msgWithCtx: => MessageWithContext): LogEntry =
     new LogEntry(msgWithCtx)

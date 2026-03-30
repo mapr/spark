@@ -17,7 +17,6 @@
 package org.apache.spark.sql.connect
 
 import scala.jdk.CollectionConverters._
-import scala.language.implicitConversions
 
 import org.apache.spark.connect.proto
 import org.apache.spark.connect.proto._

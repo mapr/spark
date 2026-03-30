@@ -17,7 +17,6 @@
 package org.apache.spark.sql
 
 import scala.collection.Map
-import scala.language.implicitConversions
 import scala.reflect.classTag
 import scala.reflect.runtime.universe.TypeTag
 

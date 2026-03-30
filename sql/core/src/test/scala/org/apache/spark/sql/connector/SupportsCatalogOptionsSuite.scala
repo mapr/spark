@@ -20,7 +20,6 @@ package org.apache.spark.sql.connector
 import java.util.Optional
 
 import scala.concurrent.duration.MICROSECONDS
-import scala.language.implicitConversions
 import scala.util.Try
 
 import org.scalatest.BeforeAndAfter

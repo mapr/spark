@@ -30,7 +30,6 @@ private[graphx] object VertexPartition {
     new VertexPartition(index, values, mask)
   }
 
-  import scala.language.implicitConversions
 
   /**
    * Implicit conversion to allow invoking `VertexPartitionBase` operations directly on a

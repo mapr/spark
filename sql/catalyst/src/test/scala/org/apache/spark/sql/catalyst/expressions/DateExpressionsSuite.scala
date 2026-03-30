@@ -24,7 +24,6 @@ import java.time.temporal.ChronoUnit
 import java.util.{Calendar, Locale, TimeZone}
 import java.util.concurrent.TimeUnit._
 
-import scala.language.postfixOps
 import scala.reflect.ClassTag
 import scala.util.Random
 

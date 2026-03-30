@@ -17,7 +17,6 @@
 
 package org.apache.spark.mllib.rdd
 
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 import org.apache.spark.{Aggregator, InterruptibleIterator, TaskContext}

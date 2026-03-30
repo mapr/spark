@@ -19,7 +19,6 @@ package org.apache.spark.sql.execution.datasources.parquet
 import java.util
 
 import scala.collection.mutable
-import scala.language.existentials
 
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.hadoop.mapreduce.{Job, OutputCommitter, TaskAttemptContext}

@@ -17,7 +17,6 @@
 
 package org.apache.spark.sql.catalyst
 
-import scala.language.existentials
 
 import org.apache.spark.sql.catalyst.{expressions => exprs}
 import org.apache.spark.sql.catalyst.DeserializerBuildHelper.expressionWithNullSafety
