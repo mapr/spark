@@ -4,7 +4,7 @@ BASE_IMAGE=${DOCKER_REGISTRY}/ubuntu18-java17-gcc7
 BASE_TAG=latest
 
 BASEDIR=$(dirname $0)
-DOCKERFILE_CHECKSUM=$(find "$BASEDIR" | cpio -o 2>/dev/null | md5sum | head -c 7)
+DOCKERFILE_CHECKSUM=$(cd "$BASEDIR" && find . -type f -exec md5sum {} + | sort | md5sum | head -c 7)
 
 IMAGE_NAME_FOR_BUILD=${BASE_IMAGE}-custom-${REPOSITORY_NAME}:${BASE_TAG}-${DOCKERFILE_CHECKSUM}
 
