@@ -204,6 +204,7 @@ BUILD_COMMAND=("$MVN" clean $MVN_BUILD_COMMAND_ARGS \
     -Dcyclonedx.skip=true \
     "$MVN_PROFILE_ARG" \
     $@)
+fi
 
 # Actually build the jar
 echo -e "\nBuilding with..."
