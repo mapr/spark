@@ -85,8 +85,7 @@
                 <version>1.1.2</version>
 
                 <configuration>
-                    <sdkSite>https://go.dev/dl/?mode=json</sdkSite>
-                    <goVersion>1.21.11</goVersion>
+                    <goVersion>1.21.13</goVersion>
                 </configuration>
 
                 <executions>

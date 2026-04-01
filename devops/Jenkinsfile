@@ -128,6 +128,7 @@ def buildStage(yamlCurrentBuildItem) {
   -e MAPR_RELEASES_REPO=${MAPR_RELEASES_REPO} \
   -e MAPR_SNAPSHOTS_REPO=${MAPR_SNAPSHOTS_REPO} \
   -v /root/.m2:/root/.m2:rw \
+  -v /root/.mvnGoLang:/root/.mvnGoLang:rw \
   -v /root/yum-proxy.conf:/etc/yum.conf:ro \
   -v /etc/hosts:/etc/hosts:ro \
   -v /root/apt-proxy.conf:/etc/apt/apt.conf.d/proxy.conf:ro \
