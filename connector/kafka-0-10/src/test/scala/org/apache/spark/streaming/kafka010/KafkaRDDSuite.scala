@@ -28,7 +28,7 @@ import kafka.log.{LogCleaner, UnifiedLog}
 import kafka.server.BrokerTopicStats
 import kafka.utils.Pool
 import org.apache.kafka.common.TopicPartition
-import org.apache.kafka.common.compress.Compression
+// import org.apache.kafka.common.compress.Compression
 import org.apache.kafka.common.config.TopicConfig
 import org.apache.kafka.common.record.{MemoryRecords, SimpleRecord}
 import org.apache.kafka.common.serialization.StringDeserializer
@@ -119,7 +119,7 @@ class KafkaRDDSuite extends SparkFunSuite {
     )
     messages.foreach { case (k, v) =>
       val record = new SimpleRecord(k.getBytes, v.getBytes)
-      log.appendAsLeader(MemoryRecords.withRecords(Compression.NONE, record), 0);
+//      log.appendAsLeader(MemoryRecords.withRecords(Compression.NONE, record), 0);
     }
     log.roll()
     logs.put(topicPartition, log)
