@@ -7,16 +7,17 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.Verification;
-import org.apache.hadoop.security.authentication.client.AuthenticationException;
-import org.apache.hadoop.security.authentication.server.AuthenticationToken;
+import org.apache.spark.ui.filters.hadoop_auth_copy.AuthenticationException;
+import org.apache.spark.ui.filters.hadoop_auth_copy.AuthenticationHandler;
+import org.apache.spark.ui.filters.hadoop_auth_copy.AuthenticationToken;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -32,9 +33,10 @@ import static org.apache.spark.ui.filters.HttpConstants.AUTHORIZATION_HEADER;
  * JWT authentication handler designed to authenticate requests with Bearer scheme.
  * Supports both JWKS URL and local PEM files for token verification.
  */
-public final class JWTAuthHandler extends MultiSchemeAuthHandler {
+public final class JWTAuthHandler implements AuthenticationHandler {
 
     private static Logger logger = LoggerFactory.getLogger(JWTAuthHandler.class);
+    private static final String TYPE = "multi-scheme";
 
     private static final String JWK_PROVIDER_PARAM_PREFIX = "jwk.";
     private static final String JWT_PARAM_PREFIX = "jwt.";
@@ -44,6 +46,11 @@ public final class JWTAuthHandler extends MultiSchemeAuthHandler {
     private static final String IDENTITY_CLAIM_SUFFIX = ".identity.claim";
 
     private List<JWTConfig> jwtConfigList;
+
+    @Override
+    public String getType() {
+        return TYPE;
+    }
 
     @Override
     public void init(Properties config) throws ServletException {

@@ -1,9 +1,9 @@
 package org.apache.spark.ui.filters;
 
-import org.apache.hadoop.security.authentication.server.AuthenticationFilter;
-import org.apache.hadoop.security.authentication.util.SignerSecretProvider;
+import jakarta.servlet.ServletContext;
+import org.apache.spark.ui.filters.hadoop_auth_copy.AuthenticationFilter;
+import org.apache.spark.ui.filters.hadoop_auth_copy.SignerSecretProvider;
 
-import javax.servlet.ServletContext;
 import java.util.Properties;
 
 public class SparkSignerSecretProvider {

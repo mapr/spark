@@ -2,8 +2,8 @@ package org.apache.spark.ui.filters;
 
 import org.apache.commons.collections.iterators.IteratorEnumeration;
 
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletContext;
+import jakarta.servlet.FilterConfig;
+import jakarta.servlet.ServletContext;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
