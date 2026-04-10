@@ -73,6 +73,12 @@ logger.KerberosAuthHandler.level = ERROR
 logger.AuthenticationFilter.name = org.apache.hadoop.security.authentication.server.AuthenticationFilter
 logger.AuthenticationFilter.level = ERROR
 
+# SPARK-1494: Investigate and fix/hide protobuf logs on Spark job start
+logger.ProtobufGeneratedMessage.name = com.google.protobuf.GeneratedMessage
+logger.ProtobufGeneratedMessage.level = ERROR
+logger.ProtobufGeneratedMessageV3.name = com.google.protobuf.GeneratedMessageV3
+logger.ProtobufGeneratedMessageV3.level = ERROR
+
 logger.NativeCodeLoader.name = org.apache.hadoop.util.NativeCodeLoader
 logger.NativeCodeLoader.level = ERROR
 logger.YarnClient.name = org.apache.spark.deploy.yarn.Client
