@@ -3,12 +3,13 @@ let loginPasswordInput = document.getElementById("loginPassword");
 let loginBtn = document.getElementById("loginBtn");
 let ssoBtn = document.getElementById("ssoBtn");
 let error = document.getElementById("error");
+const uiBase = window.location.origin;
 
 function signIn() {
     let userName = loginUserInput.value;
     let loginPassword = loginPasswordInput.value;
     const authCred = window.btoa(`${userName}:${loginPassword}`);
-    const req = new Request(window.location.origin, {
+    const req = new Request(uiBase, {
         credentials: 'include',
         headers: {
             'Content-Type': 'text/plain',
@@ -24,7 +25,7 @@ function signIn() {
                 throw new Error(`Response status: ${response.status}`);
             }
             error.textContent = ""
-            window.location.href = window.location.origin
+            window.location.href = uiBase
         } catch (error) {
             console.error("Error:", error);
         }
@@ -32,7 +33,7 @@ function signIn() {
 }
 
 function ssoProceed() {
-    fetch(window.location.origin + "?action=initSSO", {
+    fetch(uiBase + "?action=initSSO", {
         headers: {
             'Content-Type': 'application/json'
         },
@@ -48,16 +49,16 @@ function ssoProceed() {
 }
 
 function checkRedirect() {
-    const req = new Request(window.location.origin, {});
+    const req = new Request(uiBase, {});
     fetch(req).then((response) => {
-        if (response.redirected && !response.url.startsWith(window.location.origin + "/login")) {
+        if (response.redirected && !response.url.startsWith(uiBase + "/login")) {
             window.location.href = response.url;
         }
     });
 }
 
 function logoutAction() {
-    fetch(window.location.origin + "?action=logout", {})
+    fetch(uiBase + "?action=logout", {})
         .then((response) => {
             if (!response.ok) {
                 throw new Error(`Response status: ${response.status}`);
@@ -70,33 +71,36 @@ function logoutAction() {
 }
 
 function checkCheckSsoButton() {
-    fetch(window.location.origin + "?action=ssoEnable", {}).then((response) => {
+    fetch(uiBase + "?action=ssoEnable", {}).then((response) => {
         if (!response.ok) {
             ssoBtn.disabled = true;
         } else {
-            button.disabled = false;
+            ssoBtn.disabled = false;
         }
     });
 }
 
-loginBtn.addEventListener("click", function () {
-    checkRedirect();
+loginBtn.addEventListener("click", function (e) {
+    e.preventDefault();
     signIn();
 });
 
 loginPasswordInput.addEventListener("keydown", function (e) {
     if (e.key === "Enter") {
+        e.preventDefault();
         signIn();
     }
 });
 
 loginUserInput.addEventListener("keydown", function (e) {
     if (e.key === "Enter") {
+        e.preventDefault();
         signIn();
     }
 });
 
-ssoBtn.addEventListener("click", function () {
+ssoBtn.addEventListener("click", function (e) {
+    e.preventDefault();
     ssoProceed();
 });
 
