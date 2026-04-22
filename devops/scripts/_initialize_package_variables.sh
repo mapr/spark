@@ -17,3 +17,4 @@ DEPLOY_ARGS=${DEPLOY_ARGS:-"
     -Dscalastyle.skip=true -Dcheckstyle.skip=true -Dscalastyle.failOnViolation=false -Dscalatest.testFailureIgnore=true
     -DaltDeploymentRepository=mapr-snapshots::default::${MAPR_MAVEN_REPO}
 "}
+MVN_BUILD_COMMAND_ARGS=${MVN_BUILD_COMMAND_ARGS:-"install"}

@@ -24,6 +24,15 @@ build_spark() {
   cp ext-conf/warden.spark-connectserver.conf  "${BUILD_ROOT}/build/warden/warden.spark-connectserver.conf.template"
 
 #  cp -rp ext-lib/scala "${BUILD_ROOT}/build"
+
+  mkdir -p devops/buildmeta
+  mvn -B -o dependency:tree \
+    -DskipTests \
+    -Dmaven.javadoc.skip=true \
+    -Dmaven.scaladoc.skip=true \
+    -Dmaven.source.skip \
+    -Dcyclonedx.skip=true \
+    $MVN_PROFILE_ARG > devops/buildmeta/dependency-tree.txt
 }
 
 main() {
