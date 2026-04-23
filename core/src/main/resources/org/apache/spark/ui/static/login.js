@@ -74,29 +74,32 @@ function checkCheckSsoButton() {
         if (!response.ok) {
             ssoBtn.disabled = true;
         } else {
-            button.disabled = false;
+            ssoBtn.disabled = false;
         }
     });
 }
 
-loginBtn.addEventListener("click", function () {
-    checkRedirect();
+loginBtn.addEventListener("click", function (e) {
+    e.preventDefault();
     signIn();
 });
 
 loginPasswordInput.addEventListener("keydown", function (e) {
     if (e.key === "Enter") {
+        e.preventDefault();
         signIn();
     }
 });
 
 loginUserInput.addEventListener("keydown", function (e) {
     if (e.key === "Enter") {
+        e.preventDefault();
         signIn();
     }
 });
 
-ssoBtn.addEventListener("click", function () {
+ssoBtn.addEventListener("click", function (e) {
+    e.preventDefault();
     ssoProceed();
 });
 

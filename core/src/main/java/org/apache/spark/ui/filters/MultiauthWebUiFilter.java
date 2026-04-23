@@ -7,10 +7,13 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponseWrapper;
 import org.apache.spark.ui.filters.hadoop_auth_copy.AuthenticationFilter;
 import org.apache.spark.ui.filters.hadoop_auth_copy.SignerSecretProvider;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -93,6 +96,7 @@ public class MultiauthWebUiFilter extends AuthenticationFilter {
           throws IOException, ServletException {
     HttpServletRequest httpRequest = (HttpServletRequest) request;
     HttpServletResponse httpResponse = (HttpServletResponse) response;
+    boolean rmProxyRequest = isRmProxyRequest(httpRequest);
 
     servicePort = httpRequest.getServerPort();
 
@@ -104,7 +108,88 @@ public class MultiauthWebUiFilter extends AuthenticationFilter {
     if (allowedResources.contains(httpRequest.getRequestURI())) {
       chain.doFilter(httpRequest, httpResponse);
     } else {
-      super.doFilter(httpRequest, httpResponse, chain);
+      if (rmProxyRequest) {
+        RmProxyResponseWrapper responseWrapper = new RmProxyResponseWrapper(httpResponse);
+        super.doFilter(httpRequest, responseWrapper, chain);
+        if (responseWrapper.shouldForceBasicChallenge() && !httpResponse.isCommitted()) {
+          httpResponse.setHeader("WWW-Authenticate", "Basic realm=\"Spark UI\"");
+          httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication required");
+        }
+      } else {
+        super.doFilter(httpRequest, httpResponse, chain);
+      }
+    }
+  }
+
+  private boolean isRmProxyRequest(HttpServletRequest request) {
+    String forwardedContext = request.getHeader("X-Forwarded-Context");
+    if (forwardedContext != null && forwardedContext.contains("/proxy/")) {
+      return true;
+    }
+    String proxyBase = System.getProperty("spark.ui.proxyBase");
+    if (proxyBase != null && proxyBase.contains("/proxy/")) {
+      return true;
+    }
+    String appProxyBase = System.getenv("APPLICATION_WEB_PROXY_BASE");
+    return appProxyBase != null && appProxyBase.contains("/proxy/");
+  }
+
+  private boolean isLoginRedirectLocation(String location) {
+    if (location == null || location.isEmpty()) {
+      return false;
+    }
+    if (location.equals("/login") || location.equals("/login/") ||
+            location.startsWith("/login?") || location.startsWith("/login/?")) {
+      return true;
+    }
+    if (location.startsWith("http://") || location.startsWith("https://")) {
+      try {
+        URI uri = new URI(location);
+        String path = uri.getPath();
+        return path != null && (path.equals("/login") || path.equals("/login/"));
+      } catch (URISyntaxException e) {
+        return false;
+      }
+    }
+    return location.equals("login") || location.equals("login/");
+  }
+
+  private class RmProxyResponseWrapper extends HttpServletResponseWrapper {
+    private boolean forceBasicChallenge;
+
+    RmProxyResponseWrapper(HttpServletResponse response) {
+      super(response);
+    }
+
+    @Override
+    public void sendRedirect(String location) throws IOException {
+      if (isLoginRedirectLocation(location)) {
+        forceBasicChallenge = true;
+        return;
+      }
+      super.sendRedirect(location);
+    }
+
+    @Override
+    public void setHeader(String name, String value) {
+      if ("Location".equalsIgnoreCase(name) && isLoginRedirectLocation(value)) {
+        forceBasicChallenge = true;
+        return;
+      }
+      super.setHeader(name, value);
+    }
+
+    @Override
+    public void addHeader(String name, String value) {
+      if ("Location".equalsIgnoreCase(name) && isLoginRedirectLocation(value)) {
+        forceBasicChallenge = true;
+        return;
+      }
+      super.addHeader(name, value);
+    }
+
+    boolean shouldForceBasicChallenge() {
+      return forceBasicChallenge;
     }
   }
 
