@@ -147,6 +147,12 @@ export SPARK_DIST_CLASSPATH=$MAPR_SPARK_CLASSPATH
 source $MAPR_HOME/conf/env.sh
 if [ "$MAPR_SECURITY_STATUS" = "true" ]; then
   SPARK_SUBMIT_OPTS="$SPARK_SUBMIT_OPTS -Dhadoop.login=hybrid -Dmapr_sec_enabled=true -Djavax.security.auth.useSubjectCredsOnly=false"
+
+  MAPR_CLUSTERS_CONF="${MAPR_CLUSTERS_CONF:-/opt/mapr/conf/mapr-clusters.conf}"
+
+  if [ -f "$MAPR_CLUSTERS_CONF" ] && grep -qiE 'kerberosEnable[[:space:]]*=[[:space:]]*true' "$MAPR_CLUSTERS_CONF"; then
+    SPARK_BEELINE_OPTS="$SPARK_BEELINE_OPTS -Dhadoop.login=hybrid -Dmapr_sec_enabled=true -Djavax.security.auth.useSubjectCredsOnly=false"
+  fi
 fi
 
 # scala
