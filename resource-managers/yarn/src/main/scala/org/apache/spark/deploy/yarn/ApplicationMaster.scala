@@ -703,9 +703,14 @@ private[spark] class ApplicationMaster(
       case None =>
         // MAPRYARN-397: EEP Yarn uses redirect instead of proxy by default to avoid SSLHandshake exception.
         // So we do not need to use AmIpFilter which is using to work with proxy.
-        if (!yarnConf.getBoolean("yarn.web-proxy.redirect.sslhandshake", false)) {
+        val hasCustomUiFilters = sparkConf.get(UI_FILTERS).nonEmpty
+        if (!yarnConf.getBoolean("yarn.web-proxy.redirect.sslhandshake", false) &&
+            !hasCustomUiFilters) {
           System.setProperty(UI_FILTERS.key, amFilter)
           params.foreach { case (k, v) => System.setProperty(s"spark.$amFilter.param.$k", v) }
+        } else if (hasCustomUiFilters) {
+          logInfo(log"Skipping AM IP filter because custom Spark UI filters are configured: " +
+            log"${MDC(LogKeys.UI_FILTER, sparkConf.get(UI_FILTERS).mkString(","))}")
         }
     }
   }

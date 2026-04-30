@@ -4,11 +4,31 @@ let loginBtn = document.getElementById("loginBtn");
 let ssoBtn = document.getElementById("ssoBtn");
 let error = document.getElementById("error");
 
+function getRequestedTargetPath() {
+    const next = new URLSearchParams(window.location.search).get("next");
+    if (!next) {
+        return "/";
+    }
+    if (next.startsWith("/") && !next.startsWith("//")) {
+        return next;
+    }
+    try {
+        const parsed = new URL(next, window.location.origin);
+        if (parsed.origin === window.location.origin) {
+            return parsed.pathname + parsed.search + parsed.hash;
+        }
+    } catch (e) {
+        console.warn("Ignoring invalid next parameter", e);
+    }
+    return "/";
+}
+
 function signIn() {
     let userName = loginUserInput.value;
     let loginPassword = loginPasswordInput.value;
+    const requestedTargetPath = getRequestedTargetPath();
     const authCred = window.btoa(`${userName}:${loginPassword}`);
-    const req = new Request(window.location.origin, {
+    const req = new Request(requestedTargetPath, {
         credentials: 'include',
         headers: {
             'Content-Type': 'text/plain',
@@ -24,7 +44,7 @@ function signIn() {
                 throw new Error(`Response status: ${response.status}`);
             }
             error.textContent = ""
-            window.location.href = window.location.origin
+            window.location.href = requestedTargetPath
         } catch (error) {
             console.error("Error:", error);
         }
@@ -48,9 +68,10 @@ function ssoProceed() {
 }
 
 function checkRedirect() {
-    const req = new Request(window.location.origin, {});
+    const requestedTargetPath = getRequestedTargetPath();
+    const req = new Request(requestedTargetPath, {});
     fetch(req).then((response) => {
-        if (response.redirected && !response.url.startsWith(window.location.origin + "/login")) {
+        if (response.redirected && !response.url.includes("/login")) {
             window.location.href = response.url;
         }
     });

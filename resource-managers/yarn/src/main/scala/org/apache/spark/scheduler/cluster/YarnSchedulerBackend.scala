@@ -211,9 +211,11 @@ private[spark] abstract class YarnSchedulerBackend(
       filterName: String,
       filterParams: Map[String, String],
       proxyBase: String): Unit = {
-    val amIpFilter = "org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter"
+    val amIpFilters = Set(
+      "org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter",
+      "org.apache.spark.deploy.yarn.AmIpFilter")
 
-    if (filterName != amIpFilter) {
+    if (!amIpFilters.contains(filterName)) {
       if (proxyBase != null && proxyBase.nonEmpty) {
         System.setProperty("spark.ui.proxyBase", proxyBase)
       }

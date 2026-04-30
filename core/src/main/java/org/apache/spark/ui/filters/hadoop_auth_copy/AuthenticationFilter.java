@@ -25,6 +25,8 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
@@ -620,11 +622,28 @@ public class AuthenticationFilter implements Filter {
     return SsoConfigurationUtil.getInstance().getClientIssuer() + "/protocol/openid-connect/logout";
   }
 
+  private String getNextPath(HttpServletRequest httpRequest) {
+    String requestUri = httpRequest.getRequestURI();
+    if (requestUri == null || requestUri.isEmpty()) {
+      requestUri = "/";
+    }
+    if (requestUri.equals("/login") || requestUri.equals("/login/")) {
+      return "/";
+    }
+    String query = httpRequest.getQueryString();
+    if (query == null || query.isEmpty()) {
+      return requestUri;
+    }
+    return requestUri + "?" + query;
+  }
+
   private String getLoginURL(HttpServletRequest httpRequest) {
     String redirect;
     try {
       URI origin = new URI(httpRequest.getRequestURL().toString());
-      redirect = origin.getScheme() + "://" + origin.getHost() + ":" + origin.getPort() + "/login";
+      String nextPath = URLEncoder.encode(getNextPath(httpRequest), StandardCharsets.UTF_8);
+      redirect = origin.getScheme() + "://" + origin.getHost() + ":" + origin.getPort()
+          + "/login?next=" + nextPath;
     } catch (URISyntaxException e) {
       throw new RuntimeException(e);
     }
