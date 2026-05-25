@@ -43,8 +43,7 @@ private[v1] class ApplicationListResource extends ApiRequestContext {
 
     val listAllEnabled = uiRoot.securityManager.getSparkConf.get(HISTORY_LIST_ALL_ENABLED)
 
-    uiRoot.getApplicationInfoList
-      .withFilter { app =>
+    uiRoot.getApplicationInfoList(numApps) { app =>
         val anyRunning = app.attempts.isEmpty || !app.attempts.head.completed
         val matchesStatus =
           (anyRunning && includeRunning) || (!anyRunning && includeCompleted)
@@ -55,7 +54,6 @@ private[v1] class ApplicationListResource extends ApiRequestContext {
           listAllEnabled || uiRoot.checkUIViewPermissions(app.id, attempt.attemptId, user))
         matchesStatus && inTimeRange && canView.nonEmpty
       }
-      .take(numApps)
   }
 
   private def isAttemptInRange(
