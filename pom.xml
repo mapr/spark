@@ -26,7 +26,7 @@
   </parent>
   <groupId>org.apache.spark</groupId>
   <artifactId>spark-parent_2.12</artifactId>
-  <version>3.5.5.502-dep-1010</version>
+  <version>3.5.5.503-dep-1010</version>
   <packaging>pom</packaging>
   <name>Spark Project Parent POM</name>
   <url>https://spark.apache.org/</url>
@@ -125,7 +125,7 @@
     <sbt.project.name>spark</sbt.project.name>
     <asm.version>9.5</asm.version>
     <slf4j.version>2.0.7</slf4j.version>
-    <log4j.version>2.25.3</log4j.version>
+    <log4j.version>2.25.4</log4j.version>
     <!-- make sure to update IsolatedClientLoader whenever this version is changed -->
     <hadoop.version>3.4.1.400-dep-1010</hadoop.version>
     <maprfs.version>7.10.0.0-mapr</maprfs.version>
