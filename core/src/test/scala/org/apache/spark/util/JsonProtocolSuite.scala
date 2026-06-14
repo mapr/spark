@@ -603,6 +603,30 @@ class JsonProtocolSuite extends SparkFunSuite {
         |}""".stripMargin
     assert(JsonProtocol.sparkEventFromJson(parse(unknownFieldsJson)) === expected)
   }
+
+  test("SPARK-52381: handle class not found") {
+    val unknownJson =
+      """{
+        |  "Event" : "com.example.UnknownEvent",
+        |  "foo" : "foo"
+        |}""".stripMargin
+    intercept[ClassNotFoundException] {
+      JsonProtocol.sparkEventFromJson(parse(unknownJson))
+    }
+  }
+
+  test("SPARK-52381: only read classes that extend SparkListenerEvent") {
+    val unknownJson =
+      """{
+        |  "Event" : "org.apache.spark.SparkException",
+        |  "foo" : "foo"
+        |}""".stripMargin
+    val e = intercept[SparkException] {
+      JsonProtocol.sparkEventFromJson(parse(unknownJson))
+    }
+    assert(e.getMessage.startsWith("Unknown event type"))
+  }
+
 }
 
 
