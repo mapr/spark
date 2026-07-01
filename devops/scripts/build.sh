@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+set -x
 
 SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 . "${SCRIPT_DIR}/_initialize_package_variables.sh"
@@ -26,7 +27,17 @@ build_spark() {
 #  cp -rp ext-lib/scala "${BUILD_ROOT}/build"
 
   mkdir -p devops/buildmeta
-  mvn -B -o dependency:tree \
+
+  # Pre-seed the dependency plugin into the local repo while online, so the offline `dependency:tree -o` will work without issues
+  mvn -B dependency:resolve-plugins \
+    -DskipTests \
+    -Dmaven.javadoc.skip=true \
+    -Dmaven.scaladoc.skip=true \
+    -Dmaven.source.skip \
+    -Dcyclonedx.skip=true \
+    $MVN_PROFILE_ARG > /dev/null
+
+  mvn -B dependency:tree -o \
     -DskipTests \
     -Dmaven.javadoc.skip=true \
     -Dmaven.scaladoc.skip=true \
