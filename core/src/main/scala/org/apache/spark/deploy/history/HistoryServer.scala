@@ -228,6 +228,11 @@ class HistoryServer(
     provider.getListing(max)(filter)
   }
 
+  override def getApplicationInfoList(max: Int, user: String, listAllEnabled: Boolean)(
+      filter: ApplicationInfo => Boolean): Iterator[ApplicationInfo] = {
+    provider.getListing(max, user, listAllEnabled)(filter)
+  }
+
   def getApplicationInfo(appId: String): Option[ApplicationInfo] = {
     provider.getApplicationInfo(appId)
   }

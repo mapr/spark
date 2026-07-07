@@ -86,6 +86,15 @@ private[spark] trait UIRoot {
   def getApplicationInfoList(max: Int)(
       filter: ApplicationInfo => Boolean): Iterator[ApplicationInfo]
 
+  def getApplicationInfoList(max: Int, user: String, listAllEnabled: Boolean)(
+      filter: ApplicationInfo => Boolean): Iterator[ApplicationInfo] = {
+    getApplicationInfoList(max) { app =>
+      filter(app) && (listAllEnabled || app.attempts.exists { attempt =>
+        checkUIViewPermissions(app.id, attempt.attemptId, user)
+      })
+    }
+  }
+
   def getApplicationInfo(appId: String): Option[ApplicationInfo]
 
   /**
@@ -181,4 +190,3 @@ private[v1] class BadParameterException(msg: String) extends WebApplicationExcep
     this(raw"""Bad value for parameter "$param".  Expected a $exp, got "$actual"""")
   }
 }
-

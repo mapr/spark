@@ -109,6 +109,18 @@ private[history] abstract class ApplicationHistoryProvider {
   def getListing(max: Int)(predicate: ApplicationInfo => Boolean): Iterator[ApplicationInfo]
 
   /**
+   * Returns a filtered application listing while preserving historyserver view permissions.
+*/
+  def getListing(max: Int, user: String, listAllEnabled: Boolean)(
+      predicate: ApplicationInfo => Boolean): Iterator[ApplicationInfo] = {
+    getListing(max) { app =>
+      predicate(app) && (listAllEnabled || app.attempts.exists { attempt =>
+        checkUIViewPermissions(app.id, attempt.attemptId, user)
+      })
+    }
+  }
+
+  /**
    * Returns the Spark UI for a specific application.
    *
    * @param appId The application ID.

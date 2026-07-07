@@ -105,6 +105,7 @@ private[history] class FsHistoryProvider(conf: SparkConf, clock: Clock)
   private val historyUiAclsEnable = conf.get(History.HISTORY_SERVER_UI_ACLS_ENABLE)
   private val historyUiAdminAcls = conf.get(History.HISTORY_SERVER_UI_ADMIN_ACLS)
   private val historyUiAdminAclsGroups = conf.get(History.HISTORY_SERVER_UI_ADMIN_ACLS_GROUPS)
+  private val WILDCARD_ACL = "*"
   logInfo(s"History server ui acls " + (if (historyUiAclsEnable) "enabled" else "disabled") +
     "; users with admin permissions: " + historyUiAdminAcls.mkString(",") +
     "; groups with admin permissions: " + historyUiAdminAclsGroups.mkString(","))
@@ -308,6 +309,27 @@ private[history] class FsHistoryProvider(conf: SparkConf, clock: Clock)
       max)(_.toApplicationInfo())(predicate).iterator
   }
 
+  override def getListing(max: Int, user: String, listAllEnabled: Boolean)(
+      predicate: ApplicationInfo => Boolean): Iterator[ApplicationInfo] = {
+    lazy val userGroups = if (user != null) {
+      Utils.getCurrentUserGroups(conf, user)
+    } else {
+      Set.empty[String]
+    }
+
+    Utils.tryWithResource(listing.view(classOf[ApplicationInfoWrapper])
+      .index("endTime").reverse().closeableIterator()) { iter =>
+      iter.asScala.flatMap { app =>
+        val appInfo = app.toApplicationInfo()
+        if (predicate(appInfo) && canListApplication(app, user, listAllEnabled, userGroups)) {
+          Some(appInfo)
+        } else {
+          None
+        }
+      }.take(max).toList.iterator
+    }
+  }
+
   override def getApplicationInfo(appId: String): Option[ApplicationInfo] = {
     try {
       Some(load(appId).toApplicationInfo())
@@ -443,8 +465,47 @@ private[history] class FsHistoryProvider(conf: SparkConf, clock: Clock)
     if (attempt == null) {
       throw new NoSuchElementException()
     }
-    val secManager = createSecurityManager(this.conf.clone(), attempt)
-    secManager.checkUIViewPermissions(user)
+    lazy val userGroups = if (user != null) {
+      Utils.getCurrentUserGroups(conf, user)
+    } else {
+      Set.empty[String]
+    }
+    checkAttemptViewPermissions(attempt, user, userGroups)
+  }
+
+  private def canListApplication(
+      app: ApplicationInfoWrapper,
+      user: String,
+      listAllEnabled: Boolean,
+      userGroups: => Set[String]): Boolean = {
+    listAllEnabled || app.attempts.exists { attempt =>
+      checkAttemptViewPermissions(attempt, user, userGroups)
+    }
+  }
+
+  private def checkAttemptViewPermissions(
+      attempt: AttemptInfoWrapper,
+      user: String,
+      userGroups: => Set[String]): Boolean = {
+    if (user == null || !historyUiAclsEnable) {
+      true
+    } else {
+      val viewAcls = (historyUiAdminAcls ++
+        stringToSeq(attempt.adminAcls.getOrElse("")) ++
+        Seq(attempt.info.sparkUser) ++
+        stringToSeq(attempt.viewAcls.getOrElse(""))).toSet
+      val viewAclsGroups = (historyUiAdminAclsGroups ++
+        stringToSeq(attempt.adminAclsGroups.getOrElse("")) ++
+        stringToSeq(attempt.viewAclsGroups.getOrElse(""))).toSet
+
+      viewAcls.contains(WILDCARD_ACL) ||
+        viewAcls.contains(user) ||
+        viewAclsGroups.contains(WILDCARD_ACL) ||
+        (viewAclsGroups.nonEmpty && {
+          val groups = userGroups
+          viewAclsGroups.exists(groups.contains)
+        })
+    }
   }
 
   /**
