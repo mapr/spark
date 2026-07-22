@@ -162,6 +162,7 @@
     <oro.version>2.0.8</oro.version>
 
     <ojai.version>3.2.0</ojai.version>
+    <ojai.antlr4.version>4.9.3</ojai.antlr4.version>
     <!--
     If you change codahale.metrics.version, you also need to change
     the link to metrics.dropwizard.io in docs/monitoring.md.

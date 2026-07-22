@@ -150,19 +150,28 @@
       <groupId>org.ojai</groupId>
       <artifactId>ojai</artifactId>
       <version>${ojai.version}</version>
-      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.antlr</groupId>
+          <artifactId>antlr4-runtime</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.ojai</groupId>
       <artifactId>ojai-scala</artifactId>
       <version>${ojai.version}</version>
-      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <groupId>com.fasterxml.jackson.module</groupId>
           <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.antlr</groupId>
+      <artifactId>antlr4-runtime</artifactId>
+      <version>${ojai.antlr4.version}</version>
     </dependency>
     <dependency>
       <groupId>com.mapr</groupId>
@@ -212,5 +221,41 @@
   <build>
     <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
     <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <configuration combine.self="override">
+          <shadedArtifactAttached>false</shadedArtifactAttached>
+          <shadeTestJar>false</shadeTestJar>
+          <artifactSet>
+            <includes>
+              <include>org.ojai:ojai</include>
+              <include>org.ojai:ojai-scala</include>
+              <include>org.antlr:antlr4-runtime</include>
+            </includes>
+          </artifactSet>
+          <relocations>
+            <relocation>
+              <pattern>org.antlr.v4.runtime</pattern>
+              <shadedPattern>org.ojai.shaded.antlr.v4.runtime</shadedPattern>
+              <includes>
+                <include>org.antlr.v4.runtime.**</include>
+              </includes>
+            </relocation>
+          </relocations>
+          <filters>
+            <filter>
+              <artifact>*:*</artifact>
+              <excludes>
+                <exclude>META-INF/*.DSA</exclude>
+                <exclude>META-INF/*.RSA</exclude>
+                <exclude>META-INF/*.SF</exclude>
+              </excludes>
+            </filter>
+          </filters>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
 </project>
