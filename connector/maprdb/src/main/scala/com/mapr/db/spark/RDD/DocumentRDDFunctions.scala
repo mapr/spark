@@ -1,6 +1,8 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.RDD
 
+import scala.collection.{Seq => CSeq}
+
 import com.mapr.db.exceptions.TableNotFoundException
 import com.mapr.db.spark.RDD.partitioner.MapRDBPartitioner
 import com.mapr.db.spark.configuration.SerializableConfiguration
@@ -26,7 +28,7 @@ private[spark] class DocumentRDDFunctions extends LoggingTrait {
     var isNewAndBulkLoad = (false, false)
 
     val partitioner: Option[Partitioner] = rdd.partitioner
-    val keys: Seq[Value] =
+    val keys: CSeq[Value] =
       if (partitioner.isDefined && partitioner.get
             .isInstanceOf[MapRDBPartitioner]) {
         logDebug(

@@ -7,7 +7,8 @@ import scala.jdk.CollectionConverters._
 
 import com.mapr.db.spark.documentTypeUtils.OJAIType
 import com.mapr.db.spark.types.DBBinaryValue
-import com.mapr.db.spark.utils.DefaultClass.DefaultType
+import com.mapr.db.spark.utils.{MapRDBUtils, DefaultClass}
+import DefaultClass.DefaultType
 import org.ojai.types._
 import scala.language.dynamics
 
@@ -68,8 +69,12 @@ class OJAIDocument(@transient private var dc: org.ojai.Document)
       case l: Long => getDoc.set(fieldPath, l)
       case time: OTime => getDoc.set(fieldPath, time)
       case timestamp: OTimestamp => getDoc.set(fieldPath, timestamp)
-      case _: Map[_, _] => getDoc.set(fieldPath, v.asInstanceOf[Map[String, AnyRef]].asJava)
-      case _: Seq[Any] => getDoc.set(fieldPath, v.asInstanceOf[Seq[AnyRef]].asJava)
+      case _: scala.collection.Map[_, _] =>
+        getDoc.set(fieldPath,
+          MapRDBUtils.convertToMap(v.asInstanceOf[scala.collection.Map[String, Any]]).asJava)
+      case _: scala.collection.Seq[_] =>
+        getDoc.set(fieldPath,
+          MapRDBUtils.convertToSeq(v.asInstanceOf[scala.collection.Seq[Any]]).asJava)
 //      case value: DBMapValue => getDoc.set(fieldPath, value
 //            .map({ case (k, v1) => k -> v1.asInstanceOf[AnyRef] })
 //            .asJava)

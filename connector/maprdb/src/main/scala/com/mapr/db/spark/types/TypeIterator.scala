@@ -1,11 +1,12 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark.types
 
+import scala.collection.{Map => CMap, Seq => CSeq}
 import scala.jdk.CollectionConverters._
 
 import java.util
 
-class MapIterator(m: Map[String, AnyRef])
+class MapIterator(m: CMap[String, AnyRef])
     extends Iterator[(String, AnyRef)] {
   val mapIterator = m.iterator
 
@@ -25,7 +26,7 @@ class MapIterator(m: Map[String, AnyRef])
   }
 }
 
-class ListIterator[T](s: Seq[T]) extends Iterator[T] {
+class ListIterator[T](s: CSeq[T]) extends Iterator[T] {
   val seqIterator = s.iterator
 
   def hasNext: Boolean = seqIterator.hasNext

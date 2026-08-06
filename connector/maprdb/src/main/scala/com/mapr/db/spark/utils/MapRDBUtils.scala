@@ -4,6 +4,7 @@ package com.mapr.db.spark.utils
 import java.io.ObjectInput
 import java.nio.ByteBuffer
 
+import scala.collection.{Map => CMap, Seq => CSeq}
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 
@@ -22,7 +23,7 @@ private[spark] object MapRDBUtils {
   def checkOrCreateTable(tableName: String,
                          bulkMode: Boolean,
                          createTable: Boolean,
-                         keys: Seq[org.ojai.Value]): (Boolean, Boolean) = {
+                         keys: CSeq[org.ojai.Value]): (Boolean, Boolean) = {
     var isBulkLoad: Boolean = bulkMode
     if (!DBClient().tableExists(tableName)) {
       if (!createTable) {
@@ -85,7 +86,7 @@ private[spark] object MapRDBUtils {
     buff.flip()
   }
 
-  def convertToSeq(value: Seq[Any]): Seq[AnyRef] = {
+  def convertToSeq(value: CSeq[Any]): CSeq[AnyRef] = {
     value match {
       case value1: DBArrayValue[_] =>
         value1.arr.map(_.asInstanceOf[AnyRef])
@@ -94,7 +95,7 @@ private[spark] object MapRDBUtils {
     }
   }
 
-  def convertToMap(value: Map[String, Any]): Map[String, AnyRef] = {
+  def convertToMap(value: CMap[String, Any]): CMap[String, AnyRef] = {
     value match {
       case value1: DBMapValue =>
         value1.value.map {
@@ -111,14 +112,15 @@ private[spark] object MapRDBUtils {
         value1.value.asJava.asInstanceOf[AnyRef]
       case value1: DBArrayValue[_] =>
         value1.arr.asJava.asInstanceOf[AnyRef]
-      case _: Map[_, _] =>
+      case _: CMap[_, _] =>
         value
-          .asInstanceOf[Map[String, Any]]
+          .asInstanceOf[CMap[String, Any]]
           .map { case (k, v) => k -> convertToScalaCollection(v) }
           .asJava
           .asInstanceOf[AnyRef]
-      case seq: Seq[Any] =>
+      case seq: CSeq[_] =>
         seq
+          .asInstanceOf[CSeq[Any]]
           .map(convertToScalaCollection)
           .asJava
           .asInstanceOf[AnyRef]

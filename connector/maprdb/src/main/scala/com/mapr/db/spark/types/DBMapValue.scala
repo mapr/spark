@@ -4,6 +4,7 @@ package com.mapr.db.spark.types
 import java.io.{Externalizable, ObjectInput, ObjectOutput}
 import java.nio._
 
+import scala.collection.{Map => CMap}
 import scala.jdk.CollectionConverters._
 
 import com.mapr.db.rowcol.RowcolCodec
@@ -13,7 +14,7 @@ import com.mapr.db.util.ByteBufs
 import java.util
 
 private[spark] final class DBMapValue(
-    @transient private[spark] var value: Map[String, AnyRef])
+    @transient private[spark] var value: CMap[String, AnyRef])
     extends Map[String, AnyRef]
     with Externalizable {
 
@@ -70,9 +71,9 @@ private[spark] final class DBMapValue(
 
   override def equals(other: Any): Boolean = {
     other match {
-      case _: Map[_, _] =>
+      case _: CMap[_, _] =>
         val that: DBMapValue = new DBMapValue(
-          other.asInstanceOf[Map[String, AnyRef]])
+          other.asInstanceOf[CMap[String, AnyRef]])
         this.getMap == that
       case _ => false
     }

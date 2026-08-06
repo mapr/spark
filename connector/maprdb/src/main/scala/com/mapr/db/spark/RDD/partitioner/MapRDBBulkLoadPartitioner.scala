@@ -3,6 +3,8 @@ package com.mapr.db.spark.RDD.partitioner
 
 import java.nio.ByteBuffer
 
+import scala.collection.{Seq => CSeq}
+
 import com.mapr.db.impl.{ConditionImpl, IdCodec}
 import com.mapr.db.impl.ConditionNode.RowkeyRange
 import com.mapr.db.spark.MapRDBSpark
@@ -14,7 +16,7 @@ import org.ojai.Value
 
 object MapRDBPartitioner {
   def apply[T](table: String, bufferWrites: Boolean = true)(implicit k: OJAIKEY[T]): Partitioner = {
-    var keys : Seq[Value] = DBClient().getTabletInfos(table, bufferWrites).map(tableinfo =>
+    var keys: CSeq[Value] = DBClient().getTabletInfos(table, bufferWrites).map(tableinfo =>
             IdCodec.decode(tableinfo.getCondition.asInstanceOf[ConditionImpl]
               .getRowkeyRanges.get(0).getStopRow))
     keys = keys.dropRight(1)
@@ -37,13 +39,13 @@ object MapRDBPartitioner {
     }
   }
 
-  def apply[T](splits: Seq[T])(implicit ojaikey: OJAIKEY[T]): MapRDBSplitPartitioner[T] = {
+  def apply[T](splits: CSeq[T])(implicit ojaikey: OJAIKEY[T]): MapRDBSplitPartitioner[T] = {
     new MapRDBSplitPartitioner[T](splits) {}
   }
 }
 
 private[spark] abstract class MapRDBPartitioner extends Partitioner with LoggingTrait {
-  @transient private[spark] val splits : Seq[Value]
+  @transient private[spark] val splits: CSeq[Value]
 }
 
 //  private[spark] abstract case class MapRDBTablePartitioner[T]
@@ -73,16 +75,16 @@ private[spark] abstract class MapRDBPartitioner extends Partitioner with Logging
 //  }
 
 private[spark] abstract case class MapRDBSplitPartitioner[T]
-  (@transient var inputSplits: Seq[T])(implicit ojaikey: OJAIKEY[T]) extends MapRDBPartitioner {
+  (@transient var inputSplits: CSeq[T])(implicit ojaikey: OJAIKEY[T]) extends MapRDBPartitioner {
 
-  private[spark] val splitsinBinary: Seq[DBBinaryValue] =
+  private[spark] val splitsinBinary: CSeq[DBBinaryValue] =
     inputSplits.map(ojaikey.getBytes(_)).map(ByteBuffer.wrap(_)).map(new DBBinaryValue(_))
-  @transient private lazy val ranges: Seq[RowkeyRange] =
+  @transient private lazy val ranges: CSeq[RowkeyRange] =
     (Seq(null.asInstanceOf[ojaikey.Self]) ++ splitsinBinary.map(ojaikey.getValueFromBinary))
       .zip(splitsinBinary.map(ojaikey.getValueFromBinary) ++ Seq(null.asInstanceOf[ojaikey.Self]))
       .map(range => ojaikey.getRange(range))
 
-  @transient override lazy val splits : Seq[Value] = {
+  @transient override lazy val splits: CSeq[Value] = {
     splitsinBinary.map(value => value.getByteBuffer().array()).map(bytes => IdCodec.decode(bytes))
   }
 

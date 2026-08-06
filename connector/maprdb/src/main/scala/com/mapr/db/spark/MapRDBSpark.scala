@@ -3,6 +3,8 @@ package com.mapr.db.spark
 
 import java.nio.ByteBuffer
 
+import scala.collection.{Seq => CSeq}
+
 import com.mapr.db.spark.RDD.partitioner.{MapRDBPartitioner, MapRDBSplitPartitioner, OJAIKEY}
 import com.mapr.db.spark.dbclient.DBClient
 import com.mapr.db.spark.impl.OJAIDocument
@@ -76,7 +78,7 @@ object MapRDBSpark {
     *               Splits supported at this point are String and ByteBuffer.
     * It is user's responsibility to supply the splits in ascending order.
     */
-  def newPartitioner[T: OJAIKEY](splits: Seq[T]): MapRDBSplitPartitioner[T] = {
+  def newPartitioner[T: OJAIKEY](splits: CSeq[T]): MapRDBSplitPartitioner[T] = {
     MapRDBPartitioner[T](splits)
   }
 

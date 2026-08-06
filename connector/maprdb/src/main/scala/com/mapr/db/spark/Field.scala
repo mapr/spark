@@ -1,6 +1,8 @@
 /* Copyright (c) 2015 & onwards. MapR Tech, Inc., All rights reserved */
 package com.mapr.db.spark
 
+import scala.collection.{Map => CMap, Seq => CSeq}
+
 import com.mapr.db.spark.condition._
 import com.mapr.db.spark.utils.MapRDBUtils
 import org.ojai.store.QueryCondition
@@ -57,14 +59,14 @@ case class field(fieldPath: String) {
     * @param rhs right hand side value of type Sequence
     * @example field("a.d.d") === Seq("aa",10)
     */
-  def ===(rhs: Seq[Any]): Predicate = EqualsToSeq(this, MapRDBUtils.convertToSeq(rhs))
+  def ===(rhs: CSeq[Any]): Predicate = EqualsToSeq(this, MapRDBUtils.convertToSeq(rhs))
 
   /**
     * Function to provide equalsTo(===) functionality for a field to a Map
     * @param rhs right hand side value of type Map[String, Any]
     * @example field("a.d.d") === Map("aa" -> value)
     */
-  def ===(rhs: Map[String, Any]): Predicate = EqualsToMap(this, MapRDBUtils.convertToMap(rhs))
+  def ===(rhs: CMap[String, Any]): Predicate = EqualsToMap(this, MapRDBUtils.convertToMap(rhs))
 
   /**
     * Function to provide notEqualsTo(!=) functionality for a field.
@@ -78,14 +80,14 @@ case class field(fieldPath: String) {
     * @param rhs right hand side value of type Sequence
     * @example field("a.d.d") != Seq("aa",10)
     */
-  def !=(rhs: Seq[Any]): Predicate = NotEqualsToSeq(this, MapRDBUtils.convertToSeq(rhs))
+  def !=(rhs: CSeq[Any]): Predicate = NotEqualsToSeq(this, MapRDBUtils.convertToSeq(rhs))
 
   /**
     * Function to provide notequalsTo(!=) functionality for a field to a Map
     * @param rhs right hand side value of type Map[String, Any]
     * @example field("a.d.d") != Map("aa" -> value)
     */
-  def !=(rhs: Map[String, Any]): Predicate = NotEqualsToMap(this, MapRDBUtils.convertToMap(rhs))
+  def !=(rhs: CMap[String, Any]): Predicate = NotEqualsToMap(this, MapRDBUtils.convertToMap(rhs))
 
   /**
     * Function to provide between functionality for a field.
@@ -106,14 +108,14 @@ case class field(fieldPath: String) {
     * @param rhs right hand side value of type Seq[Any]
     * @example field("a.d.d") notin Seq(10,20)
     */
-  def notin(rhs: Seq[Any]): NotIn = NotIn(this, MapRDBUtils.convertToSeq(rhs))
+  def notin(rhs: CSeq[Any]): NotIn = NotIn(this, MapRDBUtils.convertToSeq(rhs))
 
   /**
     * Function to provide IN functionality for a field.
     * @param rhs right hand side value of type Seq[Any]
     * @example field("a.d.d") in (10, 20)
     */
-  def in(rhs: Seq[Any]): In = In(this, MapRDBUtils.convertToSeq(rhs))
+  def in(rhs: CSeq[Any]): In = In(this, MapRDBUtils.convertToSeq(rhs))
 
   /**
     * Function to provide NOTEXISTS functionality for a field.

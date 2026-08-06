@@ -2,6 +2,7 @@
 
 package com.mapr.db.spark.condition
 
+import scala.collection.{Map => CMap, Seq => CSeq}
 import scala.jdk.CollectionConverters._
 
 import com.mapr.db.spark.dbclient.DBClient
@@ -82,14 +83,14 @@ case class EqualsTo[T: quotes](c: field, rhs: T)(implicit ev: quotes[T])
     ev.build(c.fieldPath, rhs, QueryCondition.Op.EQUAL)
 }
 
-case class EqualsToSeq(c: field, rhs: Seq[AnyRef]) extends Predicate {
+case class EqualsToSeq(c: field, rhs: CSeq[AnyRef]) extends Predicate {
   override def build: QueryCondition =
     DBClient()
       .newCondition()
       .equals(c.fieldPath, rhs.asJava)
 }
 
-case class EqualsToMap(c: field, rhs: Map[String, AnyRef]) extends Predicate {
+case class EqualsToMap(c: field, rhs: CMap[String, AnyRef]) extends Predicate {
   override def build: QueryCondition =
     DBClient()
       .newCondition()
@@ -102,14 +103,14 @@ case class NotEqualsTo[T: quotes](c: field, rhs: T)(implicit ev: quotes[T])
     ev.build(c.fieldPath, rhs, QueryCondition.Op.NOT_EQUAL)
 }
 
-case class NotEqualsToSeq(c: field, rhs: Seq[AnyRef]) extends Predicate {
+case class NotEqualsToSeq(c: field, rhs: CSeq[AnyRef]) extends Predicate {
   override def build: QueryCondition =
     DBClient()
       .newCondition()
       .notEquals(c.fieldPath, rhs.asJava)
 }
 
-case class NotEqualsToMap(c: field, rhs: Map[String, AnyRef])
+case class NotEqualsToMap(c: field, rhs: CMap[String, AnyRef])
     extends Predicate {
   override def build: QueryCondition =
     DBClient()
@@ -137,12 +138,12 @@ case class Exists(c: field) extends Predicate {
     DBClient().newCondition().exists(c.fieldPath)
 }
 
-case class In(c: field, rhs: Seq[AnyRef]) extends Predicate {
+case class In(c: field, rhs: CSeq[AnyRef]) extends Predicate {
   override def build: QueryCondition =
     DBClient().newCondition().in(c.fieldPath, rhs.asJava)
 }
 
-case class NotIn(c: field, rhs: Seq[AnyRef]) extends Predicate {
+case class NotIn(c: field, rhs: CSeq[AnyRef]) extends Predicate {
   override def build: QueryCondition =
     DBClient().newCondition().notIn(c.fieldPath, rhs.asJava)
 }

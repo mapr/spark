@@ -2,6 +2,7 @@
 package com.mapr.db.spark.sql.utils
 
 import java.nio.ByteBuffer
+import java.util
 
 import scala.jdk.CollectionConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -270,13 +271,13 @@ object MapRSqlUtils {
         val map = rowToDocument(element.asInstanceOf[Row]).getDoc
         DBValueBuilderImpl.KeyValueBuilder.initFromObject(map)
       case (arrayType: ArrayType) =>
-        val seq = element.asInstanceOf[Seq[Any]]
+        val seq = toScalaSeq(element)
         DBValueBuilderImpl.KeyValueBuilder.initFrom(
           seq
             .map(elem => convertToDataType(elem, arrayType.elementType))
             .asJava)
       case (mpType: MapType) =>
-        val map = element.asInstanceOf[Map[String, Any]]
+        val map = toScalaMap(element)
         DBValueBuilderImpl.KeyValueBuilder.initFrom(map.asJava)
       case (BinaryType) =>
         DBValueBuilderImpl.KeyValueBuilder.initFrom(
@@ -317,6 +318,32 @@ object MapRSqlUtils {
       case _ =>
         throw new RuntimeException(
           s"Cannot convert $elementType of a row to OjaiDocument's type")
+    }
+  }
+
+  private def toScalaSeq(element: Any): scala.collection.Seq[Any] = {
+    element match {
+      case seq: scala.collection.Seq[_] =>
+        seq.asInstanceOf[scala.collection.Seq[Any]]
+      case array: Array[_] =>
+        array.toIndexedSeq
+      case list: util.List[_] =>
+        list.asScala.toSeq
+      case other =>
+        throw new ClassCastException(
+          s"${other.getClass.getName} cannot be converted to scala.collection.Seq")
+    }
+  }
+
+  private def toScalaMap(element: Any): scala.collection.Map[String, Any] = {
+    element match {
+      case map: scala.collection.Map[_, _] =>
+        map.asInstanceOf[scala.collection.Map[String, Any]]
+      case map: util.Map[_, _] =>
+        map.asScala.asInstanceOf[scala.collection.Map[String, Any]]
+      case other =>
+        throw new ClassCastException(
+          s"${other.getClass.getName} cannot be converted to scala.collection.Map")
     }
   }
 }

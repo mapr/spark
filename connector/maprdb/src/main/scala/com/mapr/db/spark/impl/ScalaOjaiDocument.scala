@@ -247,10 +247,26 @@ private[spark] abstract class ScalaOjaiDocument[B <: ScalaOjaiDocument[B]](
     THIS
   }
 
+  def set(fieldPath: String,
+          value: scala.collection.Seq[Byte],
+          off: Integer,
+          len: Integer): B = {
+    this.dc.set(fieldPath, value.asJava)
+    THIS
+  }
+
   override def set(fieldPath: FieldPath,
                    value: Seq[Byte],
                    off: Integer,
                    len: Integer): B = {
+    this.dc.set(fieldPath, value.asJava)
+    THIS
+  }
+
+  def set(fieldPath: FieldPath,
+          value: scala.collection.Seq[Byte],
+          off: Integer,
+          len: Integer): B = {
     this.dc.set(fieldPath, value.asJava)
     THIS
   }
@@ -300,7 +316,17 @@ private[spark] abstract class ScalaOjaiDocument[B <: ScalaOjaiDocument[B]](
     THIS
   }
 
+  def set(fieldPath: String, value: scala.collection.Seq[_ <: AnyRef]): B = {
+    this.dc.set(fieldPath, value.asJava)
+    THIS
+  }
+
   override def set(fieldPath: FieldPath, value: Seq[_ <: AnyRef]): B = {
+    this.dc.set(fieldPath, value.asJava)
+    THIS
+  }
+
+  def set(fieldPath: FieldPath, value: scala.collection.Seq[_ <: AnyRef]): B = {
     this.dc.set(fieldPath, value.asJava)
     THIS
   }
@@ -310,8 +336,18 @@ private[spark] abstract class ScalaOjaiDocument[B <: ScalaOjaiDocument[B]](
     THIS
   }
 
+  def setArray(fieldPath: String, values: scala.collection.Seq[AnyRef]): B = {
+    this.dc.setArray(fieldPath, values.toSeq: _*)
+    THIS
+  }
+
   override def setArray(fieldPath: FieldPath, values: AnyRef*): B = {
     this.dc.setArray(fieldPath, values: _*)
+    THIS
+  }
+
+  def setArray(fieldPath: FieldPath, values: scala.collection.Seq[AnyRef]): B = {
+    this.dc.setArray(fieldPath, values.toSeq: _*)
     THIS
   }
 

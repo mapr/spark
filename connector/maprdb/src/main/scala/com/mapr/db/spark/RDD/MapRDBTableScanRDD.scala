@@ -153,7 +153,7 @@ private[spark] class MapRDBTableScanRDD[T: ClassTag](
     }
 
     queryOptions
-      .view.filterKeys(k => k.startsWith("ojai.mapr.query")).map(identity)
+      .filter { case (k, _) => k.startsWith("ojai.mapr.query") }
         .filter(opt => opt._2 != null)
         .map(opt => {
           opt._2.toLowerCase match {

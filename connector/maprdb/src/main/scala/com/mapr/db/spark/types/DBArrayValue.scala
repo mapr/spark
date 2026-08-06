@@ -3,7 +3,7 @@ package com.mapr.db.spark.types
 
 import java.io.{Externalizable, ObjectInput, ObjectOutput}
 import java.nio._
-import scala.collection.{BuildFrom, SeqFactory, mutable}
+import scala.collection.{BuildFrom, SeqFactory, mutable, Seq => CSeq}
 import scala.jdk.CollectionConverters._
 import scala.collection.mutable.ListBuffer
 import com.mapr.db.rowcol.RowcolCodec
@@ -36,7 +36,7 @@ private[spark] object DBArrayValue extends SeqFactory[DBArrayValue] {
   override def empty[A]: DBArrayValue[A] = new DBArrayValue[A](Seq.empty)
 }
 
-private[spark] class DBArrayValue[T]( @transient private[spark] var arr : Seq[T])
+private[spark] class DBArrayValue[T]( @transient private[spark] var arr : CSeq[T])
   extends Seq[T]
     with Externalizable {
 
@@ -98,7 +98,7 @@ private[spark] class DBArrayValue[T]( @transient private[spark] var arr : Seq[T]
       case that: DBArrayValue[_] =>
         val result = this.sameElements(that)
         return result
-      case arr1: Seq[_] =>
+      case arr1: CSeq[_] =>
         val that = new DBArrayValue(arr1)
         val result = this.arr.sameElements(that)
         return result
