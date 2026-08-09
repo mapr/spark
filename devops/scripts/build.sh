@@ -26,6 +26,13 @@ build_spark() {
 
 #  cp -rp ext-lib/scala "${BUILD_ROOT}/build"
 
+  iceberg_spark_runtime_version="1.11.0"
+  iceberg_spark_runtime_artifact="iceberg-spark-runtime-4.1_2.13"
+
+  mkdir -p "${BUILD_ROOT}/build/ext-libs"
+  wget -P "${BUILD_ROOT}/build/ext-libs" \
+    "https://repo1.maven.org/maven2/org/apache/iceberg/${iceberg_spark_runtime_artifact}/${iceberg_spark_runtime_version}/${iceberg_spark_runtime_artifact}-${iceberg_spark_runtime_version}.jar"
+
   mkdir -p devops/buildmeta
 
   # Pre-seed the dependency plugin into the local repo while online, so the offline `dependency:tree -o` will work without issues
