@@ -164,6 +164,10 @@ export SCALA_LIBRARY_PATH=${SCALA_HOME}/lib
 # Use a fixed identifier for pid files
 export SPARK_IDENT_STRING="mapr"
 
+# Use only required S3 checksums for compatibility with MinIO and other S3-compatible storage
+export AWS_REQUEST_CHECKSUM_CALCULATION="${AWS_REQUEST_CHECKSUM_CALCULATION:-WHEN_REQUIRED}"
+export AWS_RESPONSE_CHECKSUM_VALIDATION="${AWS_RESPONSE_CHECKSUM_VALIDATION:-WHEN_REQUIRED}"
+
 #########################################################################################################
 #    :::CAUTION::: DO NOT EDIT ANYTHING ON OR ABOVE THIS LINE
 #########################################################################################################

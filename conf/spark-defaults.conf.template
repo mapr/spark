@@ -34,6 +34,14 @@ spark.sql.hive.metastore.sharedPrefixes  com.mysql.jdbc,org.postgresql,com.micro
 
 spark.executor.memory              2g
 
+# Use only required S3 checksums for compatibility with MinIO and other S3-compatible storage
+spark.executorEnv.AWS_REQUEST_CHECKSUM_CALCULATION WHEN_REQUIRED
+spark.executorEnv.AWS_RESPONSE_CHECKSUM_VALIDATION WHEN_REQUIRED
+spark.yarn.appMasterEnv.AWS_REQUEST_CHECKSUM_CALCULATION WHEN_REQUIRED
+spark.yarn.appMasterEnv.AWS_RESPONSE_CHECKSUM_VALIDATION WHEN_REQUIRED
+spark.kubernetes.driverEnv.AWS_REQUEST_CHECKSUM_CALCULATION WHEN_REQUIRED
+spark.kubernetes.driverEnv.AWS_RESPONSE_CHECKSUM_VALIDATION WHEN_REQUIRED
+
 spark.ui.reverseProxy true
 
 # Muting Java 11 illegal access warnings
