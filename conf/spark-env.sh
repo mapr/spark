@@ -146,7 +146,11 @@ export SPARK_DIST_CLASSPATH=$MAPR_SPARK_CLASSPATH
 # Security status
 source $MAPR_HOME/conf/env.sh
 if [ "$MAPR_SECURITY_STATUS" = "true" ]; then
-  SPARK_SUBMIT_OPTS="$SPARK_SUBMIT_OPTS -Dhadoop.login=hybrid -Dmapr_sec_enabled=true -Djavax.security.auth.useSubjectCredsOnly=false"
+  if [ "$SPARK_HIVE_THRIFTSERVER" = "1" ] && [ -n "$MAPR_HIVE_SERVER_LOGIN_OPTS" ]; then
+    SPARK_SUBMIT_OPTS="$SPARK_SUBMIT_OPTS $MAPR_HIVE_SERVER_LOGIN_OPTS -Dmapr_sec_enabled=true -Djavax.security.auth.useSubjectCredsOnly=false"
+  else
+    SPARK_SUBMIT_OPTS="$SPARK_SUBMIT_OPTS -Dhadoop.login=hybrid -Dmapr_sec_enabled=true -Djavax.security.auth.useSubjectCredsOnly=false"
+  fi
 
   MAPR_CLUSTERS_CONF="${MAPR_CLUSTERS_CONF:-/opt/mapr/conf/mapr-clusters.conf}"
 
