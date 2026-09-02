@@ -132,7 +132,7 @@
     <log4j.version>2.25.4</log4j.version>
     <!-- make sure to update IsolatedClientLoader whenever this version is changed -->
     <hadoop.version>3.4.1.500-dep-1020-SNAPSHOT</hadoop.version>
-    <maprfs.version>7.10.0.0-mapr-SNAPSHOT</maprfs.version>
+    <maprfs.version>8.2.0.0-mapr-SNAPSHOT</maprfs.version>
     <!-- SPARK-41247: When updating `protobuf.version`, also need to update `protoVersion` in `SparkBuild.scala` -->
     <protobuf.version>4.33.0</protobuf.version>
     <protoc-jar-maven-plugin.version>3.11.4</protoc-jar-maven-plugin.version>
