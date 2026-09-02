@@ -37,7 +37,7 @@ public class MultiauthWebUiFilter extends AuthenticationFilter {
     }
     filterConfigWrapper.setInitParameter(
             AuthenticationFilter.AUTH_TYPE,
-            "org.apache.spark.ui.filters.hadoop_auth_copy.MultiMechsAuthenticationHandler");
+            "com.mapr.web.security.hadoop.jakartaauth.MultiMechsAuthenticationHandler");
     initializeAuthTypes(filterConfig, filterConfigWrapper);
 
     String kerberosDisable = filterConfig.getInitParameter("kerberosDisable");
@@ -83,6 +83,7 @@ public class MultiauthWebUiFilter extends AuthenticationFilter {
     // Prevent MultiMechs from auto-enabling maprauth/kerberos defaults
     filterConfigWrapper.setInitParameter("type0", "basic");
     filterConfigWrapper.setInitParameter("type1", "bearer");
+    filterConfigWrapper.setInitParameter("type2", "maprauth");
   }
 
   private boolean isStaticDirectoryRequest(HttpServletRequest req) {
