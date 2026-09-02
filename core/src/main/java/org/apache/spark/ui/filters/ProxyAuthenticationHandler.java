@@ -1,9 +1,9 @@
 package org.apache.spark.ui.filters;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.spark.ui.filters.hadoop_auth_copy.AuthenticationException;
-import org.apache.spark.ui.filters.hadoop_auth_copy.AuthenticationHandler;
-import org.apache.spark.ui.filters.hadoop_auth_copy.AuthenticationToken;
+import com.mapr.web.security.hadoop.jakartaauth.AuthenticationException;
+import com.mapr.web.security.hadoop.jakartaauth.AuthenticationHandler;
+import com.mapr.web.security.hadoop.jakartaauth.AuthenticationToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,8 +1,8 @@
 package org.apache.spark.ui.filters;
 
 import jakarta.servlet.ServletContext;
-import org.apache.spark.ui.filters.hadoop_auth_copy.AuthenticationFilter;
-import org.apache.spark.ui.filters.hadoop_auth_copy.SignerSecretProvider;
+import com.mapr.web.security.hadoop.jakartaauth.AuthenticationFilter;
+import com.mapr.web.security.hadoop.jakartaauth.SignerSecretProvider;
 
 import java.util.Properties;
 

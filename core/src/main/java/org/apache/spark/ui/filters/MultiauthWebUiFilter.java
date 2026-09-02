@@ -8,8 +8,8 @@ import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletResponseWrapper;
-import org.apache.spark.ui.filters.hadoop_auth_copy.AuthenticationFilter;
-import org.apache.spark.ui.filters.hadoop_auth_copy.SignerSecretProvider;
+import com.mapr.web.security.hadoop.jakartaauth.AuthenticationFilter;
+import com.mapr.web.security.hadoop.jakartaauth.SignerSecretProvider;
 
 import java.io.IOException;
 import java.net.URI;

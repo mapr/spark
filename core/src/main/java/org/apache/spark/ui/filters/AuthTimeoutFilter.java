@@ -8,7 +8,7 @@ import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.spark.ui.filters.hadoop_auth_copy.AuthenticationFilter;
+import com.mapr.web.security.hadoop.jakartaauth.AuthenticationFilter;
 
 import java.io.IOException;
 
