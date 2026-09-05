@@ -865,7 +865,7 @@ private[spark] class Executor(
         val resources = taskDescription.resources.map { case (rName, addressesAmounts) =>
           rName -> new ResourceInformation(rName, addressesAmounts.keys.toSeq.sorted.toArray)
         }
-        val value = Utils.tryWithSafeFinally {
+        var value: Any = Utils.tryWithSafeFinally {
           val ugi = UserGroupInformation.getCurrentUser
           val doAsUserName = taskDescription.properties.getProperty(SparkContext.SPARK_JOB_DOASUSER)
           def res = task.run(

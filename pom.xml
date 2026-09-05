@@ -423,6 +423,17 @@
       </snapshots>
     </repository>
     <repository>
+      <id>mapr-release</id>
+      <name>MapR Release</name>
+      <url>${env.MAPR_RELEASES_REPO}</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
       <id>repository.jboss.org</id>
       <url>http://repository.jboss.org/nexus/content/groups/public-jboss/</url>
       <snapshots>
