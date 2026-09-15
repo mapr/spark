@@ -19,8 +19,9 @@ package org.apache.spark
 
 import java.io.{File, FileNotFoundException, FileOutputStream, OutputStreamWriter, PrintWriter}
 import java.nio.charset.StandardCharsets.UTF_8
-import java.nio.file.Files
-import java.util.Base64
+import java.nio.file.{AtomicMoveNotSupportedException, Files}
+import java.nio.file.StandardCopyOption.{ATOMIC_MOVE, REPLACE_EXISTING}
+import java.util.{Base64, UUID}
 
 import scala.sys.process._
 import org.apache.hadoop.fs.{FileSystem, Path}
@@ -144,6 +145,8 @@ private[spark] class SecurityManager(
 
   def getSparkConf: SparkConf = sparkConf
 
+  private val certGeneratorName = "manageSSLKeys.sh"
+
   @tailrec
   private def genViaManageSSLScript(stdWriter: PrintWriter,
                                     manageSslKeysScriptLocal: String,
@@ -165,7 +168,6 @@ private[spark] class SecurityManager(
     if (isSSLCertGenerationNeededForWebUI(getSSLOptions("ui"))) {
       val username = UserGroupInformation.getCurrentUser.getShortUserName
 
-      val certGeneratorName = "manageSSLKeys.sh"
       val mfsBaseDir = s"/apps/spark/__$username-spark-internal__/security_keys"
       val mfsManageSslKeysScriptRemote = s"$mfsBaseDir/$certGeneratorName"
       val fs = FileSystem.get(hadoopConf)
@@ -182,11 +184,8 @@ private[spark] class SecurityManager(
       val localBaseDir = s"$currentUserHomeDir/__$username-spark-internal__/security_keys"
       val manageSslKeysScriptLocal = s"$localBaseDir/$certGeneratorName"
 
-      fs.copyToLocalFile(new Path(mfsManageSslKeysScriptRemote), new Path(manageSslKeysScriptLocal))
+      stageCertGeneratorScript(fs, new Path(mfsManageSslKeysScriptRemote), manageSslKeysScriptLocal)
 
-      val manageSslKeysLocalFile = new File(manageSslKeysScriptLocal)
-
-      manageSslKeysLocalFile.setExecutable(true)
       val sslKeyStorePass = getSSLOptions("ui").keyStorePassword.get
       val certGeneratorLog = s"${Utils.getCurrentUserName()}-spark-ui-mngssl-log"
       val file = new File(s"$currentUserHomeDir/$certGeneratorLog")
@@ -213,6 +212,38 @@ private[spark] class SecurityManager(
       if (res != 0) {
         throw new Exception(s"Failed to generate SSL certificates for spark WebUI. Exit code: $res")
       }
+    }
+  }
+
+  /**
+   * Downloads the certificate generator script from MapRFS and publishes it into the
+   * local per user directory.
+   */
+  private def stageCertGeneratorScript(fs: FileSystem,
+                                       remoteScript: Path,
+                                       localScript: String): Unit = {
+    val target = new File(localScript)
+    val staged = new File(target.getParentFile, s".${target.getName}.tmp.${UUID.randomUUID()}")
+    try {
+      fs.copyToLocalFile(false, remoteScript, new Path(staged.getPath), true)
+      if (!staged.setExecutable(true)) {
+        logWarning(s"Unable to make ${staged.getPath} executable")
+      }
+      publishCertGeneratorScript(staged, target)
+    } finally {
+      if (staged.exists() && !staged.delete()) {
+        logWarning(s"Unable to remove staged file ${staged.getPath}")
+      }
+    }
+  }
+
+  private def publishCertGeneratorScript(staged: File, target: File): Unit = {
+    try {
+      Files.move(staged.toPath, target.toPath, REPLACE_EXISTING, ATOMIC_MOVE)
+    } catch {
+      case _: AtomicMoveNotSupportedException =>
+        logDebug(s"Atomic move is not supported for ${target.getPath}, moving without it")
+        Files.move(staged.toPath, target.toPath, REPLACE_EXISTING)
     }
   }
 
@@ -262,8 +293,10 @@ private[spark] class SecurityManager(
       while (files.hasNext) {
         val f = files.next()
         val fStringPath = f.getPath.toString
-        fs.copyToLocalFile(f.getPath,
-          new Path(s"$localBaseDir${fStringPath.substring(fStringPath.lastIndexOf("/"))}"))
+        if (f.getPath.getName != certGeneratorName) {
+          fs.copyToLocalFile(f.getPath,
+            new Path(s"$localBaseDir${fStringPath.substring(fStringPath.lastIndexOf("/"))}"))
+        }
       }
     }
   }
