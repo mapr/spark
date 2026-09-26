@@ -64,9 +64,9 @@ SPARK_VERSION=__VERSION_3DIGIT__
 SPARK_HOME=__PREFIX__/spark/spark-${SPARK_VERSION}
 echo "post-install called with argument \`$1'" >&2
 
-# Uninstall should only stop slave on localhost and not honor conf/slaves file
+# Uninstall should only stop worker on localhost and not honor conf/workers file
 export HOSTLIST=localhost
-$SPARK_HOME/sbin/stop-slaves.sh
+$SPARK_HOME/sbin/stop-workers.sh
 rm -rf __PREFIX__/shark/spark-$SPARK_VERSION/conf
 rm -rf __PREFIX__/spark/shark-$SPARK_VERSION/conf
 
