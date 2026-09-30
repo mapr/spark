@@ -35,6 +35,11 @@ object MimaExcludes {
 
   // Exclude rules for 4.1.x from 4.0.0
   lazy val v41excludes = defaultExcludes ++ Seq(
+    // [SPARK-47086][BUILD][CORE][WEBUI] Upgrade Jetty to 12.1.4
+    ProblemFilters.exclude[MissingTypesProblem]("org.apache.spark.ui.ProxyRedirectHandler$ResponseWrapper"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("org.apache.spark.ui.ProxyRedirectHandler#ResponseWrapper.sendRedirect"),
+    ProblemFilters.exclude[IncompatibleMethTypeProblem]("org.apache.spark.ui.ProxyRedirectHandler#ResponseWrapper.this"),
+
     // [SPARK-51261][ML][CONNECT] Introduce model size estimation to control ml cache
     ProblemFilters.exclude[ReversedMissingMethodProblem]("org.apache.spark.ml.linalg.Vector.getSizeInBytes"),
 
