@@ -22,7 +22,7 @@ import org.apache.spark.deploy.history.LoginServlet
 import java.util.Date
 
 import jakarta.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
-import org.eclipse.jetty.servlet.ServletContextHandler
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler
 
 import org.apache.spark.{SecurityManager, SparkConf, SparkContext}
 import org.apache.spark.internal.Logging
