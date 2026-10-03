@@ -374,10 +374,6 @@
               <groupId>org.eclipse.jetty</groupId>
               <artifactId>jetty-webapp</artifactId>
             </exclusion>
-            <exclusion>
-              <groupId>org.eclipse.jetty</groupId>
-              <artifactId>jetty-rewrite</artifactId>
-            </exclusion>
           </exclusions>
         </dependency>
       </dependencies>
