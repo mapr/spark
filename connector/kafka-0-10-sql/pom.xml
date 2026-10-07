@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.spark</groupId>
     <artifactId>spark-parent_2.13</artifactId>
-    <version>4.1.3.0-dep-SNAPSHOT</version>
+    <version>4.1.3.0-dep-1020</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -30,7 +30,7 @@
   <properties>
     <sbt.project.name>sql-kafka-0-10</sbt.project.name>
     <!-- note that this should be compatible with Kafka brokers version 0.10 and up -->
-    <kafka.version>3.6.1.400-dep-1020-SNAPSHOT</kafka.version>
+    <kafka.version>3.6.1.400-dep-1020</kafka.version>
   </properties>
   <packaging>jar</packaging>
   <name>Kafka 0.10+ Source for Structured Streaming</name>
