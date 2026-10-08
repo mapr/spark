@@ -46,5 +46,7 @@ if [ "$MAPR_SECURITY_STATUS" = "true" ]; then
   fi
 fi
 
+export SPARK_BEELINE_OPTS="$SPARK_BEELINE_OPTS -Dcom.google.protobuf.use_unsafe_pre22_gencode=true"
+
 CLASS="org.apache.hive.beeline.BeeLine"
 exec "${SPARK_HOME}/bin/spark-class" $CLASS "$@"
