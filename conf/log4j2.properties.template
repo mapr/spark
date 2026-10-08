@@ -66,6 +66,8 @@ logger.HiveConf.level = ERROR
 # SPARK-327: Settings to suppress the unnecessary warning message from MultiMechsAuthenticationHandler
 logger.MultiMechsAuthenticationHandler.name = org.apache.hadoop.security.authentication.server.MultiMechsAuthenticationHandler
 logger.MultiMechsAuthenticationHandler.level = ERROR
+logger.MultiMechsAuthenticationHandlerJakarta.name = com.mapr.web.security.hadoop.jakartaauth.MultiMechsAuthenticationHandler
+logger.MultiMechsAuthenticationHandlerJakarta.level = ERROR
 logger.KerberosAuthHandler.name = org.apache.hadoop.security.authentication.server.KerberosAuthHandler
 logger.KerberosAuthHandler.level = ERROR
 
