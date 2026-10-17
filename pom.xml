@@ -201,11 +201,11 @@
     <netlib.ludovic.dev.version>3.0.3</netlib.ludovic.dev.version>
     <commons-codec.version>1.16.1</commons-codec.version>
     <commons-compress.version>1.26.1</commons-compress.version>
-    <commons-io.version>2.16.1</commons-io.version>
+    <commons-io.version>2.22.0</commons-io.version>
     <!-- org.apache.commons/commons-lang/-->
     <commons-lang2.version>2.6</commons-lang2.version>
     <!-- org.apache.commons/commons-lang3/-->
-    <commons-lang3.version>3.14.0</commons-lang3.version>
+    <commons-lang3.version>3.18.0</commons-lang3.version>
     <!-- org.apache.commons/commons-pool2/-->
     <commons-pool2.version>2.11.1</commons-pool2.version>
     <datanucleus-core.version>5.2.3</datanucleus-core.version>
@@ -659,7 +659,7 @@
       <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-text</artifactId>
-        <version>1.12.0</version>
+        <version>1.14.0</version>
       </dependency>
       <dependency>
         <groupId>commons-lang</groupId>
